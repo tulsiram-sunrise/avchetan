@@ -7,13 +7,15 @@ Applies to `packages/db` and anything that reads/writes data. Full table definit
 - Drizzle schemas for both dialects ([ADR-0007](../decisions/0007-drizzle-dual-dialect-schema.md)):
   ```
   packages/db/src/schema/
-    columns.ts        dialect-neutral column spec per table (names, logical types, nullability, enums)
+    spec.ts           dialect-neutral spec per table (scope, names, logical types, nullability, enums)
     enums.ts          enum value arrays (single source for Zod + Drizzle)
-    sqlite/*.ts       sqliteTable definitions
-    pg/*.ts           pgTable definitions (+ server-only columns/tables)
+    sqlite/tables.ts  sqliteTable definitions (synced + client-local)
+    pg/tables.ts      pgTable definitions (synced + server-only; adds server_seq, created_on_server_at)
   ```
-- **Parity test** (`schema-parity.test.ts`) compares the two dialects against `columns.ts`: same tables, columns, nullability, enum values. CI fails on drift.
-- Every synced table spreads the shared `syncColumns` helper (id, created_at, updated_at, updated_by_device, deleted_at).
+- Entry points: `@avchetan/db` (spec, enums, migration runner), `@avchetan/db/sqlite` (client schema + migrations), `@avchetan/db/pg` (server schema + migrations).
+- **Parity test** (`schema-parity.test.ts`) compares both dialects against `spec.ts`: same tables per scope, columns, logical types, nullability, enum values; no UNIQUE constraints on synced tables; `server_seq` indexed. CI fails on drift.
+- Every synced table spreads the dialect's `syncColumns()` helper (id, created_at, updated_at, updated_by_device, deleted_at).
+- **No UNIQUE constraints on synced tables** besides the primary key. Sync must always accept an LWW-valid row; natural keys (slug, path, name) are kept unique by repositories, and derived IDs make concurrent creations converge.
 - Logical types mapping:
 
 | Logical | SQLite | Postgres |
@@ -28,7 +30,8 @@ Applies to `packages/db` and anything that reads/writes data. Full table definit
 
 ## Migrations
 
-- Generated with `drizzle-kit generate` per dialect (`pnpm db:generate`) into `packages/db/migrations/{sqlite,pg}`. Never edit a migration after it has run anywhere; add a new one.
+- `pnpm db:generate` (in `avchetan-code/`) runs `drizzle-kit generate` for both dialects into `packages/db/migrations/{sqlite,pg}` and then `scripts/bundle-migrations.ts`, which embeds the SQL into `src/migrations/{sqlite,pg}.generated.ts` (so every runtime can migrate without file access). Commit both. A test fails if the bundle is out of date. Never edit a migration after it has run anywhere; add a new one.
+- `runMigrations(driver, migrations, { now })` from `@avchetan/db` applies pending migrations, each in a transaction, tracked in `avchetan_migrations`. It refuses to run if the database was migrated by a newer app version (`db_newer_than_app`). Each app provides a tiny `MigrationDriver` (`run`, `all`) for its SQL driver.
 - Clients run migrations at startup before any query. Server runs at boot.
 - **Additive changes only** for synced tables (new tables, new nullable/defaulted columns). Destructive changes need an ADR with a multi-step plan (old clients may still push old shapes).
 - Data backfills are code in `packages/db/src/backfills/`, idempotent, versioned in `sync_state`.

@@ -19,7 +19,7 @@ Vitest everywhere TS runs. Tests live beside source (`foo.ts` → `foo.test.ts`)
 
 - **No live network in CI.** LLM calls use the mock model or recorded fixtures; HTTP uses the in-process server.
 - Inject `clock`, `newId`, `fetch`, adapters — never monkey-patch globals.
-- Clients in tests use in-memory SQLite (`better-sqlite3` in Node via the same Drizzle sqlite schema) — the `SqlDriver` adapter makes this possible.
+- Clients in tests use in-memory SQLite via Node's built-in `node:sqlite` (no native build), server tests use PGlite; helpers in `packages/db/test/drivers.ts`.
 - Every bug fix in sync or extraction comes with a regression test.
 - Tests must be deterministic: fixed clock, seeded IDs, no `sleep` (use fake timers).
 - Coverage is not a target, but `packages/sync` and `packages/db/repos` should stay near-complete.

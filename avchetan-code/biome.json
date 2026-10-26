@@ -8,7 +8,7 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**", "!**/migrations", "!**/*.md", "!pnpm-lock.yaml"]
+    "includes": ["**", "!**/migrations", "!**/*.md", "!pnpm-lock.yaml", "!**/*.generated.ts"]
   },
   "formatter": {
     "enabled": true,
