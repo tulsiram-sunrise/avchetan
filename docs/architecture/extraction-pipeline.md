@@ -80,7 +80,7 @@ Because IDs are deterministic, if the device and the server both process the sam
 
 ## 5. Server fallback
 
-Worker in `apps/server` (uses the same `@dhyan/core` extraction code with server-side keys):
+Worker in `apps/server` (uses the same `@avchetan/core` extraction code with server-side keys):
 
 ```
 every 60 s, inside withSyncWrite (advisory lock — see sync-protocol):

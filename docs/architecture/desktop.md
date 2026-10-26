@@ -4,7 +4,7 @@ Primary target: **Windows 11**. macOS/Linux should work where Tauri does, but ar
 
 ## Principles
 
-- Rust is a **thin native shell**: windows, hotkeys, tray, keychain, active-window/clipboard, audio (later). All business logic is TypeScript in the webview using `@dhyan/*` packages.
+- Rust is a **thin native shell**: windows, hotkeys, tray, keychain, active-window/clipboard, audio (later). All business logic is TypeScript in the webview using `@avchetan/*` packages.
 - The dock must appear in < 100 ms after the hotkey; the webview stays alive while hidden (never destroyed).
 
 ## Windows
@@ -21,7 +21,7 @@ Primary target: **Windows 11**. macOS/Linux should work where Tauri does, but ar
 
 - **Global hotkey** (`tauri-plugin-global-shortcut`): default **`Ctrl+Shift+Space`** — configurable. (`Alt+Space` from the original spec conflicts with the Windows window menu and PowerToys Run; allowed as an opt-in.) Registration failure → notification + settings prompt.
 - Hotkey handler (Rust): (1) capture previous foreground window context (Phase 6), (2) show + focus dock, (3) emit `dock:shown` with context to the webview. If already visible and focused → hide.
-- **Tray** (`tauri` tray API): left-click toggles dock; right-click menu: *Open Dhyan* (main window), *Sync now*, *Pending: N* (disabled label), *Preferences*, *Pause capture context*, *Quit*. Tooltip shows pending count and last sync time.
+- **Tray** (`tauri` tray API): left-click toggles dock; right-click menu: *Open Avchetan* (main window), *Sync now*, *Pending: N* (disabled label), *Preferences*, *Pause capture context*, *Quit*. Tooltip shows pending count and last sync time.
 - **Auto-hide on blur**: on `blur` event → hide after 100 ms unless a native dialog is open or "pin dock" is toggled. The draft (input text, mode) is kept in the webview state and persisted to `settings` every 500 ms so it survives restarts.
 - `Esc` → hide. `Enter` → submit. `Shift+Enter` → newline. `Ctrl+Enter` in Ask answer → open in main window.
 
@@ -52,7 +52,7 @@ commands/
 
 ## Data layer
 
-- SQLite file in the app data dir (`dhyan.db`), WAL mode.
+- SQLite file in the app data dir (`avchetan.db`), WAL mode.
 - Drizzle `sqlite-proxy` driver forwarding to `tauri-plugin-sql` (`apps/desktop/src/db/driver.ts`). Migrations bundled and run at startup before the UI renders anything that reads data.
 - Measure the capture path in Phase 2; if IPC overhead pushes it over 10 ms, move the capture transaction into a dedicated Rust command (documented fallback).
 
@@ -66,7 +66,7 @@ Vite + React + TypeScript + Tailwind. State: Zustand (UI state), TanStack Query 
 
 ## Packaging
 
-Windows installer via Tauri bundler (NSIS). App identifier `app.dhyan`. Code signing deferred.
+Windows installer via Tauri bundler (NSIS). App identifier `app.avchetan`. Code signing deferred.
 
 ## Hub mode (Home Hub deployment)
 

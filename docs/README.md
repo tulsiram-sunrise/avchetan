@@ -1,4 +1,4 @@
-# Dhyan — Documentation
+# Avchetan — Documentation
 
 All project documentation lives in this directory. The root [CLAUDE.md](../CLAUDE.md) holds only the highest-priority rules; everything else is here.
 
@@ -36,7 +36,10 @@ All project documentation lives in this directory. The root [CLAUDE.md](../CLAUD
 | [architecture/deployment-modes.md](architecture/deployment-modes.md) | Standalone · Home Hub (own PC + Ollama, no paid server) · Cloud; pairing, delegate mode |
 
 ### Conventions
-[code-style](conventions/code-style.md) · [naming](conventions/naming.md) · [database](conventions/database.md) · [time-and-ids](conventions/time-and-ids.md) · [api](conventions/api.md) · [errors-and-logging](conventions/errors-and-logging.md) · [testing](conventions/testing.md) · [security-and-privacy](conventions/security-and-privacy.md) · [git](conventions/git.md)
+[code-style](conventions/code-style.md) · [naming](conventions/naming.md) · [database](conventions/database.md) · [time-and-ids](conventions/time-and-ids.md) · [api](conventions/api.md) · [errors-and-logging](conventions/errors-and-logging.md) · [testing](conventions/testing.md) · [security-and-privacy](conventions/security-and-privacy.md) · [git](conventions/git.md) · [onboarding-and-user-docs](conventions/onboarding-and-user-docs.md)
+
+### User guide (for people who install and self-host Avchetan)
+[user-guide/](user-guide/README.md) — choose a setup, Standalone / Home Hub / Cloud setup, pairing, AI models, Tailscale, backups, troubleshooting. Drafts until each feature ships.
 
 ### Patterns
 [Index](patterns/README.md) — repository write + outbox, platform adapters, deterministic IDs, processing lease, extraction schema, analysis tools, background jobs.

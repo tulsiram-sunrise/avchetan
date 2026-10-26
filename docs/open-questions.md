@@ -15,8 +15,9 @@ Questions not yet decided. When answered: record the answer here (or in an ADR i
 | Q9 | Should Ask mode be able to *propose* writes (e.g. "create task?") in Phase 3, or only after the command registry exists (Phase 6)? | Phase 6 | — |
 | Q10 | Display units: metric only, or allow imperial display (lb/mi)? Storage stays metric. | Metric; setting later | — |
 | Q11 | Daily brief time and whether to also send a morning plan (today's tasks + yesterday's rollovers). | 21:00 brief; morning plan as Phase 6 stretch | Phase 6 |
-| Q12 | Priority of the built-in Home Hub (Phase 5b): build it right after Phase 5, or after the advancement phases? | Right after Phase 5 | Phase 6 |
-| Q13 | Is Dhyan meant to be distributed to other people (installers, onboarding, docs for non-developers), or stay a personal tool that others may self-host? Affects how much polish the wizard and installers need. | Personal first; keep onboarding friendly | Phase 5b |
+| Q15 | License: open source (which license?) or source-available/private? Matters once others self-host. | Decide before the first public release | Phase 5b |
+| Q16 | Code signing (Windows SmartScreen warns on unsigned installers) and Play Store publishing vs. APK only. | APK + unsigned at first; revisit for public release | Phase 5b |
+| Q17 | Should the user guide be published as a website (e.g. a static docs site) as well as Markdown in the repo? | Markdown first; site at public release | — |
 | Q14 | Default for `categories.llmMayCreate`: `auto` (create + review later) or `suggest` (ask before creating)? | `auto` | Phase 3 |
 
 ## Resolved
@@ -29,6 +30,8 @@ Questions not yet decided. When answered: record the answer here (or in an ADR i
 | R4 | Roadmap scope | Plan full phases 1–5 plus advancement phases 6–7 | 2026-10-26 |
 | R5 | Desktop framework | Tauri v2 (ADR-0001) | 2026-10-26 |
 | R6 | Sync approach | Custom outbox + LWW (ADR-0004) | 2026-10-26 |
-| R7 (Q1) | App name | **Dhyan** — packages `@dhyan/*`, identifier `app.dhyan`, deep link `dhyan://` | 2026-10-26 |
+| R7 (Q1) | App name | **Avchetan** — packages `@avchetan/*`, identifier `app.avchetan`, deep link `avchetan://` | 2026-10-26 |
 | R8 (Q4) | Categories | Determined automatically by the LLM, also definable by the user (ADR-0015) | 2026-10-26 |
+| R10 (Q12) | When to build the built-in Home Hub (Phase 5b) | Directly after Phase 5, before the advancement phases | 2026-10-26 |
+| R11 (Q13) | Who can host it | Anyone can self-host; setup must be very simple, guided and documented (ADR-0017, [user-guide](user-guide/README.md)) | 2026-10-26 |
 | R9 | Usable without a paid server? | Yes: Standalone and Home Hub modes (own PC + Ollama + Android, LAN/Tailscale) alongside Cloud (ADR-0016) | 2026-10-26 |

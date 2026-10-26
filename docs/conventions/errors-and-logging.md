@@ -2,7 +2,7 @@
 
 ## Errors
 
-- Base class `AppError` in `@dhyan/shared/errors` with a stable string `code`, `message`, optional `cause`, optional `details`. Subclasses per domain: `DbError`, `SyncError`, `LlmError`, `NativeError`, `ValidationError`.
+- Base class `AppError` in `@avchetan/shared/errors` with a stable string `code`, `message`, optional `cause`, optional `details`. Subclasses per domain: `DbError`, `SyncError`, `LlmError`, `NativeError`, `ValidationError`.
 - Codes are `snake_case` and stable (UI and retry logic switch on them). LLM codes: see [llm-engine](../architecture/llm-engine.md#error-taxonomy).
 - **Inside a module:** throw `AppError`s.
 - **At boundaries** (IPC wrappers, HTTP client/handlers, LLM calls, background jobs): convert to `Result<T, AppError>` (`ok()`/`err()` helpers) or to the HTTP error shape. Background loops never crash on a single item — they record the error on that item and continue.
@@ -13,7 +13,7 @@
 
 ## Logging
 
-- `createLogger(scope)` from `@dhyan/shared/logger` → `{ debug, info, warn, error }` with structured fields: `log.info('push done', { acked: 12, rejected: 0, ms: 140 })`.
+- `createLogger(scope)` from `@avchetan/shared/logger` → `{ debug, info, warn, error }` with structured fields: `log.info('push done', { acked: 12, rejected: 0, ms: 140 })`.
 - Implementations: desktop → console in dev + rotating file via `tauri-plugin-log` in prod; mobile → console (dev) + in-memory ring buffer viewable in settings; server → pino JSON to stdout.
 - Levels: `error` (needs attention), `warn` (degraded, recovered), `info` (lifecycle: sync cycles, jobs, startup), `debug` (details, dev only).
 - **Privacy:** never log log content, task titles, prompts, model responses, API keys, tokens, clipboard or window titles at `info`+. `debug` may include content only when the developer setting "verbose content logging" is enabled locally; it is never enabled on the server.

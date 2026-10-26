@@ -40,7 +40,7 @@ Each app has exactly **one composition root** (`src/platform/index.ts` + `src/ap
 
 ## Test adapters
 
-`@dhyan/shared/testing` provides `MemorySecretStore`, `FakeNetworkMonitor` (toggle online), `ManualScheduler` (tick by hand), `createTestClock()`, and an in-memory SQLite `SqlDriver`.
+`@avchetan/shared/testing` provides `MemorySecretStore`, `FakeNetworkMonitor` (toggle online), `ManualScheduler` (tick by hand), `createTestClock()`, and an in-memory SQLite `SqlDriver`.
 
 ## Pitfalls
 

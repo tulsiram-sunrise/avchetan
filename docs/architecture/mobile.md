@@ -13,7 +13,7 @@
 - `expo-notifications` for daily brief / reminders.
 - UI: React Native + NativeWind (Tailwind classes, consistent with desktop tokens); `@gorhom/bottom-sheet` for capture.
 - State: Zustand + TanStack Query (same pattern as desktop).
-- LLM: `@dhyan/core` with `expo/fetch` injected (streaming support). Verify the AI SDK works on Hermes in Phase 4 (may need polyfills for `TextEncoderStream`/`structuredClone`).
+- LLM: `@avchetan/core` with `expo/fetch` injected (streaming support). Verify the AI SDK works on Hermes in Phase 4 (may need polyfills for `TextEncoderStream`/`structuredClone`).
 
 ## Screens (routes)
 
@@ -48,7 +48,7 @@ A floating capture button sits on every tab. Capture sheet: multiline input, Sav
 ## Android home-screen widget (Phase 6–7)
 
 - Using `react-native-android-widget` (or a small native module via config plugin).
-- Phase 6: "Quick capture" button → deep link `dhyan://capture`.
+- Phase 6: "Quick capture" button → deep link `avchetan://capture`.
 - Phase 7: mic button → record → transcribe → save (source `mobile_widget` / `mobile_voice`), 3 s undo.
 
 ## Ollama on mobile
@@ -58,6 +58,6 @@ Optional (advanced, Tailscale only): point the `ollama` provider at the PC's Tai
 
 ## Build & run
 
-- `pnpm --filter @dhyan/mobile dev` → Metro; Android emulator or physical device via USB.
+- `pnpm --filter @avchetan/mobile dev` → Metro; Android emulator or physical device via USB.
 - Builds: local `expo run:android` or EAS Build (preview profile → APK for sideloading).
-- Monorepo: Metro config must watch workspace packages (`watchFolders`) and resolve `@dhyan/*` source (no prebuild step for packages).
+- Monorepo: Metro config must watch workspace packages (`watchFolders`) and resolve `@avchetan/*` source (no prebuild step for packages).

@@ -2,7 +2,7 @@
 
 | Thing | Convention | Example |
 |---|---|---|
-| Packages | `@dhyan/<name>` | `@dhyan/core` |
+| Packages | `@avchetan/<name>` | `@avchetan/core` |
 | Files & folders | `kebab-case` | `pending-processor.ts`, `capture-sheet.tsx` |
 | React components | `PascalCase` | `CaptureSheet` |
 | Hooks | `useXxx` | `useOpenTasks` |

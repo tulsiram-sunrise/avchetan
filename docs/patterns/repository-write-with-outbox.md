@@ -47,7 +47,7 @@ After the transaction commits, the repo emits `logs:changed` / `<table>:changed`
 
 ## Pitfalls
 
-- Writing a synced table with `db.insert(...)` outside a repo → never syncs. (Lint: restrict imports of table objects from `@dhyan/db/schema` to `packages/db` internals.)
+- Writing a synced table with `db.insert(...)` outside a repo → never syncs. (Lint: restrict imports of table objects from `@avchetan/db/schema` to `packages/db` internals.)
 - Awaiting network inside the transaction.
 - Forgetting cascades on soft delete (raw log → derived rows → tag links/mentions).
 - Pull application must use `applyRemote`, which does LWW and **does not** enqueue.

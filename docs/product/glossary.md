@@ -30,7 +30,7 @@
 | **Command mode** | `/`-prefixed action. |
 | **Daily brief** | Automated 4-bullet evening summary, stored as a reflection activity. |
 | **Deployment mode** | *Standalone* (no server), *Home Hub* (server + Ollama on the user's PC), *Cloud* (hosted server). |
-| **Hub** | The user's PC running the Dhyan server (and usually Ollama) in Home Hub mode. |
+| **Hub** | The user's PC running the Avchetan server (and usually Ollama) in Home Hub mode. |
 | **Pairing** | Connecting a device to a server by scanning a QR code with server URLs + token. |
 | **Delegate (extraction)** | Slot mode where a device doesn't extract itself; the server processes its logs immediately. |
 | **Hub (analysis)** | Slot mode where Ask questions run on the server via `/v1/ask`. |

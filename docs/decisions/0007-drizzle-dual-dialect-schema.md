@@ -19,4 +19,4 @@ Clients use SQLite and the server uses Postgres. The original spec described "on
 
 ## Consequences
 - Some duplication in schema files, caught by the parity test.
-- Wire format (camelCase JSON, ISO strings) is the common contract, validated by Zod in `@dhyan/sync/protocol`.
+- Wire format (camelCase JSON, ISO strings) is the common contract, validated by Zod in `@avchetan/sync/protocol`.

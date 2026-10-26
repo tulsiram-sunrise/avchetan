@@ -4,8 +4,8 @@
 
 - Versioned prefix `/v1`. Breaking changes → `/v2` + protocol header bump.
 - JSON only, `camelCase` keys, UTF-8. Instants as ISO strings, local dates as `YYYY-MM-DD`.
-- Request and response bodies are defined as Zod schemas in `@dhyan/sync/protocol` (sync) or `apps/server/src/routes/*.schema.ts` (others) and validated on **both** sides.
-- Auth: `Authorization: Bearer <token>`; device: `X-Dhyan-Device`; protocol: `X-Dhyan-Protocol`.
+- Request and response bodies are defined as Zod schemas in `@avchetan/sync/protocol` (sync) or `apps/server/src/routes/*.schema.ts` (others) and validated on **both** sides.
+- Auth: `Authorization: Bearer <token>`; device: `X-Avchetan-Device`; protocol: `X-Avchetan-Protocol`.
 - Every response carries `X-Request-Id`; server logs include it.
 - Methods: `GET` for reads with no body, `POST` for everything else (no PUT/PATCH/DELETE needed — sync carries tombstones).
 
@@ -41,4 +41,4 @@ Push ≤ 500 rows / 2 MB; pull page ≤ 500 rows; search `limit ≤ 15`; request
 ## Client HTTP usage
 
 - All server calls go through `packages/sync`'s `ApiClient` (injected fetch, base URL, token from `SecretStore`, timeout, request ID, error mapping). No ad-hoc `fetch` to the server elsewhere.
-- LLM provider HTTP goes only through `@dhyan/core` providers.
+- LLM provider HTTP goes only through `@avchetan/core` providers.

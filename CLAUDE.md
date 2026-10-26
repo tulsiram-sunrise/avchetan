@@ -1,4 +1,4 @@
-# CLAUDE.md — Dhyan
+# CLAUDE.md — Avchetan
 
 Personal, offline-first daily logger & planner. Type (or speak) a thought into a desktop dock (Tauri v2) or Android app (Expo); it is saved locally instantly, then an LLM extracts categories, activities, tasks, tags and entities. Devices sync through a small Hono server that runs either on the user's own PC (**Home Hub**: PGlite + local Ollama, zero cost) or in the **Cloud** (Postgres); a single device can also run **Standalone**. See [docs/architecture/deployment-modes.md](docs/architecture/deployment-modes.md).
 
@@ -45,7 +45,7 @@ docs/           all project documentation
 - DB: tables plural `snake_case`; columns `snake_case`; TS fields `camelCase`. Enums are lowercase `snake_case` string literals.
 - Tags are normalized to lowercase `kebab-case`. Metric keys use unit suffixes (`duration_min`, `weight_kg`) from the registry in [docs/architecture/data-model.md](docs/architecture/data-model.md#metric-key-registry).
 - Errors: throw `AppError` subclasses with a stable `code`; convert to `Result` at IPC/HTTP/LLM boundaries. No silent `catch {}`.
-- Logging: `createLogger('scope')` from `@dhyan/shared`; no `console.log` in committed code.
+- Logging: `createLogger('scope')` from `@avchetan/shared`; no `console.log` in committed code.
 - Tests: Vitest beside source (`*.test.ts`). Sync and extraction changes require tests. LLM tests use the mock model + fixtures, never live APIs in CI.
 
 ## Working agreements
@@ -53,6 +53,7 @@ docs/           all project documentation
 - Check the current phase in [docs/roadmap.md](docs/roadmap.md); don't build features from later phases unless asked.
 - A decision that changes architecture → add an ADR in [docs/decisions/](docs/decisions/) and update the affected doc in the same change.
 - Unresolved questions go in [docs/open-questions.md](docs/open-questions.md), not in code comments.
+- **Anyone can self-host Avchetan.** User-visible changes must keep setup guided (wizard, no terminal for Standalone/Home Hub), give every error a fix + guide link, and update [docs/user-guide/](docs/user-guide/README.md) in the same change. See [onboarding & user docs](docs/conventions/onboarding-and-user-docs.md).
 - Pin dependency versions to the latest stable at scaffold time; don't trust version numbers in `original-docs/`.
 
 ## Commands

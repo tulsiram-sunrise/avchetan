@@ -26,7 +26,7 @@ Vitest everywhere TS runs. Tests live beside source (`foo.ts` → `foo.test.ts`)
 
 ## Commands (once scaffolded)
 
-`pnpm test` (all, via Turbo) · `pnpm --filter @dhyan/sync test -- --watch` · `pnpm eval:extraction` (manual, real models, prints accuracy table).
+`pnpm test` (all, via Turbo) · `pnpm --filter @avchetan/sync test -- --watch` · `pnpm eval:extraction` (manual, real models, prints accuracy table).
 
 ## Fixtures
 

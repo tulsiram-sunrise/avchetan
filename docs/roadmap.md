@@ -4,10 +4,14 @@
 
 Each phase lists scope, deliverables and **done when** criteria (testable). Phases are sequential; a coding agent should finish a phase's criteria before starting the next. Advanced capabilities are specified in [product/advancements.md](product/advancements.md).
 
+**Applies to every phase:** a phase that adds or changes user-visible behavior is done only when the matching [user-guide](user-guide/README.md) pages are updated ([onboarding & user docs conventions](conventions/onboarding-and-user-docs.md)).
+
+**Order:** 1 → 2 → 3 → 4 → 5 → **5b (built-in Home Hub, directly after 5)** → 6 → 7.
+
 ---
 
 ## Phase 0 — Planning & docs ✅
-- `CLAUDE.md`, `docs/` tree, ADRs 0001–0016.
+- `CLAUDE.md`, `docs/` tree, ADRs 0001–0017, user-guide drafts.
 - **Done when:** user has reviewed the docs; open questions marked *blocking* are answered.
 
 ## Phase 1 — Monorepo foundation & data layer
@@ -71,7 +75,7 @@ Scope:
 Scope:
 1. Scaffold `apps/mobile` (Expo, Router, dev build); Metro monorepo config; NativeWind.
 2. `expo-sqlite` + Drizzle; migrations; composition root with Expo adapters (secure-store, NetInfo, expo/fetch, notifications).
-3. Verify `@dhyan/core` on Hermes (polyfills as needed).
+3. Verify `@avchetan/core` on Hermes (polyfills as needed).
 4. Screens: Today timeline, capture sheet + FAB, tasks, ask (local SQL tools), log detail/edit, settings (providers, slots).
 5. On-device pending processor (foreground) + background task hook (wired fully in Phase 5).
 
@@ -84,7 +88,7 @@ Scope:
 
 Scope:
 1. `apps/server`: Hono app, env schema, auth, device registration (`extractionMode`), error shape, health (`serverId`)/status, `DB_DRIVER=postgres|pglite`, `SERVER_PROFILE=cloud|hub`, Dockerfile, docker-compose (pgvector), `start:hub` script + `deploy/home-hub/compose.yml`.
-2. Sync: `@dhyan/sync/protocol` schemas; push (LWW upsert, `withSyncWrite`, skew check); pull (cursor pagination); client engine (outbox push loop, pull loop, triggers, backoff, mutex); wire into desktop + mobile (settings: server URL + token).
+2. Sync: `@avchetan/sync/protocol` schemas; push (LWW upsert, `withSyncWrite`, skew check); pull (cursor pagination); client engine (outbox push loop, pull loop, triggers, backoff, mutex); wire into desktop + mobile (settings: server URL + token).
 3. Fallback extraction worker (grace 0 for `delegate` devices, immediate wake); lease handling on clients; `delegate` extraction slot mode.
 4. Embedding worker + `log_embeddings` + `/v1/search`; `search_history` tool enabled in Ask mode (desktop + mobile).
 5. `POST /v1/ask` with Postgres implementations of the analysis tools; `hub` analysis slot mode on clients.
@@ -107,8 +111,16 @@ Scope:
 2. Tauri sidecar integration (`hub_start/stop/status`), crash restart, keep-running-in-tray option.
 3. Setup wizard: mode choice, Ollama detection and model presets, firewall rule helper, Tailscale detection, pairing QR.
 4. Hub settings panel: status, logs, data folder, backups, rotate token.
+5. First-run wizard on desktop and Android for all three modes ([onboarding rules](conventions/onboarding-and-user-docs.md#onboarding-rules)).
+6. **Setup check (doctor)** screen on desktop and Android, with fixes and guide links.
+7. Error code → user message → troubleshooting anchor mapping for every user-facing error.
+8. Distribution: Windows installer and Android APK on a releases page; `deploy/cloud/` (Compose + Caddy + `.env.example`).
+9. User guide completed (all pages in `docs/user-guide/` without the Draft banner), with screenshots.
 
-**Done when:** on a fresh Windows PC with only Ollama installed, a non-technical user can install Dhyan, choose *Home Hub*, pair a phone and capture from it — without opening a terminal.
+**Done when:**
+- On a fresh Windows PC with only Ollama installed, a non-technical user can install Avchetan, choose *Home Hub*, pair a phone and capture from it — without opening a terminal — by following the user guide literally.
+- Setup check detects and explains: Ollama stopped, model missing, firewall blocked, wrong token, clock skew, hub unreachable.
+- The cloud guide works start-to-finish on a fresh VPS.
 
 ## Phase 6 — Advancements A (ambient intelligence)
 

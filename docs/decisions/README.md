@@ -20,6 +20,7 @@ Short records of significant decisions: context, decision, consequences. Accepte
 | [0014](0014-portable-server-hosting-deferred.md) | Portable server; hosting choice deferred | Accepted |
 | [0015](0015-dynamic-categories.md) | Dynamic categories: LLM-determined and user-defined | Accepted |
 | [0016](0016-deployment-modes-home-hub.md) | Deployment modes: Standalone, Home Hub, Cloud | Accepted |
+| [0017](0017-self-hostable-guided-setup.md) | Anyone can self-host: guided setup and user documentation | Accepted |
 
 ## Template
 

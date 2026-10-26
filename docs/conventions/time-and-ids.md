@@ -1,13 +1,13 @@
 # Time & IDs
 
-Getting these wrong corrupts sync and makes "yesterday" mean the wrong day. Both live in `@dhyan/shared`.
+Getting these wrong corrupts sync and makes "yesterday" mean the wrong day. Both live in `@avchetan/shared`.
 
 ## IDs
 
 | Function | Use | Format |
 |---|---|---|
 | `newId()` | Any row created by a user action or as a new record (raw logs, manual tasks, projects, devices) | UUIDv7 (time-ordered → good index locality, sortable) |
-| `derivedId(kind, ...parts)` | Any row whose identity is determined by other rows: extracted activities/tasks (`rawLogId`, `ordinal`), tags (`path`), entity_tags, entities, mentions, daily briefs (`date`) | UUIDv5 with the fixed app namespace `DHYAN_NAMESPACE`; parts joined with `\u001f` |
+| `derivedId(kind, ...parts)` | Any row whose identity is determined by other rows: extracted activities/tasks (`rawLogId`, `ordinal`), tags (`path`), entity_tags, entities, mentions, daily briefs (`date`) | UUIDv5 with the fixed app namespace `AVCHETAN_NAMESPACE`; parts joined with `\u001f` |
 
 Rules:
 - IDs are always generated on the client (or server workers) — never by the database.

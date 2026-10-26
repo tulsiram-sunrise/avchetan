@@ -6,9 +6,9 @@ An ambient, offline-first personal logger and planner: dump any thought, workout
 
 ## Who it's for
 
-A single user per installation (initially the author), across one Windows desktop and one Android phone. There is no multi-tenancy, no sharing, no account system — anyone else who uses Dhyan runs their own instance. This lets us optimize for ergonomics and zero latency over enterprise concerns — but data integrity and key security still matter.
+One person per installation, across a Windows desktop and an Android phone. It starts as the author's own tool, but **anyone can self-host it**: setup is guided by in-app wizards and a plain-language [user guide](../user-guide/README.md) ([ADR-0017](../decisions/0017-self-hostable-guided-setup.md)). There is no multi-tenancy, no sharing, no account system — everyone runs their own instance. This lets us optimize for ergonomics and zero latency over enterprise concerns — but data integrity and key security still matter.
 
-**No paid infrastructure required.** Dhyan runs standalone on one device, or as a *Home Hub* on the user's own PC (with Ollama for local LLMs) that the phone syncs with, or against a cloud server — the user chooses ([deployment-modes](../architecture/deployment-modes.md)).
+**No paid infrastructure required.** Avchetan runs standalone on one device, or as a *Home Hub* on the user's own PC (with Ollama for local LLMs) that the phone syncs with, or against a cloud server — the user chooses ([deployment-modes](../architecture/deployment-modes.md)).
 
 ## The problem
 

@@ -48,7 +48,7 @@ Request:
 }
 ```
 - Max 500 changes per request; engine loops until the outbox is empty.
-- Rows are validated per table with the Zod schemas from `@dhyan/sync/protocol` (camelCase on the wire).
+- Rows are validated per table with the Zod schemas from `@avchetan/sync/protocol` (camelCase on the wire).
 
 Server, per change, inside one transaction per request:
 ```
@@ -112,7 +112,7 @@ Failures: exponential backoff 2 s → 5 min with jitter; reset on success or net
 
 - Wire payloads include only known columns; unknown incoming fields are dropped by Zod (`.strip()`), so an older client tolerates a newer server.
 - Additive changes only (new nullable columns, new tables). Renames/removals require a migration plan ADR.
-- The protocol has a version header `X-Dhyan-Protocol: 1`; server rejects unsupported majors with 426.
+- The protocol has a version header `X-Avchetan-Protocol: 1`; server rejects unsupported majors with 426.
 
 ## Tests required (see [testing](../conventions/testing.md))
 

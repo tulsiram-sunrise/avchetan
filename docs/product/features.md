@@ -34,7 +34,7 @@ Type `? what did I bench last week` in the dock (or the Ask tab on mobile). The 
 Deployment mode (Standalone / Home Hub / Cloud), providers & API keys, model slots (extraction / analysis / embedding / transcription, incl. `delegate`/`hub` modes), hotkey, dock position, timezone, server URLs + token (or QR pairing), hub controls (desktop), category creation policy, daily brief time, privacy rules.
 
 ### 7. Set up without any paid server (Home Hub)
-A user with a capable PC and an Android phone: install Dhyan desktop + Ollama → wizard: *Home Hub* → hub starts inside the desktop app, Ollama models detected → *Pair a phone* QR → phone scans it → phone syncs over Wi-Fi (or Tailscale when away), and its extraction and Ask run on the PC. See [deployment-modes.md](../architecture/deployment-modes.md).
+A user with a capable PC and an Android phone: install Avchetan desktop + Ollama → wizard: *Home Hub* → hub starts inside the desktop app, Ollama models detected → *Pair a phone* QR → phone scans it → phone syncs over Wi-Fi (or Tailscale when away), and its extraction and Ask run on the PC. See [deployment-modes.md](../architecture/deployment-modes.md).
 
 ## Feature list by phase
 

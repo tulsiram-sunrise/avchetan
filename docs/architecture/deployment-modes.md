@@ -1,6 +1,6 @@
 # Deployment Modes
 
-Dhyan must be usable **without paying for any cloud service**. A user with a capable PC (running Ollama) and an Android phone can run the entire system — sync, LLMs, embeddings, semantic search — at home. Decision: [ADR-0016](../decisions/0016-deployment-modes-home-hub.md).
+Avchetan must be usable **without paying for any cloud service**. A user with a capable PC (running Ollama) and an Android phone can run the entire system — sync, LLMs, embeddings, semantic search — at home. Decision: [ADR-0016](../decisions/0016-deployment-modes-home-hub.md).
 
 All three modes use the **same code**. The difference is only where the server runs, which database driver it uses, and which providers fill the model slots. The user picks a mode in a first-run setup wizard and can switch later.
 
@@ -25,30 +25,30 @@ A single device (desktop or phone) with no server configured. Everything in the 
                         ┌──────────── User's PC (the "hub") ────────────┐
                         │  Ollama  :11434   extraction / analysis /     │
                         │                   embedding models (GPU)      │
-                        │  Dhyan server :8787  (Hono + PGlite + pgvector│
+                        │  Avchetan server :8787  (Hono + PGlite + pgvector│
                         │                     workers: embed, fallback, │
                         │                     brief, /v1/ask)           │
-                        │  Dhyan desktop app → syncs to localhost       │
+                        │  Avchetan desktop app → syncs to localhost       │
                         └──────────────▲──────────────────▲─────────────┘
                      home Wi-Fi (LAN)  │                  │  Tailscale (anywhere)
                                        │                  │
                                 ┌──────┴──────────────────┴──┐
-                                │  Android phone (Dhyan app) │
+                                │  Android phone (Avchetan app) │
                                 │  sync + delegated LLM work │
                                 └────────────────────────────┘
 ```
 
 ### What runs on the hub PC
 
-- **Ollama** (native install, uses the GPU). It never needs to be exposed to the network: only the Dhyan server talks to it, over `localhost`.
-- **Dhyan server** — the same `apps/server`, started in *hub profile*:
+- **Ollama** (native install, uses the GPU). It never needs to be exposed to the network: only the Avchetan server talks to it, over `localhost`.
+- **Avchetan server** — the same `apps/server`, started in *hub profile*:
   - `DB_DRIVER=pglite` → embedded Postgres (PGlite, WASM) stored in a data directory, with the `vector` extension. No Docker, no separate database install. Same Drizzle `pg` schema and migrations as cloud mode — no third dialect.
   - Providers default to `ollama` at `http://localhost:11434`; embedding slot = an Ollama embedding model (`EMBEDDING_DIMS` set to match).
 - **Desktop app** — syncs to `http://localhost:8787`; its own extraction slot can use Ollama directly (local, instant).
 
 How the server process is started (two delivery options):
 1. **Built into the desktop app ("Hub mode" toggle)** — the desktop app ships the server as a **sidecar** executable (Tauri `externalBin`, the server bundled as a single Node executable) and starts/stops it with the app. Settings show its status, logs and data folder. This is the target experience for non-technical users.
-2. **Manual / headless** — `pnpm --filter @dhyan/server start:hub` or `docker compose -f deploy/home-hub/compose.yml up` (for an always-on box such as a home server or a second PC without the desktop app).
+2. **Manual / headless** — `pnpm --filter @avchetan/server start:hub` or `docker compose -f deploy/home-hub/compose.yml up` (for an always-on box such as a home server or a second PC without the desktop app).
 
 ### How the phone reaches the hub
 
@@ -64,7 +64,7 @@ The phone stores an **ordered list of server URLs** (`sync.serverUrls`, e.g. LAN
 ### Pairing (no typing of tokens)
 
 Desktop → Settings → *Pair a phone* shows a QR code (on demand, never persisted as an image):
-`dhyan://pair?v=1&server=<serverId>&urls=<lan>,<tailscale>&token=<sync-token>`
+`avchetan://pair?v=1&server=<serverId>&urls=<lan>,<tailscale>&token=<sync-token>`
 The phone scans it, stores the token in secure storage, saves the URLs, registers its device and runs the first sync. The token can be rotated from the desktop (all devices re-pair). The same pairing flow works for Cloud mode.
 
 ### LLM work for the phone: "delegate to hub"

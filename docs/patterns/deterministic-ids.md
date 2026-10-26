@@ -17,7 +17,7 @@
 | Daily brief | `derivedId('daily-brief', localDate)` |
 | Weekly review | `derivedId('weekly-review', isoWeek)` |
 
-`derivedId` = UUIDv5(`DHYAN_NAMESPACE`, parts joined with `\u001f`).
+`derivedId` = UUIDv5(`AVCHETAN_NAMESPACE`, parts joined with `\u001f`).
 
 ## Re-extraction
 

@@ -4,7 +4,7 @@ Small Hono app on Node. Roles: sync hub, semantic search, hub-side Ask, fallback
 
 ## Stack
 
-Hono (`@hono/node-server`), Drizzle (`node-postgres` or `pglite` driver, same `pg` schema), Zod (`@hono/zod-validator`), `@dhyan/core` (extraction, analysis, embeddings, brief), `@dhyan/sync/protocol`, pino logging. Database: Postgres ≥ 16 with `pgvector` (`DB_DRIVER=postgres`) **or** PGlite with the `vector` extension (`DB_DRIVER=pglite`). Code must use only features both support.
+Hono (`@hono/node-server`), Drizzle (`node-postgres` or `pglite` driver, same `pg` schema), Zod (`@hono/zod-validator`), `@avchetan/core` (extraction, analysis, embeddings, brief), `@avchetan/sync/protocol`, pino logging. Database: Postgres ≥ 16 with `pgvector` (`DB_DRIVER=postgres`) **or** PGlite with the `vector` extension (`DB_DRIVER=pglite`). Code must use only features both support.
 
 ## Endpoints (all under `/v1`, JSON, bearer auth except health)
 
@@ -18,11 +18,11 @@ Hono (`@hono/node-server`), Drizzle (`node-postgres` or `pglite` driver, same `p
 | `POST /v1/ask` | Run Ask on the server's analysis slot with server-side tools; streams the answer (text/event-stream) with citations. Used by devices whose analysis slot is `hub` |
 | `GET /v1/status` | Pending/fallback queue sizes, embedding backlog, last job runs (for the settings screen) |
 
-Headers: `Authorization: Bearer <SYNC_TOKEN>`, `X-Dhyan-Device: <deviceId>`, `X-Dhyan-Protocol: 1`. Error format per [conventions/api.md](../conventions/api.md).
+Headers: `Authorization: Bearer <SYNC_TOKEN>`, `X-Avchetan-Device: <deviceId>`, `X-Avchetan-Protocol: 1`. Error format per [conventions/api.md](../conventions/api.md).
 
 ## Auth
 
-Single shared secret `SYNC_TOKEN` (≥ 32 random bytes) from env, compared in constant time. Device ID header must belong to a registered device (except on register). HTTPS is required for any deployment reachable from the internet (terminate TLS at the host/proxy). Plain HTTP is acceptable only on localhost, inside a Tailscale network, or on a private LAN the user explicitly opted into (Home Hub; see [security](../conventions/security-and-privacy.md#transport)). Rate limit: 60 req/min per device (cheap protection against a leaked token hammering the DB).
+Single shared secret (≥ 32 random bytes), compared in constant time. If `SYNC_TOKEN` is not set in env, the server generates one on first start, stores only its hash in `server_meta`, and prints the token plus a pairing link once in the logs (guided setup, [ADR-0017](../decisions/0017-self-hostable-guided-setup.md)); rotation via an authenticated endpoint used by desktop settings. Device ID header must belong to a registered device (except on register). HTTPS is required for any deployment reachable from the internet (terminate TLS at the host/proxy). Plain HTTP is acceptable only on localhost, inside a Tailscale network, or on a private LAN the user explicitly opted into (Home Hub; see [security](../conventions/security-and-privacy.md#transport)). Rate limit: 60 req/min per device (cheap protection against a leaked token hammering the DB).
 
 ## Workers (in-process, interval-based, each single-flight)
 
@@ -58,7 +58,7 @@ apps/server/src/
   routes/             health.ts, devices.ts, sync.ts, search.ts, status.ts
   sync/               apply-push.ts, read-pull.ts, with-sync-write.ts
   workers/            embedder.ts, fallback-extractor.ts, brief-fallback.ts, janitor.ts
-  db/                 client.ts (uses @dhyan/db/pg)
+  db/                 client.ts (uses @avchetan/db/pg)
 ```
 
 ## Deployment (portable)

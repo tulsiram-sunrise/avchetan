@@ -14,6 +14,6 @@ Extraction could run on the client (instant, works with local Ollama, no server 
 - `privacy = local_only` logs are never processed by the server unless its extraction slot is a local model.
 
 ## Consequences
-- The server needs its own provider keys (env) and runs `@dhyan/core` extraction.
+- The server needs its own provider keys (env) and runs `@avchetan/core` extraction.
 - Lease fields and attempt counters live on `raw_logs` and sync.
 - More moving parts than either pure option. Mitigated by the lease pattern and tests simulating device + server races.

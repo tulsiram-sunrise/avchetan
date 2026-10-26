@@ -12,7 +12,7 @@
 - `index.ts` barrels only at package roots (public API). Inside a package import by path.
 - Pure functions for logic (normalization, LWW compare, date resolution) — easy to test. Side effects at the edges (repositories, adapters, workers).
 - `async`/`await`, never raw `.then` chains. Never leave a floating promise — `void fn()` with a comment if fire-and-forget is intended (e.g. `void sync.schedule()` after capture).
-- Dates: never `new Date()` for persisted values; use `clock` from `@dhyan/shared` ([time-and-ids](time-and-ids.md)).
+- Dates: never `new Date()` for persisted values; use `clock` from `@avchetan/shared` ([time-and-ids](time-and-ids.md)).
 - Comments explain *why*, not *what*. Public package APIs get a one-line TSDoc.
 
 ## React (desktop + mobile)
@@ -21,7 +21,7 @@
 - Data reads via TanStack Query hooks in `src/queries/*` (`useTodayTimeline`, `useOpenTasks`); writes via mutation hooks that call repositories. Components never touch the DB directly.
 - UI state (dock mode, draft, panel open) in Zustand stores in `src/stores/*`.
 - Query invalidation keys are table names (`['tasks', …]`); the `logs:changed` / `sync:done` events invalidate by table.
-- Tailwind (desktop) / NativeWind (mobile) with shared design tokens (colors, spacing, radii) from `@dhyan/shared/tokens`.
+- Tailwind (desktop) / NativeWind (mobile) with shared design tokens (colors, spacing, radii) from `@avchetan/shared/tokens`.
 - Accessibility: every interactive element keyboard-reachable on desktop; labels on icon buttons.
 
 ## Rust (`apps/desktop/src-tauri`)
@@ -34,7 +34,7 @@
 ## Formatting & lint
 
 - **Biome** for TS/JS/JSON formatting and linting ([ADR-0013](../decisions/0013-biome-for-lint-and-format.md)): 2-space indent, single quotes, semicolons, trailing commas, line width 100.
-- Import order: node/builtins, external, `@dhyan/*`, relative — Biome organizes imports.
+- Import order: node/builtins, external, `@avchetan/*`, relative — Biome organizes imports.
 - `pnpm lint` and `pnpm typecheck` must pass before commit (enforced by a pre-commit hook via `lefthook`, and CI).
 
 ## Dependencies

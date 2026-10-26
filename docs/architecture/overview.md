@@ -29,19 +29,19 @@ Every client is a full node: complete SQLite DB, own extraction, works offline. 
 
 ## Monorepo
 
-pnpm workspaces + Turborepo. Package scope `@dhyan/*`.
+pnpm workspaces + Turborepo. Package scope `@avchetan/*`.
 
 ```
-dhyan/
+avchetan/
 ├─ apps/
-│  ├─ desktop/          @dhyan/desktop   Vite + React + Tailwind; src-tauri/ (Rust)
-│  ├─ mobile/           @dhyan/mobile    Expo + Expo Router
-│  └─ server/           @dhyan/server    Hono on Node, Dockerfile
+│  ├─ desktop/          @avchetan/desktop   Vite + React + Tailwind; src-tauri/ (Rust)
+│  ├─ mobile/           @avchetan/mobile    Expo + Expo Router
+│  └─ server/           @avchetan/server    Hono on Node, Dockerfile
 ├─ packages/
-│  ├─ shared/           @dhyan/shared    ids, clock, logger, errors/Result, zod helpers, constants
-│  ├─ db/               @dhyan/db        schema (sqlite + pg), migrations, repositories, outbox
-│  ├─ core/             @dhyan/core      providers, model slots, extraction, analysis, prompts, normalization
-│  └─ sync/             @dhyan/sync      client sync engine; ./protocol = wire schemas (shared w/ server)
+│  ├─ shared/           @avchetan/shared    ids, clock, logger, errors/Result, zod helpers, constants
+│  ├─ db/               @avchetan/db        schema (sqlite + pg), migrations, repositories, outbox
+│  ├─ core/             @avchetan/core      providers, model slots, extraction, analysis, prompts, normalization
+│  └─ sync/             @avchetan/sync      client sync engine; ./protocol = wire schemas (shared w/ server)
 ├─ tooling/             tsconfig base, biome config, scripts
 ├─ docs/
 ├─ original-docs/       read-only history
@@ -61,7 +61,7 @@ server → shared, db, core, sync/protocol (not the sync client engine)
 ```
 
 - Packages are **platform-free**: no `@tauri-apps/*`, `expo-*`, `react-native`, `node:*`, DOM-only APIs. Platform capabilities enter through **adapter interfaces** defined in the package and implemented in each app (see [patterns/platform-adapters.md](../patterns/platform-adapters.md)).
-- `db` exposes dialect entry points: `@dhyan/db/sqlite` (clients) and `@dhyan/db/pg` (server). Shared repository logic is written against a small driver interface.
+- `db` exposes dialect entry points: `@avchetan/db/sqlite` (clients) and `@avchetan/db/pg` (server). Shared repository logic is written against a small driver interface.
 - No circular deps; enforced with a lint rule / `dependency-cruiser` check in CI.
 
 ## Adapters each app provides
