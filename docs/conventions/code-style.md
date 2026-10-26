@@ -33,7 +33,8 @@
 
 ## Formatting & lint
 
-- **Biome** for TS/JS/JSON formatting and linting ([ADR-0013](../decisions/0013-biome-for-lint-and-format.md)): 2-space indent, single quotes, semicolons, trailing commas, line width 100.
+- **Biome** for TS/JS/JSON/YAML formatting and linting ([ADR-0013](../decisions/0013-biome-for-lint-and-format.md)): 2-space indent, single quotes, semicolons, trailing commas, line width 100. Markdown, `pnpm-lock.yaml` and generated migrations are excluded.
+- Package boundaries are enforced by Biome's `noRestrictedImports` on `packages/**/src` (no `node:*`, `@tauri-apps/*`, `expo*`, `react-native*`, or app imports; tests are exempt).
 - Import order: node/builtins, external, `@avchetan/*`, relative — Biome organizes imports.
 - `pnpm lint` and `pnpm typecheck` must pass before commit (enforced by a pre-commit hook via `lefthook`, and CI).
 
@@ -41,4 +42,5 @@
 
 - Add dependencies to the narrowest workspace that needs them.
 - Prefer well-maintained, small libraries; no new state/ORM/validation libraries beyond the chosen stack without an ADR.
-- Pin exact versions (`save-exact=true` in `.npmrc`); update deliberately.
+- Pin exact versions (`saveExact: true` in `pnpm-workspace.yaml`); update deliberately.
+- Dependency install scripts are blocked unless allowed under `allowBuilds` in `pnpm-workspace.yaml` (`pnpm approve-builds <pkg>`); allow only what needs it.

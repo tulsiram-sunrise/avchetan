@@ -3,7 +3,7 @@
 Personal, offline-first daily logger & planner. Type (or speak) a thought into a desktop dock (Tauri v2) or Android app (Expo); it is saved locally instantly, then an LLM extracts categories, activities, tasks, tags and entities. Devices sync through a small Hono server that runs either on the user's own PC (**Home Hub**: PGlite + local Ollama, zero cost) or in the **Cloud** (Postgres); a single device can also run **Standalone**. See [docs/architecture/deployment-modes.md](docs/architecture/deployment-modes.md).
 
 **Read before working:** [docs/README.md](docs/README.md) (index) → [docs/roadmap.md](docs/roadmap.md) (what phase we're in) → the architecture doc for the area you're touching.
-`original-docs/` is the historical source material — **read-only, never edit, never treat as current**. `docs/` supersedes it.
+`original-docs/` (if present) is the author's local planning material — **git-ignored, never committed, read-only, never treat as current**. `docs/` supersedes it and is self-contained.
 
 ---
 
@@ -29,15 +29,18 @@ pnpm workspaces + Turborepo · TypeScript strict (ESM) · Zod · Drizzle ORM (SQ
 
 ## Layout
 
+**All code lives in `avchetan-code/`** (the pnpm workspace). Code paths in the docs (`apps/…`, `packages/…`) are relative to it. The repo root holds only repo-wide files: `docs/`, `CLAUDE.md`, `README.md`, `LICENSE`, git/editor config, `lefthook.yml`, `.github/`.
+
 ```
-apps/desktop    Tauri v2 shell (src-tauri/ = thin Rust) + React webview
-apps/mobile     Expo app (Android first)
-apps/server     Hono sync/search/fallback-extraction server
-packages/shared ids, clock, logger, Result/errors, common Zod types
-packages/db     Drizzle schemas (sqlite + pg), migrations, repositories, outbox enqueue
-packages/core   LLM provider registry, extraction + analysis, prompts, tag/metric normalization
-packages/sync   sync client engine + wire protocol schemas (shared with server)
-docs/           all project documentation
+avchetan-code/apps/desktop      Tauri v2 shell (src-tauri/ = thin Rust) + React webview
+avchetan-code/apps/mobile       Expo app (Android first)
+avchetan-code/apps/server       Hono sync/search/fallback-extraction server
+avchetan-code/packages/shared   ids, clock, logger, Result/errors, common Zod types
+avchetan-code/packages/db       Drizzle schemas (sqlite + pg), migrations, repositories, outbox enqueue
+avchetan-code/packages/core     LLM provider registry, extraction + analysis, prompts, tag/metric normalization
+avchetan-code/packages/sync     sync client engine + wire protocol schemas (shared with server)
+avchetan-code/tooling           shared tsconfig, scripts
+docs/                           all project documentation
 ```
 
 ## Code conventions (top priority only — full list in docs/conventions)
@@ -59,4 +62,16 @@ docs/           all project documentation
 
 ## Commands
 
-_To be filled in when the monorepo is scaffolded (Phase 1)._ Expected: `pnpm install`, `pnpm dev`, `pnpm test`, `pnpm lint`, `pnpm typecheck`, `pnpm db:generate`.
+Requirements: Node ≥ 24, pnpm (pinned via `packageManager`; `corepack enable`). Rust is needed from Phase 2 (desktop). **Run all pnpm commands inside `avchetan-code/`.**
+
+| Command | What it does |
+|---|---|
+| `pnpm install` | Install workspace deps (also installs lefthook git hooks) |
+| `pnpm check` | lint + typecheck + test — run before every commit |
+| `pnpm lint` / `pnpm lint:fix` | Biome check / autofix (TS, JS, JSON, YAML; Markdown is not formatted) |
+| `pnpm typecheck` | `tsc --noEmit` in every package (Turbo) |
+| `pnpm test` | Vitest in every package (Turbo) |
+| `pnpm --filter @avchetan/<pkg> test -- --watch` | Watch one package's tests |
+| `pnpm db:generate` | Generate SQLite + Postgres migrations (from Phase 1 step 3) |
+
+Dependency install scripts are blocked by default; allow one with `pnpm approve-builds <pkg>` (recorded under `allowBuilds` in `pnpm-workspace.yaml`).

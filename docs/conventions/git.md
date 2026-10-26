@@ -30,9 +30,9 @@ Conventional Commits:
 ## Hooks & CI
 
 - `lefthook` pre-commit: Biome check on staged files, `cargo fmt --check` when Rust changed, `gitleaks` on staged changes.
-- GitHub Actions:
+- GitHub Actions (workflow files live in the root `.github/workflows/`; code jobs set `defaults.run.working-directory: avchetan-code` and cache using `avchetan-code/pnpm-lock.yaml`):
   - `ci.yml` — install → lint → typecheck → test (Turbo cached) → `cargo clippy` → dependency license check (AGPL-compatible only) → secret scan; on `main` also build the desktop app (Windows runner).
-  - `docs.yml` — build the VitePress site from `docs/` (excluding `original-docs/`), fail on dead links/anchors, deploy to GitHub Pages.
+  - `docs.yml` — build the VitePress site from `docs/`, fail on dead links/anchors, deploy to GitHub Pages.
   - `release.yml` (public release milestone) — on tag: signed Windows installer, signed APK, server image → GitHub Releases.
 - Signing material lives only in GitHub Actions secrets and the owner's offline backup.
 

@@ -1,0 +1,89 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true,
+    "root": ".."
+  },
+  "files": {
+    "ignoreUnknown": true,
+    "includes": ["**", "!**/migrations", "!**/*.md", "!pnpm-lock.yaml"]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "semicolons": "always",
+      "trailingCommas": "all"
+    }
+  },
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended",
+      "suspicious": {
+        "noConsole": "error",
+        "noExplicitAny": "error"
+      },
+      "style": {
+        "noDefaultExport": "error",
+        "useImportType": "error"
+      }
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["**/*.config.ts", "**/*.config.mts", "**/*.config.js"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noDefaultExport": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["packages/**/src/**/*.ts", "!**/*.test.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": [
+                      "node:*",
+                      "@tauri-apps/*",
+                      "expo",
+                      "expo-*",
+                      "react-native",
+                      "react-native-*",
+                      "@avchetan/desktop",
+                      "@avchetan/mobile",
+                      "@avchetan/server"
+                    ],
+                    "message": "Packages must stay platform-free; inject platform capabilities through adapters (docs/patterns/platform-adapters.md)."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

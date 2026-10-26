@@ -1,0 +1,11 @@
+# Git hooks for the whole repository. Code and tooling live in avchetan-code/.
+pre-commit:
+  parallel: true
+  jobs:
+    - name: biome
+      root: avchetan-code/
+      glob: "*.{js,mjs,cjs,ts,mts,tsx,json,jsonc,yaml,yml}"
+      run: pnpm exec biome check --no-errors-on-unmatched --files-ignore-unknown=true {staged_files}
+    - name: gitleaks
+      # CI always scans; locally this runs only if gitleaks is installed.
+      run: if command -v gitleaks >/dev/null 2>&1; then gitleaks git --staged --redact --no-banner; else echo 'gitleaks not installed - skipped (CI scans)'; fi

@@ -29,24 +29,27 @@ Every client is a full node: complete SQLite DB, own extraction, works offline. 
 
 ## Monorepo
 
-pnpm workspaces + Turborepo. Package scope `@avchetan/*`.
+pnpm workspaces + Turborepo. Package scope `@avchetan/*`. All source code and build tooling live in the **`avchetan-code/`** subdirectory; the repository root holds only repo-wide files. **Code paths in these docs (`apps/…`, `packages/…`, `tooling/…`) are relative to `avchetan-code/`.**
 
 ```
-avchetan/
-├─ apps/
-│  ├─ desktop/          @avchetan/desktop   Vite + React + Tailwind; src-tauri/ (Rust)
-│  ├─ mobile/           @avchetan/mobile    Expo + Expo Router
-│  └─ server/           @avchetan/server    Hono on Node, Dockerfile
-├─ packages/
-│  ├─ shared/           @avchetan/shared    ids, clock, logger, errors/Result, zod helpers, constants
-│  ├─ db/               @avchetan/db        schema (sqlite + pg), migrations, repositories, outbox
-│  ├─ core/             @avchetan/core      providers, model slots, extraction, analysis, prompts, normalization
-│  └─ sync/             @avchetan/sync      client sync engine; ./protocol = wire schemas (shared w/ server)
-├─ tooling/             tsconfig base, biome config, scripts
-├─ docs/
-├─ original-docs/       read-only history
-├─ CLAUDE.md
-├─ package.json · pnpm-workspace.yaml · turbo.json · biome.json
+<repo root>/
+├─ avchetan-code/                         ← the pnpm workspace (run pnpm commands here)
+│  ├─ apps/
+│  │  ├─ desktop/       @avchetan/desktop   Vite + React + Tailwind; src-tauri/ (Rust)
+│  │  ├─ mobile/        @avchetan/mobile    Expo + Expo Router
+│  │  └─ server/        @avchetan/server    Hono on Node, Dockerfile
+│  ├─ packages/
+│  │  ├─ shared/        @avchetan/shared    ids, clock, logger, errors/Result, zod helpers, constants
+│  │  ├─ db/            @avchetan/db        schema (sqlite + pg), migrations, repositories, outbox
+│  │  ├─ core/          @avchetan/core      providers, model slots, extraction, analysis, prompts, normalization
+│  │  └─ sync/          @avchetan/sync      client sync engine; ./protocol = wire schemas (shared w/ server)
+│  ├─ tooling/          tsconfig base, scripts
+│  └─ package.json · pnpm-workspace.yaml · pnpm-lock.yaml · turbo.json · biome.json
+├─ docs/                documentation (source of the GitHub Pages site)
+├─ original-docs/       (local only, git-ignored) original planning material
+├─ .github/             CI workflows (GitHub requires the root; jobs use working-directory: avchetan-code)
+├─ CLAUDE.md · README.md · LICENSE
+└─ .gitignore · .gitattributes · .editorconfig · lefthook.yml (repo-wide; hooks run Biome inside avchetan-code/)
 ```
 
 Note: the original spec put `server/` at the root; it lives in `apps/` so Turborepo treats it uniformly.

@@ -20,7 +20,7 @@ Anyone should be able to self-host Avchetan (ADR-0017). That needs a public code
 **Documentation site:** **GitHub Pages**, built with **VitePress** from the existing Markdown in `docs/`. There is no separate copy of the docs.
 - The user guide is the main section. Developer docs (architecture, conventions, patterns, ADRs) are published as a second section for contributors.
 - `.github/workflows/docs.yml` builds and deploys on pushes to `main` that touch `docs/`. The build fails on dead links, including heading anchors (link check step).
-- `original-docs/` is excluded from the site.
+- `original-docs/` is local-only (git-ignored) and never published.
 
 **Signing:** done when shipping to the outside world (the public release milestone, after Phase 5b), not before.
 - Windows: a **code-signing certificate**. The certificate and its key or password live only in GitHub Actions secrets (or the hardware token the issuer requires) plus the owner's offline backup. Until the public release, installers are unsigned, and the user guide explains the SmartScreen warning.
