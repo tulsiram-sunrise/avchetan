@@ -17,9 +17,9 @@ Each phase lists scope, deliverables and **done when** criteria (testable). Phas
 ## Phase 1 — Monorepo foundation & data layer
 
 Scope:
-1. `git init`, `.gitignore`, `LICENSE` (AGPL-3.0-or-later), root `README.md` (what it is, what *Avchetan* means, status, link to docs), pnpm workspace, Turborepo, `tooling/tsconfig.base.json`, Biome, lefthook, `.npmrc` (`save-exact`).
+1. `git init`, `.gitignore`, `LICENSE` (AGPL-3.0-or-later), root `README.md` (what it is, what *Avchetan* means, status, link to docs), pnpm workspace, Turborepo, `tooling/tsconfig.base.json`, Biome, lefthook, exact-version pinning (`saveExact` in `pnpm-workspace.yaml`). ✅ *step 1 done*
 1b. GitHub repository + CI workflow (lint, typecheck, test, dependency license check); VitePress docs site deployed to GitHub Pages (`docs.yml`, dead-link check) ([ADR-0018](decisions/0018-open-source-agpl-github.md)).
-2. `packages/shared`: `newId`/`derivedId`, monotonic `clock`, date helpers (`localDate`, `todayLocal`), `AppError`/`Result`, `createLogger`, adapter interfaces, single-flight loop, test utilities.
+2. `packages/shared`: `newId`/`derivedId`, monotonic `clock`, date helpers (`localDate`, `todayLocal`), `AppError`/`Result`, `createLogger`, adapter interfaces, single-flight loop, test utilities.  ✅ *step 2 done*
 3. `packages/db`: neutral column spec, enums, SQLite + Postgres schemas for **all** tables in [data-model.md](architecture/data-model.md) (including categories, tags, projects, entities, mentions, context_rules — the tables are cheap now and hard to add later), seed categories with derived IDs, migrations for both dialects, `live()` helper, synced repo factory + domain repos (`rawLog`, `activity`, `task`, `category`, `tag`, `project`, `entity`), outbox enqueue, `applyRemote` with LWW, query helpers (timeline, open tasks, pending logs).
 4. `packages/core/normalize`: explicit tag parser (`#tag`, `#a/b`, `!private`), tag normalizer, metric key registry + normalizer.
 5. Placeholder `packages/core` and `packages/sync` with package boundaries enforced.

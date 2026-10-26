@@ -14,6 +14,7 @@
 - UI: React Native + NativeWind (Tailwind classes, consistent with desktop tokens); `@gorhom/bottom-sheet` for capture.
 - State: Zustand + TanStack Query (same pattern as desktop).
 - LLM: `@avchetan/core` with `expo/fetch` injected (streaming support). Verify the AI SDK works on Hermes in Phase 4 (may need polyfills for `TextEncoderStream`/`structuredClone`).
+- Required polyfill: `crypto.getRandomValues` (used by `uuid` in `@avchetan/shared` for `newId()`), via `expo-crypto` or `react-native-get-random-values`, imported first in the app entry. `@avchetan/shared` date helpers rely on `Intl.DateTimeFormat` with `timeZone` support (available in Hermes; verify on device).
 
 ## Screens (routes)
 
