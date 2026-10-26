@@ -46,7 +46,12 @@
   },
   "overrides": [
     {
-      "includes": ["**/*.config.ts", "**/*.config.mts", "**/*.config.js"],
+      "includes": [
+        "**/*.config.ts",
+        "**/*.config.mts",
+        "**/*.config.js",
+        "**/.vitepress/config.mts"
+      ],
       "linter": {
         "rules": {
           "style": {

@@ -8,7 +8,7 @@ Tailscale creates a private, encrypted network between your own devices. It's fr
 
 1. On the PC: install [Tailscale](https://tailscale.com/download) and sign in.
 2. On the phone: install Tailscale from the Play Store and sign in with the **same account**.
-3. In Avchetan on the PC: **Settings → Hub → Remote access**. It should show "Tailscale detected: <pc-name>". Click **Include in pairing**.
+3. In Avchetan on the PC: **Settings → Hub → Remote access**. It should show "Tailscale detected" with your PC's name. Click **Include in pairing**.
 4. Pair your phone again ([Pair your phone](pair-your-phone.md)) so it learns the Tailscale address. It will use your home Wi-Fi address when at home and Tailscale everywhere else, automatically.
 
 ## Check it worked

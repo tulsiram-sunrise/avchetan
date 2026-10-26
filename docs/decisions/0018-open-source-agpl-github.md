@@ -19,7 +19,7 @@ Anyone should be able to self-host Avchetan (ADR-0017). That needs a public code
 
 **Documentation site:** **GitHub Pages**, built with **VitePress** from the existing Markdown in `docs/`. There is no separate copy of the docs.
 - The user guide is the main section. Developer docs (architecture, conventions, patterns, ADRs) are published as a second section for contributors.
-- `.github/workflows/docs.yml` builds and deploys on pushes to `main` that touch `docs/`. The build fails on dead links, including heading anchors (link check step).
+- `.github/workflows/docs.yml` builds and deploys on pushes to `master` (the default branch) that touch `docs/`. The VitePress project lives in `avchetan-code/tooling/docs-site` and reads the repo's `docs/` folder; links that leave `docs/` are rewritten to GitHub URLs, and heading anchors use GitHub's slug rules. The build fails on dead links, including heading anchors (link check step).
 - `original-docs/` is local-only (git-ignored) and never published.
 
 **Signing:** done when shipping to the outside world (the public release milestone, after Phase 5b), not before.

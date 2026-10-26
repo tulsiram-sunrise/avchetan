@@ -72,6 +72,11 @@ Requirements: Node ≥ 24, pnpm (pinned via `packageManager`; `corepack enable`)
 | `pnpm typecheck` | `tsc --noEmit` in every package (Turbo) |
 | `pnpm test` | Vitest in every package (Turbo) |
 | `pnpm --filter @avchetan/<pkg> test -- --watch` | Watch one package's tests |
-| `pnpm db:generate` | Generate SQLite + Postgres migrations (from Phase 1 step 3) |
+| `pnpm db:generate` | Generate SQLite + Postgres migrations and bundle them (commit the output) |
+| `pnpm licenses:check` | Fail on production dependencies whose license isn't AGPL-compatible |
+| `pnpm docs:check-links` | Verify every relative link and `#anchor` in `docs/`, `CLAUDE.md`, `README.md` |
+| `pnpm docs:dev` / `pnpm docs:build` | Docs site (VitePress over repo `docs/`) locally / production build |
+
+CI (`.github/workflows/ci.yml`) runs `check`, `licenses:check`, `docs:check-links` and a full-history secret scan on every push; the default branch is `master`.
 
 Dependency install scripts are blocked by default; allow one with `pnpm approve-builds <pkg>` (recorded under `allowBuilds` in `pnpm-workspace.yaml`).

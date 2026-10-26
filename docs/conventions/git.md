@@ -4,7 +4,7 @@ The repository is not yet initialized — Phase 1 starts with `git init`. It wil
 
 ## Branches
 
-- `main` is always green (lint, typecheck, tests pass).
+- The default branch is **`master`**. It is always green (lint, typecheck, tests pass).
 - Work on short-lived branches: `phase-1/db-schema`, `feat/dock-ask-mode`, `fix/sync-ack-race`, `docs/adr-0015`.
 - Squash-merge or rebase; keep history linear.
 
@@ -31,8 +31,8 @@ Conventional Commits:
 
 - `lefthook` pre-commit: Biome check on staged files, `cargo fmt --check` when Rust changed, `gitleaks` on staged changes.
 - GitHub Actions (workflow files live in the root `.github/workflows/`; code jobs set `defaults.run.working-directory: avchetan-code` and cache using `avchetan-code/pnpm-lock.yaml`):
-  - `ci.yml` — install → lint → typecheck → test (Turbo cached) → `cargo clippy` → dependency license check (AGPL-compatible only) → secret scan; on `main` also build the desktop app (Windows runner).
-  - `docs.yml` — build the VitePress site from `docs/`, fail on dead links/anchors, deploy to GitHub Pages.
+  - `ci.yml` (every push and PR) — `checks`: install → lint → typecheck → test → `licenses:check` (production dependencies must be AGPL-compatible) → `docs:check-links`; `secrets`: gitleaks over the full history; `dco`: every PR commit has `Signed-off-by`. From Phase 2 it also gets `cargo fmt`/`clippy` and a Windows desktop build on `master`.
+  - `docs.yml` (pushes to `master` touching docs) — link check, VitePress build (`avchetan-code/tooling/docs-site`, source = repo `docs/`), deploy to GitHub Pages. One-time setup: *Settings → Pages → Source: GitHub Actions*.
   - `release.yml` (public release milestone) — on tag: signed Windows installer, signed APK, server image → GitHub Releases.
 - Signing material lives only in GitHub Actions secrets and the owner's offline backup.
 

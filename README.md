@@ -13,6 +13,7 @@ Avchetan is an offline-first personal logger and planner. Type (or say) anything
 
 ## Documentation
 
+- [Documentation website](https://tulsiram-sunrise.github.io/avchetan/) (published from `docs/`)
 - [User guide](docs/user-guide/README.md) — setting up and using Avchetan *(drafts)*
 - [Developer documentation](docs/README.md) — architecture, conventions, decisions
 - [CLAUDE.md](CLAUDE.md) — the core rules for anyone (human or AI agent) working on the code

@@ -13,8 +13,8 @@ target/
 web-build/
 
 # docs site
-docs/.vitepress/cache/
-docs/.vitepress/dist/
+**/.vitepress/cache/
+**/.vitepress/dist/
 
 # local data — never commit user data
 *.db
