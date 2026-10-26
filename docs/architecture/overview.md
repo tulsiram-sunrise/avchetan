@@ -71,7 +71,7 @@ server → shared, db, core, sync/protocol (not the sync client engine)
 
 | Adapter | Desktop | Android | Server |
 |---|---|---|---|
-| `SqlDriver` | Drizzle `sqlite-proxy` → `tauri-plugin-sql` | Drizzle `expo-sqlite` | Drizzle `node-postgres` |
+| `SqliteExecutor` (clients) / Postgres driver (server) | `tauri-plugin-sql` → Drizzle `sqlite-proxy` | `expo-sqlite` async API → Drizzle `sqlite-proxy` | Drizzle `node-postgres` or `pglite` |
 | `SecretStore` | Rust `keyring` command | `expo-secure-store` | env vars (read-only) |
 | `HttpFetch` (for LLM + sync) | `tauri-plugin-http` fetch (avoids CORS) | global `fetch` (`expo/fetch` for streaming) | Node fetch |
 | `NetworkMonitor` | `navigator.onLine` + periodic probe of sync server | `@react-native-community/netinfo` | always online |

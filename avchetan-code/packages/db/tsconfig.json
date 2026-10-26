@@ -4,5 +4,5 @@
     // Node types for tests and scripts; src/ stays platform-free via Biome import rules.
     "types": ["node"]
   },
-  "include": ["src", "test", "scripts", "*.config.ts"]
+  "include": ["src", "test", "testing", "scripts", "*.config.ts"]
 }

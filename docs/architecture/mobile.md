@@ -6,7 +6,7 @@
 
 - Expo (latest stable SDK at scaffold time — not 52 as in the original spec) with **development builds** (Expo Go can't host all native modules we need).
 - Expo Router (file-based routes in `app/`).
-- `expo-sqlite` + Drizzle (`drizzle-orm/expo-sqlite`), migrations bundled via `drizzle-kit` `expo` driver output.
+- `expo-sqlite` (async API) wrapped as a `SqliteExecutor` (`run` + `values`) and passed to `openClientStore` from `@avchetan/db/sqlite`. Like desktop, it uses Drizzle's proxy driver, so both clients share one database type and transaction model; migrations come bundled in `@avchetan/db`.
 - `expo-secure-store` for API keys and sync token.
 - `@react-native-community/netinfo` for connectivity.
 - `expo-background-task` for periodic sync/processing (best-effort, ~15 min minimum on Android).

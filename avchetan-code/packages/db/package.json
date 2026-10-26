@@ -7,7 +7,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./sqlite": "./src/sqlite.ts",
-    "./pg": "./src/pg.ts"
+    "./pg": "./src/pg.ts",
+    "./testing": "./testing/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",

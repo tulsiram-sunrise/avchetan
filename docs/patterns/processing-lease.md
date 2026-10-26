@@ -11,7 +11,7 @@ Fields on the row: `processing_lease_owner`, `processing_lease_until`, `processi
 **Client (SQLite, single process):**
 ```ts
 // claim inside one transaction; the single-flight loop guarantees no local race
-const claimed = await db.transaction(async (tx) => {
+const claimed = await store.write(async (tx) => {
   const row = await nextClaimable(tx, { deviceId, now });       // WHERE status='pending_llm' AND origin=self AND lease expired …
   if (!row) return null;
   await rawLogBase.update(tx, row.id, {

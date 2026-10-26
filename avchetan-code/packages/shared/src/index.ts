@@ -39,3 +39,4 @@ export { createLoop } from './jobs/single-flight-loop';
 export type { LogFields, Logger, LogLevel, LogRecord, LogSink } from './logger';
 export { configureLogging, consoleSink, createLogger } from './logger';
 export { localDateSchema, timeZoneSchema, utcInstantSchema, uuidSchema } from './schemas';
+export { slugify, slugifyPath } from './slug';
