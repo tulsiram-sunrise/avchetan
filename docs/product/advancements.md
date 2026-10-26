@@ -1,6 +1,6 @@
 # Advanced Capabilities
 
-These are the "advancement" suggestions from the original discussion (`original-docs/…Gemini.pdf`, section *High-Impact Advancements*), turned into concrete specs, plus a few additions marked **[new]**. Phases refer to [roadmap.md](../roadmap.md).
+These are the "advancement" suggestions from the original planning discussion (section *High-Impact Advancements*), turned into concrete specs, plus a few additions marked **[new]**. Phases refer to [roadmap.md](../roadmap.md).
 
 ## Prioritization (from the original discussion, adjusted)
 

@@ -1,0 +1,8 @@
+{
+  "extends": "../../tooling/tsconfig.base.json",
+  "compilerOptions": {
+    // Node types for tests and scripts; src/ stays platform-free via Biome import rules.
+    "types": ["node"]
+  },
+  "include": ["src", "test", "testing", "scripts", "*.config.ts"]
+}

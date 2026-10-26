@@ -114,6 +114,8 @@ Failures: exponential backoff 2 s → 5 min with jitter; reset on success or net
 - Additive changes only (new nullable columns, new tables). Renames/removals require a migration plan ADR.
 - The protocol has a version header `X-Avchetan-Protocol: 1`; server rejects unsupported majors with 426.
 
-## Tests required (see [testing](../conventions/testing.md))
+## Tests required
+
+See also [testing](../conventions/testing.md).
 
 Two in-memory SQLite clients + PGlite server: concurrent edits, delete vs edit, offline divergent edits, interrupted push (ack lost), duplicate pushes, pull pagination across tables, clock skew rejection, cursor bootstrap.

@@ -6,7 +6,7 @@
 
 - Expo (latest stable SDK at scaffold time — not 52 as in the original spec) with **development builds** (Expo Go can't host all native modules we need).
 - Expo Router (file-based routes in `app/`).
-- `expo-sqlite` + Drizzle (`drizzle-orm/expo-sqlite`), migrations bundled via `drizzle-kit` `expo` driver output.
+- `expo-sqlite` (async API) wrapped as a `SqliteExecutor` (`run` + `values`) and passed to `openClientStore` from `@avchetan/db/sqlite`. Like desktop, it uses Drizzle's proxy driver, so both clients share one database type and transaction model; migrations come bundled in `@avchetan/db`.
 - `expo-secure-store` for API keys and sync token.
 - `@react-native-community/netinfo` for connectivity.
 - `expo-background-task` for periodic sync/processing (best-effort, ~15 min minimum on Android).
@@ -14,6 +14,7 @@
 - UI: React Native + NativeWind (Tailwind classes, consistent with desktop tokens); `@gorhom/bottom-sheet` for capture.
 - State: Zustand + TanStack Query (same pattern as desktop).
 - LLM: `@avchetan/core` with `expo/fetch` injected (streaming support). Verify the AI SDK works on Hermes in Phase 4 (may need polyfills for `TextEncoderStream`/`structuredClone`).
+- Required polyfill: `crypto.getRandomValues` (used by `uuid` in `@avchetan/shared` for `newId()`), via `expo-crypto` or `react-native-get-random-values`, imported first in the app entry. `@avchetan/shared` date helpers rely on `Intl.DateTimeFormat` with `timeZone` support (available in Hermes; verify on device).
 
 ## Screens (routes)
 

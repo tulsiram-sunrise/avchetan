@@ -1,0 +1,50 @@
+# dependencies & build output
+node_modules/
+dist/
+build/
+coverage/
+.turbo/
+*.tsbuildinfo
+target/
+
+# expo / react native
+.expo/
+.expo-shared/
+web-build/
+
+# docs site
+**/.vitepress/cache/
+**/.vitepress/dist/
+
+# local data — never commit user data
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+pglite-data/
+exports/
+*.wav
+*.m4a
+
+# secrets & signing material
+.env
+.env.*
+!.env.example
+*.keystore
+*.jks
+*.pfx
+*.p12
+*.pem
+*.key
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.log
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# original planning material — kept locally, never committed
+original-docs/

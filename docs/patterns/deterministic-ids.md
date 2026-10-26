@@ -27,4 +27,4 @@ Ordinals can shift when the model output changes. The pipeline therefore: upsert
 
 - Including mutable data (titles, timestamps) in the parts → IDs change on edit. Use only identity-defining inputs.
 - Normalization must happen **before** deriving (`Shoulder Pain` and `shoulder-pain` must give the same tag ID).
-- Tag rename: the path changes but the ID must not → rename updates `path`/`name` on the existing row; `derivedId('tag', path)` is only used when **creating**. Lookup is by path first, so a renamed tag is still found. Creating a tag whose derived ID already exists as a tombstone → resurrect it (clear `deleted_at`).
+- Tag rename: the path changes but the ID must not → rename updates `path`/`name` on the existing row; `derivedId('tag', path)` is only used when **creating**. Lookup is by path first, so a renamed tag is still found. Creating a tag whose derived ID already exists as a tombstone → resurrect it (clear `deleted_at`). If the derived ID belongs to a *live* row that was renamed away from that name, the new row gets a fresh `newId()` instead (same for categories and projects).

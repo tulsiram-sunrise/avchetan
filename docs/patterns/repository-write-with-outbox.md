@@ -6,48 +6,46 @@
 
 ## Shape
 
-```ts
-// packages/db/src/repos/create-repo.ts (illustrative)
-export function createSyncedRepo<T extends SyncedTable>(table: T, deps: RepoDeps) {
-  const stamp = (row: Partial<Row<T>>, isInsert: boolean) => {
-    const now = deps.clock.now();
-    return {
-      ...row,
-      ...(isInsert ? { id: row.id ?? deps.newId(), createdAt: now } : {}),
-      updatedAt: now,
-      updatedByDevice: deps.deviceId,
-    };
-  };
+Generic helpers in `packages/db/src/client/synced.ts` do the stamping and outbox work; domain repositories in `client/repos/*` add validation and rules on top. Every repository method takes the transaction handle, so callers decide what is atomic.
 
+```ts
+// packages/db/src/client/repos/tasks.ts (simplified)
+export function tasksRepo(deps: RepoDeps) {
   return {
-    async upsert(tx: Tx, row: InsertRow<T>) {
-      const stamped = stamp(row, true);
-      await tx.insert(table).values(stamped).onConflictDoUpdate({ target: table.id, set: stamped });
-      await enqueueOutbox(tx, tableName(table), stamped.id, deps.clock.now());
-      return stamped;
+    create: (tx: Tx, input: NewTask) =>
+      insertSynced(tx, deps, tasks, { title: input.title.trim(), origin: 'user', /* … */ }),
+    complete: (tx: Tx, id: string) =>
+      updateSynced(tx, deps, tasks, id, { completedAt: deps.clock.now() }),
+    async softDelete(tx: Tx, id: string) {
+      await softDeleteLinksTo(tx, deps, 'task', [id]); // cascade first
+      await softDeleteSynced(tx, deps, tasks, [id]);
     },
-    async update(tx: Tx, id: string, patch: Partial<Row<T>>) { /* stamp(patch,false) + enqueue */ },
-    async softDelete(tx: Tx, id: string) { /* update deletedAt = now + enqueue */ },
   };
 }
 
-// usage in a domain repo — callers pass a tx so multi-row operations stay atomic
-export const taskRepo = (deps: RepoDeps) => {
-  const base = createSyncedRepo(tasks, deps);
-  return {
-    complete: (id: string) =>
-      deps.db.transaction((tx) => base.update(tx, id, { completedAt: deps.clock.now() })),
-  };
-};
+// usage (app or @avchetan/core): one transaction for several writes
+await store.write(async (tx) => {
+  const log = await store.repos.rawLogs.capture(tx, input);
+  await store.repos.tasks.create(tx, { title: 'Buy milk', rawLogId: log.id });
+});
 ```
 
-`enqueueOutbox` = `INSERT INTO sync_outbox(table_name, record_id, enqueued_at, attempts) VALUES (…, 0) ON CONFLICT(table_name, record_id) DO UPDATE SET enqueued_at = excluded.enqueued_at`.
+| Helper | Use for |
+|---|---|
+| `insertSynced` | New rows (`newId()` unless an `id` is given) |
+| `updateSynced` | Changing an existing row (`not_found` if missing) |
+| `upsertSynced` | Rows with derived IDs that may already exist (also resurrects tombstones) |
+| `ensureSynced` | Insert only if the ID doesn't exist yet — never overwrites (seeds) |
+| `softDeleteSynced` | Deletes (tombstones) |
 
-After the transaction commits, the repo emits `logs:changed` / `<table>:changed` on the event bus and calls `sync.schedule()` (debounced). Never inside the transaction.
+`enqueueOutbox` = `INSERT INTO sync_outbox … ON CONFLICT(table_name, record_id) DO UPDATE SET enqueued_at = excluded.enqueued_at, attempts = 0` — ten edits to one row leave one pointer.
+
+After the transaction commits, the caller (app service layer) emits `logs:changed` / `<table>:changed` on the event bus and calls `sync.schedule()` (debounced). Never inside the transaction.
 
 ## Pitfalls
 
-- Writing a synced table with `db.insert(...)` outside a repo → never syncs. (Lint: restrict imports of table objects from `@avchetan/db/schema` to `packages/db` internals.)
+- Writing a synced table with `tx.insert(...)` outside the repositories → never syncs.
+- Calling `store.write` inside a `store.write` callback → waits on itself forever. Pass the `tx` down instead.
 - Awaiting network inside the transaction.
 - Forgetting cascades on soft delete (raw log → derived rows → tag links/mentions).
-- Pull application must use `applyRemote`, which does LWW and **does not** enqueue.
+- Pull application must use `store.sync.applyRemote`, which does LWW and **does not** enqueue.

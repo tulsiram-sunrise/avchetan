@@ -1,0 +1,10 @@
+packages:
+  - apps/*
+  - packages/*
+  - tooling/docs-site
+
+allowBuilds:
+  esbuild: true
+  lefthook: true
+
+saveExact: true

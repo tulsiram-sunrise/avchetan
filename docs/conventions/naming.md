@@ -12,7 +12,7 @@
 | Types | `PascalCase`, no `I` prefix | `RawLog`, `SecretStore` |
 | Zod schemas | `camelCase` + `Schema` | `extractionResultSchema`; type `ExtractionResult` |
 | Repositories | `<entity>Repo` | `rawLogRepo`, `taskRepo` |
-| Adapters (interfaces) | noun | `SqlDriver`, `SecretStore`, `NetworkMonitor` |
+| Adapters (interfaces) | noun | `SqliteExecutor`, `SecretStore`, `NetworkMonitor` |
 | Adapter impls | `<Platform><Interface>` | `TauriSecretStore`, `ExpoSecretStore` |
 | DB tables | plural `snake_case` | `raw_logs`, `entity_tags` |
 | DB columns | `snake_case`; TS field `camelCase` | `logged_date` ↔ `loggedDate` |

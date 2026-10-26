@@ -14,7 +14,7 @@
 
 ## Check it worked
 
-The phone shows **Connected to <your PC name>**, and your existing entries appear.
+The phone shows **Connected to** followed by your PC's name, and your existing entries appear.
 
 ## Notes
 
