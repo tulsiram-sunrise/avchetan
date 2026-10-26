@@ -20,7 +20,8 @@ Personal, offline-first daily logger & planner. Type (or speak) a thought into a
 9. **Validate at every boundary with Zod**: LLM output, sync payloads, HTTP requests/responses, settings, env vars, IPC results. Types are inferred from schemas, not duplicated.
 10. **Schema changes touch both dialects** (`packages/db/src/schema/sqlite/*` and `.../pg/*`) plus a migration for each, and must pass the schema parity test.
 11. **Privacy in logs:** never log user log content, LLM prompts/responses or keys at `info` level or above. Log IDs, counts, durations.
-12. **Must work with zero paid services.** Every feature has to work in Home Hub mode (own PC, Ollama only, no cloud keys); server code must run on both Postgres and PGlite. Categories are dynamic (a table, not an enum).
+12. **Open source (AGPL-3.0-or-later), public repo.** No personal data in code, fixtures, screenshots or docs (made-up examples only); no secrets or keystores; new dependencies must be AGPL-compatible; commits are signed off (`git commit -s`). See [ADR-0018](docs/decisions/0018-open-source-agpl-github.md).
+13. **Must work with zero paid services.** Every feature has to work in Home Hub mode (own PC, Ollama only, no cloud keys); server code must run on both Postgres and PGlite. Categories are dynamic (a table, not an enum).
 
 ## Stack (summary — details in docs/architecture)
 

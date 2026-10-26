@@ -34,4 +34,4 @@ Vitest everywhere TS runs. Tests live beside source (`foo.ts` → `foo.test.ts`)
 packages/core/test/fixtures/extraction/
   workout-push-day.json   { input, capturedAt, tz, vocabulary?, expect: { activities:[…], tasks:[…], tags⊇[…] } }
 ```
-Add a fixture whenever a real capture is mis-extracted (from the corrections feedback loop).
+Add a fixture whenever a capture is mis-extracted (from the corrections feedback loop), but **rewrite it as a synthetic example** that keeps the pattern (wording, dates, metrics) with invented names and details. The repository is public ([ADR-0018](../decisions/0018-open-source-agpl-github.md)); real captures are never committed.

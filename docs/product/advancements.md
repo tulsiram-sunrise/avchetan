@@ -102,7 +102,7 @@ The dock is a launcher, not just a text box. One input, three modes by prefix:
 
 - When the user edits an extracted item (category, title, metrics, tags), store a compact correction record locally.
 - The most recent relevant corrections (max ~10, chosen by tag/category similarity) are included in the extraction prompt as few-shot examples. Cheap personalization without fine-tuning.
-- Corrections also feed the extraction fixture suite for regression tests.
+- Corrections also inspire new fixtures for the extraction regression suite. Fixtures are rewritten as synthetic examples, because the repository is public.
 
 ## 8. [new] Export & backup
 

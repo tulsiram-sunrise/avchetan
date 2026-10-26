@@ -5,7 +5,7 @@
 **Goal:** connect the Avchetan phone app to your hub (or cloud server) by scanning a QR code.
 
 1. On the PC: open Avchetan → **Settings → Devices → Pair a phone**. A QR code appears.
-2. On the phone: install Avchetan from the releases page (APK). Open it and choose **Connect to my hub or server**, then **Scan QR code**. Allow camera access.
+2. On the phone: install Avchetan from the project's GitHub Releases page (download the `.apk` file, open it, and allow installing from your browser when Android asks). Open it and choose **Connect to my hub or server**, then **Scan QR code**. Allow camera access.
 3. Point the camera at the QR code. The phone connects, registers itself and starts syncing.
 4. Choose how the phone uses AI:
    - **Let my hub do it** (recommended for Home Hub): your PC organizes entries and answers questions. The phone needs no AI keys.

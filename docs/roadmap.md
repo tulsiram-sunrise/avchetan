@@ -6,7 +6,7 @@ Each phase lists scope, deliverables and **done when** criteria (testable). Phas
 
 **Applies to every phase:** a phase that adds or changes user-visible behavior is done only when the matching [user-guide](user-guide/README.md) pages are updated ([onboarding & user docs conventions](conventions/onboarding-and-user-docs.md)).
 
-**Order:** 1 → 2 → 3 → 4 → 5 → **5b (built-in Home Hub, directly after 5)** → 6 → 7.
+**Order:** 1 → 2 → 3 → 4 → 5 → **5b (built-in Home Hub, directly after 5)** → *Public release milestone (when shipping to others)* → 6 → 7.
 
 ---
 
@@ -17,7 +17,8 @@ Each phase lists scope, deliverables and **done when** criteria (testable). Phas
 ## Phase 1 — Monorepo foundation & data layer
 
 Scope:
-1. `git init`, `.gitignore`, pnpm workspace, Turborepo, `tooling/tsconfig.base.json`, Biome, lefthook, `.npmrc` (`save-exact`).
+1. `git init`, `.gitignore`, `LICENSE` (AGPL-3.0-or-later), root `README.md` (what it is, what *Avchetan* means, status, link to docs), pnpm workspace, Turborepo, `tooling/tsconfig.base.json`, Biome, lefthook, `.npmrc` (`save-exact`).
+1b. GitHub repository + CI workflow (lint, typecheck, test, dependency license check); VitePress docs site deployed to GitHub Pages (`docs.yml`, dead-link check) ([ADR-0018](decisions/0018-open-source-agpl-github.md)).
 2. `packages/shared`: `newId`/`derivedId`, monotonic `clock`, date helpers (`localDate`, `todayLocal`), `AppError`/`Result`, `createLogger`, adapter interfaces, single-flight loop, test utilities.
 3. `packages/db`: neutral column spec, enums, SQLite + Postgres schemas for **all** tables in [data-model.md](architecture/data-model.md) (including categories, tags, projects, entities, mentions, context_rules — the tables are cheap now and hard to add later), seed categories with derived IDs, migrations for both dialects, `live()` helper, synced repo factory + domain repos (`rawLog`, `activity`, `task`, `category`, `tag`, `project`, `entity`), outbox enqueue, `applyRemote` with LWW, query helpers (timeline, open tasks, pending logs).
 4. `packages/core/normalize`: explicit tag parser (`#tag`, `#a/b`, `!private`), tag normalizer, metric key registry + normalizer.
@@ -30,6 +31,8 @@ Scope:
 - Tests prove every repo write enqueues the outbox in the same transaction, and soft delete cascades.
 - `derivedId` snapshot test locks the namespace.
 - CLAUDE.md "Commands" section filled in.
+- CI is green on GitHub; the docs site builds and deploys to GitHub Pages without dead links.
+- Secret scan of the full history is clean → **make the GitHub repository public** (R17).
 
 ## Phase 2 — Desktop shell & instant capture
 
@@ -121,6 +124,16 @@ Scope:
 - On a fresh Windows PC with only Ollama installed, a non-technical user can install Avchetan, choose *Home Hub*, pair a phone and capture from it — without opening a terminal — by following the user guide literally.
 - Setup check detects and explains: Ollama stopped, model missing, firewall blocked, wrong token, clock skew, hub unreachable.
 - The cloud guide works start-to-finish on a fresh VPS.
+
+## Milestone — Public release (after 5b, when shipping to the outside world)
+
+1. Signing: Windows installer signed with a code-signing certificate; Android release keystore (backed up in two places + CI secret); Play Store decision (Q20).
+2. Release workflow: tag → build signed Windows installer + signed APK + server Docker image → GitHub Releases (+ container registry), with release notes.
+3. Community files: `CONTRIBUTING.md` (setup, DCO sign-off, conventions), `CODE_OF_CONDUCT.md`, `SECURITY.md` (private vulnerability reporting), issue/PR templates.
+4. User guide: remove all *Draft* banners for shipped features, add screenshots, explain installer verification.
+5. Final checks: dependency license audit, secret scan of the full git history, fresh-machine walkthrough.
+
+**Done when:** a stranger can find the GitHub Pages site, download signed builds from GitHub Releases, and reach a working Home Hub + phone setup by following the guide.
 
 ## Phase 6 — Advancements A (ambient intelligence)
 

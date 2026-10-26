@@ -15,7 +15,9 @@ Anyone should be able to install and self-host Avchetan ([ADR-0017](../decisions
 
 ## User-guide rules
 
-- Lives in [docs/user-guide/](../user-guide/README.md). Audience: a non-developer who can install apps.
+- Lives in [docs/user-guide/](../user-guide/README.md) and is published to **GitHub Pages** (VitePress, [ADR-0018](../decisions/0018-open-source-agpl-github.md)). Audience: a non-developer who can install apps.
+- Write links and headings so they work both on GitHub and on the site. CI checks for dead links and anchors. VitePress is configured with GitHub-style heading slugs so existing anchors such as `#5-server-fallback` keep working; for new headings, prefer starting with a word, not a number.
+- Screenshots and examples use **made-up data only** (the repo and site are public).
 - Each page: goal → what you need → numbered steps (one action per step) → "check it worked" → common problems.
 - Screenshots in `docs/user-guide/images/`, named `<page>-<step>.png`, refreshed whenever the UI they show changes.
 - Commands (Cloud guide only) are copy-paste ready and complete; never "edit as appropriate" without saying exactly what to edit.

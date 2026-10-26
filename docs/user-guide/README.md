@@ -14,6 +14,11 @@ Avchetan is a personal logger and planner. Type (or say) anything — a workout,
 3. [Pair your phone](pair-your-phone.md)
 4. [Choose AI models](ai-models.md)
 
+## Downloads & source
+
+- Installers (Windows) and the Android app (APK) are published on the project's **GitHub Releases** page.
+- Avchetan is free and open source under the **AGPL-3.0** license. The source code is on GitHub.
+
 ## More
 
 - [Use your phone away from home (Tailscale)](remote-access-tailscale.md)

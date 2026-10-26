@@ -1,6 +1,6 @@
 # Avchetan — Documentation
 
-All project documentation lives in this directory. The root [CLAUDE.md](../CLAUDE.md) holds only the highest-priority rules; everything else is here.
+All project documentation lives in this directory. The root [CLAUDE.md](../CLAUDE.md) holds only the highest-priority rules; everything else is here. This folder is also the source of the public documentation site (VitePress on GitHub Pages, [ADR-0018](decisions/0018-open-source-agpl-github.md)), so write for a public audience and use made-up examples only.
 
 `original-docs/` contains the original discussion (Gemini PDF) and the first specification. They are kept for history. **Where they disagree with `docs/`, `docs/` wins** — the differences are recorded as ADRs.
 

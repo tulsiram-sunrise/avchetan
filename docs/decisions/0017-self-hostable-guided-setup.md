@@ -12,7 +12,7 @@ Avchetan started as a personal tool. The decision now is that **anyone can host 
 - **Built-in "Setup check" (doctor) screen** on desktop and mobile. It runs diagnostics: server reachable, token valid, clock skew, Ollama running, required models installed, embedding model configured, firewall rule present, phone can reach the hub, Tailscale status, disk space. Each failed check gives a plain-language fix and a guide link.
 - **Error messages link to troubleshooting:** every user-facing error code maps to a message plus a `user-guide/troubleshooting.md#<code>` anchor.
 - **Safe defaults:** a working setup without editing any setting, private by default (local models in Home Hub), and no setting that can silently lose data.
-- **Distribution:** Windows installer (NSIS) and Android APK published on a releases page. The Play Store and code signing are tracked as open questions.
+- **Distribution:** Windows installer (NSIS) and Android APK published on GitHub Releases; the user guide is published on GitHub Pages; signing happens at the public release ([ADR-0018](0018-open-source-agpl-github.md)).
 - **Documentation conventions:** [conventions/onboarding-and-user-docs.md](../conventions/onboarding-and-user-docs.md).
 
 ## Consequences
