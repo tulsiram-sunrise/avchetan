@@ -2,13 +2,16 @@ import { toAppError } from '@avchetan/shared';
 import { type RefObject, useState } from 'react';
 import { HelpLink } from '../help-link';
 import { useCaptureMutation } from '../queries/raw-logs';
+import { useSubmitKey } from '../queries/settings';
+import { DEFAULT_SUBMIT_KEY, isSubmitPress, submitHint } from '../services/submit-key';
 import { useDockStore } from '../stores/dock-store';
 
-/** The dock's text box. Enter saves, Shift+Enter adds a line. */
+/** The dock's text box. One of Enter / Shift+Enter saves (a setting); the other adds a line. */
 export function CaptureInput(props: {
   inputRef: RefObject<HTMLTextAreaElement | null>;
   onCaptured: () => void;
 }) {
+  const submitKey = useSubmitKey().data ?? DEFAULT_SUBMIT_KEY;
   const draft = useDockStore((state) => state.draft);
   const setDraft = useDockStore((state) => state.setDraft);
   const captureMutation = useCaptureMutation();
@@ -32,7 +35,7 @@ export function CaptureInput(props: {
         <span className="rounded-full bg-accent/15 px-2 py-0.5 font-medium text-accent">
           Capture
         </span>
-        <span>Enter to save · Shift+Enter for a new line · Esc to close</span>
+        <span>{submitHint(submitKey)} · Esc to close</span>
       </div>
       <textarea
         ref={props.inputRef}
@@ -42,7 +45,9 @@ export function CaptureInput(props: {
         value={draft}
         onChange={(event) => setDraft(event.target.value)}
         onKeyDown={(event) => {
-          if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
+          const { key, shiftKey, ctrlKey, altKey, metaKey } = event;
+          const press = { key, shiftKey, ctrlKey, altKey, metaKey };
+          if (isSubmitPress({ ...press, isComposing: event.nativeEvent.isComposing }, submitKey)) {
             event.preventDefault();
             void submit();
           }

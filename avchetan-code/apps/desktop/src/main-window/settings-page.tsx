@@ -3,16 +3,54 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { disable, enable, isEnabled } from '@tauri-apps/plugin-autostart';
 import { useState } from 'react';
 import { HelpLink } from '../help-link';
+import { useSetSubmitKey, useSubmitKey } from '../queries/settings';
 import { changeHotkey } from '../services/hotkey';
+import type { SubmitKey } from '../services/submit-key';
 import { useServices } from '../services-context';
 
-/** Settings stub for Phase 2: shortcut and start at login. */
+/** Settings stub for Phase 2: shortcut, send key and start at login. */
 export function SettingsPage() {
   return (
     <div className="flex max-w-xl flex-col gap-6">
       <ShortcutSetting />
+      <SubmitKeySetting />
       <AutostartSetting />
     </div>
+  );
+}
+
+const SUBMIT_KEY_OPTIONS: { value: SubmitKey; label: string }[] = [
+  { value: 'enter', label: 'Enter saves, Shift+Enter starts a new line' },
+  { value: 'shift_enter', label: 'Shift+Enter saves, Enter starts a new line' },
+];
+
+function SubmitKeySetting() {
+  const current = useSubmitKey();
+  const change = useSetSubmitKey();
+  const selected = change.isPending ? change.variables : current.data;
+
+  return (
+    <fieldset className="flex flex-col gap-2">
+      <legend className="pb-2 font-medium">Saving an entry</legend>
+      {SUBMIT_KEY_OPTIONS.map((option) => (
+        <label key={option.value} className="flex items-center gap-2 text-sm">
+          <input
+            type="radio"
+            name="submit-key"
+            value={option.value}
+            checked={selected === option.value}
+            disabled={!current.isSuccess}
+            onChange={() => change.mutate(option.value)}
+          />
+          {option.label}
+        </label>
+      ))}
+      {change.isError ? (
+        <p role="alert" className="text-sm text-danger">
+          Couldn't save this setting. Try again. <HelpLink code={toAppError(change.error).code} />
+        </p>
+      ) : null}
+    </fieldset>
   );
 }
 

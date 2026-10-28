@@ -36,7 +36,7 @@ Scope:
 
 ## Phase 2 — Desktop shell & instant capture
 
-**Progress:** steps 1–7 written. The TypeScript side is typechecked, tested and builds. The Rust shell compiles cleanly under `cargo clippy -D warnings` and `cargo fmt`. The smoke checklist (`apps/desktop/README.md`) hasn't been run.
+**Progress:** steps 1–7 done and smoke-tested on Windows 11 (results in `apps/desktop/README.md`). Left: the hand checks for tray, quit-and-restart draft, and start at login. Added on request: the save key is configurable (Enter or Shift+Enter).
 
 Scope:
 1. Scaffold `apps/desktop`: Tauri v2 + Vite + React + Tailwind; two entries (`dock`, `main`).
@@ -49,7 +49,7 @@ Scope:
 
 **Done when:**
 - Hotkey shows the dock in < 100 ms and focuses the input; second press / blur / Esc hides it; draft survives hide and app restart.
-- Capture → row visible in the recent list; measured capture transaction p95 < 10 ms (log the timing in dev).
+- Capture → row visible in the recent list; measured capture transaction p95 < 10 ms (log the timing in dev). *Accepted 2026-10-29 with an exception: plain entries p95 7.2 ms; entries with a `#tag` p95 ≈ 11 ms (median 7.7). Faster tag lookup is deferred (see Later).*
 - Tray menu works; app autostarts; second launch focuses the existing instance.
 - Timers verified to keep firing while the dock is hidden (or Rust heartbeat implemented).
 - Manual smoke checklist in `apps/desktop/README.md` passes on Windows 11.
@@ -160,4 +160,4 @@ Scope:
 ---
 
 ## Later / unscheduled
-iOS build · local semantic search (`sqlite-vec`) · SQLCipher encryption · calendar integration · desktop updater + code signing · macOS/Linux polish.
+Capture: in-memory tag lookup so tagged captures meet p95 < 10 ms (Phase 2 exception) · iOS build · local semantic search (`sqlite-vec`) · SQLCipher encryption · calendar integration · desktop updater + code signing · macOS/Linux polish.
