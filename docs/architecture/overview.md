@@ -14,7 +14,7 @@
 │   window, hub sidecar    │ │ • QR pairing             │ │   (+ vector), /v1/ask      │
 │   window, audio (later)  │ │ • expo-secure-store      │ │ • Embedding worker         │
 │ • Webview: React, Drizzle│ │ • NetInfo, bg tasks      │ │ • Fallback extraction      │
-│   over tauri-plugin-sql  │ │ • Extraction on device   │ │ • Semantic search API      │
+│   over own SQLite cmds   │ │ • Extraction on device   │ │ • Semantic search API      │
 │ • Extraction on device   │ │                          │ │ • Fallback daily brief     │
 └───────────────┬──────────┘ └──────────┬───────────────┘ └─────▲──────────────────────┘
                 │   HTTPS: /v1/sync/push, /v1/sync/pull,        │
@@ -71,7 +71,7 @@ server → shared, db, core, sync/protocol (not the sync client engine)
 
 | Adapter | Desktop | Android | Server |
 |---|---|---|---|
-| `SqliteExecutor` (clients) / Postgres driver (server) | `tauri-plugin-sql` → Drizzle `sqlite-proxy` | `expo-sqlite` async API → Drizzle `sqlite-proxy` | Drizzle `node-postgres` or `pglite` |
+| `SqliteExecutor` (clients) / Postgres driver (server) | Rust `db_run`/`db_values` commands (rusqlite, [ADR-0019](../decisions/0019-desktop-sqlite-own-commands.md)) → Drizzle `sqlite-proxy` | `expo-sqlite` async API → Drizzle `sqlite-proxy` | Drizzle `node-postgres` or `pglite` |
 | `SecretStore` | Rust `keyring` command | `expo-secure-store` | env vars (read-only) |
 | `HttpFetch` (for LLM + sync) | `tauri-plugin-http` fetch (avoids CORS) | global `fetch` (`expo/fetch` for streaming) | Node fetch |
 | `NetworkMonitor` | `navigator.onLine` + periodic probe of sync server | `@react-native-community/netinfo` | always online |

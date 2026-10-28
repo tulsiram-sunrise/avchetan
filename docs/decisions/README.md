@@ -22,6 +22,7 @@ Short records of significant decisions: context, decision, consequences. Accepte
 | [0016](0016-deployment-modes-home-hub.md) | Deployment modes: Standalone, Home Hub, Cloud | Accepted |
 | [0017](0017-self-hostable-guided-setup.md) | Anyone can self-host: guided setup and user documentation | Accepted |
 | [0018](0018-open-source-agpl-github.md) | Open source (AGPL-3.0) on GitHub, docs on GitHub Pages, signing at public release | Accepted |
+| [0019](0019-desktop-sqlite-own-commands.md) | Desktop SQLite through the app's own Rust commands, not tauri-plugin-sql | Accepted |
 
 ## Template
 

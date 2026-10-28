@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+/* Design tokens. Light by default, dark follows the OS. */
+@theme {
+  --color-surface: oklch(98% 0.005 260);
+  --color-surface-raised: oklch(100% 0 0);
+  --color-ink: oklch(22% 0.02 260);
+  --color-ink-muted: oklch(50% 0.02 260);
+  --color-line: oklch(88% 0.01 260);
+  --color-accent: oklch(55% 0.16 255);
+  --color-ok: oklch(58% 0.14 150);
+  --color-warn: oklch(70% 0.15 75);
+  --color-danger: oklch(56% 0.19 25);
+  --radius-panel: 14px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-surface: oklch(22% 0.015 260);
+    --color-surface-raised: oklch(27% 0.015 260);
+    --color-ink: oklch(94% 0.01 260);
+    --color-ink-muted: oklch(70% 0.015 260);
+    --color-line: oklch(35% 0.015 260);
+    --color-accent: oklch(70% 0.14 255);
+  }
+}
+
+html,
+body {
+  margin: 0;
+  font-family: system-ui, "Segoe UI", sans-serif;
+  color: var(--color-ink);
+  background: var(--color-surface);
+}
+
+/* The dock window is transparent; the panel draws its own background and shadow. */
+body.dock {
+  background: transparent;
+  overflow: hidden;
+}

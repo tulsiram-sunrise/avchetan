@@ -57,6 +57,16 @@ describe('rawLogs.capture', () => {
     expect(byTable('entity_tags')).toBe(2);
   });
 
+  it('links a tag once when two spellings resolve to it', async () => {
+    const { store } = await openTestStore();
+    const log = await store.write((tx) =>
+      store.repos.rawLogs.capture(tx, capture('Ran #Running #running', ['Running', 'running'])),
+    );
+
+    const links = await store.repos.tags.forTarget(store.db, 'raw_log', log.id);
+    expect(links.map((l) => l.path)).toEqual(['running']);
+  });
+
   it('rejects empty content and unknown time zones', async () => {
     const { store } = await openTestStore();
     await expect(

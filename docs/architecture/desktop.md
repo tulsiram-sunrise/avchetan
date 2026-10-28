@@ -15,7 +15,7 @@ Primary target: **Windows 11**. macOS/Linux should work where Tauri does, but ar
 | `main` | Full window: timeline, tasks, tags, people, settings | Normal decorated, resizable, taskbar visible, created on demand, hidden (not closed) on close |
 
 - Visual: frosted glass (`backdrop-filter: blur`) with a solid fallback (Windows transparency + blur can be inconsistent; Mica/acrylic via `window-vibrancy` crate is an option), rounded corners, subtle border, respects light/dark.
-- Position: centered on the monitor containing the cursor by default; optional anchors (top-right, near tray) via `tauri-plugin-positioner`; last position persisted.
+- Position: centered horizontally in the upper third of the work area of the monitor containing the cursor (Rust, `windows.rs`); optional anchors (top-right, near tray) via `tauri-plugin-positioner`; last position persisted.
 
 ## Summoning & dismissal
 
@@ -36,9 +36,13 @@ Primary target: **Windows 11**. macOS/Linux should work where Tauri does, but ar
 ## Rust surface (`src-tauri/src/`)
 
 ```
-lib.rs            builder: plugins, setup, tray, shortcuts
-windows.rs        dock show/hide/toggle, positioning
+lib.rs            builder: plugins, setup, command list
+error.rs          CommandError { code, message }
+windows.rs        dock show/hide/toggle + positioning, blur → hide, main window (dock_hide, main_open)
+hotkey.rs         global shortcut registration (hotkey_status, hotkey_set)
+tray.rs           tray icon + menu (tray_set_pending)
 commands/
+  db.rs           db_open / db_run / db_values / db_batch / db_rollback  (rusqlite, one connection per window, ADR-0019)
   secrets.rs      secret_get / secret_set / secret_delete  (keyring crate)
   context.rs      previous_window_context, read_clipboard_text   (Phase 6)
   audio.rs        start_recording / stop_recording → wav path    (Phase 7)
@@ -48,12 +52,13 @@ commands/
 
 ## Plugins
 
-`global-shortcut`, `sql` (SQLite), `http`, `positioner`, `notification`, `autostart` (start at login, default on), `single-instance` (second launch focuses the dock), `window-state` (main window), `process`, `updater` (later). Secrets via the `keyring` crate, not `stronghold`.
+Phase 2: `global-shortcut`, `autostart` (start at login, on by default the first time only), `single-instance` (second launch shows the dock), `window-state` (main window), `opener` (help links open in the browser, scoped to the guide site). Later: `http` (Phase 3), `notification`, `positioner` (anchor options), `process`, `updater`. SQLite goes through our own commands, not the `sql` plugin ([ADR-0019](../decisions/0019-desktop-sqlite-own-commands.md)). Secrets use the `keyring` crate (3.x), not `stronghold`.
 
 ## Data layer
 
 - SQLite file in the app data dir (`avchetan.db`), WAL mode.
-- Drizzle `sqlite-proxy` driver forwarding to `tauri-plugin-sql` (`apps/desktop/src/db/driver.ts`). Migrations bundled and run at startup before the UI renders anything that reads data.
+- Drizzle `sqlite-proxy` driver forwarding to the app's own `db_run`/`db_values` commands (`apps/desktop/src/native/sqlite.ts` → `src-tauri/src/commands/db.rs`), one connection per window ([ADR-0019](../decisions/0019-desktop-sqlite-own-commands.md)). Migrations bundled and run at startup (`openClientStore`) before the UI renders anything that reads data.
+- In dev, each capture logs its duration and the rolling p95 at `debug` (`capture committed`).
 - Measure the capture path in Phase 2; if IPC overhead pushes it over 10 ms, move the capture transaction into a dedicated Rust command (documented fallback).
 
 ## Background work
@@ -62,7 +67,7 @@ Runs in the dock webview (always alive): pending processor, sync engine timers, 
 
 ## Frontend stack
 
-Vite + React + TypeScript + Tailwind. State: Zustand (UI state), TanStack Query (data reads, invalidated by `logs:changed`/`sync:done` events). Router only in `main` window (TanStack Router or React Router). Two Vite entry points: `dock.html`, `main.html`.
+Vite + React + TypeScript + Tailwind. State: Zustand (UI state), TanStack Query (data reads, invalidated by `logs:changed`/`sync:done` events). Router only in `main` window (TanStack Router or React Router), added when it outgrows the two-view switch in Phase 3. Two Vite entry points: `dock.html`, `main.html`.
 
 ## Packaging
 

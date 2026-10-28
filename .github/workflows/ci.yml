@@ -75,3 +75,27 @@ jobs:
             fi
           done
           exit $missing
+
+  desktop-rust:
+    name: Desktop shell (rustfmt, clippy)
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: avchetan-code/apps/desktop/src-tauri
+    env:
+      LEFTHOOK: 0
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: avchetan-code/apps/desktop/src-tauri
+
+      # tauri::generate_context! expects frontendDist to exist; the web assets aren't needed for linting.
+      - run: New-Item -ItemType Directory -Force ../dist
+      - run: cargo fmt --check
+      - run: cargo clippy --locked --all-targets -- -D warnings

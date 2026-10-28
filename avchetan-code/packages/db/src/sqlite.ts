@@ -35,6 +35,7 @@ export { type ClientStore, type OpenClientStoreOptions, openClientStore } from '
 export {
   getById,
   insertSynced,
+  insertSyncedRow,
   live,
   type NewRow,
   type RepoDeps,

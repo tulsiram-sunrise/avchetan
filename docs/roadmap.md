@@ -1,6 +1,6 @@
 # Roadmap
 
-**Current phase: 1 — Monorepo foundation & data layer (code complete; finishing: CI green, Pages enabled, repo public) → next: Phase 2.**
+**Current phase: 2 — Desktop shell & instant capture.** Phase 1 completed 2026-10-26 (PR #1).
 
 Each phase lists scope, deliverables and **done when** criteria (testable). Phases are sequential; a coding agent should finish a phase's criteria before starting the next. Advanced capabilities are specified in [product/advancements.md](product/advancements.md).
 
@@ -14,7 +14,7 @@ Each phase lists scope, deliverables and **done when** criteria (testable). Phas
 - `CLAUDE.md`, `docs/` tree, ADRs 0001–0017, user-guide drafts.
 - **Done when:** user has reviewed the docs; open questions marked *blocking* are answered.
 
-## Phase 1 — Monorepo foundation & data layer
+## Phase 1 — Monorepo foundation & data layer ✅
 
 Scope:
 1. `git init`, `.gitignore`, `LICENSE` (AGPL-3.0-or-later), root `README.md` (what it is, what *Avchetan* means, status, link to docs), pnpm workspace, Turborepo, `tooling/tsconfig.base.json`, Biome, lefthook, exact-version pinning (`saveExact` in `pnpm-workspace.yaml`). ✅ *step 1 done*
@@ -36,18 +36,20 @@ Scope:
 
 ## Phase 2 — Desktop shell & instant capture
 
+**Progress:** steps 1–7 done and smoke-tested on Windows 11 (results in `apps/desktop/README.md`). Left: the hand checks for tray, quit-and-restart draft, and start at login. Added on request: the save key is configurable (Enter or Shift+Enter).
+
 Scope:
 1. Scaffold `apps/desktop`: Tauri v2 + Vite + React + Tailwind; two entries (`dock`, `main`).
 2. Dock window config (frameless, transparent, always-on-top, skip-taskbar, hidden at start); positioner; single-instance; autostart.
 3. Rust: global hotkey toggle (default `Ctrl+Shift+Space`, configurable), tray with menu, blur → hide, `Esc` → hide, secrets commands (keyring).
-4. SQLite via `tauri-plugin-sql` + Drizzle `sqlite-proxy`; migrations at startup; composition root with adapters.
+4. SQLite via the app's own Rust commands (rusqlite, one connection per window, [ADR-0019](decisions/0019-desktop-sqlite-own-commands.md)) + Drizzle `sqlite-proxy`; migrations at startup; composition root with adapters.
 5. Dock UI: input, mode indicator (capture only for now), draft persistence, recent captures with status badges, footer (offline/pending).
 6. Capture path: `rawLogRepo.capture` + explicit tags.
 7. Main window skeleton: timeline (raw logs only), settings stub.
 
 **Done when:**
 - Hotkey shows the dock in < 100 ms and focuses the input; second press / blur / Esc hides it; draft survives hide and app restart.
-- Capture → row visible in the recent list; measured capture transaction p95 < 10 ms (log the timing in dev).
+- Capture → row visible in the recent list; measured capture transaction p95 < 10 ms (log the timing in dev). *Accepted 2026-10-29 with an exception: plain entries p95 7.2 ms; entries with a `#tag` p95 ≈ 11 ms (median 7.7). Faster tag lookup is deferred (see Later).*
 - Tray menu works; app autostarts; second launch focuses the existing instance.
 - Timers verified to keep firing while the dock is hidden (or Rust heartbeat implemented).
 - Manual smoke checklist in `apps/desktop/README.md` passes on Windows 11.
@@ -158,4 +160,4 @@ Scope:
 ---
 
 ## Later / unscheduled
-iOS build · local semantic search (`sqlite-vec`) · SQLCipher encryption · calendar integration · desktop updater + code signing · macOS/Linux polish.
+Capture: in-memory tag lookup so tagged captures meet p95 < 10 ms (Phase 2 exception) · iOS build · local semantic search (`sqlite-vec`) · SQLCipher encryption · calendar integration · desktop updater + code signing · macOS/Linux polish.

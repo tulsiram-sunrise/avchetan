@@ -1,0 +1,16 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "What the dock and main window may do. App commands (src/commands, windows, tray, hotkey) are allowed for both.",
+  "windows": ["dock", "main"],
+  "permissions": [
+    "core:default",
+    "autostart:allow-enable",
+    "autostart:allow-disable",
+    "autostart:allow-is-enabled",
+    {
+      "identifier": "opener:allow-open-url",
+      "allow": [{ "url": "https://tulsiram-sunrise.github.io/avchetan/*" }]
+    }
+  ]
+}
