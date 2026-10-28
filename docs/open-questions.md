@@ -16,6 +16,7 @@ Questions not yet decided. When answered: record the answer here (or in an ADR i
 | Q10 | Display units: metric only, or allow imperial display (lb/mi)? Storage stays metric. | Metric; setting later | — |
 | Q11 | Daily brief time and whether to also send a morning plan (today's tasks + yesterday's rollovers). | 21:00 brief; morning plan as Phase 6 stretch | Phase 6 |
 | Q20 | Publish the Android app on the Play Store, or GitHub Releases (APK) only? | APK only at first | Public release |
+| Q21 | Desktop: when the main window starts editing (task done, corrections), should its writes go through the dock webview so one monotonic clock issues all timestamps? Each window currently has its own clock over the shared `clock_last` ([ADR-0019](decisions/0019-desktop-sqlite-own-commands.md)). | Route writes through the dock via an event/command | Phase 3 |
 
 ## Resolved
 

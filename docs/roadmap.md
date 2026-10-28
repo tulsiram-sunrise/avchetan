@@ -36,11 +36,13 @@ Scope:
 
 ## Phase 2 — Desktop shell & instant capture
 
+**Progress:** steps 1–7 written. The TypeScript side is typechecked, tested and builds. The Rust shell hasn't been compiled yet (needs the Rust toolchain on the dev machine), and the smoke checklist (`apps/desktop/README.md`) hasn't been run.
+
 Scope:
 1. Scaffold `apps/desktop`: Tauri v2 + Vite + React + Tailwind; two entries (`dock`, `main`).
 2. Dock window config (frameless, transparent, always-on-top, skip-taskbar, hidden at start); positioner; single-instance; autostart.
 3. Rust: global hotkey toggle (default `Ctrl+Shift+Space`, configurable), tray with menu, blur → hide, `Esc` → hide, secrets commands (keyring).
-4. SQLite via `tauri-plugin-sql` + Drizzle `sqlite-proxy`; migrations at startup; composition root with adapters.
+4. SQLite via the app's own Rust commands (rusqlite, one connection per window, [ADR-0019](decisions/0019-desktop-sqlite-own-commands.md)) + Drizzle `sqlite-proxy`; migrations at startup; composition root with adapters.
 5. Dock UI: input, mode indicator (capture only for now), draft persistence, recent captures with status badges, footer (offline/pending).
 6. Capture path: `rawLogRepo.capture` + explicit tags.
 7. Main window skeleton: timeline (raw logs only), settings stub.
