@@ -43,11 +43,11 @@ src-tauri/src/
 Run with `pnpm dev`, then with an installed `pnpm build`. Tick every line before closing Phase 2.
 
 - [ ] First launch: no window appears and the tray icon is visible. The dock is hidden at start.
-- [ ] `Ctrl+Shift+Space` shows the dock in < 100 ms, on the monitor with the mouse pointer, with the text box focused.
+- [x] `Ctrl+Shift+Space` shows the dock in < 100 ms, on the monitor with the mouse pointer, with the text box focused.
 - [ ] Pressing the shortcut again hides the dock. So do `Esc` and clicking another window (blur).
 - [ ] Type a half sentence, hide the dock, show it again: the text is still there.
 - [ ] Type a half sentence and quit from the tray. Start the app again: the text is still there.
-- [ ] Enter saves. The entry appears at the top of the recent list with a *Pending* badge, and the box empties.
+- [x] Enter saves. The entry appears at the top of the recent list with a *Pending* badge, and the box empties.
 - [ ] `Shift+Enter` adds a new line instead of saving.
 - [ ] `#Health/Knee` in an entry creates the tag `health/knee`, and `!private` saves as private (check with a DB viewer).
 - [ ] Dev console shows `capture committed` with `p95Ms` < 10 after 20 or more captures.
