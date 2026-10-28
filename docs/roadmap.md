@@ -1,6 +1,6 @@
 # Roadmap
 
-**Current phase: 1 — Monorepo foundation & data layer (code complete; finishing: CI green, Pages enabled, repo public) → next: Phase 2.**
+**Current phase: 2 — Desktop shell & instant capture.** Phase 1 completed 2026-10-26 (PR #1).
 
 Each phase lists scope, deliverables and **done when** criteria (testable). Phases are sequential; a coding agent should finish a phase's criteria before starting the next. Advanced capabilities are specified in [product/advancements.md](product/advancements.md).
 
@@ -14,7 +14,7 @@ Each phase lists scope, deliverables and **done when** criteria (testable). Phas
 - `CLAUDE.md`, `docs/` tree, ADRs 0001–0017, user-guide drafts.
 - **Done when:** user has reviewed the docs; open questions marked *blocking* are answered.
 
-## Phase 1 — Monorepo foundation & data layer
+## Phase 1 — Monorepo foundation & data layer ✅
 
 Scope:
 1. `git init`, `.gitignore`, `LICENSE` (AGPL-3.0-or-later), root `README.md` (what it is, what *Avchetan* means, status, link to docs), pnpm workspace, Turborepo, `tooling/tsconfig.base.json`, Biome, lefthook, exact-version pinning (`saveExact` in `pnpm-workspace.yaml`). ✅ *step 1 done*
