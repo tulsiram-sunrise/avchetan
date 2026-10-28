@@ -6,9 +6,11 @@ import type { ClientDb, Tx } from '../database';
 import {
   getById,
   insertSynced,
+  insertSyncedRow,
   live,
   type RepoDeps,
   type Row,
+  type RowPatch,
   softDeleteSynced,
   updateSynced,
   upsertSynced,
@@ -81,7 +83,9 @@ export function tagsRepo(deps: RepoDeps) {
 
     /**
      * Links a tag to a raw log, activity or task (idempotent, derived ID). An explicit link
-     * (user typed `#tag`) is never downgraded to inferred.
+     * (user typed `#tag`) is never downgraded to inferred. Pass `targetIsNew` when the target
+     * was created in this transaction: no link to it can exist, so the lookup is skipped
+     * (it costs an IPC round trip on desktop capture).
      */
     async link(
       tx: Tx,
@@ -92,21 +96,28 @@ export function tagsRepo(deps: RepoDeps) {
         isInferred: boolean;
         confidence?: number | null;
       },
+      options: { targetIsNew?: boolean } = {},
     ): Promise<TagLink> {
       const id = derivedId('entity_tag', input.tagId, input.targetType, input.targetId);
-      const existing = await getById(tx, entityTags, id);
+      const existing = options.targetIsNew ? undefined : await getById(tx, entityTags, id);
       const isInferred =
         existing && !existing.deletedAt
           ? existing.isInferred && input.isInferred
           : input.isInferred;
-      return upsertSynced(tx, deps, entityTags, {
-        id,
+      const values = {
         tagId: input.tagId,
         targetType: input.targetType,
         targetId: input.targetId,
         isInferred,
         confidence: input.confidence ?? null,
-      });
+      };
+      // Same as upsertSynced, reusing the row already read: revives a soft-deleted link.
+      return existing
+        ? updateSynced(tx, deps, entityTags, id, {
+            ...values,
+            deletedAt: null,
+          } as RowPatch<typeof entityTags>)
+        : insertSyncedRow(tx, deps, entityTags, { id, ...values });
     },
 
     async unlink(tx: Tx, linkIds: readonly string[]): Promise<void> {

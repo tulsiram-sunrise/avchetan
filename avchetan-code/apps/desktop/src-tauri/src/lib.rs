@@ -41,6 +41,8 @@ pub fn run() {
             commands::db::db_open,
             commands::db::db_run,
             commands::db::db_values,
+            commands::db::db_batch,
+            commands::db::db_rollback,
             commands::secrets::secret_get,
             commands::secrets::secret_set,
             commands::secrets::secret_delete,

@@ -12,11 +12,15 @@ The desktop app runs Drizzle's `sqlite-proxy` driver in the webview over a small
 A third need follows from having two webviews (dock and main window): one window's open transaction must not interleave with the other window's statements.
 
 ## Decision
-Ship four thin commands in `src-tauri/src/commands/db.rs` on `rusqlite` (with SQLite `bundled`):
+Ship thin commands in `src-tauri/src/commands/db.rs` on `rusqlite` (with SQLite `bundled`):
 
 - `db_open`: opens or reopens **one connection per window label**, applying the pragmas from [database conventions](../conventions/database.md) (WAL, `synchronous=NORMAL`, `foreign_keys=OFF`, `busy_timeout=5000`).
-- `db_run`: runs one statement.
+- `db_run`: runs one statement (outside a transaction).
 - `db_values`: runs one statement and returns its rows as arrays of column values.
+- `db_batch`: runs several statements and optionally a final query, in one call.
+- `db_rollback`: rolls back only if a transaction is open.
+
+Each IPC call costs about 1 ms, so inside a transaction the TS executor queues statements that return nothing and sends them with the next query or with COMMIT (`db_batch`). A plain capture takes 2 calls instead of 5. A failing queued write rejects that later call instead of its own; the transaction still rolls back. Repositories avoid `RETURNING` where they already know the full row (`insertSyncedRow`), so those inserts can be queued too.
 
 Parameters are limited to null, boolean, number and string. SQLite's own locking (WAL + busy timeout) arbitrates between the windows' connections, exactly as between processes.
 

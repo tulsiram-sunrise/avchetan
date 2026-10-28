@@ -9,7 +9,7 @@ use std::time::Duration;
 
 use rusqlite::types::{Value, ValueRef};
 use rusqlite::{params_from_iter, Connection};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value as Json;
 use tauri::{State, WebviewWindow};
 
@@ -125,19 +125,18 @@ pub fn db_open(window: WebviewWindow, state: State<'_, DbState>) -> CommandResul
     })
 }
 
-/// Executes one statement, discarding any rows it returns (PRAGMAs return some).
-#[tauri::command(async)]
-pub fn db_run(
-    window: WebviewWindow,
-    state: State<'_, DbState>,
+/// One statement and its parameters.
+#[derive(Deserialize)]
+pub struct Statement {
     sql: String,
     params: Vec<Json>,
-) -> CommandResult<()> {
-    let connection = state.connection(window.label())?;
-    let connection = connection.lock().map_err(|_| poisoned())?;
-    let mut statement = connection.prepare(&sql).map_err(query_failed)?;
-    let mut rows = statement
-        .query(params_from_iter(to_sql_values(params)?))
+}
+
+/// Executes a statement, discarding any rows it returns (PRAGMAs return some).
+fn execute(connection: &Connection, statement: Statement) -> CommandResult<()> {
+    let mut prepared = connection.prepare(&statement.sql).map_err(query_failed)?;
+    let mut rows = prepared
+        .query(params_from_iter(to_sql_values(statement.params)?))
         .map_err(query_failed)?;
     while rows.next().map_err(query_failed)?.is_some() {}
     Ok(())
@@ -145,19 +144,11 @@ pub fn db_run(
 
 /// Runs a query and returns rows as arrays of column values, in select order (what
 /// Drizzle's sqlite-proxy driver expects).
-#[tauri::command(async)]
-pub fn db_values(
-    window: WebviewWindow,
-    state: State<'_, DbState>,
-    sql: String,
-    params: Vec<Json>,
-) -> CommandResult<Vec<Vec<Json>>> {
-    let connection = state.connection(window.label())?;
-    let connection = connection.lock().map_err(|_| poisoned())?;
-    let mut statement = connection.prepare(&sql).map_err(query_failed)?;
-    let column_count = statement.column_count();
-    let mut rows = statement
-        .query(params_from_iter(to_sql_values(params)?))
+fn query(connection: &Connection, statement: Statement) -> CommandResult<Vec<Vec<Json>>> {
+    let mut prepared = connection.prepare(&statement.sql).map_err(query_failed)?;
+    let column_count = prepared.column_count();
+    let mut rows = prepared
+        .query(params_from_iter(to_sql_values(statement.params)?))
         .map_err(query_failed)?;
     let mut result = Vec::new();
     while let Some(row) = rows.next().map_err(query_failed)? {
@@ -168,4 +159,59 @@ pub fn db_values(
         result.push(values);
     }
     Ok(result)
+}
+
+#[tauri::command(async)]
+pub fn db_run(
+    window: WebviewWindow,
+    state: State<'_, DbState>,
+    sql: String,
+    params: Vec<Json>,
+) -> CommandResult<()> {
+    let connection = state.connection(window.label())?;
+    let connection = connection.lock().map_err(|_| poisoned())?;
+    execute(&connection, Statement { sql, params })
+}
+
+#[tauri::command(async)]
+pub fn db_values(
+    window: WebviewWindow,
+    state: State<'_, DbState>,
+    sql: String,
+    params: Vec<Json>,
+) -> CommandResult<Vec<Vec<Json>>> {
+    let connection = state.connection(window.label())?;
+    let connection = connection.lock().map_err(|_| poisoned())?;
+    query(&connection, Statement { sql, params })
+}
+
+/// Executes `statements` in order, stopping at the first failure, then runs `query` if
+/// given. Lets the webview send a transaction's deferred writes in one IPC call.
+#[tauri::command(async)]
+pub fn db_batch(
+    window: WebviewWindow,
+    state: State<'_, DbState>,
+    statements: Vec<Statement>,
+    query: Option<Statement>,
+) -> CommandResult<Option<Vec<Vec<Json>>>> {
+    let connection = state.connection(window.label())?;
+    let connection = connection.lock().map_err(|_| poisoned())?;
+    for statement in statements {
+        execute(&connection, statement)?;
+    }
+    query
+        .map(|statement| self::query(&connection, statement))
+        .transpose()
+}
+
+/// Rolls back the open transaction, if any. A batch that failed at `BEGIN` leaves none
+/// open, and a plain `ROLLBACK` would then fail and hide the original error.
+#[tauri::command(async)]
+pub fn db_rollback(window: WebviewWindow, state: State<'_, DbState>) -> CommandResult<()> {
+    let connection = state.connection(window.label())?;
+    let connection = connection.lock().map_err(|_| poisoned())?;
+    if connection.is_autocommit() {
+        return Ok(());
+    }
+    connection.execute_batch("ROLLBACK").map_err(query_failed)
 }

@@ -54,14 +54,17 @@ export function rawLogsRepo(deps: RepoDeps, tags: ReturnType<typeof tagsRepo>) {
         capturedAt,
       );
 
+      // Different spellings can resolve to one tag (`#Health`, `#health`); link it once.
+      const linked = new Set<string>();
       for (const path of new Set(input.explicitTagPaths ?? [])) {
         const tag = await tags.ensurePath(tx, path);
-        await tags.link(tx, {
-          tagId: tag.id,
-          targetType: 'raw_log',
-          targetId: rawLog.id,
-          isInferred: false,
-        });
+        if (linked.has(tag.id)) continue;
+        linked.add(tag.id);
+        await tags.link(
+          tx,
+          { tagId: tag.id, targetType: 'raw_log', targetId: rawLog.id, isInferred: false },
+          { targetIsNew: true },
+        );
       }
       return rawLog;
     },

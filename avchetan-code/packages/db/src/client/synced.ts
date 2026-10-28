@@ -100,6 +100,32 @@ export async function insertSynced<T extends SyncedTable>(
   return inserted as Row<T>;
 }
 
+/**
+ * `insertSynced` for a caller that supplies every column (the type enforces it), so the
+ * stored row is known without `RETURNING`. A statement that returns nothing can be batched
+ * with later ones by async drivers (one IPC call instead of two on desktop).
+ */
+export async function insertSyncedRow<T extends SyncedTable>(
+  tx: Tx,
+  deps: RepoDeps,
+  table: T,
+  values: Omit<Row<T>, SyncColumnKey> & { id: string },
+  now: string = deps.clock.now(),
+): Promise<Row<T>> {
+  const row = {
+    ...values,
+    createdAt: now,
+    updatedAt: now,
+    updatedByDevice: deps.deviceId,
+    deletedAt: null,
+  };
+  // `never`: Drizzle's insert typing can't be resolved for a generic table.
+  await tx.insert(table).values(row as never);
+  await enqueueOutbox(tx, nameOf(table), row.id, now);
+  // Every column is set above, so this is exactly the stored row.
+  return row as unknown as Row<T>;
+}
+
 export async function updateSynced<T extends SyncedTable>(
   tx: Tx,
   deps: RepoDeps,
