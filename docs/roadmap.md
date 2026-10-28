@@ -36,7 +36,7 @@ Scope:
 
 ## Phase 2 — Desktop shell & instant capture
 
-**Progress:** steps 1–7 written. The TypeScript side is typechecked, tested and builds. The Rust shell hasn't been compiled yet (needs the Rust toolchain on the dev machine), and the smoke checklist (`apps/desktop/README.md`) hasn't been run.
+**Progress:** steps 1–7 written. The TypeScript side is typechecked, tested and builds. The Rust shell compiles cleanly under `cargo clippy -D warnings` and `cargo fmt`. The smoke checklist (`apps/desktop/README.md`) hasn't been run.
 
 Scope:
 1. Scaffold `apps/desktop`: Tauri v2 + Vite + React + Tailwind; two entries (`dock`, `main`).

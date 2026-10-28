@@ -54,7 +54,11 @@ pub fn plugin<R: Runtime>() -> TauriPlugin<R> {
 
 /// Registers `accelerator`, replacing the current shortcut only if that succeeds, so a
 /// failed change leaves the old shortcut working.
-fn register<R: Runtime>(app: &AppHandle<R>, state: &HotkeyState, accelerator: &str) -> HotkeyStatus {
+fn register<R: Runtime>(
+    app: &AppHandle<R>,
+    state: &HotkeyState,
+    accelerator: &str,
+) -> HotkeyStatus {
     let accelerator = accelerator.trim();
     let failed = |error| HotkeyStatus {
         shortcut: accelerator.to_owned(),
@@ -81,7 +85,10 @@ fn register<R: Runtime>(app: &AppHandle<R>, state: &HotkeyState, accelerator: &s
         return failed("hotkey_unavailable");
     }
     if let Some(previous) = active.shortcut.replace(shortcut) {
-        warn_on_err("unregister previous shortcut", shortcuts.unregister(previous));
+        warn_on_err(
+            "unregister previous shortcut",
+            shortcuts.unregister(previous),
+        );
     }
     active.status = HotkeyStatus {
         shortcut: accelerator.to_owned(),

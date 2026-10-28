@@ -35,9 +35,15 @@ pub fn create(app: &App) -> tauri::Result<()> {
         .menu(&menu)
         .show_menu_on_left_click(false)
         .on_menu_event(|app, event| match event.id().as_ref() {
-            "open" => warn_on_err("open main", windows::open_main(app, "timeline").map_err(|e| e.message)),
+            "open" => warn_on_err(
+                "open main",
+                windows::open_main(app, "timeline").map_err(|e| e.message),
+            ),
             "preferences" => {
-                warn_on_err("open settings", windows::open_main(app, "settings").map_err(|e| e.message));
+                warn_on_err(
+                    "open settings",
+                    windows::open_main(app, "settings").map_err(|e| e.message),
+                );
             }
             "quit" => app.exit(0),
             _ => {}
@@ -62,9 +68,16 @@ pub fn create(app: &App) -> tauri::Result<()> {
 
 /// Called by the dock after each capture (and at startup).
 #[tauri::command]
-pub fn tray_set_pending(app: AppHandle, state: State<'_, TrayState>, count: u32) -> CommandResult<()> {
+pub fn tray_set_pending(
+    app: AppHandle,
+    state: State<'_, TrayState>,
+    count: u32,
+) -> CommandResult<()> {
     let failed = |error: tauri::Error| CommandError::new("tray_failed", error.to_string());
-    state.pending.set_text(format!("Pending: {count}")).map_err(failed)?;
+    state
+        .pending
+        .set_text(format!("Pending: {count}"))
+        .map_err(failed)?;
     if let Some(tray) = app.tray_by_id(TRAY_ID) {
         let tooltip = match count {
             0 => "Avchetan".to_owned(),
