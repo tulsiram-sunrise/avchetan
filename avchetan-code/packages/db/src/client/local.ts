@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { settings, syncState } from '../schema/sqlite/tables';
+import { llmRuns, settings, syncState } from '../schema/sqlite/tables';
 import type { ClientDb, Tx } from './database';
 
 /** Keys in `sync_state` (client-local; never synced). */
@@ -36,4 +36,11 @@ export async function setSetting(tx: Tx, key: string, value: unknown, now: strin
     .insert(settings)
     .values({ key, value, updatedAt: now })
     .onConflictDoUpdate({ target: settings.key, set: { value, updatedAt: now } });
+}
+
+export type NewLlmRun = typeof llmRuns.$inferInsert;
+
+/** Local audit row for one model call. Holds no prompts or answers. */
+export async function insertLlmRun(tx: Tx, run: NewLlmRun): Promise<void> {
+  await tx.insert(llmRuns).values(run);
 }

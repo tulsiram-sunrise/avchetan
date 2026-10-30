@@ -11,6 +11,8 @@ export {
 export {
   getSetting,
   getSyncState,
+  insertLlmRun,
+  type NewLlmRun,
   type SyncStateKey,
   setSetting,
   setSyncState,

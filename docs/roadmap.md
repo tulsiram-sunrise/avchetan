@@ -56,8 +56,10 @@ Scope:
 
 ## Phase 3 — LLM engine, extraction & organization (desktop)
 
+**Progress:** step 1 written (provider adapters for Groq, Ollama and Gemini; paid providers deferred, [ADR-0020](decisions/0020-free-first-provider-adapters.md)). Live check passed on Groq and Gemini on 2026-10-30; Ollama not yet checked.
+
 Scope:
-1. `packages/core`: provider registry (google, anthropic, openai, groq, ollama, openai_compatible), slot config, `presets.json`, `generateStructured` wrapper, error taxonomy, `llm_runs` recording.
+1. `packages/core`: provider adapters and registry (groq, ollama, google), slot config, `presets.json`, `generateStructured` wrapper, error taxonomy, `llm_runs` recording.
 2. Extraction prompt v1 + `ExtractionResult` schema + normalizers (dates, projects, entities); pipeline apply with deterministic IDs and re-extraction semantics.
 3. Pending processor (single-flight loop, local lease, backoff, attempts) with network monitor; desktop HTTP via `tauri-plugin-http`.
 4. Settings UI: providers & keys (keychain), model slots with "Test", timezone, hotkey.
@@ -160,4 +162,4 @@ Scope:
 ---
 
 ## Later / unscheduled
-Capture: in-memory tag lookup so tagged captures meet p95 < 10 ms (Phase 2 exception) · iOS build · local semantic search (`sqlite-vec`) · SQLCipher encryption · calendar integration · desktop updater + code signing · macOS/Linux polish.
+Capture: in-memory tag lookup so tagged captures meet p95 < 10 ms (Phase 2 exception) · Paid and other providers: Anthropic, OpenAI, any OpenAI-compatible service, one adapter each ([ADR-0020](decisions/0020-free-first-provider-adapters.md)) · iOS build · local semantic search (`sqlite-vec`) · SQLCipher encryption · calendar integration · desktop updater + code signing · macOS/Linux polish.

@@ -1,0 +1,25 @@
+{
+  "presets": [
+    {
+      "id": "groq-free",
+      "label": "Groq (free tier)",
+      "provider": "groq",
+      "extractionModel": "openai/gpt-oss-20b",
+      "analysisModel": "openai/gpt-oss-120b"
+    },
+    {
+      "id": "ollama-small",
+      "label": "Ollama on your PC (4 GB graphics card)",
+      "provider": "ollama",
+      "extractionModel": "granite4.2:3b",
+      "analysisModel": "granite4.2:8b"
+    },
+    {
+      "id": "gemini-free",
+      "label": "Google Gemini (free tier, made-up data only)",
+      "provider": "google",
+      "extractionModel": "gemini-3.5-flash-lite",
+      "analysisModel": "gemini-3.8-flash"
+    }
+  ]
+}

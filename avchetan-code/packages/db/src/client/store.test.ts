@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createNodeSqliteExecutor, openTestStore } from '../../testing';
-import { categories } from '../schema/sqlite/tables';
+import { categories, llmRuns, syncOutbox } from '../schema/sqlite/tables';
 import { SEED_CATEGORIES, seedCategoryId } from './repos/categories';
 import { openClientStore } from './store';
 
@@ -48,5 +48,24 @@ describe('openClientStore', () => {
     const ids = async (s: typeof a) =>
       (await s.store.db.select({ id: categories.id }).from(categories)).map((r) => r.id).sort();
     expect(await ids(a)).toEqual(await ids(b));
+  });
+
+  it('records llm runs locally without enqueueing them for sync', async () => {
+    const { store } = await openTestStore();
+    const outboxBefore = (await store.db.select().from(syncOutbox)).length;
+
+    await store.recordLlmRun({
+      purpose: 'extraction',
+      provider: 'ollama',
+      model: 'test-model',
+      latencyMs: 12,
+      ok: false,
+      errorCode: 'llm_unavailable',
+    });
+
+    const [run] = await store.db.select().from(llmRuns);
+    expect(run).toMatchObject({ provider: 'ollama', ok: false, errorCode: 'llm_unavailable' });
+    expect(run?.createdAt).toBe(store.clock.lastIssued());
+    expect(await store.db.select().from(syncOutbox)).toHaveLength(outboxBefore);
   });
 });

@@ -10,13 +10,14 @@ Questions not yet decided. When answered: record the answer here (or in an ADR i
 | Q3 | Offline semantic search on clients via `sqlite-vec`? Needs on-device embeddings (local model or cached vectors pulled from the server). | Not now; server-only | — |
 | Q5 | Sync private (`!private`) entries to the server? | Yes by default (own server), toggle to exclude | Phase 7 |
 | Q6 | SQLite encryption at rest (SQLCipher) on desktop/mobile? | Rely on OS disk encryption for now | — |
-| Q7 | Which models to put in `presets.json` per provider (incl. Ollama extraction/analysis/embedding models)? Decide via `pnpm eval:extraction` on synthetic fixtures. | Pick by eval results | Phase 3 |
+| Q7 | Which models to put in `presets.json` per provider (incl. Ollama extraction/analysis/embedding models)? Decide via `pnpm eval:extraction` on synthetic fixtures. | Starting points are in `presets.json` (Groq `openai/gpt-oss-20b`, Ollama `granite4.2:3b`); confirm by eval results | Phase 3 end |
 | Q8 | Cloud hosting recommendation for the cloud guide (see ADR-0014). | Decide during Phase 5 | Phase 5 end |
 | Q9 | Should Ask mode be able to *propose* writes (e.g. "create task?") in Phase 3, or only after the command registry exists (Phase 6)? | Phase 6 | — |
 | Q10 | Display units: metric only, or allow imperial display (lb/mi)? Storage stays metric. | Metric; setting later | — |
 | Q11 | Daily brief time and whether to also send a morning plan (today's tasks + yesterday's rollovers). | 21:00 brief; morning plan as Phase 6 stretch | Phase 6 |
 | Q20 | Publish the Android app on the Play Store, or GitHub Releases (APK) only? | APK only at first | Public release |
 | Q21 | Desktop: when the main window starts editing (task done, corrections), should its writes go through the dock webview so one monotonic clock issues all timestamps? Each window currently has its own clock over the shared `clock_last` ([ADR-0019](decisions/0019-desktop-sqlite-own-commands.md)). | Route writes through the dock via an event/command | Phase 3 |
+| Q22 | Ollama's OpenAI-compatible `/v1` endpoint can't set `num_ctx` per request. Does the extraction prompt with its vocabulary fit the default context, or is a setting or a native Ollama client needed? | Measure once Ollama is set up | Phase 3 end |
 
 ## Resolved
 

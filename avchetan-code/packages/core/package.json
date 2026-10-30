@@ -9,10 +9,16 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --passWithNoTests",
+    "test:live": "vitest run --config vitest.live.config.ts"
   },
   "dependencies": {
+    "@ai-sdk/google": "4.0.107",
+    "@ai-sdk/groq": "4.0.72",
+    "@ai-sdk/openai-compatible": "3.0.80",
     "@avchetan/db": "workspace:*",
-    "@avchetan/shared": "workspace:*"
+    "@avchetan/shared": "workspace:*",
+    "ai": "7.0.156",
+    "zod": "4.6.7"
   }
 }

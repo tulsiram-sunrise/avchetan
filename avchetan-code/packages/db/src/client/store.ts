@@ -6,7 +6,7 @@ import {
 } from '@avchetan/shared';
 import { type ApplyResult, applyRemoteChanges, type RemoteChange } from './apply-remote';
 import { createClientDatabase, type SqliteExecutor, type Tx } from './database';
-import { getSyncState, setSyncState } from './local';
+import { getSyncState, insertLlmRun, type NewLlmRun, setSyncState } from './local';
 import { ackOutbox, listOutbox } from './outbox';
 import * as queries from './queries';
 import { activitiesRepo } from './repos/activities';
@@ -82,6 +82,8 @@ export async function openClientStore(options: OpenClientStoreOptions) {
     write,
     repos,
     queries,
+    recordLlmRun: (run: Omit<NewLlmRun, 'id' | 'createdAt'>): Promise<void> =>
+      write((tx) => insertLlmRun(tx, { ...run, id: newId(), createdAt: clock.now() })),
     sync: {
       listOutbox: (limit?: number) => listOutbox(database.db, limit),
       ackOutbox: (entries: Parameters<typeof ackOutbox>[1]) =>
