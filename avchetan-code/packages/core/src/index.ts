@@ -17,7 +17,17 @@ export {
   llmMayCreateSchema,
   normalizeExtraction,
 } from './extraction/normalize';
+export {
+  createPendingProcessor,
+  type PendingProcessor,
+  type PendingProcessorDeps,
+} from './extraction/pending-processor';
 export { type ExtractionResult, extractionResultSchema } from './extraction/schema';
+export {
+  type ExtractionSettings,
+  loadExtractionSettings,
+  MODEL_SLOTS_SETTING,
+} from './extraction/settings';
 export {
   generateStructured,
   type LlmDeps,

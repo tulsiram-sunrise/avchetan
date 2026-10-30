@@ -3,7 +3,15 @@ import { and, eq } from 'drizzle-orm';
 import type { RawLogPrivacy, RawLogSource } from '../../schema/enums';
 import { activities, rawLogs, tasks } from '../../schema/sqlite/tables';
 import type { Tx } from '../database';
-import { insertSynced, live, type RepoDeps, type Row, softDeleteSynced } from '../synced';
+import {
+  getById,
+  insertSynced,
+  live,
+  type RepoDeps,
+  type Row,
+  softDeleteSynced,
+  updateSynced,
+} from '../synced';
 import { softDeleteLinksTo } from './cascade';
 import type { tagsRepo } from './tags';
 
@@ -67,6 +75,41 @@ export function rawLogsRepo(deps: RepoDeps, tags: ReturnType<typeof tagsRepo>) {
         );
       }
       return rawLog;
+    },
+
+    /** Takes the lease on a pending log and counts one extraction attempt. */
+    async claim(tx: Tx, log: RawLog, leaseUntil: string): Promise<RawLog> {
+      return updateSynced(tx, deps, rawLogs, log.id, {
+        processingLeaseOwner: deps.deviceId,
+        processingLeaseUntil: leaseUntil,
+        processingAttempts: log.processingAttempts + 1,
+      });
+    },
+
+    /**
+     * Releases the lease after a failed extraction. `countsAsAttempt: false` gives the
+     * attempt back, for failures that say nothing about this log (offline, rate limited).
+     */
+    async recordFailure(
+      tx: Tx,
+      id: string,
+      failure: {
+        status: 'pending_llm' | 'error';
+        lastError: string;
+        nextAttemptAt: string | null;
+        countsAsAttempt: boolean;
+      },
+    ): Promise<void> {
+      const log = await getById(tx, rawLogs, id);
+      if (!log || log.deletedAt) return;
+      await updateSynced(tx, deps, rawLogs, id, {
+        status: failure.status,
+        lastError: failure.lastError,
+        nextAttemptAt: failure.nextAttemptAt,
+        processingLeaseOwner: null,
+        processingLeaseUntil: null,
+        processingAttempts: log.processingAttempts - (failure.countsAsAttempt ? 0 : 1),
+      });
     },
 
     /** Soft-deletes the log, everything extracted from it, and all their links. */

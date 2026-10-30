@@ -27,11 +27,24 @@ loop:
         AND processing_attempts < 3
         AND (next_attempt_at IS NULL OR next_attempt_at <= now)
      ORDER BY captured_at ASC
-  claim: set lease_owner=self, lease_until=now+2min, attempts+1   (local tx, synced)
+  claim: set lease_owner=self, lease_until=now+5min, attempts+1   (local tx, synced)
   run extraction (§3)
   success → apply (§4)
   failure → record last_error; if attempts >= 3 → status='error'; release lease
 ```
+
+The lease outlasts the slowest call: a local model on a CPU has up to 3 minutes.
+
+What a failure does is decided in `failure-policy.ts`:
+
+| Failure | Attempt counted? | What happens |
+|---|---|---|
+| `llm_rate_limit` | No | The whole queue waits for `retry-after` (or 60 s). This is routine on a free tier, so it must never turn entries into errors |
+| Offline (`llm_unavailable` with no HTTP status) | No | The queue waits 60 s, or until the network returns |
+| `llm_auth`, model not downloaded | No | The queue waits 10 min, or until the user fixes it |
+| `llm_unavailable` (5xx, timeout), `llm_invalid_output`, anything else | Yes | Back off, then retry |
+| `llm_refused` | — | Status `error` at once |
+| `llm_context_overflow` | No extra | One retry within the attempt, with tags and names left out of the prompt |
 
 - A device whose extraction slot is `delegate` (e.g. a phone in Home Hub mode — [deployment-modes](deployment-modes.md#llm-work-for-the-phone-delegate-to-hub)) does not run this loop at all; the server processes its logs with no grace period.
 - Logs captured on **another** device are *not* processed here, even if pulled while pending. That device or the server owns them. (Exception: user presses "Retry here" on an error/pending item → it sets `origin_device_id = self` via a normal write.)

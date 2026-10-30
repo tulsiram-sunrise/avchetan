@@ -26,6 +26,7 @@ pub fn run() {
                 .with_denylist(&[windows::DOCK])
                 .build(),
         )
+        .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(hotkey::plugin())
         .setup(|app| {

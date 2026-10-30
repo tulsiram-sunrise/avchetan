@@ -43,6 +43,7 @@ void bootstrap(
   async (services) => {
     useDockStore.getState().setDraft(await loadDraft(services.store));
     void settleNativeState(services);
+    services.extraction.start();
     if (import.meta.env.DEV) startTimerProbe();
   },
 );

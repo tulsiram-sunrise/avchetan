@@ -56,7 +56,9 @@ export function toLlmError(error: unknown, adapter?: ProviderAdapter): AppError 
     return new LlmError('llm_refused', 'The model returned no answer');
   }
   if (error instanceof Error && (error.name === 'AbortError' || error.name === 'TimeoutError')) {
-    return new LlmError('llm_unavailable', 'The model took too long to answer');
+    return new LlmError('llm_unavailable', 'The model took too long to answer', {
+      details: { reason: 'timeout' },
+    });
   }
   return new AppError('internal', 'Unexpected error during a model call', {
     details: { thrown: error instanceof Error ? error.name : typeof error },

@@ -9,6 +9,15 @@
     "autostart:allow-disable",
     "autostart:allow-is-enabled",
     {
+      "identifier": "http:default",
+      "allow": [
+        { "url": "https://api.groq.com/*" },
+        { "url": "https://generativelanguage.googleapis.com/*" },
+        { "url": "http://localhost:11434/*" },
+        { "url": "http://127.0.0.1:11434/*" }
+      ]
+    },
+    {
       "identifier": "opener:allow-open-url",
       "allow": [{ "url": "https://tulsiram-sunrise.github.io/avchetan/*" }]
     }

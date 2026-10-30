@@ -15,6 +15,13 @@
       "analysisModel": "granite4.2:8b"
     },
     {
+      "id": "ollama-cpu",
+      "label": "Ollama on your PC (no graphics card)",
+      "provider": "ollama",
+      "extractionModel": "granite4.2:8b",
+      "analysisModel": "granite4.2:8b"
+    },
+    {
       "id": "gemini-free",
       "label": "Google Gemini (free tier, made-up data only)",
       "provider": "google",
