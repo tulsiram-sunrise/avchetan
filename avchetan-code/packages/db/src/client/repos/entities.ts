@@ -1,8 +1,9 @@
 import { derivedId, ValidationError } from '@avchetan/shared';
-import { desc } from 'drizzle-orm';
+import { and, desc, inArray } from 'drizzle-orm';
 import type { EntityKind, LinkTargetType, MentionRole } from '../../schema/enums';
 import { entities, entityMentions } from '../../schema/sqlite/tables';
 import type { ClientDb, Tx } from '../database';
+import { type DataScope, sharedEntityIds } from '../privacy';
 import { getById, live, type RepoDeps, type Row, updateSynced, upsertSynced } from '../synced';
 
 export type Entity = Row<typeof entities>;
@@ -22,11 +23,16 @@ export function normalizeEntityName(name: string): string {
 export function entitiesRepo(deps: RepoDeps) {
   return {
     /** Most recently seen entities, for the extraction prompt. */
-    async listRecentNames(db: ClientDb, limit: number): Promise<string[]> {
+    async listRecentNames(db: ClientDb, limit: number, scope: DataScope): Promise<string[]> {
       const rows = await db
         .select({ name: entities.name })
         .from(entities)
-        .where(live(entities))
+        .where(
+          and(
+            live(entities),
+            scope.includePrivate ? undefined : inArray(entities.id, sharedEntityIds(db)),
+          ),
+        )
         .orderBy(desc(entities.updatedAt))
         .limit(limit);
       return rows.map((row) => row.name);

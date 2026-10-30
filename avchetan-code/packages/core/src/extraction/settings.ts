@@ -9,6 +9,12 @@ export const MODEL_SLOTS_SETTING = 'llm.slots';
 
 export type ExtractionSettings = { models: ModelConfig[]; llmMayCreate: LlmMayCreate };
 
+/** The model that answers questions: its own slot, else the one that organizes entries. */
+export async function loadAnalysisModel(store: ClientStore): Promise<ModelConfig | null> {
+  const slots = modelSlotsSchema.safeParse((await getSetting(store.db, MODEL_SLOTS_SETTING)) ?? {});
+  return slots.success ? (slots.data.analysis ?? slots.data.extraction ?? null) : null;
+}
+
 /** Read before every run, so a change in settings needs no restart. No slot means no models. */
 export async function loadExtractionSettings(store: ClientStore): Promise<ExtractionSettings> {
   const slots = modelSlotsSchema.safeParse((await getSetting(store.db, MODEL_SLOTS_SETTING)) ?? {});

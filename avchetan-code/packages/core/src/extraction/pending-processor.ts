@@ -53,7 +53,9 @@ export function createPendingProcessor(deps: PendingProcessorDeps): PendingProce
   const later = (ms: number) => new Date(Date.parse(store.clock.now()) + ms).toISOString();
 
   async function extract(rawLog: RawLog, models: ModelConfig[], settings: ExtractionSettings) {
-    const vocabulary = await loadVocabulary(store);
+    // A prompt that may reach a cloud model can't mention tags or names from private entries.
+    const includePrivate = models.every((model) => PROVIDER_ADAPTERS[model.provider].local);
+    const vocabulary = await loadVocabulary(store, { includePrivate });
     const options = { ...settings, models, vocabulary };
     try {
       await processRawLog(store, rawLog, options, llm);

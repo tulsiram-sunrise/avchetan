@@ -84,7 +84,7 @@ describe('live extraction', () => {
         .filter((category) => category.origin === 'llm')
         .map((category) => category.name);
       process.stdout.write(
-        `\ntags: ${await store.repos.tags.listRecentPaths(store.db, 30)}\nnames: ${await store.repos.entities.listRecentNames(store.db, 30)}\nnew categories: ${newCategories}\n${runs.length} calls, ${total} tokens\n`,
+        `\ntags: ${await store.repos.tags.listRecentPaths(store.db, 30, { includePrivate: true })}\nnames: ${await store.repos.entities.listRecentNames(store.db, 30, { includePrivate: true })}\nnew categories: ${newCategories}\n${runs.length} calls, ${total} tokens\n`,
       );
     },
     580_000,

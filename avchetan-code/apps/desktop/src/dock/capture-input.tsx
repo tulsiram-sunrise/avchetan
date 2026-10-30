@@ -3,8 +3,10 @@ import { type RefObject, useState } from 'react';
 import { HelpLink } from '../help-link';
 import { useCaptureMutation } from '../queries/raw-logs';
 import { useSubmitKey } from '../queries/settings';
+import { askQuestion, isQuestion, questionText } from '../services/ask';
 import { DEFAULT_SUBMIT_KEY, isSubmitPress, submitHint } from '../services/submit-key';
-import { useDockStore } from '../stores/dock-store';
+import { useServices } from '../services-context';
+import { type AskState, useDockStore } from '../stores/dock-store';
 
 /** The dock's text box. One of Enter / Shift+Enter saves (a setting); the other adds a line. */
 export function CaptureInput(props: {
@@ -14,10 +16,33 @@ export function CaptureInput(props: {
   const submitKey = useSubmitKey().data ?? DEFAULT_SUBMIT_KEY;
   const draft = useDockStore((state) => state.draft);
   const setDraft = useDockStore((state) => state.setDraft);
+  const setAsk = useDockStore((state) => state.setAsk);
+  const asking = useDockStore((state) => state.ask?.status === 'asking');
+  const services = useServices();
   const captureMutation = useCaptureMutation();
   const [errorCode, setErrorCode] = useState<string | null>(null);
 
+  const askMode = isQuestion(draft);
+
+  /** Never saved as an entry: a question leaves the log untouched. */
+  async function submitQuestion() {
+    const question = questionText(draft);
+    if (!question || asking) return;
+    setDraft('');
+    props.onCaptured();
+    const base: AskState = { question, answer: '', sources: [], status: 'asking', error: null };
+    setAsk(base);
+    try {
+      const result = await askQuestion(services, question, (answer) => setAsk({ ...base, answer }));
+      setAsk({ ...base, ...result, status: 'done' });
+    } catch (error) {
+      const { code, message } = toAppError(error);
+      setAsk({ ...base, status: 'failed', error: { code, message } });
+    }
+  }
+
   async function submit() {
+    if (askMode) return submitQuestion();
     if (!draft.trim() || captureMutation.isPending) return;
     try {
       await captureMutation.mutateAsync(draft);
@@ -33,14 +58,14 @@ export function CaptureInput(props: {
     <div>
       <div className="flex items-center gap-2 px-1 pb-1 text-xs text-ink-muted">
         <span className="rounded-full bg-accent/15 px-2 py-0.5 font-medium text-accent">
-          Capture
+          {askMode ? 'Ask' : 'Capture'}
         </span>
         <span>{submitHint(submitKey)} · Esc to close</span>
       </div>
       <textarea
         ref={props.inputRef}
         aria-label="What's on your mind?"
-        placeholder="What's on your mind?  #tags  !private"
+        placeholder="What's on your mind?  #tags  !private  ?question"
         rows={3}
         value={draft}
         onChange={(event) => setDraft(event.target.value)}

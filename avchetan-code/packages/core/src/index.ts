@@ -1,3 +1,4 @@
+export { type AskRequest, type AskResult, type AskSource, ask } from './analysis/ask';
 export { buildCaptureInput } from './capture';
 export {
   EXTRACTION_PROMPT_VERSION,
@@ -25,6 +26,7 @@ export {
 export { type ExtractionResult, extractionResultSchema } from './extraction/schema';
 export {
   type ExtractionSettings,
+  loadAnalysisModel,
   loadExtractionSettings,
   MODEL_SLOTS_SETTING,
 } from './extraction/settings';

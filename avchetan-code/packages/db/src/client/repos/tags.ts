@@ -3,6 +3,7 @@ import { and, asc, count, desc, eq, inArray, isNull, like } from 'drizzle-orm';
 import type { LinkTargetType } from '../../schema/enums';
 import { entityTags, tags } from '../../schema/sqlite/tables';
 import type { ClientDb, Tx } from '../database';
+import { type DataScope, sharedTagIds } from '../privacy';
 import {
   getById,
   insertSynced,
@@ -46,11 +47,17 @@ export function tagsRepo(deps: RepoDeps) {
     findByPath,
 
     /** Most recently used tag paths, for the extraction prompt. */
-    async listRecentPaths(db: ClientDb, limit: number): Promise<string[]> {
+    async listRecentPaths(db: ClientDb, limit: number, scope: DataScope): Promise<string[]> {
       const rows = await db
         .select({ path: tags.path })
         .from(tags)
-        .where(and(live(tags), isNull(tags.mergedIntoId)))
+        .where(
+          and(
+            live(tags),
+            isNull(tags.mergedIntoId),
+            scope.includePrivate ? undefined : inArray(tags.id, sharedTagIds(db)),
+          ),
+        )
         .orderBy(desc(tags.updatedAt))
         .limit(limit);
       return rows.map((row) => row.path);

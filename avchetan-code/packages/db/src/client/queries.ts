@@ -4,17 +4,20 @@ import {
   count,
   desc,
   eq,
+  gte,
   inArray,
   isNotNull,
   isNull,
+  like,
   lt,
   lte,
   or,
   sql,
 } from 'drizzle-orm';
 import type { RawLogStatus } from '../schema/enums';
-import { activities, rawLogs, tasks } from '../schema/sqlite/tables';
+import { activities, entityTags, rawLogs, tags, tasks } from '../schema/sqlite/tables';
 import type { ClientDb } from './database';
+import { type DataScope, notFromPrivateLog } from './privacy';
 import type { Activity } from './repos/activities';
 import type { RawLog } from './repos/raw-logs';
 import type { Task } from './repos/tasks';
@@ -101,6 +104,86 @@ export async function extractedFrom(
       .orderBy(asc(tasks.ordinal)),
   ]);
   return { activities: children, tasks: todo };
+}
+
+/** Activities newest first, for analysis. Dates are inclusive. */
+export function activitiesForAnalysis(
+  db: ClientDb,
+  options: DataScope & { from?: string | undefined; to?: string | undefined; limit: number },
+): Promise<Activity[]> {
+  return db
+    .select()
+    .from(activities)
+    .where(
+      and(
+        live(activities),
+        options.from ? gte(activities.loggedDate, options.from) : undefined,
+        options.to ? lte(activities.loggedDate, options.to) : undefined,
+        options.includePrivate ? undefined : notFromPrivateLog(db, activities),
+      ),
+    )
+    .orderBy(desc(activities.loggedDate), desc(activities.createdAt))
+    .limit(options.limit);
+}
+
+/** All tasks, for analysis. */
+export function tasksForAnalysis(db: ClientDb, options: DataScope & { limit: number }) {
+  return db
+    .select()
+    .from(tasks)
+    .where(and(live(tasks), options.includePrivate ? undefined : notFromPrivateLog(db, tasks)))
+    .orderBy(desc(tasks.createdAt))
+    .limit(options.limit);
+}
+
+/** What carries a tag or any tag nested under it. */
+export async function tagTargets(db: ClientDb, path: string) {
+  return db
+    .select({ targetType: entityTags.targetType, targetId: entityTags.targetId })
+    .from(entityTags)
+    .innerJoin(tags, eq(tags.id, entityTags.tagId))
+    .where(
+      and(live(entityTags), live(tags), or(eq(tags.path, path), like(tags.path, `${path}/%`))),
+    );
+}
+
+/** Entries whose original text contains `text`, ignoring case, newest first. */
+export function searchLogs(
+  db: ClientDb,
+  options: DataScope & { text: string; limit: number },
+): Promise<RawLog[]> {
+  const needle = options.text.toLowerCase();
+  return db
+    .select()
+    .from(rawLogs)
+    .where(
+      and(
+        live(rawLogs),
+        sql`instr(lower(${rawLogs.content}), ${needle}) > 0`,
+        options.includePrivate ? undefined : eq(rawLogs.privacy, 'normal'),
+      ),
+    )
+    .orderBy(desc(rawLogs.capturedAt))
+    .limit(options.limit);
+}
+
+/** Raw logs by ID, in no particular order. */
+export function logsById(
+  db: ClientDb,
+  ids: readonly string[],
+  scope: DataScope,
+): Promise<RawLog[]> {
+  if (ids.length === 0) return Promise.resolve([]);
+  return db
+    .select()
+    .from(rawLogs)
+    .where(
+      and(
+        live(rawLogs),
+        inArray(rawLogs.id, [...ids]),
+        scope.includePrivate ? undefined : eq(rawLogs.privacy, 'normal'),
+      ),
+    );
 }
 
 /** Finished tasks, most recent first. */

@@ -1,4 +1,4 @@
-import type { ClientStore, RawLog } from '@avchetan/db/sqlite';
+import type { ClientStore, DataScope, RawLog } from '@avchetan/db/sqlite';
 import { addDays, type LocalDate, localDate, type Weekday, weekdayOf } from '@avchetan/shared';
 import { parseCaptureText } from '../normalize/capture-text';
 
@@ -16,15 +16,19 @@ export type ExtractionVocabulary = {
   entityNames: string[];
 };
 
-export async function loadVocabulary(store: ClientStore): Promise<ExtractionVocabulary> {
+/** The default scope is the safe one: nothing from private entries. */
+export async function loadVocabulary(
+  store: ClientStore,
+  scope: DataScope = { includePrivate: false },
+): Promise<ExtractionVocabulary> {
   const { categories, projects, tags, entities } = store.repos;
   const [activeCategories, categoryAliases, activeProjects, tagPaths, entityNames] =
     await Promise.all([
       categories.listActive(store.db),
       categories.listMergedAliases(store.db),
       projects.listActive(store.db),
-      tags.listRecentPaths(store.db, MAX_TAGS),
-      entities.listRecentNames(store.db, MAX_ENTITIES),
+      tags.listRecentPaths(store.db, MAX_TAGS, scope),
+      entities.listRecentNames(store.db, MAX_ENTITIES, scope),
     ]);
   return {
     categories: activeCategories.map(({ id, slug, name, description }) => ({

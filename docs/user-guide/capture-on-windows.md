@@ -31,6 +31,22 @@ Open Avchetan (tray icon → **Open Avchetan**) → **Settings**.
 
 - **Time zone:** Avchetan follows Windows. Choose a zone here if your entries should use a different one. A day ends at midnight.
 
+## Ask about your entries
+
+Start with `?` and press your save key:
+
+```
+? how many workouts did I do this week
+? when did my knee hurt
+? what tasks are overdue
+```
+
+A question is never saved as an entry. The answer appears in the box with the entries it came from, numbered like `[1]`. Avchetan does the counting itself, so totals come from your data, not from a guess.
+
+Your question, and the entries needed to answer it, go to the model chosen under **Settings → AI models**. Private entries are only read by a model on your own PC. They stay out of a cloud model's answers, so those answers can leave them out.
+
+When you're offline with a cloud model, Avchetan shows a short count from your PC instead.
+
 ## See what was organized
 
 Open Avchetan (tray icon → **Open Avchetan**):

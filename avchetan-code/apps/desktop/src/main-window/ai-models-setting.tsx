@@ -1,48 +1,120 @@
-import { type LlmProvider, MODEL_PRESETS, PROVIDER_ADAPTERS } from '@avchetan/core';
+import {
+  type LlmMayCreate,
+  type LlmProvider,
+  MODEL_PRESETS,
+  PROVIDER_ADAPTERS,
+} from '@avchetan/core';
 import { toAppError } from '@avchetan/shared';
 import { useState } from 'react';
 import { HelpLink } from '../help-link';
 import {
-  useExtractionModel,
   useHasApiKey,
   useRemoveApiKey,
   useSaveModel,
+  useSlotModel,
   useTestModel,
 } from '../queries/ai-models';
+import { useMayCreate, useSetMayCreate } from '../queries/settings';
+import type { ModelSlot } from '../services/ai-models';
 
 /** Offered in this order: free and private-friendly first. */
 const PROVIDERS: readonly LlmProvider[] = ['groq', 'ollama', 'google'];
 
-const suggestedModel = (provider: LlmProvider) =>
-  MODEL_PRESETS.find((preset) => preset.provider === provider)?.extractionModel ?? '';
+const SLOTS = {
+  extraction: {
+    title: 'Organizing entries',
+    hint: 'This model turns each entry into activities, tasks and tags.',
+    after: 'Saving starts organizing your waiting entries with this model.',
+    presetField: 'extractionModel',
+  },
+  analysis: {
+    title: 'Answering questions',
+    hint: 'This model answers when you type ? in the capture box. Until you choose one, the model above answers.',
+    after: 'Questions go to this model, along with the entries it needs to answer them.',
+    presetField: 'analysisModel',
+  },
+} as const;
+
+const suggestedModel = (provider: LlmProvider, slot: ModelSlot) =>
+  MODEL_PRESETS.find((preset) => preset.provider === provider)?.[SLOTS[slot].presetField] ?? '';
 
 const fieldClass = 'rounded-lg border border-line bg-surface-raised px-3 py-1.5 text-sm';
 
 export function AiModelsSetting() {
-  const saved = useExtractionModel();
+  return (
+    <section className="flex flex-col gap-5">
+      <h2 className="font-medium">AI models</h2>
+      <SlotSetting slot="extraction" />
+      <SlotSetting slot="analysis" />
+      <NewCategoriesSetting />
+    </section>
+  );
+}
+
+function SlotSetting({ slot }: { slot: ModelSlot }) {
+  const saved = useSlotModel(slot);
   // Remounts once loaded, so the form starts from the saved model.
   return saved.isSuccess ? (
     <AiModelsForm
       key={`${saved.data?.provider}:${saved.data?.model}`}
+      slot={slot}
       savedProvider={saved.data?.provider}
       savedModel={saved.data?.model}
     />
   ) : null;
 }
 
+const MAY_CREATE_OPTIONS: { value: LlmMayCreate; label: string }[] = [
+  { value: 'auto', label: 'Add it, and mark it New for me to review' },
+  { value: 'suggest', label: 'Use Other, and keep it as a suggestion' },
+  { value: 'off', label: 'Use Other' },
+];
+
+function NewCategoriesSetting() {
+  const current = useMayCreate();
+  const change = useSetMayCreate();
+  const selected = change.isPending ? change.variables : current.data;
+
+  return (
+    <fieldset className="flex flex-col gap-2">
+      <legend className="pb-1 text-sm font-medium">When no category fits an entry</legend>
+      {MAY_CREATE_OPTIONS.map((option) => (
+        <label key={option.value} className="flex items-center gap-2 text-sm">
+          <input
+            type="radio"
+            name="may-create"
+            value={option.value}
+            checked={selected === option.value}
+            disabled={!current.isSuccess}
+            onChange={() => change.mutate(option.value)}
+          />
+          {option.label}
+        </label>
+      ))}
+      {change.isError ? (
+        <p role="alert" className="text-sm text-danger">
+          Couldn't save this setting. Try again. <HelpLink code={toAppError(change.error).code} />
+        </p>
+      ) : null}
+    </fieldset>
+  );
+}
+
 function AiModelsForm(props: {
+  slot: ModelSlot;
   savedProvider: LlmProvider | undefined;
   savedModel: string | undefined;
 }) {
   const [provider, setProvider] = useState<LlmProvider>(props.savedProvider ?? 'groq');
-  const [model, setModel] = useState(props.savedModel ?? suggestedModel(provider));
+  const [model, setModel] = useState(props.savedModel ?? suggestedModel(provider, props.slot));
   const [apiKey, setApiKey] = useState('');
   const adapter = PROVIDER_ADAPTERS[provider];
+  const details = SLOTS[props.slot];
 
   const hasKey = useHasApiKey(provider);
   const removeKey = useRemoveApiKey(provider);
   const test = useTestModel();
-  const save = useSaveModel();
+  const save = useSaveModel(props.slot);
 
   const draft = { config: { provider, model: model.trim() }, apiKey };
   const needsKey = adapter.requiresApiKey && !hasKey.data && !apiKey.trim();
@@ -59,7 +131,9 @@ function AiModelsForm(props: {
   function chooseProvider(next: LlmProvider) {
     reset();
     setProvider(next);
-    setModel(next === props.savedProvider ? (props.savedModel ?? '') : suggestedModel(next));
+    setModel(
+      next === props.savedProvider ? (props.savedModel ?? '') : suggestedModel(next, props.slot),
+    );
     setApiKey('');
   }
 
@@ -67,11 +141,11 @@ function AiModelsForm(props: {
   const failedCode = failure ? toAppError(failure).code : null;
 
   return (
-    <section className="flex flex-col gap-3">
-      <h2 className="font-medium">AI models</h2>
-      <p className="text-sm text-ink-muted">
-        This model turns each entry into activities, tasks and tags.
-      </p>
+    <div className="flex flex-col gap-3">
+      <div>
+        <h3 className="text-sm font-medium">{details.title}</h3>
+        <p className="text-sm text-ink-muted">{details.hint}</p>
+      </div>
 
       <label className="flex flex-col gap-1 text-sm">
         Provider
@@ -92,7 +166,7 @@ function AiModelsForm(props: {
         Model
         <input
           className={fieldClass}
-          list="model-suggestions"
+          list={`model-suggestions-${props.slot}`}
           value={model}
           onChange={(event) => {
             reset();
@@ -100,9 +174,9 @@ function AiModelsForm(props: {
           }}
           spellCheck={false}
         />
-        <datalist id="model-suggestions">
+        <datalist id={`model-suggestions-${props.slot}`}>
           {MODEL_PRESETS.filter((preset) => preset.provider === provider).map((preset) => (
-            <option key={preset.id} value={preset.extractionModel}>
+            <option key={preset.id} value={preset[details.presetField]}>
               {preset.label}
             </option>
           ))}
@@ -176,9 +250,7 @@ function AiModelsForm(props: {
         ) : null}
       </div>
 
-      <p className="text-sm text-ink-muted">
-        Saving starts organizing your waiting entries with this model.
-      </p>
+      <p className="text-sm text-ink-muted">{details.after}</p>
 
       {test.isSuccess ? (
         <p role="status" className="text-sm">
@@ -195,6 +267,6 @@ function AiModelsForm(props: {
           {toAppError(failure).message}. <HelpLink code={failedCode} />
         </p>
       ) : null}
-    </section>
+    </div>
   );
 }

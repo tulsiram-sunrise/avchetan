@@ -1,3 +1,5 @@
+import { LLM_MAY_CREATE_SETTING, type LlmMayCreate, llmMayCreateSchema } from '@avchetan/core';
+import { getSetting, setSetting } from '@avchetan/db/sqlite';
 import { createLogger } from '@avchetan/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { emitAppEvent } from '../native/events';
@@ -9,6 +11,31 @@ const log = createLogger('queries');
 
 /** Keyed by the `settings` table so a change in one window refreshes the other. */
 const submitKeyQuery = ['settings', 'dock.submitKey'] as const;
+
+const mayCreateQuery = ['settings', LLM_MAY_CREATE_SETTING] as const;
+
+export function useMayCreate() {
+  const { store } = useServices();
+  return useQuery({
+    queryKey: mayCreateQuery,
+    queryFn: async () => {
+      const parsed = llmMayCreateSchema.safeParse(
+        await getSetting(store.db, LLM_MAY_CREATE_SETTING),
+      );
+      return parsed.success ? parsed.data : 'auto';
+    },
+  });
+}
+
+export function useSetMayCreate() {
+  const { store } = useServices();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (value: LlmMayCreate) =>
+      store.write((tx) => setSetting(tx, LLM_MAY_CREATE_SETTING, value, store.clock.now())),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: mayCreateQuery }),
+  });
+}
 
 const timeZoneQuery = ['settings', 'general.timezone'] as const;
 

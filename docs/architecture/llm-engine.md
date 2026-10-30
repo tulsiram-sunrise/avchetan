@@ -76,11 +76,14 @@ Read-only tools (Zod-defined in `packages/core/src/analysis/tools/`, implementat
 | `streaks` | `category?` / `tag?` | local SQL |
 | `search_history` | `query`, `from?`, `to?`, `category?`, `limit ≤ 15` | server `/v1/search` (semantic); returns `unavailable` offline |
 | `query_entities` / `query_commitments` | `name`, `kind?` | local SQL (Phase 7) |
-| `get_logs` | `ids[]` | local SQL — fetch full text for citation |
+| `search_entries` | `text`, `from?`, `to?`, `limit` | local SQL — keyword search over the original text, including entries that were never organized |
+| `get_logs` | `refs[]` | local SQL — fetch full text for citation |
 
 Rules:
 - Tool results are compact JSON (IDs, dates, titles, metrics, truncated text ≤ 500 chars) to keep context small.
-- The system prompt requires citing log IDs; the UI renders them as links.
+- Tool results number each source entry and the system prompt requires citing those numbers, like `[3]`: shorter than IDs, and an invented number simply matches nothing. The UI lists the cited entries under the answer.
+- **Private entries:** tools read with `includePrivate` only when the model is `local`, so nothing from a `!private` entry reaches a cloud model through a tool. The same scope applies to the extraction vocabulary: a `#tag` or name known only from private entries isn't sent either.
+- The arithmetic is done in `analysis/compute.ts`, never by the model.
 - Analysis tools are **read-only**. Writes happen only through Command mode with user confirmation.
 - When offline and the analysis slot is a cloud model: Ask shows "offline — showing local stats" and runs a deterministic fallback (basic SQL summary) where possible.
 
