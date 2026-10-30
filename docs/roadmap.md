@@ -56,7 +56,7 @@ Scope:
 
 ## Phase 3 — LLM engine, extraction & organization (desktop)
 
-**Progress:** steps 1–3 done (provider adapters for Groq, Ollama and Gemini, paid providers deferred, [ADR-0020](decisions/0020-free-first-provider-adapters.md); extraction prompt, normalizers and apply; pending processor). Step 4 in part: **Settings → AI models** sets the provider, key and organizing model, with a Test button, checked in the real app; the Ask model and timezone are still to do. Live-checked with made-up entries on 2026-10-30: on Groq (about 2,500 tokens per entry) and on Ollama with `granite4.2:8b` on a CPU (7–64 s per entry, weaker on metrics and entities).
+**Progress:** steps 1–3 done (provider adapters for Groq, Ollama and Gemini, paid providers deferred, [ADR-0020](decisions/0020-free-first-provider-adapters.md); extraction prompt, normalizers and apply; pending processor). Steps 4–5 done and checked in the real app, except the Ask model slot and the `llmMayCreate` setting, which come with step 6, and a monthly token view. Live-checked with made-up entries on 2026-10-30: on Groq (about 2,500 tokens per entry) and on Ollama with `granite4.2:8b` on a CPU (7–64 s per entry, weaker on metrics and entities).
 
 Scope:
 1. `packages/core`: provider adapters and registry (groq, ollama, google), slot config, `presets.json`, `generateStructured` wrapper, error taxonomy, `llm_runs` recording.
