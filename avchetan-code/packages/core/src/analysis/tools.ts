@@ -121,7 +121,7 @@ export function createAnalysisTools(
       description: 'List the category slugs. Call this before filtering by category.',
       inputSchema: z.object({}),
       execute: async () => {
-        const categories = await repos.categories.listActive(db);
+        const categories = await repos.categories.listActive(db, scope);
         return categories.map(({ slug, name }) => ({ slug, name }));
       },
     }),

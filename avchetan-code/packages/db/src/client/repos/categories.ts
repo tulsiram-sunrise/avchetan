@@ -3,6 +3,7 @@ import { and, asc, eq, isNotNull, isNull, ne } from 'drizzle-orm';
 import type { CategoryOrigin } from '../../schema/enums';
 import { categories } from '../../schema/sqlite/tables';
 import type { ClientDb, Tx } from '../database';
+import { type DataScope, shareableCategory } from '../privacy';
 import {
   ensureSynced,
   getById,
@@ -77,12 +78,17 @@ export function categoriesRepo(deps: RepoDeps) {
     getById: (db: ClientDb, id: string) => getById(db, categories, id),
 
     /** Active (not archived, not merged) categories, oldest first. */
-    listActive(db: ClientDb): Promise<Category[]> {
+    listActive(db: ClientDb, scope: DataScope = { includePrivate: true }): Promise<Category[]> {
       return db
         .select()
         .from(categories)
         .where(
-          and(live(categories), isNull(categories.archivedAt), isNull(categories.mergedIntoId)),
+          and(
+            live(categories),
+            isNull(categories.archivedAt),
+            isNull(categories.mergedIntoId),
+            scope.includePrivate ? undefined : shareableCategory(db),
+          ),
         )
         .orderBy(asc(categories.createdAt));
     },

@@ -15,7 +15,7 @@ import {
   sql,
 } from 'drizzle-orm';
 import type { RawLogStatus } from '../schema/enums';
-import { activities, entityTags, rawLogs, tags, tasks } from '../schema/sqlite/tables';
+import { activities, entityTags, llmRuns, rawLogs, tags, tasks } from '../schema/sqlite/tables';
 import type { ClientDb } from './database';
 import { type DataScope, notFromPrivateLog } from './privacy';
 import type { Activity } from './repos/activities';
@@ -184,6 +184,21 @@ export function logsById(
         scope.includePrivate ? undefined : eq(rawLogs.privacy, 'normal'),
       ),
     );
+}
+
+/** Model calls and tokens per provider since an instant, for the usage summary. */
+export function llmUsageSince(db: ClientDb, since: string) {
+  return db
+    .select({
+      provider: llmRuns.provider,
+      calls: count(),
+      inputTokens: sql<number>`coalesce(sum(${llmRuns.inputTokens}), 0)`,
+      outputTokens: sql<number>`coalesce(sum(${llmRuns.outputTokens}), 0)`,
+    })
+    .from(llmRuns)
+    .where(gte(llmRuns.createdAt, since))
+    .groupBy(llmRuns.provider)
+    .orderBy(asc(llmRuns.provider));
 }
 
 /** Finished tasks, most recent first. */

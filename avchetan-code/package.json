@@ -16,6 +16,7 @@
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
     "db:generate": "pnpm --filter @avchetan/db db:generate",
+    "eval:extraction": "pnpm --filter @avchetan/core eval:extraction",
     "check": "pnpm lint && pnpm typecheck && pnpm test",
     "prepare": "lefthook install",
     "licenses:check": "node tooling/scripts/check-licenses.ts",

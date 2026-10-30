@@ -1,11 +1,15 @@
 import type { ClientStore, ExtractionPlan, RawLog } from '@avchetan/db/sqlite';
-import { generateStructured, type LlmDeps } from '../llm/generate-structured';
+import {
+  generateStructured,
+  type LlmDeps,
+  type StructuredRequest,
+} from '../llm/generate-structured';
 import * as prompt from '../prompts/extraction.v1';
 import type { ModelConfig } from '../providers/config';
 import { PROVIDER_ADAPTERS } from '../providers/registry';
 import { buildExtractionInput, type ExtractionVocabulary } from './input';
 import { type LlmMayCreate, normalizeExtraction } from './normalize';
-import { extractionResultSchema } from './schema';
+import { type ExtractionResult, extractionResultSchema } from './schema';
 
 export const EXTRACTION_PROMPT_VERSION = prompt.version;
 
@@ -35,6 +39,22 @@ const emptyPlan = (rawLog: RawLog): ExtractionPlan => ({
   categorySuggestion: null,
 });
 
+/** The model call for one log. The eval uses this directly, to see the raw answer. */
+export function extractionRequest(
+  rawLog: RawLog,
+  models: readonly ModelConfig[],
+  vocabulary: ExtractionVocabulary,
+): StructuredRequest<ExtractionResult> {
+  return {
+    purpose: 'extraction',
+    rawLogId: rawLog.id,
+    models,
+    schema: extractionResultSchema,
+    system: prompt.system,
+    prompt: prompt.buildUser(buildExtractionInput(rawLog, vocabulary)),
+  };
+}
+
 /** Runs the model and normalizes its answer. Writes nothing, except the `llm_runs` audit. */
 export async function extractRawLog(
   rawLog: RawLog,
@@ -45,14 +65,7 @@ export async function extractRawLog(
   if (rawLog.privacy !== 'normal' && allowed.length === 0) return emptyPlan(rawLog);
 
   const { output, provider, model } = await generateStructured(
-    {
-      purpose: 'extraction',
-      rawLogId: rawLog.id,
-      models: allowed,
-      schema: extractionResultSchema,
-      system: prompt.system,
-      prompt: prompt.buildUser(buildExtractionInput(rawLog, vocabulary)),
-    },
+    extractionRequest(rawLog, allowed, vocabulary),
     llm,
   );
   return normalizeExtraction(output, {

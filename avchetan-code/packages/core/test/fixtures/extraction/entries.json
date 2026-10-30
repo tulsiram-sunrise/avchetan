@@ -1,0 +1,549 @@
+[
+  {
+    "id": "workout-run",
+    "text": "cycled 12 km this morning in 35 minutes",
+    "at": "2026-03-04T03:30:00.000Z",
+    "expect": {
+      "activities": [
+        {
+          "category": "workout",
+          "date": "2026-03-04",
+          "metrics": {
+            "distance_km": 12,
+            "duration_min": 35
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "workout-strength",
+    "text": "bench 80kg 3x5, squat 100kg 5x5, felt strong",
+    "at": "2026-03-04T12:30:00.000Z",
+    "expect": {
+      "activities": [
+        {
+          "category": "workout",
+          "date": "2026-03-04",
+          "exercises": ["bench", "squat"]
+        }
+      ]
+    }
+  },
+  {
+    "id": "workout-yesterday",
+    "text": "yesterday did 45 minutes of yoga",
+    "at": "2026-03-04T03:30:00.000Z",
+    "expect": {
+      "activities": [
+        {
+          "category": "workout",
+          "date": "2026-03-03",
+          "metrics": {
+            "duration_min": 45
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "workout-miles",
+    "text": "walked 2 miles after dinner",
+    "at": "2026-03-04T15:00:00.000Z",
+    "expect": {
+      "activities": [
+        {
+          "category": "workout",
+          "date": "2026-03-04",
+          "metrics": {
+            "distance_km": 3.22
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "workout-hours",
+    "text": "played badminton for 1.5 hours with Arjun",
+    "at": "2026-03-04T13:00:00.000Z",
+    "expect": {
+      "activities": [
+        {
+          "category": "workout",
+          "date": "2026-03-04",
+          "metrics": {
+            "duration_min": 90
+          }
+        }
+      ],
+      "entities": ["Arjun"]
+    }
+  },
+  {
+    "id": "workout-hindi",
+    "text": "aaj subah 30 minute yoga kiya",
+    "at": "2026-03-04T03:30:00.000Z",
+    "expect": {
+      "activities": [
+        {
+          "category": "workout",
+          "date": "2026-03-04",
+          "metrics": {
+            "duration_min": 30
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "workout-steps",
+    "text": "hit 12000 steps today",
+    "at": "2026-03-04T15:30:00.000Z",
+    "expect": {
+      "activities": [
+        {
+          "category": ["workout", "health"],
+          "date": "2026-03-04",
+          "metrics": {
+            "steps": 12000
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "diet-lunch",
+    "text": "lunch was dal rice and salad",
+    "at": "2026-03-04T08:00:00.000Z",
+    "expect": {
+      "activities": [
+        {
+          "category": "diet",
+          "date": "2026-03-04",
+          "metrics": {
+            "meal": "lunch"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "diet-macros",
+    "text": "breakfast: oats with 30g protein, about 450 kcal",
+    "at": "2026-03-04T03:00:00.000Z",
+    "expect": {
+      "activities": [
+        {
+          "category": "diet",
+          "metrics": {
+            "meal": "breakfast",
+            "protein_g": 30,
+            "calories_kcal": 450
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "diet-water",
+    "text": "drank 2 litres of water today",
+    "at": "2026-03-04T15:00:00.000Z",
+    "expect": {
+      "activities": [
+        {
+          "category": ["diet", "health"],
+          "metrics": {
+            "water_ml": 2000
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "diet-with-person",
+    "text": "dinner with Kavya at Blue Door, had pasta",
+    "at": "2026-03-04T15:00:00.000Z",
+    "expect": {
+      "activities": [
+        {
+          "category": "diet",
+          "metrics": {
+            "meal": "dinner"
+          }
+        }
+      ],
+      "entities": ["Kavya", "Blue Door"]
+    }
+  },
+  {
+    "id": "diet-hindi",
+    "text": "raat ko khichdi khayi",
+    "at": "2026-03-04T16:30:00.000Z",
+    "expect": {
+      "activities": [
+        {
+          "category": "diet",
+          "date": "2026-03-04"
+        }
+      ]
+    }
+  },
+  {
+    "id": "health-sleep",
+    "text": "slept 6.5 hours last night",
+    "at": "2026-03-04T02:30:00.000Z",
+    "expect": {
+      "activities": [
+        {
+          "category": "health",
+          "metrics": {
+            "sleep_h": 6.5
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "health-pain",
+    "text": "right shoulder pain, about a 6 out of 10",
+    "at": "2026-03-04T10:00:00.000Z",
+    "expect": {
+      "activities": [
+        {
+          "category": "health",
+          "metrics": {
+            "pain": 6
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "health-weight",
+    "text": "weighed in at 74.5 kg this morning",
+    "at": "2026-03-04T02:30:00.000Z",
+    "expect": {
+      "activities": [
+        {
+          "category": "health",
+          "date": "2026-03-04",
+          "metrics": {
+            "weight_body_kg": 74.5
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "health-medicine-task",
+    "text": "took the antibiotic, need to refill the prescription by Friday",
+    "at": "2026-03-04T04:00:00.000Z",
+    "expect": {
+      "activities": [
+        {
+          "category": "health"
+        }
+      ],
+      "tasks": [
+        {
+          "dueDate": "2026-03-06",
+          "titleHas": "prescription"
+        }
+      ]
+    }
+  },
+  {
+    "id": "work-deep",
+    "text": "2 hours of deep work on the quarterly report",
+    "at": "2026-03-04T09:00:00.000Z",
+    "expect": {
+      "activities": [
+        {
+          "category": "work",
+          "metrics": {
+            "deep_work_min": 120
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "work-meeting",
+    "text": "had a design review with Neha and Omar",
+    "at": "2026-03-04T10:30:00.000Z",
+    "expect": {
+      "activities": [
+        {
+          "category": "work",
+          "date": "2026-03-04"
+        }
+      ],
+      "entities": ["Neha", "Omar"]
+    }
+  },
+  {
+    "id": "work-project",
+    "text": "finished the tile layout plan for the home renovation",
+    "at": "2026-03-04T11:00:00.000Z",
+    "expect": {
+      "activities": [
+        {
+          "project": "Home Renovation"
+        }
+      ]
+    }
+  },
+  {
+    "id": "work-task-tomorrow",
+    "text": "send the invoice to Rahul tomorrow",
+    "at": "2026-03-04T11:00:00.000Z",
+    "expect": {
+      "tasks": [
+        {
+          "dueDate": "2026-03-05",
+          "titleHas": "invoice"
+        }
+      ],
+      "entities": ["Rahul"]
+    }
+  },
+  {
+    "id": "reflect-gratitude",
+    "text": "grateful for a quiet evening at home, feeling calm",
+    "at": "2026-03-04T16:00:00.000Z",
+    "expect": {
+      "activities": [
+        {
+          "category": "reflection"
+        }
+      ]
+    }
+  },
+  {
+    "id": "reflect-mood",
+    "text": "felt really anxious all afternoon, not sure why",
+    "at": "2026-03-04T12:00:00.000Z",
+    "expect": {
+      "activities": [
+        {
+          "category": ["reflection", "health"]
+        }
+      ]
+    }
+  },
+  {
+    "id": "reflect-hindi",
+    "text": "aaj mann bahut khush tha",
+    "at": "2026-03-04T15:00:00.000Z",
+    "expect": {
+      "activities": [
+        {
+          "category": "reflection"
+        }
+      ]
+    }
+  },
+  {
+    "id": "task-next-monday",
+    "text": "renew the car insurance by Monday",
+    "at": "2026-03-04T05:00:00.000Z",
+    "expect": {
+      "tasks": [
+        {
+          "dueDate": "2026-03-09",
+          "titleHas": "insurance"
+        }
+      ]
+    }
+  },
+  {
+    "id": "task-no-date",
+    "text": "need to call the plumber sometime",
+    "at": "2026-03-04T05:00:00.000Z",
+    "expect": {
+      "tasks": [
+        {
+          "dueDate": null,
+          "titleHas": "plumber"
+        }
+      ]
+    }
+  },
+  {
+    "id": "task-two",
+    "text": "buy milk tomorrow and pay the electricity bill by Saturday",
+    "at": "2026-03-04T05:00:00.000Z",
+    "expect": {
+      "tasks": [
+        {
+          "dueDate": "2026-03-05",
+          "titleHas": "milk"
+        },
+        {
+          "dueDate": "2026-03-07",
+          "titleHas": "electricity"
+        }
+      ]
+    }
+  },
+  {
+    "id": "task-hindi-kal",
+    "text": "kal bank jana hai",
+    "at": "2026-03-04T05:00:00.000Z",
+    "expect": {
+      "tasks": [
+        {
+          "dueDate": "2026-03-05",
+          "titleHas": "bank"
+        }
+      ]
+    }
+  },
+  {
+    "id": "task-owed",
+    "text": "I owe Vikram 500 for the movie tickets",
+    "at": "2026-03-04T15:00:00.000Z",
+    "expect": {
+      "tasks": [
+        {
+          "titleHas": "Vikram"
+        }
+      ],
+      "entities": ["Vikram"]
+    }
+  },
+  {
+    "id": "multi-activity-task",
+    "text": "coffee with Tara at Roast House, need to mail her the contract by Tuesday",
+    "at": "2026-03-04T08:30:00.000Z",
+    "expect": {
+      "activities": [
+        {
+          "category": ["diet", "other"],
+          "date": "2026-03-04"
+        }
+      ],
+      "tasks": [
+        {
+          "dueDate": "2026-03-10",
+          "titleHas": "contract"
+        }
+      ],
+      "entities": ["Tara", "Roast House"]
+    }
+  },
+  {
+    "id": "multi-two-activities",
+    "text": "gym for an hour then a protein shake with 25g protein",
+    "at": "2026-03-04T12:00:00.000Z",
+    "expect": {
+      "activities": [
+        {
+          "category": "workout",
+          "metrics": {
+            "duration_min": 60
+          }
+        },
+        {
+          "category": "diet",
+          "metrics": {
+            "protein_g": 25
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "multi-past-and-future",
+    "text": "ran 3k yesterday, will run 5k on Sunday",
+    "at": "2026-03-04T05:00:00.000Z",
+    "expect": {
+      "activities": [
+        {
+          "category": "workout",
+          "date": "2026-03-03",
+          "metrics": {
+            "distance_km": 3
+          }
+        }
+      ],
+      "tasks": [
+        {
+          "dueDate": "2026-03-08"
+        }
+      ]
+    }
+  },
+  {
+    "id": "new-category-music",
+    "text": "learned a new tabla rhythm for 40 minutes, my teacher was pleased",
+    "at": "2026-03-04T13:00:00.000Z",
+    "expect": {
+      "activities": [
+        {
+          "category": "new",
+          "metrics": {
+            "duration_min": 40
+          }
+        }
+      ],
+      "newCategory": true
+    }
+  },
+  {
+    "id": "new-category-garden",
+    "text": "repotted the tomato plants and watered the garden",
+    "at": "2026-03-04T11:00:00.000Z",
+    "expect": {
+      "activities": [
+        {
+          "category": ["new", "other"]
+        }
+      ]
+    }
+  },
+  {
+    "id": "tag-reuse",
+    "text": "knee was sore on the stairs",
+    "at": "2026-03-04T10:00:00.000Z",
+    "expect": {
+      "activities": [
+        {
+          "category": "health"
+        }
+      ],
+      "tags": ["health/knee"]
+    }
+  },
+  {
+    "id": "explicit-tag",
+    "text": "ran 4k along the river #fitness",
+    "at": "2026-03-04T03:00:00.000Z",
+    "expect": {
+      "activities": [
+        {
+          "category": "workout",
+          "metrics": {
+            "distance_km": 4
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "skip-noise",
+    "text": "qwerty zzz",
+    "at": "2026-03-04T10:00:00.000Z",
+    "expect": {
+      "skip": true
+    }
+  },
+  {
+    "id": "skip-empty-ish",
+    "text": "...",
+    "at": "2026-03-04T10:00:00.000Z",
+    "expect": {
+      "skip": true
+    }
+  }
+]

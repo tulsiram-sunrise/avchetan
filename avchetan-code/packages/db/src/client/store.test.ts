@@ -50,6 +50,30 @@ describe('openClientStore', () => {
     expect(await ids(a)).toEqual(await ids(b));
   });
 
+  it('sums model usage per provider from a given time', async () => {
+    const { store, advance } = await openTestStore();
+    const run = (provider: string, inputTokens: number | null) =>
+      store.recordLlmRun({
+        purpose: 'extraction',
+        provider,
+        model: 'test-model',
+        inputTokens,
+        outputTokens: 5,
+        ok: true,
+      });
+    await run('groq', 100);
+    advance(60_000);
+    const since = store.clock.now();
+    await run('groq', 10);
+    await run('groq', null);
+    await run('ollama', 20);
+
+    expect(await store.queries.llmUsageSince(store.db, since)).toEqual([
+      { provider: 'groq', calls: 2, inputTokens: 10, outputTokens: 10 },
+      { provider: 'ollama', calls: 1, inputTokens: 20, outputTokens: 5 },
+    ]);
+  });
+
   it('records llm runs locally without enqueueing them for sync', async () => {
     const { store } = await openTestStore();
     const outboxBefore = (await store.db.select().from(syncOutbox)).length;

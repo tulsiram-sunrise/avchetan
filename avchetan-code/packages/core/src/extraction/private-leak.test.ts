@@ -56,6 +56,48 @@ describe('vocabulary sent to a cloud model', () => {
     expect((await loadVocabulary(store)).entityNames).toEqual(['Open Person']);
   });
 
+  describe('categories the AI created', () => {
+    const useIn = async (rawLogId: string, categoryId: string) =>
+      store.write((tx) =>
+        store.repos.activities.create(tx, {
+          categoryId,
+          title: 'Something',
+          loggedDate: '2026-10-26',
+          rawLogId,
+        }),
+      );
+    const slugs = async () =>
+      (await loadVocabulary(store)).categories.map((category) => category.slug);
+
+    it('stay hidden while only private entries use them', async () => {
+      const secret = await capture('a secret !private');
+      const created = await store.write((tx) =>
+        store.repos.categories.create(tx, { name: 'Therapy', origin: 'llm', needsReview: true }),
+      );
+      await useIn(secret.id, created.id);
+
+      expect(await slugs()).not.toContain('therapy');
+    });
+
+    it('appear once a normal entry uses them', async () => {
+      const normal = await capture('a normal day');
+      const created = await store.write((tx) =>
+        store.repos.categories.create(tx, { name: 'Pottery', origin: 'llm', needsReview: true }),
+      );
+      await useIn(normal.id, created.id);
+
+      expect(await slugs()).toContain('pottery');
+    });
+
+    it('never hide the default categories or the user’s own', async () => {
+      await store.write((tx) =>
+        store.repos.categories.create(tx, { name: 'Mine', origin: 'user' }),
+      );
+
+      expect(await slugs()).toEqual(expect.arrayContaining(['workout', 'other', 'mine']));
+    });
+  });
+
   it('is the default when no scope is given', async () => {
     await capture('a secret #therapy !private');
 

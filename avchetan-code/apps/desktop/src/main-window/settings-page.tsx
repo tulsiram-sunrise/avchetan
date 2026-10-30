@@ -13,11 +13,13 @@ import { changeHotkey } from '../services/hotkey';
 import type { SubmitKey } from '../services/submit-key';
 import { useServices } from '../services-context';
 import { AiModelsSetting } from './ai-models-setting';
+import { UsageSetting } from './usage-setting';
 
 export function SettingsPage() {
   return (
     <div className="flex max-w-xl flex-col gap-6">
       <AiModelsSetting />
+      <UsageSetting />
       <ShortcutSetting />
       <SubmitKeySetting />
       <TimeZoneSetting />

@@ -24,7 +24,7 @@ export async function loadVocabulary(
   const { categories, projects, tags, entities } = store.repos;
   const [activeCategories, categoryAliases, activeProjects, tagPaths, entityNames] =
     await Promise.all([
-      categories.listActive(store.db),
+      categories.listActive(store.db, scope),
       categories.listMergedAliases(store.db),
       projects.listActive(store.db),
       tags.listRecentPaths(store.db, MAX_TAGS, scope),

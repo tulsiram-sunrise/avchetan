@@ -1,3 +1,4 @@
+import { localDate } from '@avchetan/shared';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import type { ActionArgs, ActionName } from '../services/actions';
 import { useServices } from '../services-context';
@@ -79,6 +80,18 @@ export function useTags() {
         store.repos.tags.usage(store.db),
       ]);
       return tags.map((tag) => ({ ...tag, uses: usage.get(tag.id) ?? 0 }));
+    },
+  });
+}
+
+/** Keyed by `raw_logs`: each organized entry refreshes it. */
+export function useMonthlyUsage() {
+  const { store, timeZone } = useServices();
+  return useQuery({
+    queryKey: ['raw_logs', 'llm_usage'],
+    queryFn: () => {
+      const month = localDate(new Date().toISOString(), timeZone.current()).slice(0, 7);
+      return store.queries.llmUsageSince(store.db, `${month}-01T00:00:00.000Z`);
     },
   });
 }

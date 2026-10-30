@@ -56,7 +56,7 @@ Scope:
 
 ## Phase 3 — LLM engine, extraction & organization (desktop)
 
-**Progress:** steps 1–3 done (provider adapters for Groq, Ollama and Gemini, paid providers deferred, [ADR-0020](decisions/0020-free-first-provider-adapters.md); extraction prompt, normalizers and apply; pending processor). Steps 4–6 done and checked in the real app (Ask mode with local tools, citations and private entries kept from cloud models). Still to do in step 4: a monthly token view. Live-checked with made-up entries on 2026-10-30: on Groq (about 2,500 tokens per entry) and on Ollama with `granite4.2:8b` on a CPU (7–64 s per entry, weaker on metrics and entities).
+**Progress:** steps 1–3 done (provider adapters for Groq, Ollama and Gemini, paid providers deferred, [ADR-0020](decisions/0020-free-first-provider-adapters.md); extraction prompt, normalizers and apply; pending processor). Steps 4–6 done and checked in the real app (Ask mode with local tools, citations and private entries kept from cloud models). Step 8: 37 fixtures, `pnpm eval:extraction`, and CI replay of recorded answers. Open against the done-when list: Groq's re-run after the last prompt changes, and Ollama at about 70% against the 90% target. Live-checked with made-up entries on 2026-10-30: on Groq (about 2,500 tokens per entry) and on Ollama with `granite4.2:8b` on a CPU (7–64 s per entry, weaker on metrics and entities).
 
 Scope:
 1. `packages/core`: provider adapters and registry (groq, ollama, google), slot config, `presets.json`, `generateStructured` wrapper, error taxonomy, `llm_runs` recording.

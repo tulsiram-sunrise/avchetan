@@ -140,5 +140,6 @@ The server then runs extraction and applies the result exactly like a client, bu
 
 ## 8. Quality
 
-- Fixture suite `packages/core/test/fixtures/extraction/*.json`: input text + date context → expected result (tolerant matcher: categories, counts, key metrics, due dates, tags ⊇ expected).
-- `pnpm eval:extraction --slot extraction` runs fixtures against a real configured model (manual, not CI) and prints accuracy per provider/model — used when choosing default presets.
+- Fixture suite `packages/core/test/fixtures/extraction/entries.json`: input text + capture time → expected result (tolerant matcher: categories, counts, key metrics, due dates, tags ⊇ expected). Fixtures must not repeat the prompt's few-shot examples, or the score measures copying.
+- `pnpm eval:extraction` runs fixtures against a real model (manual, not CI) and prints accuracy. Choose with `LLM_EVAL_PROVIDER` and `LLM_EVAL_MODEL`. A full run on Groq's free tier takes about 13 minutes and much of a day's tokens, so plan for one run a day.
+- `LLM_EVAL_RECORD=1` saves the answers that passed to `recorded.json`. CI replays them through the real pipeline with the mock model, so a normalizer or schema change that breaks a known-good answer fails without any network. Replays say nothing about model quality.
