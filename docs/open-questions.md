@@ -17,7 +17,7 @@ Questions not yet decided. When answered: record the answer here (or in an ADR i
 | Q11 | Daily brief time and whether to also send a morning plan (today's tasks + yesterday's rollovers). | 21:00 brief; morning plan as Phase 6 stretch | Phase 6 |
 | Q20 | Publish the Android app on the Play Store, or GitHub Releases (APK) only? | APK only at first | Public release |
 | Q21 | Desktop: when the main window starts editing (task done, corrections), should its writes go through the dock webview so one monotonic clock issues all timestamps? Each window currently has its own clock over the shared `clock_last` ([ADR-0019](decisions/0019-desktop-sqlite-own-commands.md)). | Route writes through the dock via an event/command | Phase 3 |
-| Q22 | Ollama's OpenAI-compatible `/v1` endpoint can't set `num_ctx` per request. Does the extraction prompt with its vocabulary fit the default context, or is a setting or a native Ollama client needed? | Measure once Ollama is set up | Phase 3 end |
+| Q22 | Ollama's OpenAI-compatible `/v1` endpoint can't set `num_ctx` per request. Does the extraction prompt with its vocabulary fit the default context, or is a setting or a native Ollama client needed? | Fits for now: 1,530 prompt tokens with an empty vocabulary against a default of 4,096 (CPU, granite4.2:8b). Re-measure with a full vocabulary | Phase 3 end |
 
 ## Resolved
 

@@ -21,6 +21,9 @@ const DEFAULT_TIMEOUT_MS: Record<LlmPurpose, number> = {
   transcription: 90_000,
 };
 
+/** A local model may have to load first, and may be running on a CPU. */
+const LOCAL_TIMEOUT_MS = 180_000;
+
 /** One model call for the audit trail. Never holds prompts or answers. */
 export type LlmRun = {
   rawLogId: string | null;
@@ -102,7 +105,9 @@ async function callModel<T>(
       temperature: config.temperature ?? 0,
       // Retries belong to the pending processor, which counts attempts and backs off.
       maxRetries: 0,
-      timeout: config.timeoutMs ?? DEFAULT_TIMEOUT_MS[request.purpose],
+      timeout:
+        config.timeoutMs ??
+        (adapter.local ? LOCAL_TIMEOUT_MS : DEFAULT_TIMEOUT_MS[request.purpose]),
       ...(adapter.structuredOptions ? { providerOptions: adapter.structuredOptions } : {}),
     });
     const output = result.output as T;

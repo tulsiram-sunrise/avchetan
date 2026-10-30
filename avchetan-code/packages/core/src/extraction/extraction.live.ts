@@ -3,7 +3,7 @@ import { MemorySecretStore } from '@avchetan/shared/testing';
 import { describe, expect, it } from 'vitest';
 import type { LlmRun } from '../llm/generate-structured';
 import { MODEL_PRESETS } from '../models/presets';
-import type { ModelConfig } from '../providers/config';
+import type { LlmProvider, ModelConfig } from '../providers/config';
 import { apiKeySecretName, createModel } from '../providers/registry';
 import { processRawLog } from './extract';
 import { loadVocabulary } from './input';
@@ -23,19 +23,20 @@ const ENTRIES = [
 ];
 
 const PAUSE_MS = 20_000;
-const provider = 'groq';
+const provider: LlmProvider = process.env.LLM_CHECK_OLLAMA ? 'ollama' : 'groq';
 const apiKey = process.env.GROQ_API_KEY;
 
 describe('live extraction', () => {
-  it.runIf(apiKey)(
+  it.runIf(provider === 'ollama' || apiKey)(
     'runs the pipeline on made-up entries',
     async () => {
       const secrets = new MemorySecretStore();
-      await secrets.set(apiKeySecretName(provider), apiKey as string);
+      if (apiKey) await secrets.set(apiKeySecretName('groq'), apiKey);
       const model =
-        process.env.LLM_CHECK_GROQ_MODEL ??
+        process.env[`LLM_CHECK_${provider.toUpperCase()}_MODEL`] ??
         MODEL_PRESETS.find((preset) => preset.provider === provider)?.extractionModel;
-      const config: ModelConfig = { provider, model: model as string };
+      // Generous: a local model may have to load into memory first.
+      const config: ModelConfig = { provider, model: model as string, timeoutMs: 170_000 };
 
       const { store } = await openTestStore();
       const runs: LlmRun[] = [];
@@ -73,7 +74,7 @@ describe('live extraction', () => {
           )}\n`,
         );
         // Stays under the free tier's tokens-per-minute limit.
-        await new Promise((resolve) => setTimeout(resolve, PAUSE_MS));
+        if (provider === 'groq') await new Promise((resolve) => setTimeout(resolve, PAUSE_MS));
       }
       const total = runs.reduce(
         (sum, run) => sum + (run.inputTokens ?? 0) + (run.outputTokens ?? 0),
@@ -86,6 +87,6 @@ describe('live extraction', () => {
         `\ntags: ${await store.repos.tags.listRecentPaths(store.db, 30)}\nnames: ${await store.repos.entities.listRecentNames(store.db, 30)}\nnew categories: ${newCategories}\n${runs.length} calls, ${total} tokens\n`,
       );
     },
-    300_000,
+    580_000,
   );
 });

@@ -14,6 +14,8 @@ Avchetan uses AI for three jobs. Each can use a different model:
 
 - Install [Ollama](https://ollama.com). Avchetan detects it and suggests models.
 - Larger models give better answers but need more graphics memory. The app shows a "fits your PC" hint for each suggestion.
+- Without a working graphics card, Ollama runs on the processor. That still works, but an entry can take up to a minute to organize. You can keep typing meanwhile.
+- If the app says a model isn't downloaded, run `ollama pull <model>` once, or choose a model you already have.
 - On a phone: use **Let my hub do it** — phones can't run these models.
 
 ## Free cloud providers (bring your own key)

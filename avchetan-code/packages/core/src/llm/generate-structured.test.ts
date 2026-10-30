@@ -200,6 +200,20 @@ describe('generateStructured', () => {
     expect(backupCall).not.toHaveBeenCalled();
   });
 
+  it('says when a model is not downloaded in Ollama', async () => {
+    const { deps } = setup({
+      'backup-model': async () => {
+        throw apiError(404);
+      },
+    });
+
+    await expect(generateStructured(request([backup]), deps)).rejects.toMatchObject({
+      code: 'llm_unavailable',
+      message: 'This model is not downloaded in Ollama',
+      details: { reason: 'model_missing' },
+    });
+  });
+
   it('reports retry-after in milliseconds', async () => {
     const { deps } = setup({
       'primary-model': async () => {

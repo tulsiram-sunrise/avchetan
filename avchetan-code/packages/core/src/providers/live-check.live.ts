@@ -28,35 +28,40 @@ const PROVIDERS: { provider: LlmProvider; ready: boolean; apiKey?: string | unde
 ];
 
 describe.each(PROVIDERS)('live check: $provider', ({ provider, ready, apiKey }) => {
-  it.runIf(ready)('returns a valid structured answer', async () => {
-    const secrets = new MemorySecretStore();
-    if (apiKey) await secrets.set(apiKeySecretName(provider), apiKey);
-    const model =
-      process.env[`LLM_CHECK_${provider.toUpperCase()}_MODEL`] ??
-      MODEL_PRESETS.find((preset) => preset.provider === provider)?.extractionModel;
-    if (!model) throw new Error(`No preset model for ${provider}`);
+  it.runIf(ready)(
+    'returns a valid structured answer',
+    async () => {
+      const secrets = new MemorySecretStore();
+      if (apiKey) await secrets.set(apiKeySecretName(provider), apiKey);
+      const model =
+        process.env[`LLM_CHECK_${provider.toUpperCase()}_MODEL`] ??
+        MODEL_PRESETS.find((preset) => preset.provider === provider)?.extractionModel;
+      if (!model) throw new Error(`No preset model for ${provider}`);
 
-    const runs: LlmRun[] = [];
-    const { output } = await generateStructured(
-      {
-        purpose: 'extraction',
-        models: [{ provider, model }],
-        schema: entrySchema,
-        system: 'Turn the entry into the requested JSON. Today is 2026-10-30.',
-        prompt: 'Book a dentist appointment for Sam by Friday #health',
-      },
-      {
-        resolveModel: (config) => createModel(config, { fetch, secrets }),
-        recordRun: async (run) => {
-          runs.push(run);
+      const runs: LlmRun[] = [];
+      const { output } = await generateStructured(
+        {
+          purpose: 'extraction',
+          // Generous: a local model may have to load into memory first.
+          models: [{ provider, model, timeoutMs: 170_000 }],
+          schema: entrySchema,
+          system: 'Turn the entry into the requested JSON. Today is 2026-10-30.',
+          prompt: 'Book a dentist appointment for Sam by Friday #health',
         },
-      },
-    );
+        {
+          resolveModel: (config) => createModel(config, { fetch, secrets }),
+          recordRun: async (run) => {
+            runs.push(run);
+          },
+        },
+      );
 
-    expect(entrySchema.safeParse(output).success).toBe(true);
-    const { latencyMs, inputTokens, outputTokens } = runs.at(-1) as LlmRun;
-    process.stdout.write(
-      `${provider} ${model}: ${latencyMs} ms, ${inputTokens} in, ${outputTokens} out, ${runs.length} call(s)\n`,
-    );
-  });
+      expect(entrySchema.safeParse(output).success).toBe(true);
+      const { latencyMs, inputTokens, outputTokens } = runs.at(-1) as LlmRun;
+      process.stdout.write(
+        `${provider} ${model}: ${latencyMs} ms, ${inputTokens} in, ${outputTokens} out, ${runs.length} call(s)\n`,
+      );
+    },
+    180_000,
+  );
 });

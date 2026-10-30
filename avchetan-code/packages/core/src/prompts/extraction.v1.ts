@@ -58,6 +58,7 @@ export function buildUser(input: ExtractionInput): string {
   const dates = [
     `today (${input.weekday}): ${input.today}`,
     `yesterday: ${addDays(input.today, -1)}`,
+    `tomorrow: ${addDays(input.today, 1)}`,
     ...input.upcoming.map(({ date, weekday }) => `coming ${weekday}: ${date}`),
   ];
   const sections = [
