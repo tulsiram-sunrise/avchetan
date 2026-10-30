@@ -2,6 +2,7 @@ import { createLogger } from '@avchetan/shared';
 import { enable } from '@tauri-apps/plugin-autostart';
 import type { AppServices } from '../app-services';
 import { bootstrap } from '../bootstrap';
+import { onAppEvent } from '../native/events';
 import { ensureAutostartDefault } from '../services/autostart';
 import { loadDraft } from '../services/draft';
 import { DEFAULT_HOTKEY, savedHotkey } from '../services/hotkey';
@@ -44,6 +45,10 @@ void bootstrap(
     useDockStore.getState().setDraft(await loadDraft(services.store));
     void settleNativeState(services);
     services.extraction.start();
+    // A changed model or key may clear whatever the queue is waiting for.
+    onAppEvent('logs:changed', ({ tables }) => {
+      if (tables.includes('settings')) services.extraction.resume();
+    }).catch(() => log.warn('could not subscribe to setting changes'));
     if (import.meta.env.DEV) startTimerProbe();
   },
 );

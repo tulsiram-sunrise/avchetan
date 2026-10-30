@@ -27,8 +27,9 @@ Avchetan uses AI for three jobs. Each can use a different model:
 Other providers, such as Anthropic Claude and OpenAI, are planned for a later version.
 
 1. Create an API key on the provider's website.
-2. **Settings → AI models → Add provider** → paste the key → **Test**.
-3. Choose which model to use for each job.
+2. Open **Settings → AI models**, choose the provider, and paste the key.
+3. Click **Test** to check it. Nothing is saved yet, and only a made-up sentence is sent.
+4. Click **Save**. Avchetan then starts organizing the entries that are waiting, so they are sent to that provider.
 
 Your key is stored in your device's secure storage (Windows Credential Manager / Android Keystore), never in plain files.
 

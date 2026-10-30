@@ -35,6 +35,7 @@ export {
   type StructuredRequest,
   type StructuredResult,
 } from './llm/generate-structured';
+export { testModel } from './llm/test-model';
 export { MODEL_PRESETS, type ModelPreset, modelPresetSchema } from './models/presets';
 export { type ParsedCapture, parseCaptureText } from './normalize/capture-text';
 export { METRIC_ALIASES, METRICS, type MetricSpec } from './normalize/metric-keys';

@@ -15,7 +15,7 @@ export const PROVIDER_ADAPTERS: Record<LlmProvider, ProviderAdapter> = {
 export type ProviderDeps = {
   /** Platform fetch: `tauri-plugin-http`, `expo/fetch` or Node fetch. */
   fetch: HttpFetch;
-  secrets: SecretStore;
+  secrets: Pick<SecretStore, 'get'>;
 };
 
 export function apiKeySecretName(provider: LlmProvider): SecretName {
