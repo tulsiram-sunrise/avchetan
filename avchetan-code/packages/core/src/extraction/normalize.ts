@@ -24,6 +24,8 @@ const MAX_NOTES = 2000;
 const MAX_ITEMS = 20;
 const DAYS_BACK = 366;
 const DAYS_FORWARD = 731;
+/** Small models fill the name field with these instead of leaving the entity out. */
+const NOT_A_NAME = /^\(?(none|null|n\/?a|unknown)\)?$/i;
 
 export type NormalizeContext = {
   rawLog: Pick<RawLog, 'id' | 'capturedAt' | 'capturedTz'>;
@@ -156,7 +158,7 @@ export function normalizeExtraction(
   const entities: PlannedEntity[] = [];
   for (const entity of result.entities) {
     const name = clean(entity.name, MAX_TITLE);
-    if (!name) continue;
+    if (!name || NOT_A_NAME.test(name)) continue;
     const mentions = entity.mentions.flatMap(({ target, role }) => {
       const parsed = parseTarget(target, result.activities.length, result.tasks.length);
       const mapped = parsed && remap(parsed);

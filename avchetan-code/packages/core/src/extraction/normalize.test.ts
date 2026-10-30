@@ -215,6 +215,14 @@ describe('normalizeExtraction', () => {
     expect(entities[0]?.mentions).toEqual([{ target: { type: 'log' }, role: 'about' }]);
   });
 
+  it.each(['none', 'None', '(none)', 'null', 'N/A', 'unknown'])('drops the name %s', (name) => {
+    const { entities } = normalizeExtraction(
+      { ...empty, entities: [{ kind: 'person', name, mentions: [] }] },
+      context,
+    );
+    expect(entities).toEqual([]);
+  });
+
   it('ignores skip when the model also returned items', () => {
     const plan = normalizeExtraction(
       { ...empty, activities: [activity], skip: { reason: 'unsure' } },
