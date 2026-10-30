@@ -29,6 +29,16 @@ export {
   seedCategoryId,
 } from './client/repos/categories';
 export { type Entity, type EntityMention, normalizeEntityName } from './client/repos/entities';
+export {
+  CATEGORY_SUGGESTIONS_SETTING,
+  type CategoryProposal,
+  type ExtractionPlan,
+  type MentionTarget,
+  NEW_CATEGORY,
+  type PlannedActivity,
+  type PlannedEntity,
+  type PlannedTask,
+} from './client/repos/extraction';
 export type { Project } from './client/repos/projects';
 export type { CaptureInput, RawLog } from './client/repos/raw-logs';
 export type { Tag, TagLink } from './client/repos/tags';

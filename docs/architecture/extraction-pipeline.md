@@ -52,8 +52,8 @@ Output: one structured object validated by the **extraction envelope** schema:
 
 ```
 ExtractionResult {
-  activities: [{ category, title, notes?, metrics, loggedDate, occurredAt?, project?, inferredTags[] }]
-  tasks:      [{ title, notes?, dueDate|null, category|null, project?, inferredTags[] }]
+  activities: [{ category, title, notes|null, metrics: [{key, value}], exercises[], loggedDate, project|null, inferredTags[] }]
+  tasks:      [{ title, notes|null, dueDate|null, category|null, project|null, inferredTags[] }]
   newCategory?: { name, description }   // only if no existing category fits; max one per log
                                         // `category` fields hold an existing slug or this new name
   logTags:    string[]            // inferred tags for the raw log as a whole
@@ -61,6 +61,10 @@ ExtractionResult {
   skip?:      { reason }          // nothing actionable (e.g. "test", "asdf")
 }
 ```
+
+Every field is required (nullable where it can be absent) so strict JSON-schema providers accept it. `occurredAt` isn't requested yet, because a model can't reliably turn local times into UTC; `occurred_at` stays null.
+
+The normalized result is an `ExtractionPlan`, applied in one transaction by `store.repos.extraction.apply`. A `!private` entry is only ever sent to a `local` provider; with none configured it is marked `skipped`.
 
 This replaces the original spec's two separate tools (`log_activity`, `create_task`) with one structured output — see [ADR-0009](../decisions/0009-single-structured-extraction-output.md). The two tool contracts survive as the `activities` and `tasks` item schemas.
 

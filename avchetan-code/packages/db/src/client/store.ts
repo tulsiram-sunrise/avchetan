@@ -12,6 +12,7 @@ import * as queries from './queries';
 import { activitiesRepo } from './repos/activities';
 import { categoriesRepo } from './repos/categories';
 import { entitiesRepo } from './repos/entities';
+import { extractionRepo } from './repos/extraction';
 import { projectsRepo } from './repos/projects';
 import { rawLogsRepo } from './repos/raw-logs';
 import { tagsRepo } from './repos/tags';
@@ -63,7 +64,7 @@ export async function openClientStore(options: OpenClientStoreOptions) {
 
   const deps: RepoDeps = { deviceId, clock, newId };
   const tags = tagsRepo(deps);
-  const repos = {
+  const baseRepos = {
     rawLogs: rawLogsRepo(deps, tags),
     activities: activitiesRepo(deps),
     tasks: tasksRepo(deps),
@@ -72,6 +73,7 @@ export async function openClientStore(options: OpenClientStoreOptions) {
     tags,
     entities: entitiesRepo(deps),
   };
+  const repos = { ...baseRepos, extraction: extractionRepo(deps, baseRepos) };
 
   await write((tx) => repos.categories.ensureSeeds(tx));
 

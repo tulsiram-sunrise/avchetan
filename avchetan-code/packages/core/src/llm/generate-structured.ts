@@ -92,6 +92,7 @@ async function callModel<T>(
       errorCode,
     });
 
+  const adapter = PROVIDER_ADAPTERS[config.provider];
   try {
     const result = await generateText({
       model: await deps.resolveModel(config),
@@ -102,12 +103,13 @@ async function callModel<T>(
       // Retries belong to the pending processor, which counts attempts and backs off.
       maxRetries: 0,
       timeout: config.timeoutMs ?? DEFAULT_TIMEOUT_MS[request.purpose],
+      ...(adapter.structuredOptions ? { providerOptions: adapter.structuredOptions } : {}),
     });
     const output = result.output as T;
     await finish(true, result.usage, null);
     return { ok: true, output };
   } catch (thrown) {
-    const error = toLlmError(thrown, PROVIDER_ADAPTERS[config.provider]);
+    const error = toLlmError(thrown, adapter);
     const invalid = NoObjectGeneratedError.isInstance(thrown) ? thrown : undefined;
     await finish(false, invalid?.usage, error.code);
     return { ok: false, error, invalidText: invalid?.text };

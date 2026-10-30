@@ -21,6 +21,8 @@ export type ProviderAdapter = {
   readonly local: boolean;
   /** The free tier may use submitted content to improve the provider's products. */
   readonly freeTierUsesContent: boolean;
+  /** Sent with structured calls, keyed by SDK provider name. */
+  readonly structuredOptions?: Record<string, Record<string, string>>;
   createModel(config: ModelConfig, context: ModelContext): LanguageModel;
   /** Provider-specific failures the shared mapping would misread. */
   classifyError?(error: APICallError): LlmError | undefined;

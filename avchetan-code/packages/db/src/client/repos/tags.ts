@@ -1,5 +1,5 @@
 import { derivedId, slugifyPath, ValidationError } from '@avchetan/shared';
-import { and, asc, eq, inArray } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNull } from 'drizzle-orm';
 import type { LinkTargetType } from '../../schema/enums';
 import { entityTags, tags } from '../../schema/sqlite/tables';
 import type { ClientDb, Tx } from '../database';
@@ -44,6 +44,17 @@ export function tagsRepo(deps: RepoDeps) {
 
   return {
     findByPath,
+
+    /** Most recently used tag paths, for the extraction prompt. */
+    async listRecentPaths(db: ClientDb, limit: number): Promise<string[]> {
+      const rows = await db
+        .select({ path: tags.path })
+        .from(tags)
+        .where(and(live(tags), isNull(tags.mergedIntoId)))
+        .orderBy(desc(tags.updatedAt))
+        .limit(limit);
+      return rows.map((row) => row.path);
+    },
 
     /**
      * Returns the tag for a path like `Health/Injuries/Shoulder Pain`, creating it and any

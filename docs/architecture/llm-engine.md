@@ -12,7 +12,7 @@ Free options come first ([ADR-0020](../decisions/0020-free-first-provider-adapte
 | `ollama` | `@ai-sdk/openai-compatible`, `baseUrl` default `http://localhost:11434/v1` | none | Local/offline. On Android: LAN URL of the desktop |
 | `google` | `@ai-sdk/google` | API key | Gemini. The free tier may use content to improve Google's products, so use it with made-up data only |
 
-Each provider is a `ProviderAdapter` (`packages/core/src/providers/adapters/`) registered in `PROVIDER_ADAPTERS`. An adapter holds only what differs between providers: `requiresApiKey`, `local`, `freeTierUsesContent`, `createModel` and an optional `classifyError`. To add a provider: add its id to `LLM_PROVIDERS`, write one adapter, register it.
+Each provider is a `ProviderAdapter` (`packages/core/src/providers/adapters/`) registered in `PROVIDER_ADAPTERS`. An adapter holds only what differs between providers: `requiresApiKey`, `local`, `freeTierUsesContent`, `createModel`, and optional `structuredOptions` and `classifyError`. To add a provider: add its id to `LLM_PROVIDERS`, write one adapter, register it.
 
 Besides real providers, a slot can be set to a **routing mode** for devices that can't or shouldn't call a model themselves ([deployment-modes](deployment-modes.md#llm-work-for-the-phone-delegate-to-hub)):
 - extraction `delegate` — this device never extracts; the server does it immediately after sync;
@@ -53,7 +53,7 @@ Slot config (non-secret, stored in `settings`):
 - Errors are mapped by `toLlmError` without keeping the SDK error as `cause`, because SDK errors carry the request body (the user's log content).
 - `temperature: 0`. Timeout 20 s default.
 - Schema design rules (for cross-provider reliability):
-  - Avoid `z.record(z.any())` at the top level — `metrics` is an object of known optional keys (from the registry) plus an `extra` array of `{key, value}` pairs that the normalizer folds back. Some providers reject open-ended objects in strict mode.
+  - Avoid `z.record(z.any())` at the top level — `metrics` is an array of `{key, value}` pairs that the normalizer folds back, plus a typed `exercises` array. Some providers reject open-ended objects in strict mode, and an object of every known key would make the model write dozens of nulls per activity.
   - All fields required-but-nullable rather than optional where strict modes need it (`dueDate: string | null`).
   - Short `.describe()` text on every field; examples belong in the prompt, not the schema.
   - Enums for roles and entity kinds. Categories are **not** an enum (they're dynamic, [ADR-0015](../decisions/0015-dynamic-categories.md)): the schema takes a string and the normalizer resolves it against the category table.

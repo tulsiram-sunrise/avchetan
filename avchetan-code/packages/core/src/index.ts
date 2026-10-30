@@ -1,5 +1,24 @@
 export { buildCaptureInput } from './capture';
 export {
+  EXTRACTION_PROMPT_VERSION,
+  type ExtractionOptions,
+  extractRawLog,
+  processRawLog,
+} from './extraction/extract';
+export {
+  buildExtractionInput,
+  type ExtractionInput,
+  type ExtractionVocabulary,
+  loadVocabulary,
+} from './extraction/input';
+export {
+  LLM_MAY_CREATE_SETTING,
+  type LlmMayCreate,
+  llmMayCreateSchema,
+  normalizeExtraction,
+} from './extraction/normalize';
+export { type ExtractionResult, extractionResultSchema } from './extraction/schema';
+export {
   generateStructured,
   type LlmDeps,
   type LlmRun,

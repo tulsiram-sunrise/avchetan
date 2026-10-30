@@ -1,5 +1,5 @@
 import { derivedId, slugify, ValidationError } from '@avchetan/shared';
-import { and, asc, eq, isNull, ne } from 'drizzle-orm';
+import { and, asc, eq, isNotNull, isNull, ne } from 'drizzle-orm';
 import type { CategoryOrigin } from '../../schema/enums';
 import { categories } from '../../schema/sqlite/tables';
 import type { ClientDb, Tx } from '../database';
@@ -85,6 +85,20 @@ export function categoriesRepo(deps: RepoDeps) {
           and(live(categories), isNull(categories.archivedAt), isNull(categories.mergedIntoId)),
         )
         .orderBy(asc(categories.createdAt));
+    },
+
+    /** Slugs of merged categories with where they now point, so old names keep resolving. */
+    async listMergedAliases(db: ClientDb): Promise<{ slug: string; id: string }[]> {
+      const merged = await db
+        .select()
+        .from(categories)
+        .where(and(live(categories), isNotNull(categories.mergedIntoId)));
+      return Promise.all(
+        merged.map(async (category) => ({
+          slug: category.slug,
+          id: (await resolve(db, category)).id,
+        })),
+      );
     },
 
     /** Idempotent; never overwrites a seed the user renamed. */

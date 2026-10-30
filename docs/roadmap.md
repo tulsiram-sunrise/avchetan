@@ -56,7 +56,7 @@ Scope:
 
 ## Phase 3 — LLM engine, extraction & organization (desktop)
 
-**Progress:** step 1 written (provider adapters for Groq, Ollama and Gemini; paid providers deferred, [ADR-0020](decisions/0020-free-first-provider-adapters.md)). Live check passed on Groq and Gemini on 2026-10-30; Ollama not yet checked.
+**Progress:** steps 1–2 done (provider adapters for Groq, Ollama and Gemini, paid providers deferred, [ADR-0020](decisions/0020-free-first-provider-adapters.md); extraction prompt, normalizers and apply). Live-checked on Groq with made-up entries on 2026-10-30, about 2,500 tokens per entry. Ollama not yet checked.
 
 Scope:
 1. `packages/core`: provider adapters and registry (groq, ollama, google), slot config, `presets.json`, `generateStructured` wrapper, error taxonomy, `llm_runs` recording.
