@@ -1,6 +1,6 @@
 # Roadmap
 
-**Current phase: 2 — Desktop shell & instant capture.** Phase 1 completed 2026-10-26 (PR #1).
+**Current phase: 3 — LLM engine, extraction & organization (desktop).** Phase 1 completed 2026-10-26 (PR #1). Phase 2 completed 2026-10-30 (PR #2).
 
 Each phase lists scope, deliverables and **done when** criteria (testable). Phases are sequential; a coding agent should finish a phase's criteria before starting the next. Advanced capabilities are specified in [product/advancements.md](product/advancements.md).
 
@@ -34,9 +34,9 @@ Scope:
 - CI is green on GitHub; the docs site builds and deploys to GitHub Pages without dead links.
 - Secret scan of the full history is clean → **make the GitHub repository public** (R17).
 
-## Phase 2 — Desktop shell & instant capture
+## Phase 2 — Desktop shell & instant capture ✅
 
-**Progress:** steps 1–7 done and smoke-tested on Windows 11 (results in `apps/desktop/README.md`). Left: the hand checks for tray, quit-and-restart draft, and start at login. Added on request: the save key is configurable (Enter or Shift+Enter).
+**Result:** steps 1–7 done; the full smoke checklist passed on Windows 11 (results in `apps/desktop/README.md`), including the hand checks for tray, quit-and-restart draft, and start at login. Added on request: the save key is configurable (Enter or Shift+Enter).
 
 Scope:
 1. Scaffold `apps/desktop`: Tauri v2 + Vite + React + Tailwind; two entries (`dock`, `main`).
