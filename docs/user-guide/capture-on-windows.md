@@ -29,6 +29,19 @@ Open Avchetan (tray icon → **Open Avchetan**) → **Settings**.
 - **Saving an entry:** choose whether **Enter** saves and **Shift+Enter** starts a new line (the default), or the other way round. Swap them if you often write entries longer than one line.
 - **Start with Windows:** leave this on so the shortcut works right after you sign in.
 
+- **Time zone:** Avchetan follows Windows. Choose a zone here if your entries should use a different one. A day ends at midnight.
+
+## See what was organized
+
+Open Avchetan (tray icon → **Open Avchetan**):
+
+- **Timeline:** every entry, with the activities and tasks found in it. Click a title to change it, or change the category next to it. Avchetan never overwrites what you changed. **Options** under an entry lets you organize it again, edit its text, or delete it.
+- **Tasks:** tick things off and set due dates.
+- **Review:** entries that couldn't be organized, and why. Press **Organize now** to try again.
+- **Categories:** rename, merge or archive them. The AI adds a category, marked **New**, only when nothing fits; press **Keep** or merge it into another.
+- **Tags:** rename, nest (`health/knee`), merge or recolor them.
+- **Projects:** list what you're working on. Entries are linked to a project only if it's listed here.
+
 ## Check it worked
 
 Press your shortcut, type `Test entry #test` and press your save key. The entry appears at the top of the list, and *Open Avchetan* shows it in the timeline.

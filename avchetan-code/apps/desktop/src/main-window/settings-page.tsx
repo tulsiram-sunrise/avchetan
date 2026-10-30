@@ -1,9 +1,14 @@
-import { toAppError } from '@avchetan/shared';
+import { systemTimeZone, toAppError } from '@avchetan/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { disable, enable, isEnabled } from '@tauri-apps/plugin-autostart';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { HelpLink } from '../help-link';
-import { useSetSubmitKey, useSubmitKey } from '../queries/settings';
+import {
+  useSetSubmitKey,
+  useSetTimeZone,
+  useSubmitKey,
+  useTimeZoneChoice,
+} from '../queries/settings';
 import { changeHotkey } from '../services/hotkey';
 import type { SubmitKey } from '../services/submit-key';
 import { useServices } from '../services-context';
@@ -15,6 +20,7 @@ export function SettingsPage() {
       <AiModelsSetting />
       <ShortcutSetting />
       <SubmitKeySetting />
+      <TimeZoneSetting />
       <AutostartSetting />
     </div>
   );
@@ -111,6 +117,40 @@ function ShortcutSetting() {
         <p role="alert" className="text-sm text-danger">
           That shortcut can't be used (another app may own it). Try another.{' '}
           <HelpLink code={failedCode} />
+        </p>
+      ) : null}
+    </section>
+  );
+}
+
+function TimeZoneSetting() {
+  const choice = useTimeZoneChoice();
+  const change = useSetTimeZone();
+  const zones = useMemo(() => Intl.supportedValuesOf('timeZone'), []);
+
+  return (
+    <section className="flex flex-col gap-2">
+      <h2 className="font-medium">Time zone</h2>
+      <p className="text-sm text-ink-muted">
+        Decides which day an entry belongs to, and what "tomorrow" means. A day ends at midnight.
+      </p>
+      <select
+        aria-label="Time zone"
+        className="w-72 rounded-lg border border-line bg-surface-raised px-3 py-1.5 text-sm"
+        value={choice.data ?? ''}
+        disabled={!choice.isSuccess || change.isPending}
+        onChange={(event) => change.mutate(event.target.value || null)}
+      >
+        <option value="">Same as Windows ({systemTimeZone()})</option>
+        {zones.map((zone) => (
+          <option key={zone} value={zone}>
+            {zone}
+          </option>
+        ))}
+      </select>
+      {change.isError ? (
+        <p role="alert" className="text-sm text-danger">
+          Couldn't save this setting. Try again. <HelpLink code={toAppError(change.error).code} />
         </p>
       ) : null}
     </section>

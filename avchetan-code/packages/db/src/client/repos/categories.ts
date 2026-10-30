@@ -167,6 +167,33 @@ export function categoriesRepo(deps: RepoDeps) {
       return updateSynced(tx, deps, categories, id, { name, slug });
     },
 
+    /** Every category with where it now points, so rows on a merged one show the survivor. */
+    async listResolved(db: ClientDb): Promise<{ id: string; resolved: Category }[]> {
+      const rows = await db.select().from(categories).where(live(categories));
+      return Promise.all(
+        rows.map(async (row) => ({ id: row.id, resolved: await resolve(db, row) })),
+      );
+    },
+
+    /** Rows keep pointing at the merged category and readers follow `merged_into_id`. */
+    async merge(tx: Tx, id: string, intoId: string): Promise<Category> {
+      if (REQUIRED_SEEDS.some((slug) => seedCategoryId(slug) === id)) {
+        throw new ValidationError('category_required', 'This category is required');
+      }
+      const target = await getById(tx, categories, intoId);
+      if (!target || target.deletedAt) {
+        throw new ValidationError('invalid_merge', 'That category no longer exists');
+      }
+      const survivor = await resolve(tx, target);
+      if (survivor.id === id) {
+        throw new ValidationError('invalid_merge', 'A category can’t be merged into itself');
+      }
+      return updateSynced(tx, deps, categories, id, {
+        mergedIntoId: survivor.id,
+        needsReview: false,
+      });
+    },
+
     async markReviewed(tx: Tx, id: string): Promise<Category> {
       return updateSynced(tx, deps, categories, id, { needsReview: false });
     },

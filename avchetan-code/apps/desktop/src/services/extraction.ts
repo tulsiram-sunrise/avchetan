@@ -6,10 +6,12 @@ import type { Platform } from '../platform';
 
 const log = createLogger('extraction');
 
+const DATA_TABLES = ['raw_logs', 'activities', 'tasks', 'categories', 'tags', 'projects'];
+
 /** Other windows refetch; the tray shows the new pending count. */
-async function announce(store: ClientStore, platform: Platform): Promise<void> {
+export async function announce(store: ClientStore, platform: Platform): Promise<void> {
   try {
-    await emitAppEvent('logs:changed', { tables: ['raw_logs', 'activities', 'tasks'] });
+    await emitAppEvent('logs:changed', { tables: [...DATA_TABLES] });
     await platform.shell.setTrayPending(await store.queries.pendingCount(store.db));
   } catch (error) {
     log.warn('could not announce extraction', { code: toAppError(error).code });

@@ -1,4 +1,18 @@
-import { and, asc, count, desc, eq, isNull, lt, lte, or, sql } from 'drizzle-orm';
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  inArray,
+  isNotNull,
+  isNull,
+  lt,
+  lte,
+  or,
+  sql,
+} from 'drizzle-orm';
+import type { RawLogStatus } from '../schema/enums';
 import { activities, rawLogs, tasks } from '../schema/sqlite/tables';
 import type { ClientDb } from './database';
 import type { Activity } from './repos/activities';
@@ -66,6 +80,61 @@ export function activitiesOn(db: ClientDb, loggedDate: string): Promise<Activity
     .from(activities)
     .where(and(live(activities), eq(activities.loggedDate, loggedDate)))
     .orderBy(asc(activities.occurredAt), asc(activities.createdAt));
+}
+
+/** What was extracted from these logs, for showing under each entry. */
+export async function extractedFrom(
+  db: ClientDb,
+  rawLogIds: readonly string[],
+): Promise<{ activities: Activity[]; tasks: Task[] }> {
+  if (rawLogIds.length === 0) return { activities: [], tasks: [] };
+  const [children, todo] = await Promise.all([
+    db
+      .select()
+      .from(activities)
+      .where(and(live(activities), inArray(activities.rawLogId, [...rawLogIds])))
+      .orderBy(asc(activities.ordinal)),
+    db
+      .select()
+      .from(tasks)
+      .where(and(live(tasks), inArray(tasks.rawLogId, [...rawLogIds])))
+      .orderBy(asc(tasks.ordinal)),
+  ]);
+  return { activities: children, tasks: todo };
+}
+
+/** Finished tasks, most recent first. */
+export function completedTasks(db: ClientDb, limit = 50): Promise<Task[]> {
+  return db
+    .select()
+    .from(tasks)
+    .where(and(live(tasks), isNotNull(tasks.completedAt)))
+    .orderBy(desc(tasks.completedAt))
+    .limit(limit);
+}
+
+/** Logs that need a look: waiting, failed or skipped. Newest first. */
+export function logsWithStatus(
+  db: ClientDb,
+  statuses: readonly RawLogStatus[],
+  limit = 200,
+): Promise<RawLog[]> {
+  return db
+    .select()
+    .from(rawLogs)
+    .where(and(live(rawLogs), inArray(rawLogs.status, [...statuses])))
+    .orderBy(desc(rawLogs.capturedAt))
+    .limit(limit);
+}
+
+/** How many activities each category has. */
+export async function categoryUsage(db: ClientDb): Promise<Map<string, number>> {
+  const rows = await db
+    .select({ categoryId: activities.categoryId, value: count() })
+    .from(activities)
+    .where(live(activities))
+    .groupBy(activities.categoryId);
+  return new Map(rows.map((row) => [row.categoryId, row.value]));
 }
 
 /** Open tasks: dated ones by due date first, then undated ones, oldest first. */

@@ -46,5 +46,8 @@ Start with **Settings → Setup check**. It tests everything and tells you what 
 ## db_query_failed
 **"Couldn't save this entry."** Your text stays in the box, so nothing is lost. Press Enter to try again. If it keeps failing, quit and restart Avchetan, then see [database_unavailable](#database_unavailable).
 
+## dock_unavailable
+**"The capture box isn't responding."** Your change wasn't saved. Right-click the tray icon → **Quit Avchetan**, start it again, and repeat the change.
+
 ## Entries stay "pending"
-Normal when offline or when the hub is unreachable. They are processed automatically later. If they stay pending while everything is connected, run **Setup check**.
+Normal when offline or when the hub is unreachable. They are processed automatically later. If they stay pending while everything is connected, open **Review** in the main window: it shows the reason for each entry.

@@ -1,13 +1,42 @@
 import { useState } from 'react';
 import type { MainView } from '../native/events';
 import { useAppEvent, useTableInvalidation } from '../use-app-event';
+import { CategoriesPage } from './categories-page';
+import { ProjectsPage } from './projects-page';
+import { ReviewPage } from './review-page';
 import { SettingsPage } from './settings-page';
+import { TagsPage } from './tags-page';
+import { TasksPage } from './tasks-page';
 import { Timeline } from './timeline';
 
 const VIEWS: { id: MainView; label: string }[] = [
   { id: 'timeline', label: 'Timeline' },
+  { id: 'tasks', label: 'Tasks' },
+  { id: 'review', label: 'Review' },
+  { id: 'categories', label: 'Categories' },
+  { id: 'tags', label: 'Tags' },
+  { id: 'projects', label: 'Projects' },
   { id: 'settings', label: 'Settings' },
 ];
+
+function CurrentView({ view }: { view: MainView }) {
+  switch (view) {
+    case 'timeline':
+      return <Timeline />;
+    case 'tasks':
+      return <TasksPage />;
+    case 'review':
+      return <ReviewPage />;
+    case 'categories':
+      return <CategoriesPage />;
+    case 'tags':
+      return <TagsPage />;
+    case 'projects':
+      return <ProjectsPage />;
+    case 'settings':
+      return <SettingsPage />;
+  }
+}
 
 /** The full window. Hidden (not closed) when the user closes it. */
 export function MainApp(props: { initialView: MainView }) {
@@ -34,7 +63,7 @@ export function MainApp(props: { initialView: MainView }) {
         ))}
       </nav>
       <main className="min-w-0 flex-1 overflow-y-auto p-6">
-        {view === 'timeline' ? <Timeline /> : <SettingsPage />}
+        <CurrentView view={view} />
       </main>
     </div>
   );

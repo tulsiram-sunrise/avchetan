@@ -135,7 +135,7 @@ The server then runs extraction and applies the result exactly like a client, bu
 ## 7. User-facing behavior
 
 - Pending badge count in dock and tray tooltip.
-- Error list with reason (rate limit, invalid key, validation) and actions: retry, retry with analysis model, edit text & re-extract (creates a **new** raw log linked via `context.supersedes`; the original is soft-deleted — content stays immutable).
+- Error list with reason (rate limit, invalid key, validation) and actions: retry, retry with analysis model, edit text & re-extract (creates a **new** raw log linked via `context.supersedes`, keeping the original `captured_at` and `captured_tz` so its day and relative dates don't move; the original is soft-deleted — content stays immutable).
 - Manual edits of extracted rows set `is_user_edited` and record a correction.
 
 ## 8. Quality
