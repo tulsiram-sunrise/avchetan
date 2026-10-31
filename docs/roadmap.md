@@ -1,6 +1,6 @@
 # Roadmap
 
-**Current phase: 3 — LLM engine, extraction & organization (desktop).** Phase 1 completed 2026-10-26 (PR #1). Phase 2 completed 2026-10-30 (PR #2).
+**Current phase: 4 — Android app.** Phase 1 completed 2026-10-26 (PR #1). Phase 2 completed 2026-10-30 (PR #2). Phase 3 completed 2026-10-31.
 
 Each phase lists scope, deliverables and **done when** criteria (testable). Phases are sequential; a coding agent should finish a phase's criteria before starting the next. Advanced capabilities are specified in [product/advancements.md](product/advancements.md).
 
@@ -54,9 +54,9 @@ Scope:
 - Timers verified to keep firing while the dock is hidden (or Rust heartbeat implemented).
 - Manual smoke checklist in `apps/desktop/README.md` passes on Windows 11.
 
-## Phase 3 — LLM engine, extraction & organization (desktop)
+## Phase 3 — LLM engine, extraction & organization (desktop) ✅
 
-**Progress:** steps 1–3 done (provider adapters for Groq, Ollama and Gemini, paid providers deferred, [ADR-0020](decisions/0020-free-first-provider-adapters.md); extraction prompt, normalizers and apply; pending processor). Steps 4–6 done and checked in the real app (Ask mode with local tools, citations and private entries kept from cloud models). Step 8: 37 fixtures, `pnpm eval:extraction`, and CI replay of recorded answers. Still open: Groq's re-run after the last prompt changes. Live-checked with made-up entries on 2026-10-30: on Groq (about 2,500 tokens per entry) and on Ollama with `granite4.2:8b` on a CPU (7–64 s per entry, weaker on metrics and entities).
+**Result:** steps 1–8 done (provider adapters for Groq, Ollama and Gemini, paid providers deferred, [ADR-0020](decisions/0020-free-first-provider-adapters.md); extraction prompt, normalizers and apply; pending processor; Settings, main window and Ask mode with local tools, citations and private entries kept from cloud models; 37 fixtures, `pnpm eval:extraction`, and CI replay of recorded answers). Live-checked with made-up entries on 2026-10-30: on Groq (about 2,500 tokens per entry) and on Ollama with `granite4.2:8b` on a CPU (7–64 s per entry, weaker on metrics and entities). Save in Settings, an organized capture and an Ask answer were also proven in the real app. Tag rename and merge, Organize now, Edit text, the usage table and bold stripping in Ask have automated tests only. Better accuracy on Groq is planned under [Later](#later--unscheduled).
 
 Scope:
 1. `packages/core`: provider adapters and registry (groq, ollama, google), slot config, `presets.json`, `generateStructured` wrapper, error taxonomy, `llm_runs` recording.
@@ -74,7 +74,7 @@ Scope:
 - Running extraction twice on the same log yields identical rows (test).
 - An entry that fits no category produces at most one new category (`needs_review`), and a near-duplicate proposal ("Workouts") resolves to the existing one (tests).
 - The whole flow works with Ollama only (no cloud keys configured).
-- Fixture suite passes in CI with the mock model; manual eval with at least one cloud + one Ollama model ≥ 90% tolerant-match. *Accepted 2026-10-30 with an exception: no Ollama model reached 90% on a PC without a working graphics card (`granite4.2:8b` 65–70%, `qwen3.5:9b` 65%, 37 fixtures). Ollama stays the private, offline option; re-measure on a working GPU.*
+- Fixture suite passes in CI with the mock model; manual eval with at least one cloud + one Ollama model ≥ 90% tolerant-match. *Accepted 2026-10-30 with an exception: no Ollama model reached 90% on a PC without a working graphics card (`granite4.2:8b` 65–70%, `qwen3.5:9b` 65%, 37 fixtures). Ollama stays the private, offline option; re-measure on a working GPU. Cloud: Gemini `gemini-3.5-flash-lite` meets the target at 100%. Groq `openai/gpt-oss-20b`, the main provider, does not: 33/37 (89.2%) on 2026-10-30 and 32/37 (86.5%) on 2026-10-31. Accepted 2026-10-31; the follow-up is under [Later](#later--unscheduled).*
 - `? how many workouts this week` returns a correct, cited answer offline-from-server (online to the LLM).
 
 ## Phase 4 — Android app
@@ -162,4 +162,11 @@ Scope:
 ---
 
 ## Later / unscheduled
+
+**Extraction accuracy (Phase 3 follow-up).** Goal: Groq at 90% or more, averaged over several runs. Do it in this order:
+1. Read scores written like `6/10` as a number in the metric normalizer, with a test (`health-pain`).
+2. Find out why two entries missed in both runs: `task-two` (due date one day late) and `multi-activity-task` (a new category instead of diet or other).
+3. Add new fixtures before changing any prompt, so the prompts aren't fitted to these 37.
+4. Score Groq over three runs on separate days. Results move by about three entries between runs, so one run can't show a real change.
+
 Capture: in-memory tag lookup so tagged captures meet p95 < 10 ms (Phase 2 exception) · Paid and other providers: Anthropic, OpenAI, any OpenAI-compatible service, one adapter each ([ADR-0020](decisions/0020-free-first-provider-adapters.md)) · iOS build · local semantic search (`sqlite-vec`) · SQLCipher encryption · calendar integration · desktop updater + code signing · macOS/Linux polish.

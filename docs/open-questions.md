@@ -9,13 +9,12 @@ Questions not yet decided. When answered: record the answer here (or in an ADR i
 | Q3 | Offline semantic search on clients via `sqlite-vec`? Needs on-device embeddings (local model or cached vectors pulled from the server). | Not now; server-only | — |
 | Q5 | Sync private (`!private`) entries to the server? | Yes by default (own server), toggle to exclude | Phase 7 |
 | Q6 | SQLite encryption at rest (SQLCipher) on desktop/mobile? | Rely on OS disk encryption for now | — |
-| Q7 | Which models to put in `presets.json` per provider (incl. Ollama extraction/analysis/embedding models)? Decide via `pnpm eval:extraction` on synthetic fixtures. | Eval on 37 fixtures, 2026-10-30: Gemini `gemini-3.5-flash-lite` 100%; Groq `openai/gpt-oss-20b` 89.2% before the last prompt changes, re-run still owed (daily limit hit); on a CPU, Ollama `granite4.2:8b` 64.9–70.3% and `qwen3.5:9b` 64.9% (slower, with duplicated items), below the 90% target and accepted as an exception. Keep `granite4.2:8b` for CPU-only PCs; re-measure Ollama models on a working GPU | Phase 3 end |
 | Q8 | Cloud hosting recommendation for the cloud guide (see ADR-0014). | Decide during Phase 5 | Phase 5 end |
 | Q9 | Should Ask mode be able to *propose* writes (e.g. "create task?") in Phase 3, or only after the command registry exists (Phase 6)? | Phase 6 | — |
 | Q10 | Display units: metric only, or allow imperial display (lb/mi)? Storage stays metric. | Metric; setting later | — |
 | Q11 | Daily brief time and whether to also send a morning plan (today's tasks + yesterday's rollovers). | 21:00 brief; morning plan as Phase 6 stretch | Phase 6 |
 | Q20 | Publish the Android app on the Play Store, or GitHub Releases (APK) only? | APK only at first | Public release |
-| Q22 | Ollama's OpenAI-compatible `/v1` endpoint can't set `num_ctx` per request. Does the extraction prompt with its vocabulary fit the default context, or is a setting or a native Ollama client needed? | Fits for now: 1,530 prompt tokens with an empty vocabulary against a default of 4,096 (CPU, granite4.2:8b). Re-measure with a full vocabulary | Phase 3 end |
+| Q22 | Ollama's OpenAI-compatible `/v1` endpoint can't set `num_ctx` per request. Does the extraction prompt with its vocabulary fit the default context, or is a setting or a native Ollama client needed? | Fits for now: 1,530 prompt tokens with an empty vocabulary against a default of 4,096 (CPU, granite4.2:8b). Re-measure with a full vocabulary | Phase 5 end |
 
 ## Resolved
 
@@ -40,3 +39,4 @@ Questions not yet decided. When answered: record the answer here (or in an ADR i
 | R17 (Q19) | When the GitHub repo goes public | Right after Phase 1 is complete | 2026-10-26 |
 | R18 (Q2) | Timezone and day boundary | A day ends at midnight. The zone follows Windows, or a choice in Settings | 2026-10-30 |
 | R19 (Q21) | Where the main window's writes run | In the dock, through named actions (`apps/desktop/src/services/actions.ts`), so one clock issues every timestamp | 2026-10-30 |
+| R20 (Q7) | Which models go in `presets.json` | Keep the current presets. Eval on 37 fixtures: Gemini `gemini-3.5-flash-lite` 100%; Groq `openai/gpt-oss-20b` 86.5–89.2%; on a CPU, Ollama `granite4.2:8b` 64.9–70.3% and `qwen3.5:9b` 64.9% (slower, with duplicated items). Use `granite4.2:8b` on CPU-only PCs and re-measure Ollama on a working GPU. Groq's follow-up is in the [roadmap](roadmap.md#later--unscheduled) | 2026-10-31 |
