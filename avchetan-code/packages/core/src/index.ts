@@ -39,6 +39,14 @@ export {
 } from './llm/generate-structured';
 export { testModel } from './llm/test-model';
 export { MODEL_PRESETS, type ModelPreset, modelPresetSchema } from './models/presets';
+export {
+  hasApiKey,
+  loadSlotModel,
+  type ModelSlot,
+  removeApiKey,
+  saveSlotModel,
+  testDraftModel,
+} from './models/slots';
 export { type ParsedCapture, parseCaptureText } from './normalize/capture-text';
 export { METRIC_ALIASES, METRICS, type MetricSpec } from './normalize/metric-keys';
 export {

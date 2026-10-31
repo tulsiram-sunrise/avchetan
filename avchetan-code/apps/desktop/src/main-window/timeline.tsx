@@ -1,7 +1,7 @@
 import type { Activity, RawLog, Task } from '@avchetan/db/sqlite';
+import { formatDay, formatTime } from '@avchetan/shared';
 import { useMemo } from 'react';
 import { StatusBadge } from '../dock/status-badge';
-import { formatDay, formatTime } from '../format';
 import { useExtracted } from '../queries/organize';
 import { useTimeline } from '../queries/raw-logs';
 import { ActivityRow, EntryActions, TaskRow } from './timeline-items';

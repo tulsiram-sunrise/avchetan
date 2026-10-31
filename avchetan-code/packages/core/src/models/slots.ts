@@ -1,16 +1,14 @@
+import { type ClientStore, getSetting, setSetting } from '@avchetan/db/sqlite';
+import type { HttpFetch, SecretStore } from '@avchetan/shared';
+import { MODEL_SLOTS_SETTING } from '../extraction/settings';
+import { testModel } from '../llm/test-model';
 import {
-  apiKeySecretName,
-  createModel,
   type LlmProvider,
-  MODEL_SLOTS_SETTING,
   type ModelConfig,
   modelConfigSchema,
   modelSlotsSchema,
-  PROVIDER_ADAPTERS,
-  testModel,
-} from '@avchetan/core';
-import { type ClientStore, getSetting, setSetting } from '@avchetan/db/sqlite';
-import type { HttpFetch, SecretStore } from '@avchetan/shared';
+} from '../providers/config';
+import { apiKeySecretName, createModel, PROVIDER_ADAPTERS } from '../providers/registry';
 
 async function loadSlots(store: ClientStore) {
   const parsed = modelSlotsSchema.safeParse(
@@ -19,6 +17,7 @@ async function loadSlots(store: ClientStore) {
   return parsed.success ? parsed.data : modelSlotsSchema.parse({});
 }
 
+/** The two jobs a user picks a model for. */
 export type ModelSlot = 'extraction' | 'analysis';
 
 /** The model chosen for a job, if any. */

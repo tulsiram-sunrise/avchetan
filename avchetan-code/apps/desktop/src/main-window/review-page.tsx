@@ -1,6 +1,6 @@
 import type { RawLog } from '@avchetan/db/sqlite';
+import { formatDay, formatTime } from '@avchetan/shared';
 import { StatusBadge } from '../dock/status-badge';
-import { formatDay, formatTime } from '../format';
 import { useLogsToReview } from '../queries/organize';
 import { EntryActions } from './timeline-items';
 import { panelClass } from './ui';

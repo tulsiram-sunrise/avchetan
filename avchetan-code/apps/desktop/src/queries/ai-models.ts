@@ -1,15 +1,16 @@
-import type { LlmProvider, ModelConfig } from '@avchetan/core';
-import { createLogger } from '@avchetan/shared';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { emitAppEvent } from '../native/events';
 import {
   hasApiKey,
+  type LlmProvider,
   loadSlotModel,
+  type ModelConfig,
   type ModelSlot,
   removeApiKey,
   saveSlotModel,
   testDraftModel,
-} from '../services/ai-models';
+} from '@avchetan/core';
+import { createLogger } from '@avchetan/shared';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { emitAppEvent } from '../native/events';
 import { useServices } from '../services-context';
 
 const log = createLogger('queries');

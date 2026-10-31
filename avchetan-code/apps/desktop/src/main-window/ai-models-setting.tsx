@@ -2,6 +2,7 @@ import {
   type LlmMayCreate,
   type LlmProvider,
   MODEL_PRESETS,
+  type ModelSlot,
   PROVIDER_ADAPTERS,
 } from '@avchetan/core';
 import { toAppError } from '@avchetan/shared';
@@ -15,7 +16,6 @@ import {
   useTestModel,
 } from '../queries/ai-models';
 import { useMayCreate, useSetMayCreate } from '../queries/settings';
-import type { ModelSlot } from '../services/ai-models';
 
 /** Offered in this order: free and private-friendly first. */
 const PROVIDERS: readonly LlmProvider[] = ['groq', 'ollama', 'google'];
