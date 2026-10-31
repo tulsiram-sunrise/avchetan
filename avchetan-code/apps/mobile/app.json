@@ -23,7 +23,7 @@
         "expo-build-properties",
         {
           "android": {
-            "extraProguardRules": "-keep class androidx.work.impl.WorkDatabase { *; }\n-keep class androidx.work.impl.WorkDatabase_Impl { *; }\n"
+            "extraProguardRules": "-keep class androidx.work.** { *; }\n-keep class * extends androidx.work.ListenableWorker { *; }\n-keep class expo.modules.backgroundtask.** { *; }\n-keep class expo.modules.taskManager.** { *; }\n"
           }
         }
       ]

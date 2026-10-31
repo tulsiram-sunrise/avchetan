@@ -36,7 +36,7 @@ If Metro fails with `Failed to replace ... HMRClient.js` after a reinstall, its 
 
 After a background run in a development build, the app can open on the dev launcher. Force-stop it and open it again. To test the background task, wait at least 15 minutes after first registering it, because Android ignores a forced run until then.
 
-Test a release build after adding a native library. It runs R8, which removes code that only reflection reaches, and a debug build can't show that. WorkManager's database needed a keep rule for this reason, in `app.json` under `expo-build-properties`. Expo then prints an `Opening exp+avchetan://` line that a release build ignores, so open the app from its icon.
+Test a release build after adding a native library. It runs R8, which removes code that only reflection reaches, and a debug build can't show that. WorkManager needs keep rules for this reason, in `app.json` under `expo-build-properties`. Without them the app crashed at launch, and then the background task failed without any visible error, so check that a run logs `Worker result SUCCESS`. Expo then prints an `Opening exp+avchetan://` line that a release build ignores, so open the app from its icon.
 
 On a PC without a working graphics card, start the emulator with `-gpu swiftshader_indirect`.
 
