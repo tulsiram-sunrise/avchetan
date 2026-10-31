@@ -1,6 +1,6 @@
-import type { Cancel, Scheduler } from '@avchetan/shared';
+import type { Cancel, Scheduler } from '../adapters';
 
-/** Webview timers. They keep firing while the dock is hidden (checked in Phase 2). */
+/** Plain timers, for any platform that keeps them firing (checked for the desktop dock in Phase 2). */
 export class TimerScheduler implements Scheduler {
   every(ms: number, task: () => void): Cancel {
     const id = setInterval(task, ms);

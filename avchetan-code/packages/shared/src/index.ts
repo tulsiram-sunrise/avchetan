@@ -36,6 +36,7 @@ export type { IdGenerator, IdPart } from './ids';
 export { AVCHETAN_NAMESPACE, derivedId, newId } from './ids';
 export type { Loop, LoopOptions, LoopRunResult } from './jobs/single-flight-loop';
 export { createLoop } from './jobs/single-flight-loop';
+export { TimerScheduler } from './jobs/timer-scheduler';
 export type { LogFields, Logger, LogLevel, LogRecord, LogSink } from './logger';
 export { configureLogging, consoleSink, createLogger } from './logger';
 export { localDateSchema, timeZoneSchema, utcInstantSchema, uuidSchema } from './schemas';
