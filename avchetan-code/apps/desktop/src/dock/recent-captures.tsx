@@ -1,4 +1,4 @@
-import { formatTime } from '../format';
+import { formatTime } from '@avchetan/shared';
 import { useRecentCaptures } from '../queries/raw-logs';
 import { StatusBadge } from './status-badge';
 

@@ -12,7 +12,7 @@ Free options come first ([ADR-0020](../decisions/0020-free-first-provider-adapte
 | `ollama` | `@ai-sdk/openai-compatible`, `baseUrl` default `http://localhost:11434/v1` | none | Local/offline. On Android: LAN URL of the desktop |
 | `google` | `@ai-sdk/google` | API key | Gemini. The free tier may use content to improve Google's products, so use it with made-up data only |
 
-Each provider is a `ProviderAdapter` (`packages/core/src/providers/adapters/`) registered in `PROVIDER_ADAPTERS`. An adapter holds only what differs between providers: `requiresApiKey`, `local`, `freeTierUsesContent`, `createModel`, and optional `structuredOptions` and `classifyError`. To add a provider: add its id to `LLM_PROVIDERS`, write one adapter, register it.
+Each provider is a `ProviderAdapter` (`packages/core/src/providers/adapters/`) registered in `PROVIDER_ADAPTERS`. An adapter holds only what differs between providers: `requiresApiKey`, `local`, `freeTierUsesContent`, `createModel`, and optional `structuredOptions`, `analysisOptions` and `classifyError`. Ollama uses both option sets to turn thinking off, which is far too slow on a CPU. To add a provider: add its id to `LLM_PROVIDERS`, write one adapter, register it.
 
 Besides real providers, a slot can be set to a **routing mode** for devices that can't or shouldn't call a model themselves ([deployment-modes](deployment-modes.md#llm-work-for-the-phone-delegate-to-hub)):
 - extraction `delegate` — this device never extracts; the server does it immediately after sync;

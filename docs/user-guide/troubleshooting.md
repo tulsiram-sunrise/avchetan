@@ -42,6 +42,7 @@ Start with **Settings → Setup check**. It tests everything and tells you what 
 - Right-click the tray icon → **Quit Avchetan**, then start it again from the Start menu.
 - Check that your disk isn't full.
 - If you use a backup or sync tool (OneDrive, Dropbox) on `%APPDATA%\app.avchetan`, exclude that folder. Those tools can lock the file while Avchetan is using it.
+- On Android: close the app fully and open it again, and check that your phone has free storage.
 
 ## db_query_failed
 **"Couldn't save this entry."** Your text stays in the box, so nothing is lost. Press Enter to try again. If it keeps failing, quit and restart Avchetan, then see [database_unavailable](#database_unavailable).

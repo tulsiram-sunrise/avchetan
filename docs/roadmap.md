@@ -79,6 +79,8 @@ Scope:
 
 ## Phase 4 — Android app
 
+**Progress:** steps 1–5 done on Expo SDK 58: routes, NativeWind, Expo adapters (SQLite, keystore, network), composition root and the pending processor. Tests run the migrated client store through the Expo adapter, and CI builds the Hermes bundle, which includes the AI SDK. Checked on an Android 17 emulator on 2026-10-31 with a local Ollama: IDs, time zones, streaming, real extraction and a cited Ask answer all work on Hermes. In that debug build, capture took 334 ms cold, then a median of 11 ms and p95 of 34 ms; measure again on a release build. Today, capture, Tasks, Ask, entry detail and AI model settings were driven by hand on the emulator, in both themes, including capturing in airplane mode and organizing after reconnecting. The processor wakes when the app becomes active, and a background task takes up to 3 entries: Android ran it unprompted on the emulator with no screen open, organizing 3 of 4 waiting entries. A made-up key was found in no app file, and settings held no key. The release APK runs without Metro, reached Groq over HTTPS, and ran the background task unprompted with no screen open. The check on a physical phone, including capture timing on a release build, is still open.
+
 Scope:
 1. Scaffold `apps/mobile` (Expo, Router, dev build); Metro monorepo config; NativeWind.
 2. `expo-sqlite` (async API) wrapped as a `SqliteExecutor` for `openClientStore` (Drizzle proxy driver); migrations; composition root with Expo adapters (secure-store, NetInfo, expo/fetch, notifications).

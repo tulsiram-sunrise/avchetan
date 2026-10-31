@@ -1,9 +1,10 @@
-import { apiKeySecretName, loadExtractionSettings, MODEL_SLOTS_SETTING } from '@avchetan/core';
 import { getSetting, setSetting } from '@avchetan/db/sqlite';
 import { openTestStore } from '@avchetan/db/testing';
 import { MemorySecretStore } from '@avchetan/shared/testing';
 import { describe, expect, it, vi } from 'vitest';
-import { hasApiKey, loadSlotModel, removeApiKey, saveSlotModel, testDraftModel } from './ai-models';
+import { loadExtractionSettings, MODEL_SLOTS_SETTING } from '../extraction/settings';
+import { apiKeySecretName } from '../providers/registry';
+import { hasApiKey, loadSlotModel, removeApiKey, saveSlotModel, testDraftModel } from './slots';
 
 const config = { provider: 'groq', model: 'test-model' } as const;
 

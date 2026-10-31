@@ -188,6 +188,32 @@ describe('ask', () => {
     expect(await store.db.select().from(askHistory)).toEqual([]);
   });
 
+  it('says a timeout took too long, even after a tool call', async () => {
+    doStream.mockResolvedValueOnce(toolStream('query_tasks', {})).mockImplementationOnce(
+      ({ abortSignal }) =>
+        new Promise((_, reject) => {
+          abortSignal?.addEventListener('abort', () => reject(abortSignal.reason));
+        }),
+    );
+
+    await expect(ask(store, question({ ...ollama, timeoutMs: 20 }), llm)).rejects.toMatchObject({
+      code: 'llm_unavailable',
+      details: { reason: 'timeout' },
+    });
+    expect(runs).toMatchObject([{ ok: false, errorCode: 'llm_unavailable' }]);
+  });
+
+  it('turns thinking off on Ollama only', async () => {
+    doStream.mockImplementation(async () => textStream('None.'));
+
+    await ask(store, question(ollama), llm);
+    await ask(store, question(groq), llm);
+
+    const sent = doStream.mock.calls.map(([options]) => options.providerOptions);
+    expect(sent[0]).toEqual({ ollama: { reasoningEffort: 'none' } });
+    expect(sent[1]).toBeUndefined();
+  });
+
   it('treats an empty answer as a refusal', async () => {
     doStream.mockResolvedValue(textStream(''));
 

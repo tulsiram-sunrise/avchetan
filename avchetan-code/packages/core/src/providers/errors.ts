@@ -35,6 +35,12 @@ function fromApiCall(error: APICallError): LlmError {
   return new LlmError('llm_unavailable', 'The model could not be reached', { details });
 }
 
+export function modelTimeoutError(): LlmError {
+  return new LlmError('llm_unavailable', 'The model took too long to answer', {
+    details: { reason: 'timeout' },
+  });
+}
+
 /**
  * Maps whatever a model call threw onto the error taxonomy (docs/architecture/llm-engine.md).
  * The original error is deliberately not kept as `cause`: SDK errors carry the request body,
@@ -56,9 +62,7 @@ export function toLlmError(error: unknown, adapter?: ProviderAdapter): AppError 
     return new LlmError('llm_refused', 'The model returned no answer');
   }
   if (error instanceof Error && (error.name === 'AbortError' || error.name === 'TimeoutError')) {
-    return new LlmError('llm_unavailable', 'The model took too long to answer', {
-      details: { reason: 'timeout' },
-    });
+    return modelTimeoutError();
   }
   return new AppError('internal', 'Unexpected error during a model call', {
     details: { thrown: error instanceof Error ? error.name : typeof error },

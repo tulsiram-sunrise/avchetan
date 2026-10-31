@@ -34,6 +34,8 @@ export type PendingProcessorDeps = {
 export type PendingProcessor = {
   /** Look for work now. Never awaited by capture. */
   wake: () => Promise<void>;
+  /** Works through at most `limit` logs, for a platform's short background window. */
+  drain: (limit: number) => Promise<void>;
   start: () => void;
   stop: () => void;
   /** Lifts a wait, e.g. after the user fixes a key. */
@@ -42,13 +44,16 @@ export type PendingProcessor = {
 
 /**
  * Works through this device's pending logs one at a time, oldest first
- * (docs/architecture/extraction-pipeline.md §2). Runs only in the dock, which is always alive.
+ * (docs/architecture/extraction-pipeline.md §2). On desktop it runs only in the dock, which is
+ * always alive.
  */
 export function createPendingProcessor(deps: PendingProcessorDeps): PendingProcessor {
   const { store, llm, network, scheduler } = deps;
   const loadSettings = deps.loadSettings ?? loadExtractionSettings;
   /** Set when a failure holds the whole queue. */
   let pausedUntil: string | null = null;
+  /** Logs this run may still take; null when there's no limit. */
+  let budget: number | null = null;
 
   const later = (ms: number) => new Date(Date.parse(store.clock.now()) + ms).toISOString();
 
@@ -92,6 +97,7 @@ export function createPendingProcessor(deps: PendingProcessorDeps): PendingProce
 
   async function run(): Promise<LoopRunResult> {
     const now = store.clock.now();
+    if (budget === 0) return 'idle';
     if (pausedUntil && now < pausedUntil) return 'idle';
     pausedUntil = null;
 
@@ -109,6 +115,7 @@ export function createPendingProcessor(deps: PendingProcessorDeps): PendingProce
     });
     if (!next) return 'idle';
 
+    if (budget !== null) budget -= 1;
     await store.write((tx) => store.repos.rawLogs.claim(tx, next, later(LEASE_MS)));
     try {
       await extract(next, models, settings);
@@ -139,6 +146,14 @@ export function createPendingProcessor(deps: PendingProcessorDeps): PendingProce
   let unsubscribe: (() => void) | null = null;
   return {
     wake: loop.wake,
+    async drain(limit) {
+      budget = limit;
+      try {
+        await loop.wake();
+      } finally {
+        budget = null;
+      }
+    },
     resume,
     start() {
       unsubscribe ??= network.subscribe((online) => {

@@ -14,6 +14,7 @@ Avchetan is a personal logger and planner. Type (or say) anything — a workout,
 3. [Pair your phone](pair-your-phone.md)
 4. [Choose AI models](ai-models.md)
 5. [Capture on Windows](capture-on-windows.md): the shortcut, tags, and which key saves
+6. [Use Avchetan on Android](capture-on-android.md): entries, tasks, and asking questions
 
 ## Downloads & source
 

@@ -8,3 +8,8 @@ allowBuilds:
   lefthook: true
 
 saveExact: true
+
+# Newest releases that fit Expo 58.0.21 and pass pnpm's release-age check. Remove when upgrading Expo.
+overrides:
+  "@expo/log-box": 58.0.13
+  "@expo/metro-runtime": 58.0.15

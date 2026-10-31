@@ -11,10 +11,13 @@
 - `@react-native-community/netinfo` for connectivity.
 - `expo-background-task` for periodic sync/processing (best-effort, ~15 min minimum on Android).
 - `expo-notifications` for daily brief / reminders.
-- UI: React Native + NativeWind (Tailwind classes, consistent with desktop tokens); `@gorhom/bottom-sheet` for capture.
-- State: Zustand + TanStack Query (same pattern as desktop).
-- LLM: `@avchetan/core` with `expo/fetch` injected (streaming support). Verify the AI SDK works on Hermes in Phase 4 (may need polyfills for `TextEncoderStream`/`structuredClone`).
-- Required polyfill: `crypto.getRandomValues` (used by `uuid` in `@avchetan/shared` for `newId()`), via `expo-crypto` or `react-native-get-random-values`, imported first in the app entry. `@avchetan/shared` date helpers rely on `Intl.DateTimeFormat` with `timeZone` support (available in Hermes; verify on device).
+- UI: React Native + NativeWind (Tailwind classes), with colors from `src/theme/tokens.json`, which match desktop's tokens and also feed React Navigation. Capture is a native `formSheet`, so it needs no bottom sheet library. Keep buttons out of the keyboard's way: Save sits at the top of the sheet.
+- State: Zustand + TanStack Query (same pattern as desktop). There's one process, so writes call the repositories directly (`src/queries/writes.ts`) rather than going through desktop's window actions.
+- LLM: `@avchetan/core` with `expo/fetch` injected (streaming support). The AI SDK needs no extra polyfills on Hermes: streaming, tool calls, `AbortSignal.any` and `AbortSignal.timeout` were checked on an emulator.
+- Required polyfill: `crypto.getRandomValues` (used by `uuid` in `@avchetan/shared` for `newId()`), from `expo-crypto`, in `src/polyfills.ts`, which `index.ts` imports first. `@avchetan/shared` date helpers use `Intl.DateTimeFormat` with `timeZone`, which works on Hermes. Android may report an older zone name, such as `Asia/Calcutta`.
+- Android backup is off (`allowBackup: false`), so entries and keystore items never go to a Google account. Export arrives in Phase 5.
+- NetInfo's reachability check is off, because it pings a Google address. The app relies on Android's connected state, so a phone on a home network without internet still counts as online and can reach a Home Hub.
+- Version pins: React must match the version Expo ships, so mobile can lag behind desktop's React. `pnpm-workspace.yaml` overrides two Expo packages to stay within pnpm's release-age check; remove those overrides when upgrading Expo.
 
 ## Screens (routes)
 
@@ -25,18 +28,21 @@ app/
     index.tsx            Today — timeline grouped by logged_date, pending badges
     tasks.tsx            Overdue / Today / Upcoming / Someday
     ask.tsx              Ask mode (chat-style, citations)
-    more.tsx             Tags, Projects, People (Phase 7), Settings
-  capture.tsx            Modal bottom sheet (also opened by widget deep link)
+    more.tsx             Settings for now; Tags, Projects and People come later
+  capture.tsx            Native sheet (also opened by `avchetan://capture`)
   log/[id].tsx           Raw log detail + extracted items, edit, re-extract
-  settings/…             providers, slots, sync, notifications, privacy
+  settings/…             providers and slots for now; sync, notifications, privacy later
 ```
 
-A floating capture button sits on every tab. Capture sheet: multiline input, Save, mic button (Phase 7).
+A floating capture button sits on every tab except Ask, which has its own input. Capture sheet: multiline input, Save, mic button (Phase 7).
+
+An edit replaces the raw log with a new one, so the entry screen moves to the new ID after saving. `expo/fetch` fails differently from standard fetch, so `platform/standard-fetch.ts` makes connection failures look standard, or the AI SDK wouldn't treat them as being offline.
 
 ## Background & lifecycle
 
-- App foreground → sync cycle → pending processor.
-- Background task (every ~15 min, OS-dependent) → sync cycle → process up to 3 pending logs (bounded to fit the background time budget).
+- App foreground → sync cycle → pending processor. The processor is woken each time the app becomes active.
+- Background task (every ~15 min, OS-dependent) → sync cycle → process up to 3 pending logs (bounded to fit the background time budget). `src/services/background.ts` defines it when the bundle loads, because Android can start it with no screen, and the screens and the task share `getAppServices()`.
+- Register the task only once. `registerTaskAsync` cancels and re-enqueues the work, so calling it on each launch would restart the 15 minute clock and cancel a run in progress. WorkManager also ignores a forced job until the interval has passed, so test it at least 15 minutes after registering.
 - Extraction on device only for logs captured on this device; server fallback covers logs left pending while the phone sleeps.
 - In Home Hub mode the default is extraction `delegate` + analysis `hub`: the phone makes no LLM calls; it captures, syncs, and asks the hub ([deployment-modes](deployment-modes.md#llm-work-for-the-phone-delegate-to-hub)).
 
@@ -60,5 +66,7 @@ Optional (advanced, Tailscale only): point the `ollama` provider at the PC's Tai
 ## Build & run
 
 - `pnpm --filter @avchetan/mobile dev` → Metro; Android emulator or physical device via USB.
-- Builds: local `expo run:android` or EAS Build (preview profile → APK for sideloading).
-- Monorepo: Metro config must watch workspace packages (`watchFolders`) and resolve `@avchetan/*` source (no prebuild step for packages).
+- `pnpm --filter @avchetan/mobile bundle` → the Android Hermes bundle, with no SDK or device needed. CI runs it.
+- Builds: local `expo run:android` or EAS Build (preview profile → APK for sideloading). `android/` is generated from `app.json` and is not committed. Release builds run R8, so a library that loads classes by reflection needs a keep rule (`expo-build-properties` in `app.json`).
+- Windows: native builds need CMake 3.31.6 and `LongPathsEnabled`, because CMake's object paths under pnpm reach about 320 characters and the Ninja in Android's default CMake can't pass 260. `plugins/long-native-paths.js` selects that CMake. Setup is in the [app README](../../avchetan-code/apps/mobile/README.md).
+- Monorepo: Expo's default Metro config finds the pnpm workspace and resolves `@avchetan/*` to source (no prebuild step for packages).

@@ -3,6 +3,8 @@ import { LlmError } from '@avchetan/shared';
 import type { ProviderAdapter } from '../adapter';
 
 const DEFAULT_BASE_URL = 'http://localhost:11434/v1';
+// Thinking took a small answer from 3 tokens to 92, far too slow on a CPU.
+const NO_THINKING = { ollama: { reasoningEffort: 'none' } };
 
 export const ollamaAdapter: ProviderAdapter = {
   id: 'ollama',
@@ -10,8 +12,8 @@ export const ollamaAdapter: ProviderAdapter = {
   requiresApiKey: false,
   local: true,
   freeTierUsesContent: false,
-  // Thinking took a small answer from 3 tokens to 92, far too slow on a CPU.
-  structuredOptions: { ollama: { reasoningEffort: 'none' } },
+  structuredOptions: NO_THINKING,
+  analysisOptions: NO_THINKING,
   createModel: ({ provider, model, baseUrl }, { fetch }) =>
     createOpenAICompatible({
       name: provider,

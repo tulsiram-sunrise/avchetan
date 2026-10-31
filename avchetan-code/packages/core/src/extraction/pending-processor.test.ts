@@ -86,6 +86,37 @@ describe('pending processor', () => {
     expect(doGenerate).toHaveBeenCalledTimes(2);
   });
 
+  describe('drain', () => {
+    it('stops after the limit and leaves the rest pending, oldest first', async () => {
+      const logs = [await capture('1'), await capture('2'), await capture('3')];
+
+      await processor.drain(2);
+
+      expect(await stored(logs[0] as RawLog)).toMatchObject({ status: 'processed' });
+      expect(await stored(logs[1] as RawLog)).toMatchObject({ status: 'processed' });
+      expect(await stored(logs[2] as RawLog)).toMatchObject({ status: 'pending_llm' });
+    });
+
+    it('stops limiting once it has finished', async () => {
+      const last = (await Promise.all([capture('1'), capture('2'), capture('3')])).at(-1) as RawLog;
+
+      await processor.drain(1);
+      await processor.wake();
+
+      expect(await stored(last)).toMatchObject({ status: 'processed' });
+    });
+
+    it('counts a failed log against the limit', async () => {
+      doGenerate.mockRejectedValue(apiError(500));
+      await capture('1');
+      await capture('2');
+
+      await processor.drain(1);
+
+      expect(doGenerate).toHaveBeenCalledTimes(1);
+    });
+  });
+
   it('does nothing until a model is configured', async () => {
     settings = { ...settings, models: [] };
     const log = await capture();
