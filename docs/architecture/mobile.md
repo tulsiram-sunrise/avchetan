@@ -67,6 +67,6 @@ Optional (advanced, Tailscale only): point the `ollama` provider at the PC's Tai
 
 - `pnpm --filter @avchetan/mobile dev` → Metro; Android emulator or physical device via USB.
 - `pnpm --filter @avchetan/mobile bundle` → the Android Hermes bundle, with no SDK or device needed. CI runs it.
-- Builds: local `expo run:android` or EAS Build (preview profile → APK for sideloading). `android/` is generated from `app.json` and is not committed.
+- Builds: local `expo run:android` or EAS Build (preview profile → APK for sideloading). `android/` is generated from `app.json` and is not committed. Release builds run R8, so a library that loads classes by reflection needs a keep rule (`expo-build-properties` in `app.json`).
 - Windows: native builds need CMake 3.31.6 and `LongPathsEnabled`, because CMake's object paths under pnpm reach about 320 characters and the Ninja in Android's default CMake can't pass 260. `plugins/long-native-paths.js` selects that CMake. Setup is in the [app README](../../avchetan-code/apps/mobile/README.md).
 - Monorepo: Expo's default Metro config finds the pnpm workspace and resolves `@avchetan/*` to source (no prebuild step for packages).
