@@ -40,7 +40,7 @@ function isAllowed(expression: string): boolean {
 
 type LicenseEntry = { name: string; versions: string[] };
 
-const output = execSync('pnpm licenses list --json', {
+const output = execSync('pnpm licenses list --json --prod --recursive', {
   encoding: 'utf8',
   maxBuffer: 64 * 1024 * 1024,
 });
