@@ -31,6 +31,8 @@ Other providers, such as Anthropic Claude and OpenAI, are planned for a later ve
 3. Click **Test** to check it. Nothing is saved yet, and only a made-up sentence is sent.
 4. Click **Save**. Avchetan then starts organizing the entries that are waiting, so they are sent to that provider.
 
+On Android, these settings are under **More → AI models**.
+
 Your key is stored in your device's secure storage (Windows Credential Manager / Android Keystore), never in plain files.
 
 ## Privacy

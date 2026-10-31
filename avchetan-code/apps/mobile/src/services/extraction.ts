@@ -3,7 +3,11 @@ import type { ClientStore } from '@avchetan/db/sqlite';
 import type { Platform } from '../platform';
 
 /** Wires the processor to this platform. Foreground only until the background task (step 5). */
-export function createExtractionService(store: ClientStore, platform: Platform): PendingProcessor {
+export function createExtractionService(
+  store: ClientStore,
+  platform: Platform,
+  onChange: () => void,
+): PendingProcessor {
   const { fetch, secrets, network, scheduler } = platform;
   return createPendingProcessor({
     store,
@@ -13,5 +17,6 @@ export function createExtractionService(store: ClientStore, platform: Platform):
       resolveModel: (config) => createModel(config, { fetch, secrets }),
       recordRun: (run) => store.recordLlmRun(run),
     },
+    onChange,
   });
 }

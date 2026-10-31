@@ -13,6 +13,7 @@ import { openDatabaseAsync } from 'expo-sqlite';
 import { createExpoSqliteExecutor } from './expo-sqlite';
 import { NetInfoMonitor } from './netinfo-monitor';
 import { ExpoSecretStore } from './secure-store';
+import { withStandardFailures } from './standard-fetch';
 
 /** Every platform capability the app uses, built once (docs/patterns/platform-adapters.md). */
 export type Platform = {
@@ -44,6 +45,6 @@ export async function createExpoPlatform(): Promise<Platform> {
     secrets: new ExpoSecretStore(SecureStore),
     network: new NetInfoMonitor(NetInfo.addEventListener),
     scheduler: new TimerScheduler(),
-    fetch: expoFetch as HttpFetch,
+    fetch: withStandardFailures(expoFetch as HttpFetch),
   };
 }

@@ -1,23 +1,8 @@
+import { exerciseLines, metricsText } from '@avchetan/core';
 import type { Activity, RawLog, Task } from '@avchetan/db/sqlite';
 import { useState } from 'react';
 import { useAction, useActiveCategories, useCategoryNames } from '../queries/organize';
 import { ActionError, EditableText, fieldClass, QuietButton } from './ui';
-
-function metricsText(metrics: Record<string, unknown>): string {
-  return Object.entries(metrics)
-    .filter(([key]) => key !== 'exercises')
-    .map(([key, value]) => `${key.replaceAll('_', ' ')}: ${String(value)}`)
-    .join(' · ');
-}
-
-function exerciseLines(metrics: Record<string, unknown>): string[] {
-  const list = Array.isArray(metrics.exercises) ? metrics.exercises : [];
-  return list.map((raw) => {
-    const item = raw as { name: string; sets?: number; reps?: number; weight_kg?: number };
-    const volume = item.sets && item.reps ? ` ${item.sets}×${item.reps}` : '';
-    return `${item.name}${volume}${item.weight_kg ? ` @ ${item.weight_kg} kg` : ''}`;
-  });
-}
 
 export function ActivityRow({ activity }: { activity: Activity }) {
   const names = useCategoryNames();

@@ -1,33 +1,61 @@
 import '../global.css';
 import { createLogger, toAppError } from '@avchetan/shared';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Text, View } from 'react-native';
 import { type AppServices, openAppServices } from '../src/app-services';
-import { openHelp } from '../src/help';
 import { createExpoPlatform } from '../src/platform';
+import { queryClient } from '../src/query-client';
 import { ServicesProvider } from '../src/services-context';
+import { AppTheme } from '../src/theme/theme';
+import { HelpLink } from '../src/ui/parts';
 
 const log = createLogger('app');
-const queryClient = new QueryClient();
 
 type Startup =
   | { status: 'opening' }
   | { status: 'failed' }
   | { status: 'ready'; services: AppServices };
 
-function StartupFailed() {
+function AppRoutes({ startup }: { startup: Startup }) {
+  if (startup.status === 'failed') {
+    return (
+      <View className="flex-1 items-center justify-center gap-3 bg-surface p-6">
+        <Text className="text-center text-base text-ink">
+          Avchetan couldn't open its database. Close the app and open it again.{' '}
+          <HelpLink code="database_unavailable" />
+        </Text>
+      </View>
+    );
+  }
+  if (startup.status === 'opening') {
+    return (
+      <View className="flex-1 items-center justify-center bg-surface">
+        <ActivityIndicator />
+      </View>
+    );
+  }
   return (
-    <View className="flex-1 items-center justify-center gap-3 bg-white p-6 dark:bg-neutral-950">
-      <Text className="text-center text-base text-neutral-900 dark:text-neutral-100">
-        Avchetan couldn't open its database. Close the app and open it again.
-      </Text>
-      <Pressable onPress={() => void openHelp('database_unavailable')}>
-        <Text className="text-base text-blue-600 dark:text-blue-400">Open the guide</Text>
-      </Pressable>
-    </View>
+    <ServicesProvider services={startup.services}>
+      <QueryClientProvider client={queryClient}>
+        <Stack>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="capture"
+            options={{
+              presentation: 'formSheet',
+              headerShown: false,
+              sheetAllowedDetents: [0.6],
+              sheetGrabberVisible: true,
+            }}
+          />
+          <Stack.Screen name="log/[id]" options={{ title: 'Entry' }} />
+          <Stack.Screen name="settings/ai-models" options={{ title: 'AI models' }} />
+        </Stack>
+      </QueryClientProvider>
+    </ServicesProvider>
   );
 }
 
@@ -49,21 +77,10 @@ export default function RootLayout() {
       );
   }, []);
 
-  if (startup.status === 'failed') return <StartupFailed />;
-  if (startup.status === 'opening') {
-    return (
-      <View className="flex-1 items-center justify-center bg-white dark:bg-neutral-950">
-        <ActivityIndicator />
-      </View>
-    );
-  }
-
   return (
-    <ServicesProvider services={startup.services}>
-      <QueryClientProvider client={queryClient}>
-        <StatusBar style="auto" />
-        <Stack screenOptions={{ headerShown: false }} />
-      </QueryClientProvider>
-    </ServicesProvider>
+    <AppTheme>
+      <StatusBar style="auto" />
+      <AppRoutes startup={startup} />
+    </AppTheme>
   );
 }

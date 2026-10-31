@@ -11,8 +11,8 @@
 - `@react-native-community/netinfo` for connectivity.
 - `expo-background-task` for periodic sync/processing (best-effort, ~15 min minimum on Android).
 - `expo-notifications` for daily brief / reminders.
-- UI: React Native + NativeWind (Tailwind classes, consistent with desktop tokens); `@gorhom/bottom-sheet` for capture.
-- State: Zustand + TanStack Query (same pattern as desktop).
+- UI: React Native + NativeWind (Tailwind classes), with colors from `src/theme/tokens.json`, which match desktop's tokens and also feed React Navigation. Capture is a native `formSheet`, so it needs no bottom sheet library. Keep buttons out of the keyboard's way: Save sits at the top of the sheet.
+- State: Zustand + TanStack Query (same pattern as desktop). There's one process, so writes call the repositories directly (`src/queries/writes.ts`) rather than going through desktop's window actions.
 - LLM: `@avchetan/core` with `expo/fetch` injected (streaming support). The AI SDK needs no extra polyfills on Hermes: streaming, tool calls, `AbortSignal.any` and `AbortSignal.timeout` were checked on an emulator.
 - Required polyfill: `crypto.getRandomValues` (used by `uuid` in `@avchetan/shared` for `newId()`), from `expo-crypto`, in `src/polyfills.ts`, which `index.ts` imports first. `@avchetan/shared` date helpers use `Intl.DateTimeFormat` with `timeZone`, which works on Hermes. Android may report an older zone name, such as `Asia/Calcutta`.
 - Android backup is off (`allowBackup: false`), so entries and keystore items never go to a Google account. Export arrives in Phase 5.
@@ -28,13 +28,15 @@ app/
     index.tsx            Today — timeline grouped by logged_date, pending badges
     tasks.tsx            Overdue / Today / Upcoming / Someday
     ask.tsx              Ask mode (chat-style, citations)
-    more.tsx             Tags, Projects, People (Phase 7), Settings
-  capture.tsx            Modal bottom sheet (also opened by widget deep link)
+    more.tsx             Settings for now; Tags, Projects and People come later
+  capture.tsx            Native sheet (also opened by `avchetan://capture`)
   log/[id].tsx           Raw log detail + extracted items, edit, re-extract
-  settings/…             providers, slots, sync, notifications, privacy
+  settings/…             providers and slots for now; sync, notifications, privacy later
 ```
 
-A floating capture button sits on every tab. Capture sheet: multiline input, Save, mic button (Phase 7).
+A floating capture button sits on every tab except Ask, which has its own input. Capture sheet: multiline input, Save, mic button (Phase 7).
+
+An edit replaces the raw log with a new one, so the entry screen moves to the new ID after saving. `expo/fetch` fails differently from standard fetch, so `platform/standard-fetch.ts` makes connection failures look standard, or the AI SDK wouldn't treat them as being offline.
 
 ## Background & lifecycle
 

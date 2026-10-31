@@ -57,6 +57,7 @@ export {
   parseQuantity,
   toSnakeKey,
 } from './normalize/metrics';
+export { exerciseLines, metricsText } from './normalize/metrics-display';
 export { normalizeTagPath, normalizeTagSegment, singularize } from './normalize/tags';
 export type { ModelContext, ProviderAdapter } from './providers/adapter';
 export {
