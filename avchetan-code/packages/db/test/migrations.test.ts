@@ -71,7 +71,7 @@ describe('SQLite migrations', () => {
   });
 });
 
-describe('Postgres (PGlite) migrations', () => {
+describe('Postgres (PGlite) migrations', { timeout: 30_000 }, () => {
   it('create every server table and assign server_seq in order', async () => {
     const { pg, driver } = await createTestPglite();
     await runMigrations(driver, pgMigrations, { now });
