@@ -1,0 +1,814 @@
+{
+  "workout-run": {
+    "activities": [
+      {
+        "category": "workout",
+        "title": "Morning cycling",
+        "notes": null,
+        "metrics": [
+          {
+            "key": "distance_km",
+            "value": "12"
+          },
+          {
+            "key": "duration_min",
+            "value": "35"
+          }
+        ],
+        "exercises": [],
+        "loggedDate": "2026-03-04",
+        "project": null,
+        "inferredTags": []
+      }
+    ],
+    "tasks": [],
+    "newCategory": null,
+    "logTags": [],
+    "entities": [],
+    "skip": null
+  },
+  "workout-strength": {
+    "activities": [
+      {
+        "category": "workout",
+        "title": "Strength training",
+        "notes": "Felt strong",
+        "metrics": [],
+        "exercises": [
+          {
+            "name": "Bench press",
+            "sets": 3,
+            "reps": 5,
+            "weightKg": 80,
+            "durationMin": null
+          },
+          {
+            "name": "Squat",
+            "sets": 5,
+            "reps": 5,
+            "weightKg": 100,
+            "durationMin": null
+          }
+        ],
+        "loggedDate": "2026-03-04",
+        "project": null,
+        "inferredTags": []
+      }
+    ],
+    "tasks": [],
+    "newCategory": null,
+    "logTags": [],
+    "entities": [],
+    "skip": null
+  },
+  "workout-yesterday": {
+    "activities": [
+      {
+        "category": "workout",
+        "title": "Yoga session",
+        "notes": null,
+        "metrics": [
+          {
+            "key": "duration_min",
+            "value": "45"
+          }
+        ],
+        "exercises": [],
+        "loggedDate": "2026-03-03",
+        "project": null,
+        "inferredTags": []
+      }
+    ],
+    "tasks": [],
+    "newCategory": null,
+    "logTags": [],
+    "entities": [],
+    "skip": null
+  },
+  "workout-miles": {
+    "activities": [
+      {
+        "category": "workout",
+        "title": "Walk after dinner",
+        "notes": null,
+        "metrics": [
+          {
+            "key": "distance_km",
+            "value": "3.218"
+          }
+        ],
+        "exercises": [],
+        "loggedDate": "2026-03-04",
+        "project": null,
+        "inferredTags": []
+      }
+    ],
+    "tasks": [],
+    "newCategory": null,
+    "logTags": [],
+    "entities": [],
+    "skip": null
+  },
+  "workout-hindi": {
+    "activities": [
+      {
+        "category": "workout",
+        "title": "Morning yoga",
+        "notes": null,
+        "metrics": [
+          {
+            "key": "duration_min",
+            "value": "30"
+          }
+        ],
+        "exercises": [],
+        "loggedDate": "2026-03-04",
+        "project": null,
+        "inferredTags": []
+      }
+    ],
+    "tasks": [],
+    "newCategory": null,
+    "logTags": [],
+    "entities": [],
+    "skip": null
+  },
+  "workout-steps": {
+    "activities": [
+      {
+        "category": "workout",
+        "title": "Walk",
+        "notes": null,
+        "metrics": [
+          {
+            "key": "steps",
+            "value": "12000"
+          }
+        ],
+        "exercises": [],
+        "loggedDate": "2026-03-04",
+        "project": null,
+        "inferredTags": []
+      }
+    ],
+    "tasks": [],
+    "newCategory": null,
+    "logTags": [],
+    "entities": [],
+    "skip": null
+  },
+  "diet-lunch": {
+    "activities": [
+      {
+        "category": "diet",
+        "title": "Lunch: dal rice and salad",
+        "notes": null,
+        "metrics": [
+          {
+            "key": "meal",
+            "value": "lunch"
+          }
+        ],
+        "exercises": [],
+        "loggedDate": "2026-03-04",
+        "project": null,
+        "inferredTags": []
+      }
+    ],
+    "tasks": [],
+    "newCategory": null,
+    "logTags": [],
+    "entities": [],
+    "skip": null
+  },
+  "diet-macros": {
+    "activities": [
+      {
+        "category": "diet",
+        "title": "Breakfast: oats",
+        "notes": null,
+        "metrics": [
+          {
+            "key": "protein_g",
+            "value": "30"
+          },
+          {
+            "key": "calories_kcal",
+            "value": "450"
+          },
+          {
+            "key": "meal",
+            "value": "breakfast"
+          }
+        ],
+        "exercises": [],
+        "loggedDate": "2026-03-04",
+        "project": null,
+        "inferredTags": []
+      }
+    ],
+    "tasks": [],
+    "newCategory": null,
+    "logTags": [],
+    "entities": [],
+    "skip": null
+  },
+  "diet-water": {
+    "activities": [
+      {
+        "category": "diet",
+        "title": "Water intake",
+        "notes": null,
+        "metrics": [
+          {
+            "key": "water_ml",
+            "value": "2000"
+          }
+        ],
+        "exercises": [],
+        "loggedDate": "2026-03-04",
+        "project": null,
+        "inferredTags": []
+      }
+    ],
+    "tasks": [],
+    "newCategory": null,
+    "logTags": [],
+    "entities": [],
+    "skip": null
+  },
+  "diet-with-person": {
+    "activities": [
+      {
+        "category": "diet",
+        "title": "Dinner: pasta",
+        "notes": null,
+        "metrics": [
+          {
+            "key": "meal",
+            "value": "dinner"
+          }
+        ],
+        "exercises": [],
+        "loggedDate": "2026-03-04",
+        "project": null,
+        "inferredTags": []
+      }
+    ],
+    "tasks": [],
+    "newCategory": null,
+    "logTags": [],
+    "entities": [
+      {
+        "kind": "person",
+        "name": "Kavya",
+        "mentions": [
+          {
+            "target": "activity:0",
+            "role": "with"
+          }
+        ]
+      },
+      {
+        "kind": "place",
+        "name": "Blue Door",
+        "mentions": [
+          {
+            "target": "activity:0",
+            "role": "at"
+          }
+        ]
+      }
+    ],
+    "skip": null
+  },
+  "diet-hindi": {
+    "activities": [
+      {
+        "category": "diet",
+        "title": "Night meal: khichdi",
+        "notes": null,
+        "metrics": [
+          {
+            "key": "meal",
+            "value": "dinner"
+          }
+        ],
+        "exercises": [],
+        "loggedDate": "2026-03-04",
+        "project": null,
+        "inferredTags": []
+      }
+    ],
+    "tasks": [],
+    "newCategory": null,
+    "logTags": [],
+    "entities": [],
+    "skip": null
+  },
+  "health-sleep": {
+    "activities": [
+      {
+        "category": "health",
+        "title": "Sleep",
+        "notes": null,
+        "metrics": [
+          {
+            "key": "sleep_h",
+            "value": "6.5"
+          }
+        ],
+        "exercises": [],
+        "loggedDate": "2026-03-03",
+        "project": null,
+        "inferredTags": []
+      }
+    ],
+    "tasks": [],
+    "newCategory": null,
+    "logTags": [],
+    "entities": [],
+    "skip": null
+  },
+  "health-pain": {
+    "activities": [
+      {
+        "category": "health",
+        "title": "Right shoulder pain",
+        "notes": "about a 6 out of 10",
+        "metrics": [
+          {
+            "key": "pain",
+            "value": "6"
+          },
+          {
+            "key": "body_part",
+            "value": "right shoulder"
+          }
+        ],
+        "exercises": [],
+        "loggedDate": "2026-03-04",
+        "project": null,
+        "inferredTags": []
+      }
+    ],
+    "tasks": [],
+    "newCategory": null,
+    "logTags": [],
+    "entities": [],
+    "skip": null
+  },
+  "health-weight": {
+    "activities": [
+      {
+        "category": "health",
+        "title": "Weigh‑in",
+        "notes": null,
+        "metrics": [
+          {
+            "key": "weight_body_kg",
+            "value": "74.5"
+          }
+        ],
+        "exercises": [],
+        "loggedDate": "2026-03-04",
+        "project": null,
+        "inferredTags": []
+      }
+    ],
+    "tasks": [],
+    "newCategory": null,
+    "logTags": [],
+    "entities": [],
+    "skip": null
+  },
+  "health-medicine-task": {
+    "activities": [
+      {
+        "category": "health",
+        "title": "Took antibiotic",
+        "notes": null,
+        "metrics": [],
+        "exercises": [],
+        "loggedDate": "2026-03-04",
+        "project": null,
+        "inferredTags": []
+      }
+    ],
+    "tasks": [
+      {
+        "title": "Refill prescription",
+        "notes": null,
+        "dueDate": "2026-03-06",
+        "category": "health",
+        "project": null,
+        "inferredTags": []
+      }
+    ],
+    "newCategory": null,
+    "logTags": [],
+    "entities": [],
+    "skip": null
+  },
+  "work-deep": {
+    "activities": [
+      {
+        "category": "work",
+        "title": "Deep work on quarterly report",
+        "notes": null,
+        "metrics": [
+          {
+            "key": "deep_work_min",
+            "value": "120"
+          }
+        ],
+        "exercises": [],
+        "loggedDate": "2026-03-04",
+        "project": null,
+        "inferredTags": []
+      }
+    ],
+    "tasks": [],
+    "newCategory": null,
+    "logTags": [],
+    "entities": [],
+    "skip": null
+  },
+  "work-meeting": {
+    "activities": [
+      {
+        "category": "work",
+        "title": "Design review",
+        "notes": null,
+        "metrics": [],
+        "exercises": [],
+        "loggedDate": "2026-03-04",
+        "project": null,
+        "inferredTags": []
+      }
+    ],
+    "tasks": [],
+    "newCategory": null,
+    "logTags": [],
+    "entities": [
+      {
+        "kind": "person",
+        "name": "Neha",
+        "mentions": [
+          {
+            "target": "activity:0",
+            "role": "with"
+          }
+        ]
+      },
+      {
+        "kind": "person",
+        "name": "Omar",
+        "mentions": [
+          {
+            "target": "activity:0",
+            "role": "with"
+          }
+        ]
+      }
+    ],
+    "skip": null
+  },
+  "work-project": {
+    "activities": [
+      {
+        "category": "work",
+        "title": "Finish tile layout plan",
+        "notes": null,
+        "metrics": [],
+        "exercises": [],
+        "loggedDate": "2026-03-04",
+        "project": "Home Renovation",
+        "inferredTags": []
+      }
+    ],
+    "tasks": [],
+    "newCategory": null,
+    "logTags": [],
+    "entities": [],
+    "skip": null
+  },
+  "work-task-tomorrow": {
+    "activities": [],
+    "tasks": [
+      {
+        "title": "Send invoice",
+        "notes": "to Rahul",
+        "dueDate": "2026-03-05",
+        "category": "work",
+        "project": null,
+        "inferredTags": []
+      }
+    ],
+    "newCategory": null,
+    "logTags": [],
+    "entities": [
+      {
+        "kind": "person",
+        "name": "Rahul",
+        "mentions": [
+          {
+            "target": "task:0",
+            "role": "owed_by"
+          }
+        ]
+      }
+    ],
+    "skip": null
+  },
+  "reflect-gratitude": {
+    "activities": [
+      {
+        "category": "reflection",
+        "title": "Quiet evening at home",
+        "notes": "Feeling calm",
+        "metrics": [],
+        "exercises": [],
+        "loggedDate": "2026-03-04",
+        "project": null,
+        "inferredTags": []
+      }
+    ],
+    "tasks": [],
+    "newCategory": null,
+    "logTags": [],
+    "entities": [],
+    "skip": null
+  },
+  "reflect-mood": {
+    "activities": [
+      {
+        "category": "reflection",
+        "title": "Afternoon anxiety",
+        "notes": "Felt really anxious all afternoon, not sure why",
+        "metrics": [],
+        "exercises": [],
+        "loggedDate": "2026-03-04",
+        "project": null,
+        "inferredTags": []
+      }
+    ],
+    "tasks": [],
+    "newCategory": null,
+    "logTags": [],
+    "entities": [],
+    "skip": null
+  },
+  "reflect-hindi": {
+    "activities": [
+      {
+        "category": "reflection",
+        "title": "Mood: Happy",
+        "notes": "aaj mann bahut khush tha",
+        "metrics": [],
+        "exercises": [],
+        "loggedDate": "2026-03-04",
+        "project": null,
+        "inferredTags": []
+      }
+    ],
+    "tasks": [],
+    "newCategory": null,
+    "logTags": [],
+    "entities": [],
+    "skip": null
+  },
+  "task-next-monday": {
+    "activities": [],
+    "tasks": [
+      {
+        "title": "Renew car insurance",
+        "notes": null,
+        "dueDate": "2026-03-09",
+        "category": null,
+        "project": null,
+        "inferredTags": []
+      }
+    ],
+    "newCategory": null,
+    "logTags": [],
+    "entities": [],
+    "skip": null
+  },
+  "task-no-date": {
+    "activities": [],
+    "tasks": [
+      {
+        "title": "Call plumber",
+        "notes": null,
+        "dueDate": null,
+        "category": "other",
+        "project": null,
+        "inferredTags": []
+      }
+    ],
+    "newCategory": null,
+    "logTags": [],
+    "entities": [],
+    "skip": null
+  },
+  "task-hindi-kal": {
+    "activities": [],
+    "tasks": [
+      {
+        "title": "Go to bank",
+        "notes": null,
+        "dueDate": "2026-03-05",
+        "category": "other",
+        "project": null,
+        "inferredTags": []
+      }
+    ],
+    "newCategory": null,
+    "logTags": [],
+    "entities": [],
+    "skip": null
+  },
+  "task-owed": {
+    "activities": [],
+    "tasks": [
+      {
+        "title": "Pay Vikram 500 for movie tickets",
+        "notes": null,
+        "dueDate": null,
+        "category": null,
+        "project": null,
+        "inferredTags": []
+      }
+    ],
+    "newCategory": null,
+    "logTags": [],
+    "entities": [
+      {
+        "kind": "person",
+        "name": "Vikram",
+        "mentions": [
+          {
+            "target": "task:0",
+            "role": "owed_to"
+          }
+        ]
+      }
+    ],
+    "skip": null
+  },
+  "multi-two-activities": {
+    "activities": [
+      {
+        "category": "workout",
+        "title": "Gym session",
+        "notes": null,
+        "metrics": [
+          {
+            "key": "duration_min",
+            "value": "60"
+          }
+        ],
+        "exercises": [],
+        "loggedDate": "2026-03-04",
+        "project": null,
+        "inferredTags": []
+      },
+      {
+        "category": "diet",
+        "title": "Protein shake",
+        "notes": null,
+        "metrics": [
+          {
+            "key": "protein_g",
+            "value": "25"
+          }
+        ],
+        "exercises": [],
+        "loggedDate": "2026-03-04",
+        "project": null,
+        "inferredTags": []
+      }
+    ],
+    "tasks": [],
+    "newCategory": null,
+    "logTags": [],
+    "entities": [],
+    "skip": null
+  },
+  "multi-past-and-future": {
+    "activities": [
+      {
+        "category": "workout",
+        "title": "Morning run",
+        "notes": null,
+        "metrics": [
+          {
+            "key": "distance_km",
+            "value": "3"
+          }
+        ],
+        "exercises": [],
+        "loggedDate": "2026-03-03",
+        "project": null,
+        "inferredTags": ["running"]
+      }
+    ],
+    "tasks": [
+      {
+        "title": "Run 5k on Sunday",
+        "notes": null,
+        "dueDate": "2026-03-08",
+        "category": "workout",
+        "project": null,
+        "inferredTags": []
+      }
+    ],
+    "newCategory": null,
+    "logTags": [],
+    "entities": [],
+    "skip": null
+  },
+  "new-category-garden": {
+    "activities": [
+      {
+        "category": "other",
+        "title": "Repotted tomato plants and watered garden",
+        "notes": null,
+        "metrics": [],
+        "exercises": [],
+        "loggedDate": "2026-03-04",
+        "project": null,
+        "inferredTags": []
+      }
+    ],
+    "tasks": [],
+    "newCategory": null,
+    "logTags": [],
+    "entities": [],
+    "skip": null
+  },
+  "tag-reuse": {
+    "activities": [
+      {
+        "category": "health",
+        "title": "Stairs caused knee soreness",
+        "notes": "Knee was sore on the stairs",
+        "metrics": [],
+        "exercises": [],
+        "loggedDate": "2026-03-04",
+        "project": null,
+        "inferredTags": ["health/knee"]
+      }
+    ],
+    "tasks": [],
+    "newCategory": null,
+    "logTags": [],
+    "entities": [],
+    "skip": null
+  },
+  "explicit-tag": {
+    "activities": [
+      {
+        "category": "workout",
+        "title": "Run 4k",
+        "notes": null,
+        "metrics": [
+          {
+            "key": "distance_km",
+            "value": "4"
+          }
+        ],
+        "exercises": [],
+        "loggedDate": "2026-03-04",
+        "project": null,
+        "inferredTags": ["running"]
+      }
+    ],
+    "tasks": [],
+    "newCategory": null,
+    "logTags": ["fitness"],
+    "entities": [],
+    "skip": null
+  },
+  "skip-noise": {
+    "activities": [],
+    "tasks": [],
+    "newCategory": null,
+    "logTags": [],
+    "entities": [],
+    "skip": {
+      "reason": "No content"
+    }
+  },
+  "skip-empty-ish": {
+    "activities": [],
+    "tasks": [],
+    "newCategory": null,
+    "logTags": [],
+    "entities": [],
+    "skip": {
+      "reason": "No content"
+    }
+  }
+}

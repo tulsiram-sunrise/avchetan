@@ -61,6 +61,7 @@ export function useCaptureMutation() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: rawLogKeys.all });
       void announceCapture(services);
+      void services.extraction.wake();
     },
   });
 }

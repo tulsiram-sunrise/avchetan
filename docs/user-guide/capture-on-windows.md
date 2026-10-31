@@ -29,6 +29,35 @@ Open Avchetan (tray icon → **Open Avchetan**) → **Settings**.
 - **Saving an entry:** choose whether **Enter** saves and **Shift+Enter** starts a new line (the default), or the other way round. Swap them if you often write entries longer than one line.
 - **Start with Windows:** leave this on so the shortcut works right after you sign in.
 
+- **Time zone:** Avchetan follows Windows. Choose a zone here if your entries should use a different one. A day ends at midnight.
+
+## Ask about your entries
+
+Start with `?` and press your save key:
+
+```
+? how many workouts did I do this week
+? when did my knee hurt
+? what tasks are overdue
+```
+
+A question is never saved as an entry. The answer appears in the box with the entries it came from, numbered like `[1]`. Avchetan does the counting itself, so totals come from your data, not from a guess.
+
+Your question, and the entries needed to answer it, go to the model chosen under **Settings → AI models**. Private entries are only read by a model on your own PC. They stay out of a cloud model's answers, so those answers can leave them out.
+
+When you're offline with a cloud model, Avchetan shows a short count from your PC instead.
+
+## See what was organized
+
+Open Avchetan (tray icon → **Open Avchetan**):
+
+- **Timeline:** every entry, with the activities and tasks found in it. Click a title to change it, or change the category next to it. Avchetan never overwrites what you changed. **Options** under an entry lets you organize it again, edit its text, or delete it.
+- **Tasks:** tick things off and set due dates.
+- **Review:** entries that couldn't be organized, and why. Press **Organize now** to try again.
+- **Categories:** rename, merge or archive them. The AI adds a category, marked **New**, only when nothing fits; press **Keep** or merge it into another.
+- **Tags:** rename, nest (`health/knee`), merge or recolor them.
+- **Projects:** list what you're working on. Entries are linked to a project only if it's listed here.
+
 ## Check it worked
 
 Press your shortcut, type `Test entry #test` and press your save key. The entry appears at the top of the list, and *Open Avchetan* shows it in the timeline.

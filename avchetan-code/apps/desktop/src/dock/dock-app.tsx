@@ -1,7 +1,9 @@
 import { createLogger } from '@avchetan/shared';
 import { useEffect, useRef } from 'react';
 import { useServices } from '../services-context';
+import { useDockStore } from '../stores/dock-store';
 import { useAppEvent, useTableInvalidation } from '../use-app-event';
+import { AskPanel } from './ask-panel';
 import { CaptureInput } from './capture-input';
 import { DockFooter } from './dock-footer';
 import { HotkeyBanner } from './hotkey-banner';
@@ -15,6 +17,7 @@ export function DockApp() {
   const { platform } = useServices();
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const autosave = useDraftPersistence();
+  const asking = useDockStore((state) => state.ask !== null);
   useTableInvalidation();
 
   useAppEvent('dock:shown', () => inputRef.current?.focus());
@@ -42,7 +45,7 @@ export function DockApp() {
         <HotkeyBanner />
         <CaptureInput inputRef={inputRef} onCaptured={() => void autosave.flush()} />
         <div className="min-h-0 flex-1 overflow-y-auto">
-          <RecentCaptures />
+          {asking ? <AskPanel /> : <RecentCaptures />}
         </div>
         <DockFooter />
       </main>

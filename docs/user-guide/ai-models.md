@@ -14,19 +14,27 @@ Avchetan uses AI for three jobs. Each can use a different model:
 
 - Install [Ollama](https://ollama.com). Avchetan detects it and suggests models.
 - Larger models give better answers but need more graphics memory. The app shows a "fits your PC" hint for each suggestion.
+- Without a working graphics card, Ollama runs on the processor. That still works, but an entry can take up to a minute to organize, and in our tests about one entry in three had a mistake, such as a missed number or wrong date. You can correct these in the main window. A cloud provider is more accurate, but your entries leave your PC.
+- If the app says a model isn't downloaded, run `ollama pull <model>` once, or choose a model you already have.
 - On a phone: use **Let my hub do it** — phones can't run these models.
 
-## Paid providers (bring your own key)
+## Free cloud providers (bring your own key)
 
-Google Gemini, Anthropic Claude, OpenAI, Groq, or any OpenAI-compatible service.
+**Groq** has a free tier with daily limits, enough for a personal log. If you reach a limit, your entries wait and are organized later.
+
+**Google Gemini** also has a free tier, but Google's terms say what you send to it can be used to improve its products and read by human reviewers, and that you shouldn't send personal information. Avchetan entries are personal, so use Groq or Ollama for them unless you have a paid Gemini plan.
+
+Other providers, such as Anthropic Claude and OpenAI, are planned for a later version.
+
 1. Create an API key on the provider's website.
-2. **Settings → AI models → Add provider** → paste the key → **Test**.
-3. Choose which model to use for each job.
+2. Open **Settings → AI models**, choose the provider, and paste the key.
+3. Click **Test** to check it. Nothing is saved yet, and only a made-up sentence is sent.
+4. Click **Save**. Avchetan then starts organizing the entries that are waiting, so they are sent to that provider.
 
 Your key is stored in your device's secure storage (Windows Credential Manager / Android Keystore), never in plain files.
 
 ## Privacy
 
 - With Ollama only, your entries never leave your devices and hub.
-- With a cloud provider, the text of your entries (and your questions) is sent to that provider to be processed. The settings screen shows which jobs use which provider.
+- With a cloud provider, the text of your entries (and your questions) is sent to that provider to be processed, under that provider's terms. The settings screen shows which jobs use which provider.
 - Add `!private` to an entry to keep it away from cloud AI entirely (coming in a later version).

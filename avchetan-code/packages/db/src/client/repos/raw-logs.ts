@@ -3,7 +3,15 @@ import { and, eq } from 'drizzle-orm';
 import type { RawLogPrivacy, RawLogSource } from '../../schema/enums';
 import { activities, rawLogs, tasks } from '../../schema/sqlite/tables';
 import type { Tx } from '../database';
-import { insertSynced, live, type RepoDeps, type Row, softDeleteSynced } from '../synced';
+import {
+  getById,
+  insertSynced,
+  live,
+  type RepoDeps,
+  type Row,
+  softDeleteSynced,
+  updateSynced,
+} from '../synced';
 import { softDeleteLinksTo } from './cascade';
 import type { tagsRepo } from './tags';
 
@@ -18,10 +26,12 @@ export type CaptureInput = {
   privacy?: RawLogPrivacy;
   /** `#tags` already parsed from the content (deterministically, not by the LLM). */
   explicitTagPaths?: readonly string[];
+  /** Only for an edit: the moment the original was captured. */
+  capturedAt?: string;
 };
 
 export function rawLogsRepo(deps: RepoDeps, tags: ReturnType<typeof tagsRepo>) {
-  return {
+  const repo = {
     /**
      * The capture hot path: one local transaction, no network. The log starts as
      * `pending_llm`; extraction happens later in the background.
@@ -35,7 +45,8 @@ export function rawLogsRepo(deps: RepoDeps, tags: ReturnType<typeof tagsRepo>) {
         });
       }
 
-      const capturedAt = deps.clock.now();
+      const now = deps.clock.now();
+      const capturedAt = input.capturedAt ?? now;
       const rawLog = await insertSynced(
         tx,
         deps,
@@ -51,7 +62,7 @@ export function rawLogsRepo(deps: RepoDeps, tags: ReturnType<typeof tagsRepo>) {
           originDeviceId: deps.deviceId,
           processingAttempts: 0,
         },
-        capturedAt,
+        now,
       );
 
       // Different spellings can resolve to one tag (`#Health`, `#health`); link it once.
@@ -67,6 +78,41 @@ export function rawLogsRepo(deps: RepoDeps, tags: ReturnType<typeof tagsRepo>) {
         );
       }
       return rawLog;
+    },
+
+    /** Takes the lease on a pending log and counts one extraction attempt. */
+    async claim(tx: Tx, log: RawLog, leaseUntil: string): Promise<RawLog> {
+      return updateSynced(tx, deps, rawLogs, log.id, {
+        processingLeaseOwner: deps.deviceId,
+        processingLeaseUntil: leaseUntil,
+        processingAttempts: log.processingAttempts + 1,
+      });
+    },
+
+    /**
+     * Releases the lease after a failed extraction. `countsAsAttempt: false` gives the
+     * attempt back, for failures that say nothing about this log (offline, rate limited).
+     */
+    async recordFailure(
+      tx: Tx,
+      id: string,
+      failure: {
+        status: 'pending_llm' | 'error';
+        lastError: string;
+        nextAttemptAt: string | null;
+        countsAsAttempt: boolean;
+      },
+    ): Promise<void> {
+      const log = await getById(tx, rawLogs, id);
+      if (!log || log.deletedAt) return;
+      await updateSynced(tx, deps, rawLogs, id, {
+        status: failure.status,
+        lastError: failure.lastError,
+        nextAttemptAt: failure.nextAttemptAt,
+        processingLeaseOwner: null,
+        processingLeaseUntil: null,
+        processingAttempts: log.processingAttempts - (failure.countsAsAttempt ? 0 : 1),
+      });
     },
 
     /** Soft-deletes the log, everything extracted from it, and all their links. */
@@ -88,5 +134,39 @@ export function rawLogsRepo(deps: RepoDeps, tags: ReturnType<typeof tagsRepo>) {
       await softDeleteSynced(tx, deps, tasks, taskIds);
       await softDeleteSynced(tx, deps, rawLogs, [id]);
     },
+
+    /**
+     * Puts a log back in the queue with a fresh set of attempts: retry after an error, process
+     * a skipped entry anyway, or re-extract. This device takes ownership ("Retry here").
+     */
+    async requeue(tx: Tx, id: string): Promise<RawLog> {
+      return updateSynced(tx, deps, rawLogs, id, {
+        status: 'pending_llm',
+        originDeviceId: deps.deviceId,
+        processingAttempts: 0,
+        processingLeaseOwner: null,
+        processingLeaseUntil: null,
+        nextAttemptAt: null,
+        lastError: null,
+      });
+    },
+
+    /**
+     * Content is immutable: an edit is a new log that points back at the one it replaces. It
+     * keeps the original capture time, so its day and "yesterday" still mean the same thing.
+     */
+    async replace(tx: Tx, id: string, input: CaptureInput): Promise<RawLog> {
+      const old = await getById(tx, rawLogs, id);
+      if (!old || old.deletedAt) throw new ValidationError('not_found', 'Entry no longer exists');
+      const next = await repo.capture(tx, {
+        ...input,
+        capturedTz: old.capturedTz,
+        capturedAt: old.capturedAt,
+        context: { ...input.context, supersedes: id },
+      });
+      await repo.softDelete(tx, id);
+      return next;
+    },
   };
+  return repo;
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createNodeSqliteExecutor, openTestStore } from '../../testing';
-import { categories } from '../schema/sqlite/tables';
+import { categories, llmRuns, syncOutbox } from '../schema/sqlite/tables';
 import { SEED_CATEGORIES, seedCategoryId } from './repos/categories';
 import { openClientStore } from './store';
 
@@ -48,5 +48,48 @@ describe('openClientStore', () => {
     const ids = async (s: typeof a) =>
       (await s.store.db.select({ id: categories.id }).from(categories)).map((r) => r.id).sort();
     expect(await ids(a)).toEqual(await ids(b));
+  });
+
+  it('sums model usage per provider from a given time', async () => {
+    const { store, advance } = await openTestStore();
+    const run = (provider: string, inputTokens: number | null) =>
+      store.recordLlmRun({
+        purpose: 'extraction',
+        provider,
+        model: 'test-model',
+        inputTokens,
+        outputTokens: 5,
+        ok: true,
+      });
+    await run('groq', 100);
+    advance(60_000);
+    const since = store.clock.now();
+    await run('groq', 10);
+    await run('groq', null);
+    await run('ollama', 20);
+
+    expect(await store.queries.llmUsageSince(store.db, since)).toEqual([
+      { provider: 'groq', calls: 2, inputTokens: 10, outputTokens: 10 },
+      { provider: 'ollama', calls: 1, inputTokens: 20, outputTokens: 5 },
+    ]);
+  });
+
+  it('records llm runs locally without enqueueing them for sync', async () => {
+    const { store } = await openTestStore();
+    const outboxBefore = (await store.db.select().from(syncOutbox)).length;
+
+    await store.recordLlmRun({
+      purpose: 'extraction',
+      provider: 'ollama',
+      model: 'test-model',
+      latencyMs: 12,
+      ok: false,
+      errorCode: 'llm_unavailable',
+    });
+
+    const [run] = await store.db.select().from(llmRuns);
+    expect(run).toMatchObject({ provider: 'ollama', ok: false, errorCode: 'llm_unavailable' });
+    expect(run?.createdAt).toBe(store.clock.lastIssued());
+    expect(await store.db.select().from(syncOutbox)).toHaveLength(outboxBefore);
   });
 });

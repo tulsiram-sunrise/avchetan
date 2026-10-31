@@ -27,11 +27,24 @@ loop:
         AND processing_attempts < 3
         AND (next_attempt_at IS NULL OR next_attempt_at <= now)
      ORDER BY captured_at ASC
-  claim: set lease_owner=self, lease_until=now+2min, attempts+1   (local tx, synced)
+  claim: set lease_owner=self, lease_until=now+5min, attempts+1   (local tx, synced)
   run extraction (§3)
   success → apply (§4)
   failure → record last_error; if attempts >= 3 → status='error'; release lease
 ```
+
+The lease outlasts the slowest call: a local model on a CPU has up to 3 minutes.
+
+What a failure does is decided in `failure-policy.ts`:
+
+| Failure | Attempt counted? | What happens |
+|---|---|---|
+| `llm_rate_limit` | No | The whole queue waits for `retry-after` (or 60 s). This is routine on a free tier, so it must never turn entries into errors |
+| Offline (`llm_unavailable` with no HTTP status) | No | The queue waits 60 s, or until the network returns |
+| `llm_auth`, model not downloaded | No | The queue waits 10 min, or until the user fixes it |
+| `llm_unavailable` (5xx, timeout), `llm_invalid_output`, anything else | Yes | Back off, then retry |
+| `llm_refused` | — | Status `error` at once |
+| `llm_context_overflow` | No extra | One retry within the attempt, with tags and names left out of the prompt |
 
 - A device whose extraction slot is `delegate` (e.g. a phone in Home Hub mode — [deployment-modes](deployment-modes.md#llm-work-for-the-phone-delegate-to-hub)) does not run this loop at all; the server processes its logs with no grace period.
 - Logs captured on **another** device are *not* processed here, even if pulled while pending. That device or the server owns them. (Exception: user presses "Retry here" on an error/pending item → it sets `origin_device_id = self` via a normal write.)
@@ -52,8 +65,8 @@ Output: one structured object validated by the **extraction envelope** schema:
 
 ```
 ExtractionResult {
-  activities: [{ category, title, notes?, metrics, loggedDate, occurredAt?, project?, inferredTags[] }]
-  tasks:      [{ title, notes?, dueDate|null, category|null, project?, inferredTags[] }]
+  activities: [{ category, title, notes|null, metrics: [{key, value}], exercises[], loggedDate, project|null, inferredTags[] }]
+  tasks:      [{ title, notes|null, dueDate|null, category|null, project|null, inferredTags[] }]
   newCategory?: { name, description }   // only if no existing category fits; max one per log
                                         // `category` fields hold an existing slug or this new name
   logTags:    string[]            // inferred tags for the raw log as a whole
@@ -61,6 +74,10 @@ ExtractionResult {
   skip?:      { reason }          // nothing actionable (e.g. "test", "asdf")
 }
 ```
+
+Every field is required (nullable where it can be absent) so strict JSON-schema providers accept it. `occurredAt` isn't requested yet, because a model can't reliably turn local times into UTC; `occurred_at` stays null.
+
+The normalized result is an `ExtractionPlan`, applied in one transaction by `store.repos.extraction.apply`. A `!private` entry is only ever sent to a `local` provider; with none configured it is marked `skipped`.
 
 This replaces the original spec's two separate tools (`log_activity`, `create_task`) with one structured output — see [ADR-0009](../decisions/0009-single-structured-extraction-output.md). The two tool contracts survive as the `activities` and `tasks` item schemas.
 
@@ -118,10 +135,11 @@ The server then runs extraction and applies the result exactly like a client, bu
 ## 7. User-facing behavior
 
 - Pending badge count in dock and tray tooltip.
-- Error list with reason (rate limit, invalid key, validation) and actions: retry, retry with analysis model, edit text & re-extract (creates a **new** raw log linked via `context.supersedes`; the original is soft-deleted — content stays immutable).
+- Error list with reason (rate limit, invalid key, validation) and actions: retry, retry with analysis model, edit text & re-extract (creates a **new** raw log linked via `context.supersedes`, keeping the original `captured_at` and `captured_tz` so its day and relative dates don't move; the original is soft-deleted — content stays immutable).
 - Manual edits of extracted rows set `is_user_edited` and record a correction.
 
 ## 8. Quality
 
-- Fixture suite `packages/core/test/fixtures/extraction/*.json`: input text + date context → expected result (tolerant matcher: categories, counts, key metrics, due dates, tags ⊇ expected).
-- `pnpm eval:extraction --slot extraction` runs fixtures against a real configured model (manual, not CI) and prints accuracy per provider/model — used when choosing default presets.
+- Fixture suite `packages/core/test/fixtures/extraction/entries.json`: input text + capture time → expected result (tolerant matcher: categories, counts, key metrics, due dates, tags ⊇ expected). Fixtures must not repeat the prompt's few-shot examples, or the score measures copying.
+- `pnpm eval:extraction` runs fixtures against a real model (manual, not CI) and prints accuracy. Choose with `LLM_EVAL_PROVIDER` and `LLM_EVAL_MODEL`. A full run on Groq's free tier takes about 13 minutes and much of a day's tokens, so plan for one run a day.
+- `LLM_EVAL_RECORD=1` saves the answers that passed to `recorded.json`. CI replays them through the real pipeline with the mock model, so a normalizer or schema change that breaks a known-good answer fails without any network. Replays say nothing about model quality.

@@ -4,14 +4,15 @@ Provider-agnostic layer for extraction, analysis, embeddings and transcription. 
 
 ## Providers
 
+Free options come first ([ADR-0020](../decisions/0020-free-first-provider-adapters.md)). Paid providers are on the roadmap under *Later*.
+
 | Provider id | Package | Auth | Notes |
 |---|---|---|---|
-| `google` | `@ai-sdk/google` | API key | Gemini |
-| `anthropic` | `@ai-sdk/anthropic` | API key | Claude |
-| `openai` | `@ai-sdk/openai` | API key | |
-| `groq` | `@ai-sdk/groq` | API key | Very low latency; good extraction slot |
-| `ollama` | OpenAI-compatible provider, `baseUrl` default `http://localhost:11434/v1` | none | Local/offline. On Android: LAN URL of the desktop |
-| `openai_compatible` | `@ai-sdk/openai-compatible` | optional key + `baseUrl` | LM Studio, OpenRouter, DeepInfra, Cerebras, etc. |
+| `groq` | `@ai-sdk/groq` | API key | Very low latency; free tier; good extraction slot |
+| `ollama` | `@ai-sdk/openai-compatible`, `baseUrl` default `http://localhost:11434/v1` | none | Local/offline. On Android: LAN URL of the desktop |
+| `google` | `@ai-sdk/google` | API key | Gemini. The free tier may use content to improve Google's products, so use it with made-up data only |
+
+Each provider is a `ProviderAdapter` (`packages/core/src/providers/adapters/`) registered in `PROVIDER_ADAPTERS`. An adapter holds only what differs between providers: `requiresApiKey`, `local`, `freeTierUsesContent`, `createModel`, and optional `structuredOptions` and `classifyError`. To add a provider: add its id to `LLM_PROVIDERS`, write one adapter, register it.
 
 Besides real providers, a slot can be set to a **routing mode** for devices that can't or shouldn't call a model themselves ([deployment-modes](deployment-modes.md#llm-work-for-the-phone-delegate-to-hub)):
 - extraction `delegate` — this device never extracts; the server does it immediately after sync;
@@ -35,21 +36,24 @@ Slot config (non-secret, stored in `settings`):
   "fallbacks":  { "extraction": [{ "provider": "google", "model": "<model-id>" }] } }
 ```
 - **No model IDs in code.** Suggested pairs live in `packages/core/src/models/presets.json` (data, edited when providers release new models — check provider docs; the names in `original-docs/` are obsolete). Settings UI offers presets plus a free-text model field and a "Test" button.
-- **Fallback chain:** if the primary extraction model fails with a provider/availability error (not validation), try the next entry. Recorded in `llm_runs`.
+- **Fallback chain:** if the primary extraction model fails with `llm_unavailable` (not validation, auth or rate limiting), try the next entry. Recorded in `llm_runs`.
 
 ## Secrets
 
 `SecretStore` interface: `get(name)`, `set(name, value)`, `delete(name)`; names like `provider:anthropic:apiKey`, `sync:token`.
 - Desktop: Rust commands backed by the `keyring` crate (Windows Credential Manager / macOS Keychain / Secret Service). The webview never persists keys; it fetches them per call and does not cache beyond the call.
 - Mobile: `expo-secure-store` (Android Keystore-backed).
-- Server: env vars `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY`, … read once at startup through the validated env schema.
+- Server: env vars `GROQ_API_KEY`, `GOOGLE_API_KEY`, … read once at startup through the validated env schema.
+- Manual live check: `pnpm --filter @avchetan/core test:live` reads the same env vars from the terminal and sends one made-up sentence to each configured provider. It never runs in CI.
 
 ## Extraction
 
 - Uses the SDK's **structured object output** (JSON-schema-constrained where the provider supports it; tool-call or JSON-mode fallback handled by the SDK) with the `ExtractionResult` Zod schema ([extraction-pipeline §3](extraction-pipeline.md#3-extraction-call)).
+- Every structured call goes through `generateStructured` (`packages/core/src/llm/generate-structured.ts`), which owns the fallback chain, the single repair retry and run recording. The SDK's own retries are off (`maxRetries: 0`): the pending processor counts attempts and backs off.
+- Errors are mapped by `toLlmError` without keeping the SDK error as `cause`, because SDK errors carry the request body (the user's log content).
 - `temperature: 0`. Timeout 20 s default.
 - Schema design rules (for cross-provider reliability):
-  - Avoid `z.record(z.any())` at the top level — `metrics` is an object of known optional keys (from the registry) plus an `extra` array of `{key, value}` pairs that the normalizer folds back. Some providers reject open-ended objects in strict mode.
+  - Avoid `z.record(z.any())` at the top level — `metrics` is an array of `{key, value}` pairs that the normalizer folds back, plus a typed `exercises` array. Some providers reject open-ended objects in strict mode, and an object of every known key would make the model write dozens of nulls per activity.
   - All fields required-but-nullable rather than optional where strict modes need it (`dueDate: string | null`).
   - Short `.describe()` text on every field; examples belong in the prompt, not the schema.
   - Enums for roles and entity kinds. Categories are **not** an enum (they're dynamic, [ADR-0015](../decisions/0015-dynamic-categories.md)): the schema takes a string and the normalizer resolves it against the category table.
@@ -72,11 +76,14 @@ Read-only tools (Zod-defined in `packages/core/src/analysis/tools/`, implementat
 | `streaks` | `category?` / `tag?` | local SQL |
 | `search_history` | `query`, `from?`, `to?`, `category?`, `limit ≤ 15` | server `/v1/search` (semantic); returns `unavailable` offline |
 | `query_entities` / `query_commitments` | `name`, `kind?` | local SQL (Phase 7) |
-| `get_logs` | `ids[]` | local SQL — fetch full text for citation |
+| `search_entries` | `text`, `from?`, `to?`, `limit` | local SQL — keyword search over the original text, including entries that were never organized |
+| `get_logs` | `refs[]` | local SQL — fetch full text for citation |
 
 Rules:
 - Tool results are compact JSON (IDs, dates, titles, metrics, truncated text ≤ 500 chars) to keep context small.
-- The system prompt requires citing log IDs; the UI renders them as links.
+- Tool results number each source entry and the system prompt requires citing those numbers, like `[3]`: shorter than IDs, and an invented number simply matches nothing. The UI lists the cited entries under the answer.
+- **Private entries:** tools read with `includePrivate` only when the model is `local`, so nothing from a `!private` entry reaches a cloud model through a tool. The same scope applies to the extraction vocabulary: a `#tag` or name known only from private entries isn't sent either.
+- The arithmetic is done in `analysis/compute.ts`, never by the model.
 - Analysis tools are **read-only**. Writes happen only through Command mode with user confirmation.
 - When offline and the analysis slot is a cloud model: Ask shows "offline — showing local stats" and runs a deterministic fallback (basic SQL summary) where possible.
 

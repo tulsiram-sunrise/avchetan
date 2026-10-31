@@ -32,5 +32,5 @@ Parameters are limited to null, boolean, number and string. SQLite's own locking
 ## Consequences
 - No `tauri-plugin-sql` dependency, and one less capability to grant.
 - Rust owns the database file path (`<app data>/avchetan.db`), so later Rust features (backups, hub sidecar handoff) can reach it.
-- Each window runs its own monotonic clock over the shared `clock_last`. In Phase 2 only the dock writes synced tables. If the main window starts editing (Phase 3), revisit whether writes should be routed through the dock: [open questions](../open-questions.md).
+- Each window runs its own monotonic clock over the shared `clock_last`. In Phase 2 only the dock writes synced tables. From Phase 3 the main window edits data by asking the dock to run a named action, so one clock issues every synced timestamp (`apps/desktop/src/services/actions.ts`).
 - The TS executor is tested against an in-process stand-in for these commands (`apps/desktop/src/native/sqlite.test.ts`).

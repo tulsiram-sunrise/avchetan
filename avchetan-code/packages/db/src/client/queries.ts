@@ -1,6 +1,23 @@
-import { and, asc, count, desc, eq, isNull, lt, lte, or, sql } from 'drizzle-orm';
-import { activities, rawLogs, tasks } from '../schema/sqlite/tables';
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  gte,
+  inArray,
+  isNotNull,
+  isNull,
+  like,
+  lt,
+  lte,
+  or,
+  sql,
+} from 'drizzle-orm';
+import type { RawLogStatus } from '../schema/enums';
+import { activities, entityTags, llmRuns, rawLogs, tags, tasks } from '../schema/sqlite/tables';
 import type { ClientDb } from './database';
+import { type DataScope, notFromPrivateLog } from './privacy';
 import type { Activity } from './repos/activities';
 import type { RawLog } from './repos/raw-logs';
 import type { Task } from './repos/tasks';
@@ -66,6 +83,156 @@ export function activitiesOn(db: ClientDb, loggedDate: string): Promise<Activity
     .from(activities)
     .where(and(live(activities), eq(activities.loggedDate, loggedDate)))
     .orderBy(asc(activities.occurredAt), asc(activities.createdAt));
+}
+
+/** What was extracted from these logs, for showing under each entry. */
+export async function extractedFrom(
+  db: ClientDb,
+  rawLogIds: readonly string[],
+): Promise<{ activities: Activity[]; tasks: Task[] }> {
+  if (rawLogIds.length === 0) return { activities: [], tasks: [] };
+  const [children, todo] = await Promise.all([
+    db
+      .select()
+      .from(activities)
+      .where(and(live(activities), inArray(activities.rawLogId, [...rawLogIds])))
+      .orderBy(asc(activities.ordinal)),
+    db
+      .select()
+      .from(tasks)
+      .where(and(live(tasks), inArray(tasks.rawLogId, [...rawLogIds])))
+      .orderBy(asc(tasks.ordinal)),
+  ]);
+  return { activities: children, tasks: todo };
+}
+
+/** Activities newest first, for analysis. Dates are inclusive. */
+export function activitiesForAnalysis(
+  db: ClientDb,
+  options: DataScope & { from?: string | undefined; to?: string | undefined; limit: number },
+): Promise<Activity[]> {
+  return db
+    .select()
+    .from(activities)
+    .where(
+      and(
+        live(activities),
+        options.from ? gte(activities.loggedDate, options.from) : undefined,
+        options.to ? lte(activities.loggedDate, options.to) : undefined,
+        options.includePrivate ? undefined : notFromPrivateLog(db, activities),
+      ),
+    )
+    .orderBy(desc(activities.loggedDate), desc(activities.createdAt))
+    .limit(options.limit);
+}
+
+/** All tasks, for analysis. */
+export function tasksForAnalysis(db: ClientDb, options: DataScope & { limit: number }) {
+  return db
+    .select()
+    .from(tasks)
+    .where(and(live(tasks), options.includePrivate ? undefined : notFromPrivateLog(db, tasks)))
+    .orderBy(desc(tasks.createdAt))
+    .limit(options.limit);
+}
+
+/** What carries a tag or any tag nested under it. */
+export async function tagTargets(db: ClientDb, path: string) {
+  return db
+    .select({ targetType: entityTags.targetType, targetId: entityTags.targetId })
+    .from(entityTags)
+    .innerJoin(tags, eq(tags.id, entityTags.tagId))
+    .where(
+      and(live(entityTags), live(tags), or(eq(tags.path, path), like(tags.path, `${path}/%`))),
+    );
+}
+
+/** Entries whose original text contains `text`, ignoring case, newest first. */
+export function searchLogs(
+  db: ClientDb,
+  options: DataScope & { text: string; limit: number },
+): Promise<RawLog[]> {
+  const needle = options.text.toLowerCase();
+  return db
+    .select()
+    .from(rawLogs)
+    .where(
+      and(
+        live(rawLogs),
+        sql`instr(lower(${rawLogs.content}), ${needle}) > 0`,
+        options.includePrivate ? undefined : eq(rawLogs.privacy, 'normal'),
+      ),
+    )
+    .orderBy(desc(rawLogs.capturedAt))
+    .limit(options.limit);
+}
+
+/** Raw logs by ID, in no particular order. */
+export function logsById(
+  db: ClientDb,
+  ids: readonly string[],
+  scope: DataScope,
+): Promise<RawLog[]> {
+  if (ids.length === 0) return Promise.resolve([]);
+  return db
+    .select()
+    .from(rawLogs)
+    .where(
+      and(
+        live(rawLogs),
+        inArray(rawLogs.id, [...ids]),
+        scope.includePrivate ? undefined : eq(rawLogs.privacy, 'normal'),
+      ),
+    );
+}
+
+/** Model calls and tokens per provider since an instant, for the usage summary. */
+export function llmUsageSince(db: ClientDb, since: string) {
+  return db
+    .select({
+      provider: llmRuns.provider,
+      calls: count(),
+      inputTokens: sql<number>`coalesce(sum(${llmRuns.inputTokens}), 0)`,
+      outputTokens: sql<number>`coalesce(sum(${llmRuns.outputTokens}), 0)`,
+    })
+    .from(llmRuns)
+    .where(gte(llmRuns.createdAt, since))
+    .groupBy(llmRuns.provider)
+    .orderBy(asc(llmRuns.provider));
+}
+
+/** Finished tasks, most recent first. */
+export function completedTasks(db: ClientDb, limit = 50): Promise<Task[]> {
+  return db
+    .select()
+    .from(tasks)
+    .where(and(live(tasks), isNotNull(tasks.completedAt)))
+    .orderBy(desc(tasks.completedAt))
+    .limit(limit);
+}
+
+/** Logs that need a look: waiting, failed or skipped. Newest first. */
+export function logsWithStatus(
+  db: ClientDb,
+  statuses: readonly RawLogStatus[],
+  limit = 200,
+): Promise<RawLog[]> {
+  return db
+    .select()
+    .from(rawLogs)
+    .where(and(live(rawLogs), inArray(rawLogs.status, [...statuses])))
+    .orderBy(desc(rawLogs.capturedAt))
+    .limit(limit);
+}
+
+/** How many activities each category has. */
+export async function categoryUsage(db: ClientDb): Promise<Map<string, number>> {
+  const rows = await db
+    .select({ categoryId: activities.categoryId, value: count() })
+    .from(activities)
+    .where(live(activities))
+    .groupBy(activities.categoryId);
+  return new Map(rows.map((row) => [row.categoryId, row.value]));
 }
 
 /** Open tasks: dated ones by due date first, then undated ones, oldest first. */

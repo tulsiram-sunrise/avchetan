@@ -17,7 +17,7 @@
 | **Dock** | The desktop floating capture/ask/command window. |
 | **Full window** | The normal desktop window for timeline, tasks, settings. |
 | **Model slot** | A configured (provider, model) pair for a purpose: *extraction*, *analysis*, *embedding*, *transcription*. |
-| **Provider** | An LLM vendor/runtime: google, anthropic, openai, groq, ollama, openai_compatible. |
+| **Provider** | An LLM vendor/runtime: groq, ollama, google. More are planned ([ADR-0020](../decisions/0020-free-first-provider-adapters.md)). |
 | **Outbox** | Local table of records changed since the last successful push. |
 | **Push / Pull** | Upload local changes / download server changes. Together: a **sync cycle**. |
 | **Cursor** | Server-issued position (`server_seq`) up to which a device has pulled. |

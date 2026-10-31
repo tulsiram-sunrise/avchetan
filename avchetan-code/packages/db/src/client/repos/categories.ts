@@ -1,8 +1,9 @@
 import { derivedId, slugify, ValidationError } from '@avchetan/shared';
-import { and, asc, eq, isNull, ne } from 'drizzle-orm';
+import { and, asc, eq, isNotNull, isNull, ne } from 'drizzle-orm';
 import type { CategoryOrigin } from '../../schema/enums';
 import { categories } from '../../schema/sqlite/tables';
 import type { ClientDb, Tx } from '../database';
+import { type DataScope, shareableCategory } from '../privacy';
 import {
   ensureSynced,
   getById,
@@ -77,14 +78,33 @@ export function categoriesRepo(deps: RepoDeps) {
     getById: (db: ClientDb, id: string) => getById(db, categories, id),
 
     /** Active (not archived, not merged) categories, oldest first. */
-    listActive(db: ClientDb): Promise<Category[]> {
+    listActive(db: ClientDb, scope: DataScope = { includePrivate: true }): Promise<Category[]> {
       return db
         .select()
         .from(categories)
         .where(
-          and(live(categories), isNull(categories.archivedAt), isNull(categories.mergedIntoId)),
+          and(
+            live(categories),
+            isNull(categories.archivedAt),
+            isNull(categories.mergedIntoId),
+            scope.includePrivate ? undefined : shareableCategory(db),
+          ),
         )
         .orderBy(asc(categories.createdAt));
+    },
+
+    /** Slugs of merged categories with where they now point, so old names keep resolving. */
+    async listMergedAliases(db: ClientDb): Promise<{ slug: string; id: string }[]> {
+      const merged = await db
+        .select()
+        .from(categories)
+        .where(and(live(categories), isNotNull(categories.mergedIntoId)));
+      return Promise.all(
+        merged.map(async (category) => ({
+          slug: category.slug,
+          id: (await resolve(db, category)).id,
+        })),
+      );
     },
 
     /** Idempotent; never overwrites a seed the user renamed. */
@@ -151,6 +171,33 @@ export function categoriesRepo(deps: RepoDeps) {
         throw new ValidationError('duplicate_name', 'A category with this name already exists');
       }
       return updateSynced(tx, deps, categories, id, { name, slug });
+    },
+
+    /** Every category with where it now points, so rows on a merged one show the survivor. */
+    async listResolved(db: ClientDb): Promise<{ id: string; resolved: Category }[]> {
+      const rows = await db.select().from(categories).where(live(categories));
+      return Promise.all(
+        rows.map(async (row) => ({ id: row.id, resolved: await resolve(db, row) })),
+      );
+    },
+
+    /** Rows keep pointing at the merged category and readers follow `merged_into_id`. */
+    async merge(tx: Tx, id: string, intoId: string): Promise<Category> {
+      if (REQUIRED_SEEDS.some((slug) => seedCategoryId(slug) === id)) {
+        throw new ValidationError('category_required', 'This category is required');
+      }
+      const target = await getById(tx, categories, intoId);
+      if (!target || target.deletedAt) {
+        throw new ValidationError('invalid_merge', 'That category no longer exists');
+      }
+      const survivor = await resolve(tx, target);
+      if (survivor.id === id) {
+        throw new ValidationError('invalid_merge', 'A category can’t be merged into itself');
+      }
+      return updateSynced(tx, deps, categories, id, {
+        mergedIntoId: survivor.id,
+        needsReview: false,
+      });
     },
 
     async markReviewed(tx: Tx, id: string): Promise<Category> {

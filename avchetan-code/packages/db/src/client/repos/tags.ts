@@ -1,8 +1,9 @@
 import { derivedId, slugifyPath, ValidationError } from '@avchetan/shared';
-import { and, asc, eq, inArray } from 'drizzle-orm';
+import { and, asc, count, desc, eq, inArray, isNull, like } from 'drizzle-orm';
 import type { LinkTargetType } from '../../schema/enums';
 import { entityTags, tags } from '../../schema/sqlite/tables';
 import type { ClientDb, Tx } from '../database';
+import { type DataScope, sharedTagIds } from '../privacy';
 import {
   getById,
   insertSynced,
@@ -44,6 +45,23 @@ export function tagsRepo(deps: RepoDeps) {
 
   return {
     findByPath,
+
+    /** Most recently used tag paths, for the extraction prompt. */
+    async listRecentPaths(db: ClientDb, limit: number, scope: DataScope): Promise<string[]> {
+      const rows = await db
+        .select({ path: tags.path })
+        .from(tags)
+        .where(
+          and(
+            live(tags),
+            isNull(tags.mergedIntoId),
+            scope.includePrivate ? undefined : inArray(tags.id, sharedTagIds(db)),
+          ),
+        )
+        .orderBy(desc(tags.updatedAt))
+        .limit(limit);
+      return rows.map((row) => row.path);
+    },
 
     /**
      * Returns the tag for a path like `Health/Injuries/Shoulder Pain`, creating it and any
@@ -162,5 +180,93 @@ export function tagsRepo(deps: RepoDeps) {
 
     recolor: (tx: Tx, id: string, color: string | null) =>
       updateSynced(tx, deps, tags, id, { color }),
+
+    listAll(db: ClientDb): Promise<Tag[]> {
+      return db
+        .select()
+        .from(tags)
+        .where(and(live(tags), isNull(tags.mergedIntoId)))
+        .orderBy(asc(tags.path));
+    },
+
+    /** How many live links each tag has. */
+    async usage(db: ClientDb): Promise<Map<string, number>> {
+      const rows = await db
+        .select({ tagId: entityTags.tagId, value: count() })
+        .from(entityTags)
+        .where(live(entityTags))
+        .groupBy(entityTags.tagId);
+      return new Map(rows.map((row) => [row.tagId, row.value]));
+    },
+
+    /**
+     * Renames or re-parents a tag, taking its children along. IDs stay: links keep working.
+     * Moving onto an existing tag is a merge, which the user has to choose.
+     */
+    async move(tx: Tx, id: string, rawPath: string): Promise<Tag> {
+      const path = slugifyPath(rawPath);
+      if (!path) throw new ValidationError('invalid_tag', 'Tag is empty');
+      const tag = await getById(tx, tags, id);
+      if (!tag || tag.deletedAt) throw new ValidationError('invalid_tag', 'Tag no longer exists');
+      if (path === tag.path) return tag;
+      if (path.startsWith(`${tag.path}/`)) {
+        throw new ValidationError('invalid_tag', 'A tag can’t move inside itself');
+      }
+      if (await findByPath(tx, path)) {
+        throw new ValidationError('duplicate_name', 'That tag already exists. Merge them instead');
+      }
+
+      const segments = path.split('/');
+      const parentPath = segments.slice(0, -1).join('/');
+      const parent = parentPath ? await this.ensurePath(tx, parentPath) : undefined;
+      const moved = await updateSynced(tx, deps, tags, id, {
+        name: segments.at(-1) as string,
+        path,
+        parentId: parent?.id ?? null,
+      });
+
+      const children = await tx
+        .select()
+        .from(tags)
+        .where(and(live(tags), like(tags.path, `${tag.path}/%`)));
+      for (const child of children) {
+        await updateSynced(tx, deps, tags, child.id, {
+          path: `${path}${child.path.slice(tag.path.length)}`,
+        });
+      }
+      return moved;
+    },
+
+    /** Moves every link to the surviving tag, so nothing stays on the merged one. */
+    async merge(tx: Tx, id: string, intoId: string): Promise<void> {
+      const target = await getById(tx, tags, intoId);
+      if (!target || target.deletedAt) {
+        throw new ValidationError('invalid_tag', 'That tag no longer exists');
+      }
+      const survivor = await resolve(tx, target);
+      if (survivor.id === id) {
+        throw new ValidationError('invalid_tag', 'A tag can’t be merged into itself');
+      }
+      const links = await tx
+        .select()
+        .from(entityTags)
+        .where(and(live(entityTags), eq(entityTags.tagId, id)));
+      for (const link of links) {
+        await this.link(tx, {
+          tagId: survivor.id,
+          targetType: link.targetType,
+          targetId: link.targetId,
+          isInferred: link.isInferred,
+          confidence: link.confidence,
+        });
+      }
+      await softDeleteSynced(
+        tx,
+        deps,
+        entityTags,
+        links.map((link) => link.id),
+      );
+      await updateSynced(tx, deps, tags, id, { mergedIntoId: survivor.id });
+    },
   };
 }

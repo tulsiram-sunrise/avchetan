@@ -1,13 +1,22 @@
 import { createLogger } from '@avchetan/shared';
 import { emit, listen } from '@tauri-apps/api/event';
 import { z } from 'zod';
+import { actionRequestSchema, actionResultSchema } from '../services/actions';
 
 const log = createLogger('events');
 
-const mainViewSchema = z.enum(['timeline', 'settings']);
+const mainViewSchema = z.enum([
+  'timeline',
+  'tasks',
+  'review',
+  'categories',
+  'tags',
+  'projects',
+  'settings',
+]);
 export type MainView = z.infer<typeof mainViewSchema>;
 
-/** App-wide events. Payloads carry IDs and table names only, never content. */
+/** App-wide events, local to this app. Only action requests carry user text; none are logged. */
 const eventSchemas = {
   /** Rust → dock: the dock was just shown. */
   'dock:shown': z.null(),
@@ -15,6 +24,10 @@ const eventSchemas = {
   'logs:changed': z.object({ tables: z.array(z.string()) }),
   /** Rust → main: switch to a view. */
   'main:navigate': z.object({ view: mainViewSchema }),
+  /** Main → dock: please do this write. */
+  'action:request': actionRequestSchema,
+  /** Dock → main: how it went. */
+  'action:result': actionResultSchema,
 };
 
 export type AppEvents = { [K in keyof typeof eventSchemas]: z.infer<(typeof eventSchemas)[K]> };
