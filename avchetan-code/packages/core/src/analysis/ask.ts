@@ -4,7 +4,7 @@ import { type LanguageModelUsage, stepCountIs, streamText } from 'ai';
 import type { LlmDeps } from '../llm/generate-structured';
 import { buildSystem } from '../prompts/analysis.v1';
 import type { ModelConfig } from '../providers/config';
-import { toLlmError } from '../providers/errors';
+import { modelTimeoutError, toLlmError } from '../providers/errors';
 import { PROVIDER_ADAPTERS } from '../providers/registry';
 import { createAnalysisTools, createCitations, normalizeCitations } from './tools';
 
@@ -68,6 +68,7 @@ export async function ask(
       maxRetries: 0,
       timeout: model.timeoutMs ?? (adapter.local ? LOCAL_TIMEOUT_MS : CLOUD_TIMEOUT_MS),
       ...(request.abortSignal ? { abortSignal: request.abortSignal } : {}),
+      ...(adapter.analysisOptions ? { providerOptions: adapter.analysisOptions } : {}),
     });
 
     for await (const part of result.fullStream) {
@@ -78,6 +79,9 @@ export async function ask(
         usage = part.totalUsage;
       } else if (part.type === 'error') {
         failure = part.error;
+      } else if (part.type === 'abort') {
+        // The timeout ends the stream without an error. Nothing in the app cancels an Ask yet.
+        failure ??= modelTimeoutError();
       }
     }
     if (failure) throw failure;
