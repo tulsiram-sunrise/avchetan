@@ -40,8 +40,9 @@ An edit replaces the raw log with a new one, so the entry screen moves to the ne
 
 ## Background & lifecycle
 
-- App foreground → sync cycle → pending processor.
-- Background task (every ~15 min, OS-dependent) → sync cycle → process up to 3 pending logs (bounded to fit the background time budget).
+- App foreground → sync cycle → pending processor. The processor is woken each time the app becomes active.
+- Background task (every ~15 min, OS-dependent) → sync cycle → process up to 3 pending logs (bounded to fit the background time budget). `src/services/background.ts` defines it when the bundle loads, because Android can start it with no screen, and the screens and the task share `getAppServices()`.
+- Register the task only once. `registerTaskAsync` cancels and re-enqueues the work, so calling it on each launch would restart the 15 minute clock and cancel a run in progress. WorkManager also ignores a forced job until the interval has passed, so test it at least 15 minutes after registering.
 - Extraction on device only for logs captured on this device; server fallback covers logs left pending while the phone sleeps.
 - In Home Hub mode the default is extraction `delegate` + analysis `hub`: the phone makes no LLM calls; it captures, syncs, and asks the hub ([deployment-modes](deployment-modes.md#llm-work-for-the-phone-delegate-to-hub)).
 

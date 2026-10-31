@@ -33,6 +33,8 @@ Without these, the build stops with `ninja: error: manifest 'build.ninja' still 
 
 If Metro fails with `Failed to replace ... HMRClient.js` after a reinstall, its cache is stale. Run `pnpm --filter @avchetan/mobile dev --clear`.
 
+After a background run in a development build, the app can open on the dev launcher. Force-stop it and open it again. To test the background task, wait at least 15 minutes after first registering it, because Android ignores a forced run until then.
+
 On a PC without a working graphics card, start the emulator with `-gpu swiftshader_indirect`.
 
 To use Ollama on the PC from the emulator, the model's base URL is `http://10.0.2.2:11434/v1`.

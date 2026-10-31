@@ -14,6 +14,7 @@ Questions not yet decided. When answered: record the answer here (or in an ADR i
 | Q10 | Display units: metric only, or allow imperial display (lb/mi)? Storage stays metric. | Metric; setting later | — |
 | Q11 | Daily brief time and whether to also send a morning plan (today's tasks + yesterday's rollovers). | 21:00 brief; morning plan as Phase 6 stretch | Phase 6 |
 | Q20 | Publish the Android app on the Play Store, or GitHub Releases (APK) only? | APK only at first | Public release |
+| Q24 | Android 17 asks for `ACCESS_LOCAL_NETWORK` before an app can reach devices on the local network, which includes a Home Hub. Where does the app ask, and what does it say if the user refuses? | Ask during pairing, and link to a fix from the setup check | Phase 5 |
 | Q23 | Release builds block plain `http://`, so the phone's Ollama address only works in debug builds. Allow a chosen host through a network security config, or leave Ollama on a phone to the Home Hub? | Hub only, unless someone needs direct access | Public release |
 | Q22 | Ollama's OpenAI-compatible `/v1` endpoint can't set `num_ctx` per request. Does the extraction prompt with its vocabulary fit the default context, or is a setting or a native Ollama client needed? | Fits for now: 1,530 prompt tokens with an empty vocabulary against a default of 4,096 (CPU, granite4.2:8b). Re-measure with a full vocabulary | Phase 5 end |
 

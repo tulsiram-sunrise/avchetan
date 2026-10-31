@@ -4,10 +4,11 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
-import { type AppServices, openAppServices } from '../src/app-services';
-import { createExpoPlatform } from '../src/platform';
-import { queryClient } from '../src/query-client';
+import { ActivityIndicator, AppState, Text, View } from 'react-native';
+import { type AppServices, getAppServices } from '../src/app-services';
+import { queryClient, refreshAll } from '../src/query-client';
+import { registerBackgroundWork } from '../src/services/background';
+import { watchForeground } from '../src/services/foreground';
 import { ServicesProvider } from '../src/services-context';
 import { AppTheme } from '../src/theme/theme';
 import { HelpLink } from '../src/ui/parts';
@@ -63,18 +64,24 @@ export default function RootLayout() {
   const [startup, setStartup] = useState<Startup>({ status: 'opening' });
 
   useEffect(() => {
-    createExpoPlatform()
-      .then(openAppServices)
-      .then(
-        (services) => {
-          services.extraction.start();
-          setStartup({ status: 'ready', services });
-        },
-        (error) => {
-          log.error('startup failed', { code: toAppError(error).code });
-          setStartup({ status: 'failed' });
-        },
-      );
+    let stopWatching = () => {};
+    getAppServices().then(
+      (services) => {
+        services.extraction.start();
+        void registerBackgroundWork();
+        stopWatching = watchForeground(AppState, () => {
+          // Android may have stopped timers, and the background task may have changed rows.
+          refreshAll();
+          void services.extraction.wake();
+        });
+        setStartup({ status: 'ready', services });
+      },
+      (error) => {
+        log.error('startup failed', { code: toAppError(error).code });
+        setStartup({ status: 'failed' });
+      },
+    );
+    return () => stopWatching();
   }, []);
 
   return (

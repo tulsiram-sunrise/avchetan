@@ -19,7 +19,7 @@ Until you choose one, your entries are saved and wait.
 2. Type what happened or what you need to do, for example `Walked 30 minutes, call the plumber tomorrow`.
 3. Tap **Save**. The entry appears on **Today** with a *Pending* badge, then changes to *✓ Organized*.
 
-This works without a connection too. The entry waits, and it's organized when you're back online with the app open.
+This works without a connection too. The entry waits, and it's organized when you're back online. Opening the app does this right away. With the app closed, Android organizes a few entries at a time every so often, and it decides when.
 
 If you close the box without saving, your text is still there the next time you open it, unless the app has fully closed.
 

@@ -8,7 +8,11 @@
     "userInterfaceStyle": "automatic",
     "android": {
       "package": "app.avchetan",
-      "allowBackup": false
+      "allowBackup": false,
+      "blockedPermissions": [
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
+      ]
     },
     "plugins": ["expo-router", "expo-secure-store", "expo-sqlite", "./plugins/long-native-paths.js"]
   }
