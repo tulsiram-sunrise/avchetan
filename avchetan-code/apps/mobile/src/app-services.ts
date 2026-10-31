@@ -1,0 +1,21 @@
+import type { PendingProcessor } from '@avchetan/core';
+import { type ClientStore, openClientStore } from '@avchetan/db/sqlite';
+import { createLogger } from '@avchetan/shared';
+import type { Platform } from './platform';
+import { createExtractionService } from './services/extraction';
+
+const log = createLogger('app');
+
+export type AppServices = {
+  platform: Platform;
+  store: ClientStore;
+  extraction: PendingProcessor;
+};
+
+/** Wires the packages: native database → client store → services. */
+export async function openAppServices(platform: Platform): Promise<AppServices> {
+  const started = performance.now();
+  const store = await openClientStore({ executor: platform.sqlite });
+  log.info('store ready', { durationMs: Math.round(performance.now() - started) });
+  return { platform, store, extraction: createExtractionService(store, platform) };
+}

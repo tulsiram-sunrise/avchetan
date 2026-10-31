@@ -13,8 +13,11 @@
 - `expo-notifications` for daily brief / reminders.
 - UI: React Native + NativeWind (Tailwind classes, consistent with desktop tokens); `@gorhom/bottom-sheet` for capture.
 - State: Zustand + TanStack Query (same pattern as desktop).
-- LLM: `@avchetan/core` with `expo/fetch` injected (streaming support). Verify the AI SDK works on Hermes in Phase 4 (may need polyfills for `TextEncoderStream`/`structuredClone`).
-- Required polyfill: `crypto.getRandomValues` (used by `uuid` in `@avchetan/shared` for `newId()`), via `expo-crypto` or `react-native-get-random-values`, imported first in the app entry. `@avchetan/shared` date helpers rely on `Intl.DateTimeFormat` with `timeZone` support (available in Hermes; verify on device).
+- LLM: `@avchetan/core` with `expo/fetch` injected (streaming support). Expo already installs `TextDecoderStream`, `TextEncoderStream` and `structuredClone`. Still to verify on a device: `ReadableStream`, `TransformStream`, `AbortSignal.any` and `AbortSignal.timeout`.
+- Required polyfill: `crypto.getRandomValues` (used by `uuid` in `@avchetan/shared` for `newId()`), from `expo-crypto`, in `src/polyfills.ts`, which `index.ts` imports first. `@avchetan/shared` date helpers rely on `Intl.DateTimeFormat` with `timeZone` support (available in Hermes; verify on device).
+- Android backup is off (`allowBackup: false`), so entries and keystore items never go to a Google account. Export arrives in Phase 5.
+- NetInfo's reachability check is off, because it pings a Google address. The app relies on Android's connected state, so a phone on a home network without internet still counts as online and can reach a Home Hub.
+- Version pins: React must match the version Expo ships, so mobile can lag behind desktop's React. `pnpm-workspace.yaml` overrides two Expo packages to stay within pnpm's release-age check; remove those overrides when upgrading Expo.
 
 ## Screens (routes)
 
@@ -60,5 +63,6 @@ Optional (advanced, Tailscale only): point the `ollama` provider at the PC's Tai
 ## Build & run
 
 - `pnpm --filter @avchetan/mobile dev` → Metro; Android emulator or physical device via USB.
-- Builds: local `expo run:android` or EAS Build (preview profile → APK for sideloading).
-- Monorepo: Metro config must watch workspace packages (`watchFolders`) and resolve `@avchetan/*` source (no prebuild step for packages).
+- `pnpm --filter @avchetan/mobile bundle` → the Android Hermes bundle, with no SDK or device needed. CI runs it.
+- Builds: local `expo run:android` or EAS Build (preview profile → APK for sideloading). `android/` is generated from `app.json` and is not committed.
+- Monorepo: Expo's default Metro config finds the pnpm workspace and resolves `@avchetan/*` to source (no prebuild step for packages).

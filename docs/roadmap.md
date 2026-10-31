@@ -79,6 +79,8 @@ Scope:
 
 ## Phase 4 — Android app
 
+**Progress:** steps 1–2 done in code on Expo SDK 58: routes, NativeWind, Expo adapters (SQLite, keystore, network), composition root and the pending processor. Tests run the migrated client store through the Expo adapter, and CI builds the Hermes bundle, which includes the AI SDK. Nothing has run on a device yet, so step 3 is still open.
+
 Scope:
 1. Scaffold `apps/mobile` (Expo, Router, dev build); Metro monorepo config; NativeWind.
 2. `expo-sqlite` (async API) wrapped as a `SqliteExecutor` for `openClientStore` (Drizzle proxy driver); migrations; composition root with Expo adapters (secure-store, NetInfo, expo/fetch, notifications).
