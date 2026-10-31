@@ -10,6 +10,6 @@
       "package": "app.avchetan",
       "allowBackup": false
     },
-    "plugins": ["expo-router", "expo-secure-store", "expo-sqlite"]
+    "plugins": ["expo-router", "expo-secure-store", "expo-sqlite", "./plugins/long-native-paths.js"]
   }
 }

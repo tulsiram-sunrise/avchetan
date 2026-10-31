@@ -2,9 +2,26 @@
 
 The Expo app. See [docs/architecture/mobile.md](../../../docs/architecture/mobile.md).
 
-## Run it
+## Set up
 
-You need JDK 21, the Android SDK with `ANDROID_HOME` set, and a phone with USB debugging or an emulator.
+You need:
+
+- JDK 21
+- Android Studio, with `ANDROID_HOME` set to its SDK folder
+- An emulator, or a phone with USB debugging
+
+On Windows, native builds also need long paths:
+
+1. In Android Studio, open **Settings → Languages & Frameworks → Android SDK → SDK Tools**, tick **Show Package Details**, and install **CMake 3.31.6**.
+2. In PowerShell run as administrator:
+
+   ```powershell
+   New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem' -Name LongPathsEnabled -Value 1 -PropertyType DWORD -Force
+   ```
+
+Without these, the build stops with `ninja: error: manifest 'build.ninja' still dirty` or a `mkdir` error.
+
+## Run it
 
 | Command (inside `avchetan-code/`) | What it does |
 |---|---|
@@ -12,4 +29,10 @@ You need JDK 21, the Android SDK with `ANDROID_HOME` set, and a phone with USB d
 | `pnpm --filter @avchetan/mobile dev` | Starts Metro for an installed development app |
 | `pnpm --filter @avchetan/mobile bundle` | Builds the Hermes bundle only, with no SDK or device |
 
-`android/` is generated from `app.json`, so change `app.json` rather than the generated files.
+`android/` is generated from `app.json`, so change `app.json` rather than the generated files. To regenerate it on Windows, stop Gradle first (`android\gradlew --stop`), then delete it with `rd /s /q "\\?\<full path>\android"`, because ordinary deletes fail on its long paths.
+
+If Metro fails with `Failed to replace ... HMRClient.js` after a reinstall, its cache is stale. Run `pnpm --filter @avchetan/mobile dev --clear`.
+
+On a PC without a working graphics card, start the emulator with `-gpu swiftshader_indirect`.
+
+To use Ollama on the PC from the emulator, the model's base URL is `http://10.0.2.2:11434/v1`.

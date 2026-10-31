@@ -79,7 +79,7 @@ Scope:
 
 ## Phase 4 — Android app
 
-**Progress:** steps 1–2 done in code on Expo SDK 58: routes, NativeWind, Expo adapters (SQLite, keystore, network), composition root and the pending processor. Tests run the migrated client store through the Expo adapter, and CI builds the Hermes bundle, which includes the AI SDK. Nothing has run on a device yet, so step 3 is still open.
+**Progress:** steps 1–3 done on Expo SDK 58: routes, NativeWind, Expo adapters (SQLite, keystore, network), composition root and the pending processor. Tests run the migrated client store through the Expo adapter, and CI builds the Hermes bundle, which includes the AI SDK. Checked on an Android 17 emulator on 2026-10-31 with a local Ollama: IDs, time zones, streaming, real extraction and a cited Ask answer all work on Hermes. In that debug build, capture took 334 ms cold, then a median of 11 ms and p95 of 34 ms; measure again on a release build. The physical device check comes at the end of this phase.
 
 Scope:
 1. Scaffold `apps/mobile` (Expo, Router, dev build); Metro monorepo config; NativeWind.
