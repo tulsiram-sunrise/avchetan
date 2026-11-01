@@ -270,6 +270,30 @@ export function claimablePendingLogs(
     .limit(options.limit);
 }
 
+/**
+ * Own logs out of attempts but still pending: each try was cut off before it could record a
+ * failure, for example because Android stopped the app. Nothing would ever pick these up.
+ */
+export function abandonedPendingLogs(
+  db: ClientDb,
+  options: { deviceId: string; now: string; maxAttempts: number; limit: number },
+): Promise<RawLog[]> {
+  return db
+    .select()
+    .from(rawLogs)
+    .where(
+      and(
+        live(rawLogs),
+        eq(rawLogs.status, 'pending_llm'),
+        eq(rawLogs.originDeviceId, options.deviceId),
+        gte(rawLogs.processingAttempts, options.maxAttempts),
+        or(isNull(rawLogs.processingLeaseUntil), lt(rawLogs.processingLeaseUntil, options.now)),
+      ),
+    )
+    .orderBy(asc(rawLogs.capturedAt))
+    .limit(options.limit);
+}
+
 /** Count of raw logs awaiting extraction (for the pending badge). */
 export async function pendingCount(db: ClientDb): Promise<number> {
   const [row] = await db

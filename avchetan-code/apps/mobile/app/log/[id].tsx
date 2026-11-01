@@ -11,6 +11,7 @@ import {
   useEditLog,
   useRequeueLog,
 } from '../../src/queries/writes';
+import { parseLastError } from '../../src/services/last-error';
 import { Button, Failure, Field, HelpLink } from '../../src/ui/parts';
 import { StatusBadge } from '../../src/ui/status-badge';
 import { TaskCheck } from '../../src/ui/task-row';
@@ -42,13 +43,12 @@ function ActivityItem({ activity }: { activity: Activity }) {
   );
 }
 
-/** Stored as `code: message` by the pending processor. */
 function LastError({ rawLog }: { rawLog: RawLog }) {
   if (!rawLog.lastError) return null;
-  const [code = '', ...message] = rawLog.lastError.split(': ');
+  const { code, message } = parseLastError(rawLog.lastError);
   return (
     <Text accessibilityRole="alert" className="text-sm text-danger">
-      {message.join(': ')}. <HelpLink code={code} />
+      {message}. <HelpLink code={code} />
     </Text>
   );
 }

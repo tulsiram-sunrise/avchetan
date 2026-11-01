@@ -23,10 +23,21 @@ describe('withStandardFailures', () => {
     expect(failure).toMatchObject({ message: 'fetch failed', cause });
   });
 
-  it('leaves an abort alone, so a timeout stays a timeout', async () => {
-    const abort = new DOMException('Aborted', 'AbortError');
-    const fetch = withStandardFailures(failingWith(abort));
+  it('reports an abort as one, so a timeout stays a timeout', async () => {
+    // What expo/fetch really throws: a plain error, with nothing naming it an abort.
+    const fetch = withStandardFailures(failingWith(new Error('fetch failed: canceled')));
+    const controller = new AbortController();
+    controller.abort();
 
-    await expect(fetch('http://test.invalid')).rejects.toBe(abort);
+    await expect(fetch('http://test.invalid', { signal: controller.signal })).rejects.toMatchObject(
+      { name: 'AbortError' },
+    );
+  });
+
+  it('still reports a connection failure when a signal was passed but not aborted', async () => {
+    const fetch = withStandardFailures(failingWith(new Error('Failed to connect')));
+    const { signal } = new AbortController();
+
+    await expect(fetch('http://test.invalid', { signal })).rejects.toBeInstanceOf(TypeError);
   });
 });

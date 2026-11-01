@@ -22,7 +22,9 @@ Start with **Settings → Setup check**. It tests everything and tells you what 
 **"The provider is rate limiting requests."** Normal on a free plan. Your entries wait and are organized automatically; nothing is lost. If you often reach the limit, check your provider's usage page.
 
 ## llm_unavailable
-**"The model could not be reached"**, **"took too long to answer"** or **"is not downloaded in Ollama."**
+**"The model could not be reached"**, **"took too long to answer"**, **"was interrupted too many times"** or **"is not downloaded in Ollama."**
+- A note in brackets, such as *HTTP 503*, is what the provider answered. With no note, the request got no answer at all, so check your connection.
+- Interrupted: the phone stopped the app while it was working. Open the entry and tap **Organize now**. If this keeps happening, let Avchetan run in the background in your phone's battery settings.
 - Ollama: is the Ollama app running in the tray?
 - Model not downloaded: open a terminal, run `ollama pull` followed by the model name, then click **Test** again.
 - Took too long: a large model on a PC without a graphics card can be slow. Try a smaller model.

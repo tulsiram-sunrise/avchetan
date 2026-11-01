@@ -167,7 +167,7 @@ Scope:
 
 **Extraction accuracy (Phase 3 follow-up).** Goal: Groq at 90% or more, averaged over several runs. Do it in this order:
 1. Read scores written like `6/10` as a number in the metric normalizer, with a test (`health-pain`).
-2. Find out why two entries missed in both runs: `task-two` (due date one day late) and `multi-activity-task` (a new category instead of diet or other).
+2. Find out why two entries missed in both runs: `task-two` (due date one day late) and `multi-activity-task` (a new category instead of diet or other). The same kind of miss showed up on a phone on 2026-11-02: an entry edited from "by Friday" to "by Saturday" came back with the Thursday before.
 3. Add new fixtures before changing any prompt, so the prompts aren't fitted to these 37.
 4. Score Groq over three runs on separate days. Results move by about three entries between runs, so one run can't show a real change.
 

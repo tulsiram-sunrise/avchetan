@@ -117,6 +117,55 @@ describe('pending processor', () => {
     });
   });
 
+  it('marks a log as an error when its tries were all cut off', async () => {
+    const log = await capture();
+    await store.write((tx) =>
+      tx.run(`UPDATE raw_logs SET processing_attempts = 3 WHERE id = '${log.id}'`),
+    );
+
+    await processor.wake();
+
+    expect(doGenerate).not.toHaveBeenCalled();
+    expect(await stored(log)).toMatchObject({
+      status: 'error',
+      lastError: 'llm_unavailable: Organizing this entry was interrupted too many times',
+    });
+  });
+
+  it('leaves a log alone while its last try may still be running', async () => {
+    const log = await capture();
+    await store.write((tx) =>
+      tx.run(
+        `UPDATE raw_logs SET processing_attempts = 3,
+         processing_lease_until = '2999-01-01T00:00:00.000Z' WHERE id = '${log.id}'`,
+      ),
+    );
+
+    await processor.wake();
+
+    expect(await stored(log)).toMatchObject({ status: 'pending_llm', lastError: null });
+  });
+
+  it('shows the status and provider code of a failed call, and nothing else', async () => {
+    const log = await capture();
+    doGenerate.mockRejectedValueOnce(
+      new APICallError({
+        message: 'x',
+        url: 'http://test.invalid',
+        requestBodyValues: {},
+        statusCode: 400,
+        responseBody:
+          '{"error":{"message":"bad","code":"json_validate_failed","failed_generation":"an entry"}}',
+      }),
+    );
+
+    await processor.wake();
+
+    expect((await stored(log))?.lastError).toBe(
+      'llm_unavailable: The model could not be reached (HTTP 400, json_validate_failed)',
+    );
+  });
+
   it('does nothing until a model is configured', async () => {
     settings = { ...settings, models: [] };
     const log = await capture();
