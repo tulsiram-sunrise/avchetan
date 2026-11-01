@@ -15,6 +15,16 @@ export type LlmErrorCode = (typeof LLM_ERROR_CODES)[number];
 const CONTEXT_OVERFLOW =
   /context.{0,10}(length|window)|maximum context|prompt is too long|too many tokens/i;
 
+/**
+ * What a failed call said, for the message the user sees. Only the status and the provider's
+ * short code: the rest of an error body can echo the user's entry.
+ */
+function failureHint(error: APICallError): string {
+  const code = error.responseBody?.match(/"code"\s*:\s*"([a-z0-9_]{1,40})"/)?.[1];
+  const parts = [error.statusCode && `HTTP ${error.statusCode}`, code].filter(Boolean);
+  return parts.length > 0 ? ` (${parts.join(', ')})` : '';
+}
+
 function fromApiCall(error: APICallError): LlmError {
   const status = error.statusCode;
   const details = status === undefined ? {} : { status };
@@ -32,7 +42,9 @@ function fromApiCall(error: APICallError): LlmError {
       details,
     });
   }
-  return new LlmError('llm_unavailable', 'The model could not be reached', { details });
+  return new LlmError('llm_unavailable', `The model could not be reached${failureHint(error)}`, {
+    details,
+  });
 }
 
 export function modelTimeoutError(): LlmError {

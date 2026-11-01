@@ -95,6 +95,28 @@ export function createPendingProcessor(deps: PendingProcessorDeps): PendingProce
     if (decision.kind === 'wait') pausedUntil = later(decision.delayMs);
   }
 
+  /** Without this, a log whose tries were all cut off would stay pending with no reason shown. */
+  async function giveUpOnAbandoned(now: string): Promise<boolean> {
+    const [abandoned] = await store.queries.abandonedPendingLogs(store.db, {
+      deviceId: store.deviceId,
+      now,
+      maxAttempts: MAX_ATTEMPTS,
+      limit: 1,
+    });
+    if (!abandoned) return false;
+    log.warn('extraction abandoned', { id: abandoned.id });
+    await store.write((tx) =>
+      store.repos.rawLogs.recordFailure(tx, abandoned.id, {
+        status: 'error',
+        lastError: 'llm_unavailable: Organizing this entry was interrupted too many times',
+        nextAttemptAt: null,
+        countsAsAttempt: true,
+      }),
+    );
+    deps.onChange?.();
+    return true;
+  }
+
   async function run(): Promise<LoopRunResult> {
     const now = store.clock.now();
     if (budget === 0) return 'idle';
@@ -113,7 +135,7 @@ export function createPendingProcessor(deps: PendingProcessorDeps): PendingProce
       maxAttempts: MAX_ATTEMPTS,
       limit: 1,
     });
-    if (!next) return 'idle';
+    if (!next) return (await giveUpOnAbandoned(now)) ? 'more' : 'idle';
 
     if (budget !== null) budget -= 1;
     await store.write((tx) => store.repos.rawLogs.claim(tx, next, later(LEASE_MS)));

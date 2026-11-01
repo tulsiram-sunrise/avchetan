@@ -31,9 +31,10 @@ loop:
   run extraction (§3)
   success → apply (§4)
   failure → record last_error; if attempts >= 3 → status='error'; release lease
+  nothing to pick → any own pending log with attempts >= 3 and no live lease → status='error'
 ```
 
-The lease outlasts the slowest call: a local model on a CPU has up to 3 minutes.
+The lease outlasts the slowest call: a local model on a CPU has up to 3 minutes. Attempts are counted at the claim, so a try cut off by the OS records no failure; the last line above stops a log whose tries were all cut off from staying pending forever with no reason.
 
 What a failure does is decided in `failure-policy.ts`:
 
