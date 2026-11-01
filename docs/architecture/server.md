@@ -4,7 +4,7 @@ Small Hono app on Node. Roles: sync hub, semantic search, hub-side Ask, fallback
 
 ## Stack
 
-Hono (`@hono/node-server`), Drizzle (`node-postgres` or `pglite` driver, same `pg` schema), Zod (`@hono/zod-validator`), `@avchetan/core` (extraction, analysis, embeddings, brief), `@avchetan/sync/protocol`, pino logging. Database: Postgres ≥ 16 with `pgvector` (`DB_DRIVER=postgres`) **or** PGlite with the `vector` extension (`DB_DRIVER=pglite`). Code must use only features both support.
+Hono (`@hono/node-server`), Drizzle (`node-postgres` or `pglite` driver, same `pg` schema), Zod, `@avchetan/core` (extraction, analysis, embeddings, brief), `@avchetan/sync/protocol`, `createLogger` from `@avchetan/shared`. Database: Postgres ≥ 16 with `pgvector` (`DB_DRIVER=postgres`) **or** PGlite with the `vector` extension (`DB_DRIVER=pglite`). Code must use only features both support.
 
 ## Endpoints (all under `/v1`, JSON, bearer auth except health)
 
@@ -54,6 +54,7 @@ FALLBACK_EXTRACTION_ENABLED=true, FALLBACK_GRACE_MINUTES=15
 apps/server/src/
   index.ts            boot: env, db, migrations, app, workers
   env.ts              Zod env schema
+  auth.ts             server identity, sync token hash
   app.ts              Hono app, middleware (auth, device, protocol, errors, request id)
   routes/             health.ts, devices.ts, sync.ts, search.ts, status.ts
   sync/               apply-push.ts, read-pull.ts, with-sync-write.ts

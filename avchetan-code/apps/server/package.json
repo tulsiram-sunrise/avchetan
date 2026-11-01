@@ -1,0 +1,30 @@
+{
+  "name": "@avchetan/server",
+  "version": "0.0.0",
+  "private": true,
+  "license": "AGPL-3.0-or-later",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --env-file-if-exists=.env src/index.ts",
+    "start": "tsx --env-file-if-exists=.env src/index.ts",
+    "start:hub": "cross-env DB_DRIVER=pglite SERVER_PROFILE=hub tsx --env-file-if-exists=.env src/index.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@avchetan/db": "workspace:*",
+    "@avchetan/shared": "workspace:*",
+    "@avchetan/sync": "workspace:*",
+    "@electric-sql/pglite": "0.5.14",
+    "@hono/node-server": "2.1.5",
+    "cross-env": "10.1.0",
+    "drizzle-orm": "0.45.4",
+    "hono": "4.13.14",
+    "pg": "8.23.1",
+    "tsx": "4.23.15",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/pg": "8.23.1"
+  }
+}
