@@ -17,6 +17,7 @@
     "@avchetan/core": "workspace:*",
     "@avchetan/db": "workspace:*",
     "@avchetan/shared": "workspace:*",
+    "@avchetan/sync": "workspace:*",
     "@tanstack/react-query": "5.105.0",
     "@tauri-apps/api": "2.12.4",
     "@tauri-apps/plugin-autostart": "2.7.0",

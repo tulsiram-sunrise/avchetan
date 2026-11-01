@@ -203,6 +203,9 @@ importers:
       '@avchetan/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@avchetan/sync':
+        specifier: workspace:*
+        version: link:../../packages/sync
       '@tanstack/react-query':
         specifier: 5.105.0
         version: 5.105.0(@types/react@19.3.0)(react@19.3.1)
@@ -264,6 +267,9 @@ importers:
       '@avchetan/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@avchetan/sync':
+        specifier: workspace:*
+        version: link:../../packages/sync
       '@expo/vector-icons':
         specifier: 15.1.1
         version: 15.1.1(expo-font@58.0.11(expo@58.0.21)(react-native@0.88.1(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.88.1(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.3.0)(react@19.3.0)(supports-color@8.1.1))(react@19.3.0))(react-native@0.88.1(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.88.1(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.3.0)(react@19.3.0)(supports-color@8.1.1))(react@19.3.0)

@@ -2,7 +2,7 @@ import { createModel, createPendingProcessor, type PendingProcessor } from '@avc
 import type { ClientStore } from '@avchetan/db/sqlite';
 import type { Platform } from '../platform';
 
-/** Wires the processor to this platform. Foreground only until the background task (step 5). */
+/** Wires the processor to this platform. */
 export function createExtractionService(
   store: ClientStore,
   platform: Platform,

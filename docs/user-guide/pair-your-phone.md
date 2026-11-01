@@ -12,6 +12,15 @@
    - **Use my own AI provider on the phone**: paste an API key.
 5. Done. Close the QR screen on the PC.
 
+## Connect by hand
+
+Until QR pairing arrives, type the details in on each device:
+
+1. Find your server's address, such as `http://192.168.1.20:8787`, and its sync token. The server prints the token once, the first time it starts.
+2. On the phone, open **More → Sync**. On the PC, open **Settings → Sync**.
+3. Enter the address and paste the token. For an address on your home network, turn on **Trust this home network**.
+4. Tap **Save**. The screen should say **Up to date.** within a few seconds.
+
 ## Check it worked
 
 The phone shows **Connected to** followed by your PC's name, and your existing entries appear.

@@ -62,6 +62,7 @@ export function useCaptureMutation() {
       void queryClient.invalidateQueries({ queryKey: rawLogKeys.all });
       void announceCapture(services);
       void services.extraction.wake();
+      services.sync.schedule();
     },
   });
 }

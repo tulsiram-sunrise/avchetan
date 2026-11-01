@@ -54,6 +54,7 @@ function AppRoutes({ startup }: { startup: Startup }) {
           />
           <Stack.Screen name="log/[id]" options={{ title: 'Entry' }} />
           <Stack.Screen name="settings/ai-models" options={{ title: 'AI models' }} />
+          <Stack.Screen name="settings/sync" options={{ title: 'Sync' }} />
         </Stack>
       </QueryClientProvider>
     </ServicesProvider>
@@ -68,11 +69,13 @@ export default function RootLayout() {
     getAppServices().then(
       (services) => {
         services.extraction.start();
+        services.sync.start();
         void registerBackgroundWork();
         stopWatching = watchForeground(AppState, () => {
           // Android may have stopped timers, and the background task may have changed rows.
           refreshAll();
           void services.extraction.wake();
+          void services.sync.syncNow();
         });
         setStartup({ status: 'ready', services });
       },

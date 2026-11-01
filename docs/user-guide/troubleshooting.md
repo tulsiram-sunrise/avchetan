@@ -15,6 +15,15 @@ Start with **Settings → Setup check**. It tests everything and tells you what 
 ## clock_skew
 **"This device's clock is wrong."** Turn on automatic date & time in the device settings.
 
+## untrusted_local_network
+**"Turn on Trust this home network to use this address."** The address is on your home network and uses plain `http://`, so your sync token travels unencrypted on that Wi-Fi. Turn on **Trust this home network** if you trust everyone on it, or connect through [Tailscale](remote-access-tailscale.md), which encrypts it.
+
+## insecure_server_url
+**"This address needs https://."** Plain `http://` only works on this device, on a home network or through Tailscale. Anywhere else your token would cross the internet unprotected, so use the server's `https://` address.
+
+## sync_issue
+**"Changes keep failing to sync."** The server refused these changes ten times, so they're waiting and nothing is lost. Check that both devices run the same version of Avchetan, then report it if it doesn't clear.
+
 ## llm_auth
 **"The provider rejected the API key"** or **"No API key is set for this provider."** Paste the key again in **Settings → AI models** and click **Test**. Your entries wait safely and are organized once the key works.
 

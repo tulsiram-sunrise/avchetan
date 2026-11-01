@@ -97,7 +97,7 @@ Scope:
 
 ## Phase 5 — Server, sync, fallback, semantic search, deployment modes
 
-**Progress:** started 2026-11-02. `apps/server` has health, device registration, push and pull, token auth, the rate limit and body limit, on PGlite and starts as a hub. `@avchetan/sync` has the protocol schemas and the client engine. Tests cover two clients and a PGlite server through the engine. Not yet done from steps 1 and 2: `/v1/status`, the Dockerfile and compose files, a test run on real Postgres, and wiring the engine into the desktop and mobile apps.
+**Progress:** started 2026-11-02. `apps/server` has health, device registration, push and pull, token auth, the rate limit and body limit, on PGlite and starts as a hub. `@avchetan/sync` has the protocol schemas and the client engine. Tests cover two clients and a PGlite server through the engine. Both apps run the engine, with a Sync screen for addresses and the token. Not yet done from steps 1 and 2: `/v1/status`, the Dockerfile and compose files, and a test run on real Postgres.
 
 Scope:
 1. `apps/server`: Hono app, env schema, auth, device registration (`extractionMode`), error shape, health (`serverId`)/status, `DB_DRIVER=postgres|pglite`, `SERVER_PROFILE=cloud|hub`, Dockerfile, docker-compose (pgvector), `start:hub` script + `deploy/home-hub/compose.yml`.

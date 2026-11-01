@@ -78,25 +78,27 @@ export function useCategoryNames() {
 }
 
 export function useCapture() {
-  const { capture, extraction } = useServices();
+  const { capture, extraction, sync } = useServices();
   return useMutation({
     mutationFn: (text: string) => capture.capture(text),
     // The row is committed by now: nothing here may delay the sheet closing.
     onSuccess: () => {
       refreshAll();
       void extraction.wake();
+      sync.schedule();
     },
   });
 }
 
 /** A write through the repositories; the processor then picks up anything it queued. */
 export function useWrite<A, R>(run: (store: ClientStore, args: A) => Promise<R>) {
-  const { store, extraction } = useServices();
+  const { store, extraction, sync } = useServices();
   return useMutation({
     mutationFn: (args: A) => run(store, args),
     onSuccess: () => {
       refreshAll();
       void extraction.wake();
+      sync.schedule();
     },
   });
 }
