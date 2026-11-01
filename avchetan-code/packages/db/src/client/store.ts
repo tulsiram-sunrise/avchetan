@@ -12,9 +12,10 @@ import {
   insertLlmRun,
   type NewAskEntry,
   type NewLlmRun,
+  type SyncStateKey,
   setSyncState,
 } from './local';
-import { ackOutbox, listOutbox } from './outbox';
+import { ackOutbox, listOutbox, rejectOutbox, stuckOutboxCount } from './outbox';
 import * as queries from './queries';
 import { activitiesRepo } from './repos/activities';
 import { categoriesRepo } from './repos/categories';
@@ -24,7 +25,7 @@ import { projectsRepo } from './repos/projects';
 import { rawLogsRepo } from './repos/raw-logs';
 import { tagsRepo } from './repos/tags';
 import { tasksRepo } from './repos/tasks';
-import type { RepoDeps } from './synced';
+import { getById, type RepoDeps, SYNCED_TABLES } from './synced';
 
 export type OpenClientStoreOptions = {
   executor: SqliteExecutor;
@@ -97,10 +98,26 @@ export async function openClientStore(options: OpenClientStoreOptions) {
       write((tx) => insertAskEntry(tx, { ...entry, id: newId(), createdAt: clock.now() })),
     sync: {
       listOutbox: (limit?: number) => listOutbox(database.db, limit),
+      /** The current row for each pointer: what gets pushed. A row can't be missing, only tombstoned. */
+      readOutboxRow: (tableName: keyof typeof SYNCED_TABLES, recordId: string) =>
+        getById(database.db, SYNCED_TABLES[tableName], recordId),
       ackOutbox: (entries: Parameters<typeof ackOutbox>[1]) =>
         database.write((tx) => ackOutbox(tx, entries)),
+      rejectOutbox: (entries: Parameters<typeof rejectOutbox>[1]) =>
+        database.write((tx) => rejectOutbox(tx, entries)),
+      stuckCount: () => stuckOutboxCount(database.db),
       applyRemote: (changes: readonly RemoteChange[]): Promise<ApplyResult> =>
         database.write((tx) => applyRemoteChanges(tx, changes)),
+      /** One pulled page and its cursor, together: a crash can't skip or repeat part of a page. */
+      applyPage: (changes: readonly RemoteChange[], cursor: number): Promise<ApplyResult> =>
+        database.write(async (tx) => {
+          const result = await applyRemoteChanges(tx, changes);
+          await setSyncState(tx, 'pull_cursor', String(cursor));
+          return result;
+        }),
+      getState: (key: SyncStateKey) => getSyncState(database.db, key),
+      setState: (key: SyncStateKey, value: string) =>
+        database.write((tx) => setSyncState(tx, key, value)),
     },
   };
 }

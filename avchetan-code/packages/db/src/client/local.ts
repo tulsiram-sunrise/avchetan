@@ -7,6 +7,8 @@ export type SyncStateKey =
   | 'device_id'
   | 'clock_last'
   | 'pull_cursor'
+  | 'server_id'
+  | 'registered_server_id'
   | 'last_push_at'
   | 'last_pull_at';
 
