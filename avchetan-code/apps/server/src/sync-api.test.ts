@@ -106,6 +106,14 @@ describe('access', () => {
     expect(await response.json()).toMatchObject({ error: { code: 'unknown_device' } });
   });
 
+  it('refuses a device ID that is not a UUID', async () => {
+    const response = await app.request('/v1/sync/pull', {
+      headers: headers({ [HEADERS.device]: 'not-a-uuid' }),
+    });
+
+    expect(response.status).toBe(403);
+  });
+
   it('limits a device to 60 requests a minute', async () => {
     await register();
     for (let i = 0; i < 59; i += 1) await pull();

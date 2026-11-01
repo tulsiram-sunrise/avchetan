@@ -2,14 +2,14 @@ import { type ClientStore, SYNCED_TABLES } from '@avchetan/db/sqlite';
 import { openTestStore } from '@avchetan/db/testing';
 import { createMonotonicClock, type HttpFetch } from '@avchetan/shared';
 import { FakeNetworkMonitor, ManualScheduler, MemorySecretStore } from '@avchetan/shared/testing';
-import { createSyncEngine, type SyncEngine, saveConnection } from '@avchetan/sync';
+import { createSyncEngine, loadSyncStatus, type SyncEngine, saveConnection } from '@avchetan/sync';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from './app';
 import { loadServerIdentity } from './auth';
 import { openPglite, type ServerDatabase } from './db/client';
 
 const TOKEN = 'test-token-that-is-long-enough-to-pass-32';
-const URL = 'http://hub.test';
+const URL = 'https://hub.test';
 const START = '2026-10-26T10:00:00.000Z';
 
 type Device = {
@@ -48,7 +48,7 @@ async function device(fetch: HttpFetch = (input, init) => serverFetch(input, ini
   });
   const secrets = new MemorySecretStore();
   const network = new FakeNetworkMonitor();
-  await saveConnection(store, secrets, { urls: [URL], token: TOKEN });
+  await saveConnection(store, secrets, { urls: [URL], token: TOKEN, trustLocalNetwork: false });
   const engine = createSyncEngine({
     store,
     fetch,
@@ -101,7 +101,7 @@ describe('two devices and a server', () => {
     const received = await desktop.store.db.query.rawLogs.findFirst();
     expect(received).toEqual(log);
     expect(await phone.store.sync.listOutbox()).toEqual([]);
-    expect(phone.engine.status().state).toBe('synced');
+    expect((await loadSyncStatus(phone.store)).state).toBe('synced');
   });
 
   it('ends with identical rows on both sides', async () => {
@@ -155,6 +155,26 @@ describe('two devices and a server', () => {
     expect(await titles(desktop)).toEqual([]);
   });
 
+  it('lets an edit made after pulling beat a row from a faster clock', async () => {
+    const phone = await device();
+    const desktop = await device();
+    const task = await addTask(desktop, 'original');
+    desktop.advance(60_000);
+    serverMs += 60_000;
+    await desktop.store.write((tx) =>
+      desktop.store.repos.tasks.editByUser(tx, task.id, { title: 'from the fast clock' }),
+    );
+    await converge(desktop, phone);
+
+    // The phone's own clock is still a minute behind.
+    await phone.store.write((tx) =>
+      phone.store.repos.tasks.editByUser(tx, task.id, { title: 'made later, on the phone' }),
+    );
+    await converge(phone, desktop);
+
+    expect(await titles(desktop)).toEqual(['made later, on the phone']);
+  });
+
   it('survives an ack lost on the way back', async () => {
     let dropNextPush = true;
     const phone = await device(async (input, init) => {
@@ -169,7 +189,7 @@ describe('two devices and a server', () => {
     await capture(phone, 'an entry');
 
     await phone.engine.syncNow();
-    expect(phone.engine.status().state).toBe('failed');
+    expect((await loadSyncStatus(phone.store)).state).toBe('failed');
     expect((await phone.store.sync.listOutbox()).length).toBeGreaterThan(0);
     await converge(phone, desktop);
 
@@ -210,7 +230,7 @@ describe('two devices and a server', () => {
 
     await phone.engine.syncNow();
 
-    expect(phone.engine.status().clockSkew).toBe(true);
+    expect((await loadSyncStatus(phone.store)).clockSkew).toBe(true);
     expect(await phone.store.sync.listOutbox()).toHaveLength(1);
   });
 
@@ -241,7 +261,11 @@ describe('two devices and a server', () => {
 
   it('waits for the user on a bad token instead of retrying', async () => {
     const phone = await device();
-    await saveConnection(phone.store, new MemorySecretStore(), { urls: [URL], token: 'x' });
+    await saveConnection(phone.store, new MemorySecretStore(), {
+      urls: [URL],
+      token: 'x',
+      trustLocalNetwork: false,
+    });
     const spy = vi.fn(serverFetch);
     const engine = createSyncEngine({
       store: phone.store,
@@ -254,7 +278,7 @@ describe('two devices and a server', () => {
 
     await engine.syncNow();
 
-    expect(engine.status().state).toBe('unauthorized');
+    expect((await loadSyncStatus(phone.store)).state).toBe('unauthorized');
   });
 
   it('stays quiet while offline or not configured', async () => {
@@ -262,7 +286,7 @@ describe('two devices and a server', () => {
     const phone = await device(spy);
     phone.network.setOnline(false);
     await phone.engine.syncNow();
-    expect(phone.engine.status().state).toBe('offline');
+    expect((await loadSyncStatus(phone.store)).state).toBe('offline');
     expect(spy).not.toHaveBeenCalled();
 
     const { store } = await openTestStore();
@@ -275,22 +299,22 @@ describe('two devices and a server', () => {
       device: { name: 'Test', platform: 'android', extractionMode: 'self' },
     });
     await unconfigured.syncNow();
-    expect(unconfigured.status().state).toBe('not_configured');
+    expect((await loadSyncStatus(store)).state).toBe('not_configured');
   });
 
   it('uses the next address when the first is down', async () => {
     const phone = await device(async (input, init) => {
-      if (String(input).startsWith('http://down.test')) throw new TypeError('no route');
+      if (String(input).startsWith('https://down.test')) throw new TypeError('no route');
       return serverFetch(input, init);
     });
     await saveConnection(
       phone.store,
-      { set: async () => {}, get: async () => null, delete: async () => {} },
-      { urls: ['http://down.test/', URL], token: TOKEN },
+      { set: async () => {} },
+      { urls: ['https://down.test/', URL], token: TOKEN, trustLocalNetwork: false },
     );
 
     await phone.engine.syncNow();
 
-    expect(phone.engine.status().state).toBe('synced');
+    expect((await loadSyncStatus(phone.store)).state).toBe('synced');
   });
 });

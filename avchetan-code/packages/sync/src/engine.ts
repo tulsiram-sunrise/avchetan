@@ -21,6 +21,7 @@ import {
   MAX_PUSH_CHANGES,
   SYNCED_ROW_SCHEMAS,
 } from './protocol';
+import { INITIAL_STATUS, type SyncState, type SyncStatus } from './status';
 
 const log = createLogger('sync');
 
@@ -33,24 +34,6 @@ export type SyncDevice = {
   extractionMode: ExtractionMode;
 };
 
-export type SyncState =
-  | 'not_configured'
-  | 'offline'
-  | 'syncing'
-  | 'synced'
-  /** Needs the user: the loop stops retrying until the connection changes. */
-  | 'unauthorized'
-  | 'server_unreachable'
-  | 'failed';
-
-export type SyncStatus = {
-  state: SyncState;
-  /** Set when the server refused rows because this device's clock is wrong. */
-  clockSkew: boolean;
-  /** Changes the server keeps refusing, shown as "sync issue". */
-  stuck: number;
-};
-
 export type SyncEngineDeps = {
   store: ClientStore;
   fetch: HttpFetch;
@@ -60,7 +43,6 @@ export type SyncEngineDeps = {
   device: SyncDevice;
   /** Rows changed here, so the UI can refresh and the pending processor can look again. */
   onSynced?: () => void;
-  onStatus?: (status: SyncStatus) => void;
 };
 
 export type SyncEngine = {
@@ -70,7 +52,6 @@ export type SyncEngine = {
   syncNow: () => Promise<void>;
   start: () => void;
   stop: () => void;
-  status: () => SyncStatus;
 };
 
 function toRemoteChange({ table, row }: { table: string; row: unknown }): RemoteChange {
@@ -85,12 +66,17 @@ function toRemoteChange({ table, row }: { table: string; row: unknown }): Remote
  */
 export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
   const { store, fetch, secrets, network, scheduler, device } = deps;
-  let current: SyncStatus = { state: 'not_configured', clockSkew: false, stuck: 0 };
+  let current = INITIAL_STATUS;
+  let saved = '';
   let cancelDebounce: Cancel | null = null;
 
-  function report(state: SyncState, changes: Partial<SyncStatus> = {}): void {
+  /** Saved rather than sent, so any screen or window can read it. A cycle in progress isn't. */
+  async function report(state: SyncState, changes: Partial<SyncStatus> = {}): Promise<void> {
     current = { ...current, ...changes, state };
-    deps.onStatus?.(current);
+    const next = JSON.stringify(current);
+    if (state === 'syncing' || next === saved) return;
+    saved = next;
+    await store.sync.setState('status', next);
   }
 
   /** The first address that answers; all addresses belong to one server. */
@@ -177,18 +163,18 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
     const urls = await loadServerUrls(store);
     const token = await secrets.get(SYNC_TOKEN_SECRET);
     if (urls.length === 0 || !token) {
-      report('not_configured');
+      await report('not_configured');
       return 'idle';
     }
     if (!network.isOnline()) {
-      report('offline');
+      await report('offline');
       return 'idle';
     }
 
-    report('syncing');
+    await report('syncing');
     const server = await findServer(urls);
     if (!server) {
-      report('server_unreachable');
+      await report('server_unreachable');
       throw new SyncError('server_unreachable', 'No address of the server answered');
     }
     const { serverId } = server.health;
@@ -199,16 +185,16 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
     } catch (error) {
       const { code } = toAppError(error);
       if (code === 'unauthorized') {
-        report('unauthorized');
+        await report('unauthorized');
         return 'idle';
       }
       // The server forgot this device, for example after a restore. Register again next time.
       if (code === 'unknown_device') await store.sync.setState('registered_server_id', '');
-      report('failed');
+      await report('failed');
       throw error;
     }
 
-    report('synced', { stuck: await store.sync.stuckCount() });
+    await report('synced', { stuck: await store.sync.stuckCount() });
     deps.onSynced?.();
     return 'idle';
   }
@@ -234,7 +220,6 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
   return {
     schedule,
     syncNow: loop.wake,
-    status: () => current,
     start() {
       unsubscribe ??= network.subscribe((online) => {
         if (!online) return;

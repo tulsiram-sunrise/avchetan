@@ -9,6 +9,7 @@ export type SyncStateKey =
   | 'pull_cursor'
   | 'server_id'
   | 'registered_server_id'
+  | 'status'
   | 'last_push_at'
   | 'last_pull_at';
 

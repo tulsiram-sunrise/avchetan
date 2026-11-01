@@ -4,6 +4,7 @@ import { type Clock, createLogger } from '@avchetan/shared';
 import { type ErrorResponse, HEADERS, PROTOCOL_VERSION } from '@avchetan/sync/protocol';
 import { eq } from 'drizzle-orm';
 import { type Context, Hono } from 'hono';
+import { z } from 'zod';
 import { ApiError } from './api-error';
 import type { ServerIdentity } from './auth';
 import { tokenMatches } from './auth';
@@ -69,8 +70,12 @@ export function createApp(deps: AppDeps) {
   app.use('/v1/*', async (c, next) => {
     const deviceId = c.req.header(HEADERS.device);
     if (c.req.path !== '/v1/devices/register') {
-      const [known] = deviceId
-        ? await db.select({ id: devices.id }).from(devices).where(eq(devices.id, deviceId))
+      // Checked first: Postgres throws on anything that isn't a UUID.
+      const [known] = z.uuid().safeParse(deviceId).success
+        ? await db
+            .select({ id: devices.id })
+            .from(devices)
+            .where(eq(devices.id, deviceId as string))
         : [];
       if (!known) throw new ApiError(403, 'unknown_device', 'Pair this device again');
       c.set('deviceId', known.id);

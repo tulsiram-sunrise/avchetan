@@ -28,6 +28,8 @@ A version is the pair `(updated_at, updated_by_device)`. Incoming wins iff it is
 - `clock.now()` is monotonic per device: `max(Date.now(), last + 1ms)`, persisted in `sync_state.clock_last`.
 - Server rejects pushed rows with `updated_at` more than 5 minutes ahead of server time (`rejected: clock_skew`); client surfaces "device clock is wrong" and retries after correction.
 - Clients never use their clock to decide *what to pull* — only the server cursor.
+- After applying a pulled page, a client moves its clock past the newest `updated_at` in it (`clock.observe`). Otherwise an edit made right after pulling from a device with a faster clock would carry an older time and silently lose.
+- The server compares `updated_by_device` with `COLLATE "C"`, the byte order clients use, so both sides pick the same winner.
 
 **Local edits vs incoming pull:** if a pulled row loses LWW against the local row, it is skipped (the local row is in the outbox and will win on the server too). If it wins, it overwrites the local row and any outbox pointer for that record is removed (the local change already lost).
 
