@@ -14,6 +14,15 @@ export {
   type SyncEngineDeps,
 } from './engine';
 export { askServer } from './hub-ask';
+export {
+  buildPairingLink,
+  loadPairingLink,
+  type PairingDeps,
+  type PairingLink,
+  pairWithLink,
+  parsePairingLink,
+  rotateServerToken,
+} from './pairing';
 export { type SearchDeps, searchServer } from './search';
 export {
   describeSync,

@@ -8,14 +8,17 @@ import {
   type HubAskRequest,
   type HubAskResult,
   healthResponseSchema,
+  type PairingResponse,
   PROTOCOL_VERSION,
   type PullResponse,
   type PushRequest,
   type PushResponse,
+  pairingResponseSchema,
   pullResponseSchema,
   pushResponseSchema,
   type RegisterDeviceRequest,
   registerDeviceResponseSchema,
+  rotateTokenResponseSchema,
   type SearchRequest,
   type SearchResponse,
   type StatusResponse,
@@ -130,6 +133,18 @@ export function createApiClient({ fetch, baseUrl, token, deviceId }: ApiClientOp
         throw new SyncError('server_unreachable', 'The hub did not answer', { cause: error });
       }
       return readAnswer(response, onText);
+    },
+    pairing(): Promise<PairingResponse> {
+      return send(fetch, `${baseUrl}/v1/pairing`, options(), pairingResponseSchema);
+    },
+    async rotateToken(): Promise<string> {
+      const { token } = await send(
+        fetch,
+        `${baseUrl}/v1/token/rotate`,
+        post({}),
+        rotateTokenResponseSchema,
+      );
+      return token;
     },
     status(): Promise<StatusResponse> {
       return send(fetch, `${baseUrl}/v1/status`, options(), statusResponseSchema);

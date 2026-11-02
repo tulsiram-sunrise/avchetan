@@ -21,7 +21,7 @@ function isOnThisDevice(host: string): boolean {
 }
 
 /** Tailscale traffic is already encrypted, so the token is safe on plain HTTP there. */
-function isTailscale(host: string): boolean {
+export function isTailscale(host: string): boolean {
   if (host.endsWith('.ts.net')) return true;
   const [first, second] = host.split('.').map(Number);
   return first === 100 && second !== undefined && second >= 64 && second <= 127;

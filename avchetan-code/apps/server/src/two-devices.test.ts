@@ -2,7 +2,15 @@ import { type ClientStore, SYNCED_TABLES } from '@avchetan/db/sqlite';
 import { openTestStore } from '@avchetan/db/testing';
 import { createMonotonicClock, type HttpFetch } from '@avchetan/shared';
 import { FakeNetworkMonitor, ManualScheduler, MemorySecretStore } from '@avchetan/shared/testing';
-import { createSyncEngine, loadSyncStatus, type SyncEngine, saveConnection } from '@avchetan/sync';
+import {
+  createSyncEngine,
+  loadPairingLink,
+  loadSyncStatus,
+  pairWithLink,
+  rotateServerToken,
+  type SyncEngine,
+  saveConnection,
+} from '@avchetan/sync';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from './app';
 import { loadServerIdentity } from './auth';
@@ -18,6 +26,7 @@ type Device = {
   engine: SyncEngine;
   advance: (ms: number) => void;
   network: FakeNetworkMonitor;
+  secrets: MemorySecretStore;
 };
 
 let database: ServerDatabase;
@@ -37,6 +46,7 @@ beforeEach(async () => {
     version: 'test',
     profile: 'hub',
     nowMs: () => serverMs,
+    pairing: { urls: () => [URL], tokenFromEnv: false },
   });
   serverFetch = (input, init) => Promise.resolve(app.fetch(new Request(input, init)));
 });
@@ -59,7 +69,7 @@ async function device(fetch: HttpFetch = (input, init) => serverFetch(input, ini
     scheduler: new ManualScheduler(),
     device: { name: 'Test', platform: 'android', extractionMode: 'self' },
   });
-  return { store, engine, advance, network } satisfies Device;
+  return { store, engine, advance, network, secrets } satisfies Device;
 }
 
 const capture = ({ store }: Device, content: string) =>
@@ -91,6 +101,36 @@ async function converge(...devices: Device[]) {
     for (const each of devices) await each.engine.syncNow();
   }
 }
+
+describe('pairing', () => {
+  it('pairs a new phone from the desktop’s code, and a new token locks out the rest', async () => {
+    const desktop = await device();
+    await desktop.engine.syncNow();
+    const fromDesktop = { store: desktop.store, fetch: serverFetch, secrets: desktop.secrets };
+    const link = await loadPairingLink(fromDesktop);
+
+    const { store } = await openTestStore({ start: START, newId: () => crypto.randomUUID() });
+    const secrets = new MemorySecretStore();
+    await pairWithLink({ store, fetch: serverFetch, secrets }, link);
+    const engine = createSyncEngine({
+      store,
+      fetch: serverFetch,
+      secrets,
+      network: new FakeNetworkMonitor(),
+      scheduler: new ManualScheduler(),
+      device: { name: 'Phone', platform: 'android', extractionMode: 'self' },
+    });
+    await engine.syncNow();
+    expect((await loadSyncStatus(store)).state).toBe('synced');
+
+    await rotateServerToken(fromDesktop);
+    await desktop.engine.syncNow();
+    await engine.syncNow();
+
+    expect((await loadSyncStatus(desktop.store)).state).toBe('synced');
+    expect((await loadSyncStatus(store)).state).toBe('unauthorized');
+  });
+});
 
 describe('two devices and a server', () => {
   it('brings a capture from one device to the other', async () => {
