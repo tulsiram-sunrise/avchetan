@@ -13,13 +13,18 @@ import {
   pushResponseSchema,
   type RegisterDeviceRequest,
   registerDeviceResponseSchema,
+  type SearchRequest,
+  type SearchResponse,
   type StatusResponse,
+  searchResponseSchema,
   statusResponseSchema,
 } from './protocol';
 
 const TIMEOUT_MS = 30_000;
 /** `/v1/health` decides which address to use, so a dead one has to fail fast. */
 const HEALTH_TIMEOUT_MS = 4_000;
+/** Ask waits on it, and falls back to searching by words. */
+const SEARCH_TIMEOUT_MS = 10_000;
 
 async function send<T extends z.ZodType>(
   fetch: HttpFetch,
@@ -99,6 +104,14 @@ export function createApiClient({ fetch, baseUrl, token, deviceId }: ApiClientOp
       const query = new URLSearchParams({ cursor: String(cursor) });
       if (limit !== undefined) query.set('limit', String(limit));
       return send(fetch, `${baseUrl}/v1/sync/pull?${query}`, options(), pullResponseSchema);
+    },
+    search(request: SearchRequest): Promise<SearchResponse> {
+      return send(
+        fetch,
+        `${baseUrl}/v1/search`,
+        { ...post(request), signal: AbortSignal.timeout(SEARCH_TIMEOUT_MS) },
+        searchResponseSchema,
+      );
     },
     status(): Promise<StatusResponse> {
       return send(fetch, `${baseUrl}/v1/status`, options(), statusResponseSchema);

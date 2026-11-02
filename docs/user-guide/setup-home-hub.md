@@ -51,6 +51,15 @@ For a machine that is always on, such as a home server or a second PC, without t
 
 Your data stays in a Docker volume on that machine, and the hub starts again by itself after a restart. To stop it, run `docker compose -f deploy/home-hub/compose.yml down`. Don't add `-v` unless you want to delete all your synced data.
 
+## Search by meaning
+
+The hub can find entries by what they mean, not only the words in them, so Ask can answer `when did my knee hurt` from an entry that says "stiff leg". It needs a search model in Ollama on the PC, about 640 MB:
+
+1. Run `ollama pull qwen3-embedding:0.6b` once.
+2. Start the hub with `EMBEDDING_PROVIDER=ollama` and `EMBEDDING_MODEL=qwen3-embedding:0.6b` set, the same way as the settings in [Run the hub on a home server](#run-the-hub-on-a-home-server-instead-docker).
+
+The first start goes through all your existing entries, about 0.2 seconds each on a processor. After that each new entry is ready for search a few seconds after it syncs. Private entries are only searchable with a model on your own PC, like this one.
+
 ## Common problems
 
 | Problem | Fix |

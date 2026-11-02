@@ -4,7 +4,7 @@ import type { ClientStore } from '@avchetan/db/sqlite';
 import { openTestStore } from '@avchetan/db/testing';
 import { createMonotonicClock, type HttpFetch } from '@avchetan/shared';
 import { FakeNetworkMonitor, ManualScheduler, MemorySecretStore } from '@avchetan/shared/testing';
-import { createSyncEngine, type SyncEngine, saveConnection } from '@avchetan/sync';
+import { createSyncEngine, type SyncEngine, saveConnection, searchServer } from '@avchetan/sync';
 import {
   HEADERS,
   PROTOCOL_VERSION,
@@ -36,7 +36,7 @@ const vectorOf = (text: string) => [
 const doEmbed = vi.fn<MockEmbeddingModelV4['doEmbed']>();
 let database: ServerDatabase;
 let serverFetch: HttpFetch;
-let phone: { store: ClientStore; engine: SyncEngine };
+let phone: { store: ClientStore; engine: SyncEngine; secrets: MemorySecretStore };
 let embedder: Embedder;
 let queued: Promise<void>;
 
@@ -83,7 +83,7 @@ async function setUp(model: ModelConfig | null) {
     scheduler: new ManualScheduler(),
     device: { name: 'Phone', platform: 'android', extractionMode: 'self' },
   });
-  phone = { store, engine };
+  phone = { store, engine, secrets };
 }
 
 beforeEach(async () => {
@@ -208,6 +208,33 @@ describe('search by meaning', () => {
     await embedder.wake();
 
     expect(await storedVectors()).toHaveLength(1);
+  });
+
+  it('reaches a device through searchServer, closest first', async () => {
+    await setUp(ollama);
+    await embedder.start();
+    const knee = await capture('Knee hurts');
+    await capture('Slept well');
+    await syncAndEmbed();
+
+    const results = await searchServer(
+      { store: phone.store, fetch: serverFetch, secrets: phone.secrets },
+      { query: 'knee' },
+    );
+
+    expect(results?.[0]?.rawLogId).toBe(knee.id);
+  });
+
+  it('gives a device null, not an error, when search is off', async () => {
+    await setUp(null);
+    await phone.engine.syncNow();
+
+    expect(
+      await searchServer(
+        { store: phone.store, fetch: serverFetch, secrets: phone.secrets },
+        { query: 'knee' },
+      ),
+    ).toBeNull();
   });
 
   it('says search is off when the server has no embedding model', async () => {

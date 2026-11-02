@@ -1,4 +1,5 @@
 export { type AskRequest, type AskResult, type AskSource, ask } from './analysis/ask';
+export type { SearchHistory } from './analysis/tools';
 export { buildCaptureInput } from './capture';
 export { type EmbeddingSource, embeddingText, embedTexts } from './embeddings/embed';
 export {

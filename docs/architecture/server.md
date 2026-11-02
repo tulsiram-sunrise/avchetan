@@ -42,7 +42,7 @@ DB_DRIVER=postgres|pglite, DATABASE_URL (postgres) | PGLITE_DATA_DIR (pglite)
 SERVER_PROFILE=cloud|hub   (hub: defaults providers to local Ollama, allows LAN/Tailscale HTTP, enables snapshot backups)
 SYNC_TOKEN, PORT=8787, BIND_HOST=0.0.0.0, LOG_LEVEL=info, TZ_DEFAULT=UTC  (fallback only; each raw log carries its own captured_tz)
 EXTRACTION_PROVIDER, EXTRACTION_MODEL, ANALYSIS_PROVIDER, ANALYSIS_MODEL,
-EMBEDDING_PROVIDER, EMBEDDING_MODEL, EMBEDDING_DIMS
+EMBEDDING_PROVIDER, EMBEDDING_MODEL   (no EMBEDDING_DIMS: each row records its length; see retrieval.md)
 <PROVIDER>_API_KEY …, OLLAMA_BASE_URL (optional)
 FALLBACK_EXTRACTION_ENABLED=true, FALLBACK_GRACE_MINUTES=15
 ```

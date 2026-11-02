@@ -2,6 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-10-26
+- **Refined 2026-11-02:** the column has no fixed N. Each row records `model` and `dims`, and the server builds a partial HNSW index per length (`(embedding::vector(N))` where `dims = N`), so a new model needs a backfill but no migration ([retrieval](../architecture/retrieval.md#where-it-sits)).
 
 ## Context
 Fuzzy historical questions ("when did my knee feel weird") need semantic retrieval. The original discussion concluded that a dedicated vector DB is overkill for one user.

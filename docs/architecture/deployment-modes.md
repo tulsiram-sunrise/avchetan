@@ -43,7 +43,7 @@ A single device (desktop or phone) with no server configured. Everything in the 
 - **Ollama** (native install, uses the GPU). It never needs to be exposed to the network: only the Avchetan server talks to it, over `localhost`.
 - **Avchetan server** — the same `apps/server`, started in *hub profile*:
   - `DB_DRIVER=pglite` → embedded Postgres (PGlite, WASM) stored in a data directory, with the `vector` extension. No Docker, no separate database install. Same Drizzle `pg` schema and migrations as cloud mode — no third dialect.
-  - Providers default to `ollama` at `http://localhost:11434`; embedding slot = an Ollama embedding model (`EMBEDDING_DIMS` set to match).
+  - Providers default to `ollama` at `http://localhost:11434`; embedding slot = an Ollama embedding model (`EMBEDDING_PROVIDER`, `EMBEDDING_MODEL`; the suggested one is in `presets.json`).
 - **Desktop app** — syncs to `http://localhost:8787`; its own extraction slot can use Ollama directly (local, instant).
 
 How the server process is started (two delivery options):

@@ -43,6 +43,8 @@ Start with `?` and press your save key:
 
 A question is never saved as an entry. The answer appears in the box with the entries it came from, numbered like `[1]`. Avchetan does the counting itself, so totals come from your data, not from a guess.
 
+**Search by meaning.** If your hub has a search model (see [Home Hub](setup-home-hub.md#search-by-meaning)), a question like `when did my knee hurt` also finds entries that say "stiff leg" or "physio". Without a hub, or when it can't be reached, Avchetan searches for the words you used.
+
 Your question, and the entries needed to answer it, go to the model chosen under **Settings → AI models**. Private entries are only read by a model on your own PC. They stay out of a cloud model's answers, so those answers can leave them out.
 
 When you're offline with a cloud model, Avchetan shows a short count from your PC instead.
