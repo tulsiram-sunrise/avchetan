@@ -1,9 +1,12 @@
 import { type MigrationDriver, pgMigrations, runMigrations } from '@avchetan/db/pg';
+import { createLogger } from '@avchetan/shared';
 import { PGlite } from '@electric-sql/pglite';
 import { drizzle as drizzleNodePg } from 'drizzle-orm/node-postgres';
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
 import { drizzle as drizzlePglite } from 'drizzle-orm/pglite';
 import pg from 'pg';
+
+const log = createLogger('db');
 
 export type ServerDb = PgDatabase<PgQueryResultHKT>;
 
@@ -35,6 +38,11 @@ export async function openPglite(dataDir?: string): Promise<ServerDatabase> {
 
 export async function openPostgres(url: string): Promise<ServerDatabase> {
   const pool = new pg.Pool({ connectionString: url });
+  // An idle connection the database closes (a restart, an idle timeout) is reported here, and
+  // with no listener Node would exit. The pool opens a new connection for the next query.
+  pool.on('error', (error) => {
+    log.warn('idle database connection closed', { code: 'code' in error ? error.code : 'unknown' });
+  });
   return {
     db: drizzleNodePg(pool) as unknown as ServerDb,
     migrate: async (now) => {
