@@ -138,3 +138,26 @@ export const searchResponseSchema = z.object({
   ),
 });
 export type SearchResponse = z.infer<typeof searchResponseSchema>;
+
+/** `POST /v1/ask`: the hub answers with its own model, from its own copy of the entries. */
+export const askRequestSchema = z.object({
+  question: z.string().trim().min(1).max(2_000),
+  /** The asking device's IANA time zone, so "today" and "this week" mean its days. */
+  timeZone: z.string().min(1).max(64),
+});
+export type HubAskRequest = z.input<typeof askRequestSchema>;
+
+/** Sent as server-sent events, one JSON object per `data:` line. */
+export const askEventSchema = z.discriminatedUnion('type', [
+  /** The whole answer so far, citations already numbered. */
+  z.object({ type: z.literal('text'), text: z.string() }),
+  z.object({
+    type: z.literal('done'),
+    answer: z.string(),
+    /** The device reads these entries from its own database to show them. */
+    sources: z.array(z.object({ number: z.int(), rawLogId: z.uuid() })),
+  }),
+  z.object({ type: z.literal('error'), code: z.string(), message: z.string() }),
+]);
+export type AskEvent = z.infer<typeof askEventSchema>;
+export type HubAskResult = Omit<Extract<AskEvent, { type: 'done' }>, 'type'>;

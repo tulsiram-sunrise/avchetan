@@ -28,12 +28,17 @@ export {
 } from './extraction/pending-processor';
 export { type ExtractionResult, extractionResultSchema } from './extraction/schema';
 export {
+  ANALYSIS_MODE_SETTING,
+  ANALYSIS_MODES,
+  type AnalysisMode,
   EXTRACTION_MODE_SETTING,
   type ExtractionSettings,
+  loadAnalysisMode,
   loadAnalysisModel,
   loadExtractionMode,
   loadExtractionSettings,
   MODEL_SLOTS_SETTING,
+  saveAnalysisMode,
   saveExtractionMode,
 } from './extraction/settings';
 export {

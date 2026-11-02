@@ -26,6 +26,9 @@ const envSchema = z
     /** With no provider, the server organizes nothing and devices do it themselves. */
     EXTRACTION_PROVIDER: z.enum(LLM_PROVIDERS).optional(),
     EXTRACTION_MODEL: z.string().min(1).optional(),
+    /** The hub answers Ask questions for devices set to use it (ADR-0022). */
+    ANALYSIS_PROVIDER: z.enum(LLM_PROVIDERS).optional(),
+    ANALYSIS_MODEL: z.string().min(1).optional(),
     /** Search by meaning (docs/architecture/retrieval.md). With no provider, search is off. */
     EMBEDDING_PROVIDER: z.enum(LLM_PROVIDERS).optional(),
     EMBEDDING_MODEL: z.string().min(1).optional(),
@@ -40,6 +43,10 @@ const envSchema = z
   .refine((env) => !env.EXTRACTION_PROVIDER || env.EXTRACTION_MODEL, {
     path: ['EXTRACTION_MODEL'],
     message: 'EXTRACTION_MODEL is required when EXTRACTION_PROVIDER is set',
+  })
+  .refine((env) => !env.ANALYSIS_PROVIDER || env.ANALYSIS_MODEL, {
+    path: ['ANALYSIS_MODEL'],
+    message: 'ANALYSIS_MODEL is required when ANALYSIS_PROVIDER is set',
   })
   .refine((env) => !env.EMBEDDING_PROVIDER || env.EMBEDDING_MODEL, {
     path: ['EMBEDDING_MODEL'],

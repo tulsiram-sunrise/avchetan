@@ -1,9 +1,12 @@
 import { type HttpFetch, SyncError } from '@avchetan/shared';
 import type { z } from 'zod';
+import { readAnswer } from './ask-stream';
 import {
   errorResponseSchema,
   HEADERS,
   type HealthResponse,
+  type HubAskRequest,
+  type HubAskResult,
   healthResponseSchema,
   PROTOCOL_VERSION,
   type PullResponse,
@@ -23,6 +26,8 @@ import {
 const TIMEOUT_MS = 30_000;
 /** `/v1/health` decides which address to use, so a dead one has to fail fast. */
 const HEALTH_TIMEOUT_MS = 4_000;
+/** A local model on a processor may take minutes to answer. */
+const ASK_TIMEOUT_MS = 300_000;
 /** Ask waits on it, and falls back to searching by words. */
 const SEARCH_TIMEOUT_MS = 10_000;
 
@@ -112,6 +117,19 @@ export function createApiClient({ fetch, baseUrl, token, deviceId }: ApiClientOp
         { ...post(request), signal: AbortSignal.timeout(SEARCH_TIMEOUT_MS) },
         searchResponseSchema,
       );
+    },
+    /** The hub answers with its own model, streamed as server-sent events. */
+    async ask(request: HubAskRequest, onText: (text: string) => void): Promise<HubAskResult> {
+      let response: Response;
+      try {
+        response = await fetch(`${baseUrl}/v1/ask`, {
+          ...post(request),
+          signal: AbortSignal.timeout(ASK_TIMEOUT_MS),
+        });
+      } catch (error) {
+        throw new SyncError('server_unreachable', 'The hub did not answer', { cause: error });
+      }
+      return readAnswer(response, onText);
     },
     status(): Promise<StatusResponse> {
       return send(fetch, `${baseUrl}/v1/status`, options(), statusResponseSchema);

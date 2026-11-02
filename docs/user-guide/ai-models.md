@@ -30,6 +30,16 @@ New entries show **Pending** until they sync, then come back organized a few sec
 
 If the screen says the phone isn't connected to a hub, set up [Sync](pair-your-phone.md#connect-by-hand) first. Entries wait on the phone until it can reach the hub.
 
+## Let your hub answer a phone's questions
+
+The hub can answer the **Ask** tab's questions too, so the phone needs no AI key at all.
+
+1. On the PC, the hub needs a model for questions: start it with `ANALYSIS_PROVIDER` and `ANALYSIS_MODEL` set (see [Home Hub](setup-home-hub.md)). Without a graphics card, a larger model answers better but can take a minute or more.
+2. On the phone, open **More → AI models**.
+3. Under **Who answers your questions?**, tap **My hub**.
+
+The phone has to reach the hub to ask. Without a connection, Ask shows today's counts from the phone instead.
+
 ## Free cloud providers (bring your own key)
 
 **Groq** has a free tier with daily limits, enough for a personal log. If you reach a limit, your entries wait and are organized later.

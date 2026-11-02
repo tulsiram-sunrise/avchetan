@@ -25,6 +25,7 @@ Short records of significant decisions: context, decision, consequences. Accepte
 | [0019](0019-desktop-sqlite-own-commands.md) | Desktop SQLite through the app's own Rust commands, not tauri-plugin-sql | Accepted |
 | [0020](0020-free-first-provider-adapters.md) | Free providers first, behind small provider adapters | Accepted |
 | [0021](0021-server-organizes-as-a-device.md) | The server organizes entries as one more device | Accepted |
+| [0022](0022-hub-answers-on-its-device.md) | The hub answers questions on its own device | Accepted |
 
 ## Template
 

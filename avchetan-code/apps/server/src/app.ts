@@ -11,10 +11,12 @@ import { eq } from 'drizzle-orm';
 import { type Context, Hono } from 'hono';
 import { z } from 'zod';
 import { ApiError } from './api-error';
+import type { HubAsk } from './ask/hub-ask';
 import type { ServerIdentity } from './auth';
 import { hashToken, tokenMatches } from './auth';
 import type { ServerDb } from './db/client';
 import { createRateLimiter } from './rate-limit';
+import { askRoutes } from './routes/ask';
 import { deviceRoutes } from './routes/devices';
 import { healthRoutes } from './routes/health';
 import { searchRoutes } from './routes/search';
@@ -40,6 +42,8 @@ export type AppDeps = {
   onPush?: (deviceId: string, acked: readonly { table: string; id: string }[]) => void;
   /** Search by meaning; absent when the server has no embedding model. */
   search?: { model: string; embed: (text: string) => Promise<number[]> };
+  /** Answers questions with the hub's model; absent when it has none. */
+  ask?: HubAsk;
 };
 
 export type AppEnv = { Variables: { requestId: string; deviceId: string; internal: boolean } };
@@ -122,6 +126,7 @@ export function createApp(deps: AppDeps) {
   app.route('/v1', syncRoutes(deps));
   app.route('/v1', statusRoutes(deps));
   app.route('/v1', searchRoutes(deps));
+  app.route('/v1', askRoutes(deps));
 
   app.notFound((c) => c.json(errorBody(c, 'not_found', 'No such endpoint'), 404));
   app.onError((error, c) => {

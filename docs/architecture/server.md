@@ -15,7 +15,7 @@ Hono (`@hono/node-server`), Drizzle (`node-postgres` or `pglite` driver, same `p
 | `POST /v1/sync/push` | See [sync-protocol](sync-protocol.md#push--post-v1syncpush) |
 | `GET /v1/sync/pull` | See [sync-protocol](sync-protocol.md#pull--get-v1syncpullcursornlimit500) |
 | `POST /v1/search` | Semantic search ([retrieval](retrieval.md#search-api)) |
-| `POST /v1/ask` | Run Ask on the server's analysis slot with server-side tools; streams the answer (text/event-stream) with citations. Used by devices whose analysis slot is `hub` |
+| `POST /v1/ask` | `{ question, timeZone }`: runs the apps' Ask on the server device's copy with the hub's model ([ADR-0022](../decisions/0022-hub-answers-on-its-device.md)); streams `text`, then `done` with cited raw log IDs, or `error` (text/event-stream). 503 `ask_unavailable` without `ANALYSIS_PROVIDER`. Used by devices with `analysis.mode = hub` |
 | `GET /v1/status` | For the settings screen: `serverId`, version, profile, server time, each device with its last-seen time, and raw logs still waiting for extraction or failed. The fallback queue, embedding backlog and last job runs join with their workers (steps 3–4); clients ignore fields they don't know |
 
 Headers: `Authorization: Bearer <SYNC_TOKEN>`, `X-Avchetan-Device: <deviceId>`, `X-Avchetan-Protocol: 1`. Error format per [conventions/api.md](../conventions/api.md).
@@ -41,7 +41,7 @@ The server device writes through the sync API like any device. All writes to syn
 DB_DRIVER=postgres|pglite, DATABASE_URL (postgres) | PGLITE_DATA_DIR (pglite)
 SERVER_PROFILE=cloud|hub   (hub: defaults providers to local Ollama, allows LAN/Tailscale HTTP, enables snapshot backups)
 SYNC_TOKEN, PORT=8787, BIND_HOST=0.0.0.0, LOG_LEVEL=info, TZ_DEFAULT=UTC  (fallback only; each raw log carries its own captured_tz)
-EXTRACTION_PROVIDER, EXTRACTION_MODEL, ANALYSIS_PROVIDER, ANALYSIS_MODEL,
+EXTRACTION_PROVIDER, EXTRACTION_MODEL, ANALYSIS_PROVIDER (hub answers questions), ANALYSIS_MODEL,
 EMBEDDING_PROVIDER, EMBEDDING_MODEL   (no EMBEDDING_DIMS: each row records its length; see retrieval.md)
 <PROVIDER>_API_KEY …, OLLAMA_BASE_URL (optional)
 FALLBACK_EXTRACTION_ENABLED=true, FALLBACK_GRACE_MINUTES=15

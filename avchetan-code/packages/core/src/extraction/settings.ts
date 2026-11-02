@@ -18,6 +18,20 @@ export async function loadExtractionMode(store: ClientStore): Promise<Extraction
   return mode.success ? mode.data : 'self';
 }
 
+/** Who answers this device's questions: its own model (`self`) or its hub (`hub`, ADR-0022). */
+export const ANALYSIS_MODES = ['self', 'hub'] as const;
+export type AnalysisMode = (typeof ANALYSIS_MODES)[number];
+export const ANALYSIS_MODE_SETTING = 'analysis.mode';
+
+export async function loadAnalysisMode(store: ClientStore): Promise<AnalysisMode> {
+  const mode = z.enum(ANALYSIS_MODES).safeParse(await getSetting(store.db, ANALYSIS_MODE_SETTING));
+  return mode.success ? mode.data : 'self';
+}
+
+export async function saveAnalysisMode(store: ClientStore, mode: AnalysisMode): Promise<void> {
+  await store.write((tx) => setSetting(tx, ANALYSIS_MODE_SETTING, mode, store.clock.now()));
+}
+
 export async function saveExtractionMode(store: ClientStore, mode: ExtractionMode): Promise<void> {
   await store.write((tx) => setSetting(tx, EXTRACTION_MODE_SETTING, mode, store.clock.now()));
 }

@@ -1,11 +1,14 @@
 import {
+  type AnalysisMode,
   hasApiKey,
   type LlmProvider,
+  loadAnalysisMode,
   loadExtractionMode,
   loadSlotModel,
   type ModelConfig,
   type ModelSlot,
   removeApiKey,
+  saveAnalysisMode,
   saveExtractionMode,
   saveSlotModel,
   testDraftModel,
@@ -22,6 +25,23 @@ const modeQuery = ['settings', 'extraction.mode'] as const;
 export function useExtractionMode() {
   const { store } = useServices();
   return useQuery({ queryKey: modeQuery, queryFn: () => loadExtractionMode(store) });
+}
+
+const analysisModeQuery = ['settings', 'analysis.mode'] as const;
+
+/** Who answers this phone's questions: its own model, or the hub. */
+export function useAnalysisMode() {
+  const { store } = useServices();
+  return useQuery({ queryKey: analysisModeQuery, queryFn: () => loadAnalysisMode(store) });
+}
+
+export function useSaveAnalysisMode() {
+  const { store } = useServices();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (mode: AnalysisMode) => saveAnalysisMode(store, mode),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: analysisModeQuery }),
+  });
 }
 
 export function useSaveExtractionMode() {

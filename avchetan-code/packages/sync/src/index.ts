@@ -13,6 +13,7 @@ export {
   type SyncEngine,
   type SyncEngineDeps,
 } from './engine';
+export { askServer } from './hub-ask';
 export { type SearchDeps, searchServer } from './search';
 export {
   describeSync,

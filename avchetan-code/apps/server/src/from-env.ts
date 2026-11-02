@@ -27,6 +27,11 @@ export function extractionModelsFromEnv(env: ServerEnv): ModelConfig[] {
   return model ? [model] : [];
 }
 
+/** The model the hub answers questions with, or null when it doesn't answer them. */
+export function analysisModelFromEnv(env: ServerEnv): ModelConfig | null {
+  return modelFromEnv(env, env.ANALYSIS_PROVIDER, env.ANALYSIS_MODEL);
+}
+
 /** The server's embedding model, or null when search is off. */
 export function embeddingModelFromEnv(env: ServerEnv): ModelConfig | null {
   return modelFromEnv(env, env.EMBEDDING_PROVIDER, env.EMBEDDING_MODEL);

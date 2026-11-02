@@ -7,15 +7,20 @@ import {
   TimerScheduler,
   toAppError,
 } from '@avchetan/shared';
+import { MAX_SEARCH_RESULTS } from '@avchetan/sync/protocol';
 import { serve } from '@hono/node-server';
+import { ApiError } from './api-error';
 import { createApp } from './app';
+import { createHubAsk, type HubAsk } from './ask/hub-ask';
 import { loadServerIdentity } from './auth';
 import { openPglite, openPostgres } from './db/client';
 import { createEmbedder, type Embedder, embeddingModelId } from './embeddings/embedder';
 import { enqueueEmbedJobs, rawLogsTouchedBy } from './embeddings/jobs';
+import { searchLogs } from './embeddings/search';
 import { loadEnv } from './env';
 import { openServerDevice, type ServerDevice } from './fallback/server-device';
 import {
+  analysisModelFromEnv,
   embeddingModelFromEnv,
   extractionModelsFromEnv,
   llmFromEnv,
@@ -55,6 +60,19 @@ async function main(): Promise<void> {
     ? () =>
         createEmbeddingModel(embedding, { fetch: globalThis.fetch, secrets: secretsFromEnv(env) })
     : null;
+  const search =
+    embedding && resolveEmbedding
+      ? {
+          model: embeddingModelId(embedding),
+          embed: async (text: string) => {
+            const [vector] = await embedTexts(await resolveEmbedding(), [text]);
+            return vector as number[];
+          },
+        }
+      : null;
+  const analysis = analysisModelFromEnv(env);
+  // Set once the server's device is open, which needs the app's own fetch.
+  let hubAsk: HubAsk | null = null;
 
   const app = createApp({
     db: database.db,
@@ -72,36 +90,53 @@ async function main(): Promise<void> {
         .then(wakeAfter)
         .catch((error) => log.warn('could not queue embeddings', { code: toAppError(error).code }));
     },
-    ...(embedding && resolveEmbedding
+    ...(search ? { search } : {}),
+    ...(analysis
       ? {
-          search: {
-            model: embeddingModelId(embedding),
-            embed: async (text: string) => {
-              const [vector] = await embedTexts(await resolveEmbedding(), [text]);
-              return vector as number[];
-            },
+          ask: (request, onText, abortSignal) => {
+            if (!hubAsk) throw new ApiError(503, 'ask_unavailable', 'The server is still starting');
+            return hubAsk(request, onText, abortSignal);
           },
         }
       : {}),
   });
 
-  const models = extractionModelsFromEnv(env);
-  if (env.FALLBACK_EXTRACTION_ENABLED && models.length > 0) {
+  const organizing = env.FALLBACK_EXTRACTION_ENABLED ? extractionModelsFromEnv(env) : [];
+  if (organizing.length === 0) {
+    log.info('not organizing entries', {
+      reason: env.FALLBACK_EXTRACTION_ENABLED ? 'no_extraction_provider' : 'disabled',
+    });
+  }
+  // The server's device organizes entries, answers questions, or both.
+  if (organizing.length > 0 || analysis) {
+    const llm = llmFromEnv(env);
     device = await openServerDevice({
       fetch: (input, init) => Promise.resolve(app.fetch(new Request(input, init))),
       db: database.db,
       serverId: identity.serverId,
       internalToken,
-      models,
+      models: organizing,
       graceMinutes: env.FALLBACK_GRACE_MINUTES,
-      llm: llmFromEnv(env),
+      llm,
     });
     device.start();
-  } else {
-    log.info('not organizing entries', {
-      reason: env.FALLBACK_EXTRACTION_ENABLED ? 'no_extraction_provider' : 'disabled',
-    });
+    if (analysis) {
+      hubAsk = createHubAsk({
+        device,
+        model: analysis,
+        llm,
+        searchHistory: search
+          ? async ({ query }) =>
+              searchLogs(database.db, {
+                vector: await search.embed(query),
+                model: search.model,
+                limit: MAX_SEARCH_RESULTS,
+              })
+          : undefined,
+      });
+    }
   }
+  if (!analysis) log.info('not answering questions', { reason: 'no_analysis_provider' });
   if (embedding && resolveEmbedding) {
     embedder = createEmbedder({
       db: database.db,
