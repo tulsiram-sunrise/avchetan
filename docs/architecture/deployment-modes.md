@@ -71,7 +71,7 @@ The phone scans it, stores the token in secure storage, saves the URLs, register
 
 The phone can't run Ollama models itself. In Home Hub mode its model slots default to **delegate**:
 
-- **Extraction (delegate):** the phone captures and syncs; it does not call any LLM. The device is registered with `extraction_mode = 'delegate'`, so the hub's fallback extractor processes its logs **immediately** (grace period 0 for that device) instead of after 15 minutes. Results sync back within seconds when connected. Offline on the phone → logs stay *pending* and are processed as soon as it reaches the hub.
+- **Extraction (delegate):** the phone captures and syncs; it does not call any LLM. The device is registered with `extraction_mode = 'delegate'`, so the hub's server device ([ADR-0021](../decisions/0021-server-organizes-as-a-device.md)) processes its logs **immediately** (grace period 0 for that device) instead of after 15 minutes. Results sync back within seconds when connected. Offline on the phone → logs stay *pending* and are processed as soon as it reaches the hub.
 - **Ask (hub):** the phone sends the question to `POST /v1/ask`; the hub runs the analysis model (Ollama) with **server-side tool implementations** (SQL on its Postgres/PGlite copy + vector search) and streams the answer back. Offline → Ask falls back to local SQL summaries.
 - **Embeddings / semantic search:** always on the hub.
 - Optional alternative per slot: call Ollama on the hub directly (`ollama` provider with the hub URL) — discouraged, because Ollama has no authentication; only acceptable over Tailscale.
@@ -107,7 +107,8 @@ As described in [server.md](server.md): container + Postgres with pgvector, HTTP
 | Deployment mode | all devices (wizard) | `standalone`, `hub`, `cloud` |
 | `sync.serverUrls` | clients | ordered list |
 | Hub mode on/off, port, data dir | desktop | sidecar control |
-| Slot provider per device | clients | `ollama`, cloud providers, `delegate` (extraction), `hub` (analysis) |
+| Slot provider per device | clients | `ollama`, cloud providers; `hub` (analysis, step 5) |
+| `extraction.mode` | client `settings` (local) | `self` | `delegate`: `delegate` gives the device's processor no model and registers it as `delegate`; the sync engine registers again when it changes |
 | `DB_DRIVER` | server env | `postgres` \| `pglite` |
 | `PGLITE_DATA_DIR` | server env | path |
 | Per-device `extraction_mode` | server `devices` table | `self` \| `delegate` |

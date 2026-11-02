@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { useMemo } from 'react';
 import { Pressable, SectionList, Text, View } from 'react-native';
-import { useSlotModel } from '../../src/queries/ai-models';
+import { useExtractionMode, useSlotModel } from '../../src/queries/ai-models';
 import { useExtracted, usePendingCount, useTimeline } from '../../src/queries/entries';
 import { byRawLog, groupByDay } from '../../src/services/grouping';
 import { CaptureButton } from '../../src/ui/capture-button';
@@ -12,7 +12,9 @@ import { SectionTitle } from '../../src/ui/parts';
 function ChooseModelBanner() {
   const pending = usePendingCount();
   const model = useSlotModel('extraction');
-  if (!pending.data || !model.isSuccess || model.data) return null;
+  const mode = useExtractionMode();
+  // With the hub organizing, entries wait for a sync, not for a model on the phone.
+  if (!pending.data || !model.isSuccess || model.data || mode.data !== 'self') return null;
   return (
     <Pressable
       accessibilityRole="button"

@@ -28,6 +28,7 @@ const log = createLogger('sync');
 // Another device's change waits for this at most, so it stays well inside the 60 s target.
 const POLL_MS = 30_000;
 const DEBOUNCE_MS = 2_000;
+const REGISTRATION = 'registration';
 
 export type SyncDevice = {
   name: string;
@@ -41,7 +42,8 @@ export type SyncEngineDeps = {
   secrets: Pick<SecretStore, 'get'>;
   network: NetworkMonitor;
   scheduler: Scheduler;
-  device: SyncDevice;
+  /** Read every cycle: a changed device (say, its extraction mode) registers again. */
+  device: SyncDevice | (() => Promise<SyncDevice>);
   /** Rows changed here, so the UI can refresh and the pending processor can look again. */
   onSynced?: () => void;
 };
@@ -66,7 +68,9 @@ function toRemoteChange({ table, row }: { table: string; row: unknown }): Remote
  * so nothing that captures or edits an entry ever waits on it.
  */
 export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
-  const { store, fetch, secrets, network, scheduler, device } = deps;
+  const { store, fetch, secrets, network, scheduler } = deps;
+  const loadDevice =
+    typeof deps.device === 'function' ? deps.device : async () => deps.device as SyncDevice;
   let current = INITIAL_STATUS;
   let saved = '';
   let cancelDebounce: Cancel | null = null;
@@ -152,9 +156,12 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
 
   async function cycle(baseUrl: string, serverId: string, token: string): Promise<void> {
     const api = createApiClient({ fetch, baseUrl, token, deviceId: store.deviceId });
-    if ((await store.sync.getState('registered_server_id')) !== serverId) {
+    const device = await loadDevice();
+    // The server and what it knows of this device, so a change to either registers again.
+    const registration = JSON.stringify({ serverId, device });
+    if ((await store.sync.getState(REGISTRATION)) !== registration) {
       await api.register(device);
-      await store.sync.setState('registered_server_id', serverId);
+      await store.sync.setState(REGISTRATION, registration);
     }
     await push(api);
     await pull(api);
@@ -190,7 +197,7 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
         return 'idle';
       }
       // The server forgot this device, for example after a restore. Register again next time.
-      if (code === 'unknown_device') await store.sync.setState('registered_server_id', '');
+      if (code === 'unknown_device') await store.sync.setState(REGISTRATION, '');
       await report('failed');
       throw error;
     }

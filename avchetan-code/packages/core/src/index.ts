@@ -26,10 +26,13 @@ export {
 } from './extraction/pending-processor';
 export { type ExtractionResult, extractionResultSchema } from './extraction/schema';
 export {
+  EXTRACTION_MODE_SETTING,
   type ExtractionSettings,
   loadAnalysisModel,
+  loadExtractionMode,
   loadExtractionSettings,
   MODEL_SLOTS_SETTING,
+  saveExtractionMode,
 } from './extraction/settings';
 export {
   generateStructured,

@@ -27,7 +27,7 @@ const SLOTS = {
   },
   analysis: {
     title: 'Answering questions',
-    hint: 'This model answers on the Ask tab. Until you choose one, the model above answers.',
+    hint: "This model answers on the Ask tab. Until you choose one, the phone's model for organizing entries answers, if it has one.",
     presetField: 'analysisModel',
   },
 } as const;

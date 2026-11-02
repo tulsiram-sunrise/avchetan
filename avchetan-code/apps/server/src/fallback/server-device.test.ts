@@ -104,7 +104,8 @@ async function serverDevice(graceMinutes = 15, models: ModelConfig[] = [groq]) {
   return device;
 }
 
-async function phone(extractionMode: ExtractionMode) {
+async function phone(extractionMode: ExtractionMode | (() => ExtractionMode)) {
+  const modeNow = typeof extractionMode === 'function' ? extractionMode : () => extractionMode;
   const { store } = await openTestStore({ start: START, newId: () => crypto.randomUUID() });
   const secrets = new MemorySecretStore();
   await saveConnection(store, secrets, { urls: [URL], token: TOKEN, trustLocalNetwork: false });
@@ -114,7 +115,7 @@ async function phone(extractionMode: ExtractionMode) {
     secrets,
     network: new FakeNetworkMonitor(),
     scheduler: new ManualScheduler(),
-    device: { name: 'Phone', platform: 'android', extractionMode },
+    device: async () => ({ name: 'Phone', platform: 'android', extractionMode: modeNow() }),
   });
   return { store, engine };
 }
@@ -199,6 +200,22 @@ describe('the server device', () => {
     const log = await capture(store, 'Slept badly', 'local_only');
     await engine.syncNow();
 
+    await organize(device);
+
+    expect(await statusOnServer(log.id)).toBe('processed');
+  });
+
+  it('takes a waiting entry at once after its phone switches to the hub', async () => {
+    const device = await serverDevice(15);
+    let mode: ExtractionMode = 'self';
+    const { store, engine } = await phone(() => mode);
+    const log = await capture(store, 'Ran 5 km this morning');
+    await engine.syncNow();
+    await organize(device);
+    expect(await statusOnServer(log.id)).toBe('pending_llm');
+
+    mode = 'delegate';
+    await engine.syncNow();
     await organize(device);
 
     expect(await statusOnServer(log.id)).toBe('processed');

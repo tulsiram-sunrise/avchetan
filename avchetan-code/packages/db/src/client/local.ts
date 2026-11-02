@@ -8,7 +8,8 @@ export type SyncStateKey =
   | 'clock_last'
   | 'pull_cursor'
   | 'server_id'
-  | 'registered_server_id'
+  /** The server and device details last registered there, as JSON. */
+  | 'registration'
   | 'status'
   | 'last_push_at'
   | 'last_pull_at';

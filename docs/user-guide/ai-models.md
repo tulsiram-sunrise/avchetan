@@ -16,7 +16,19 @@ Avchetan uses AI for three jobs. Each can use a different model:
 - Larger models give better answers but need more graphics memory. The app shows a "fits your PC" hint for each suggestion.
 - Without a working graphics card, Ollama runs on the processor. That still works, but an entry can take up to a minute to organize, and in our tests about one entry in three had a mistake, such as a missed number or wrong date. You can correct these in the main window. A cloud provider is more accurate, but your entries leave your PC.
 - If the app says a model isn't downloaded, run `ollama pull <model>` once, or choose a model you already have.
-- On a phone: use **Let my hub do it** — phones can't run these models.
+- On a phone: let your hub do it, because phones can't run these models. See below.
+
+## Let your hub organize a phone's entries
+
+If your phone syncs with a hub on your PC, the PC can organize the phone's entries, and the phone needs no AI key.
+
+1. On the PC, the hub needs a model: start it with `EXTRACTION_PROVIDER` and `EXTRACTION_MODEL` set (see [Home Hub](setup-home-hub.md)).
+2. On the phone, open **More → AI models**.
+3. Under **Who organizes your entries?**, tap **My hub**.
+
+New entries show **Pending** until they sync, then come back organized a few seconds later. Entries already waiting are picked up at the next sync. To go back, tap **This phone**; the model you chose before is still there.
+
+If the screen says the phone isn't connected to a hub, set up [Sync](pair-your-phone.md#connect-by-hand) first. Entries wait on the phone until it can reach the hub.
 
 ## Free cloud providers (bring your own key)
 
