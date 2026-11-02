@@ -11,12 +11,14 @@ COPY tooling/tsconfig.base.json tooling/
 COPY packages/shared/package.json packages/shared/
 COPY packages/db/package.json packages/db/
 COPY packages/sync/package.json packages/sync/
+COPY packages/core/package.json packages/core/
 COPY apps/server/package.json apps/server/
 # No scripts: the root `prepare` installs git hooks, and esbuild's binary arrives as a package.
 RUN pnpm install --frozen-lockfile --ignore-scripts --filter @avchetan/server...
 COPY packages/shared packages/shared
 COPY packages/db packages/db
 COPY packages/sync packages/sync
+COPY packages/core packages/core
 COPY apps/server apps/server
 RUN pnpm --filter @avchetan/server build \
   && mkdir -p /out/node_modules/@electric-sql \

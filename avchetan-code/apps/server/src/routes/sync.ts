@@ -9,7 +9,7 @@ import { applyPush } from '../sync/apply-push';
 import { readPull } from '../sync/read-pull';
 import { readBody } from './read-body';
 
-export function syncRoutes({ db, clock }: AppDeps) {
+export function syncRoutes({ db, clock, onPush }: AppDeps) {
   const limitBody = bodyLimit({
     maxSize: MAX_PUSH_BYTES,
     onError: () => {
@@ -20,7 +20,9 @@ export function syncRoutes({ db, clock }: AppDeps) {
   return new Hono<AppEnv>()
     .post('/sync/push', limitBody, async (c) => {
       const { changes } = await readBody(c, pushRequestSchema);
-      return c.json(await applyPush(db, changes, clock.now()));
+      const result = await applyPush(db, changes, clock.now());
+      onPush?.(c.get('deviceId'));
+      return c.json(result);
     })
     .get('/sync/pull', async (c) => {
       const query = pullQuerySchema.safeParse(c.req.query());

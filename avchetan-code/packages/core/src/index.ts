@@ -19,6 +19,7 @@ export {
   normalizeExtraction,
 } from './extraction/normalize';
 export {
+  type ClaimOptions,
   createPendingProcessor,
   type PendingProcessor,
   type PendingProcessorDeps,

@@ -98,25 +98,24 @@ Because IDs are deterministic, if the device and the server both process the sam
 
 ## 5. Server fallback
 
-Worker in `apps/server` (uses the same `@avchetan/core` extraction code with server-side keys):
+The server organizes entries that devices left waiting, as **one more device** ([ADR-0021](../decisions/0021-server-organizes-as-a-device.md)): an in-memory client store kept in step through the server's own sync API, running the apps' pending processor and `@avchetan/core` extraction (`apps/server/src/fallback/`). Its results sync like any device's.
+
+Which entries it may take is decided in Postgres (`left-waiting.ts`):
 
 ```
-every 60 s, inside withSyncWrite (advisory lock — see sync-protocol):
-  UPDATE raw_logs SET processing_lease_owner='server',
-         processing_lease_until=now()+interval '5 min', processing_attempts=processing_attempts+1,
-         updated_at=now(), updated_by_device='server', server_seq=nextval('sync_seq')
-  WHERE id IN (
-    SELECT id FROM raw_logs
-    WHERE status='pending_llm' AND deleted_at IS NULL AND privacy='normal'
-      AND created_on_server_at < now() - grace(origin_device_id)  -- 15 min; 0 for devices with extraction_mode='delegate'
-      AND (processing_lease_until IS NULL OR processing_lease_until < now())
-      AND processing_attempts < 5
-    ORDER BY captured_at LIMIT 10 FOR UPDATE SKIP LOCKED)
-  RETURNING …
+SELECT id FROM raw_logs LEFT JOIN devices ON devices.id::text = raw_logs.origin_device_id
+WHERE status = 'pending_llm' AND deleted_at IS NULL
+  AND privacy = 'normal'                -- unless every server model is local (ADR-0010)
+  AND processing_attempts < 3           -- the clients' MAX_ATTEMPTS
+  AND (processing_lease_until IS NULL OR processing_lease_until < now)
+  AND (devices.extraction_mode = 'delegate'
+       OR created_on_server_at <= now() - FALLBACK_GRACE_MINUTES)   -- database clock
+ORDER BY captured_at LIMIT 50
 ```
-(`created_on_server_at` is a server-only column set on first insert.)
 
-The server then runs extraction and applies the result exactly like a client, bumping `server_seq` so devices pull it. Grace period and enable flag are env-configurable (`FALLBACK_EXTRACTION_ENABLED`, `FALLBACK_GRACE_MINUTES`).
+(`created_on_server_at` is a server-only column set on first insert.) The device's copy then checks each candidate is still claimable there, and the processor takes the lease, extracts and applies the result exactly as on a client. A push from another device wakes it, so a `delegate` device's entries are organized within seconds; otherwise it looks every 60 s.
+
+Configuration (env): `FALLBACK_EXTRACTION_ENABLED` (default `true`), `FALLBACK_GRACE_MINUTES` (default 15), `EXTRACTION_PROVIDER` and `EXTRACTION_MODEL` (no provider: the server organizes nothing), `OLLAMA_BASE_URL`, `GROQ_API_KEY`, `GOOGLE_API_KEY`. Settings don't sync, so the server uses the default `llmMayCreate` (`auto`).
 
 ## 6. Status lifecycle
 

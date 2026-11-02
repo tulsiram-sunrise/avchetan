@@ -2,6 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-10-26
+- **Refined by:** [ADR-0021](0021-server-organizes-as-a-device.md): the server applies results as one more device, and claims through sync instead of `FOR UPDATE SKIP LOCKED`
 
 ## Context
 Extraction could run on the client (instant, works with local Ollama, no server needed) or on the server (single key location, runs while the phone sleeps). Running on every client that sees a pending log would double-process logs.

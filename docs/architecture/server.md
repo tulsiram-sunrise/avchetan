@@ -29,11 +29,11 @@ Single shared secret (≥ 32 random bytes), compared in constant time. If `SYNC_
 | Worker | Interval | Work |
 |---|---|---|
 | `embedder` | 10 s | Drain `server_jobs` kind `embed` in batches |
-| `fallback-extractor` | 60 s, plus an immediate wake after a push containing new `pending_llm` logs from a `delegate` device | Claim stale `pending_llm` raw logs ([extraction-pipeline §5](extraction-pipeline.md#5-server-fallback)) |
+| server device (`fallback/`) | 60 s, plus a wake after any other device's push | Organize entries devices left waiting, as one more device ([ADR-0021](../decisions/0021-server-organizes-as-a-device.md), [extraction-pipeline §5](extraction-pipeline.md#5-server-fallback)) |
 | `brief-fallback` | 15 min | If past the user's brief time + 2.5 h and no daily brief for that date exists, generate it (Phase 6) |
 | `janitor` | daily | Purge tombstones older than 90 days *that all devices have pulled past* (`devices.last_pull_cursor`), prune `server_jobs` |
 
-All writes to synced tables go through `withSyncWrite` (advisory lock + `server_seq` assignment).
+The server device writes through the sync API like any device. All writes to synced tables go through `withSyncWrite` (advisory lock + `server_seq` assignment).
 
 ## Configuration (env, Zod-validated at boot; process exits on invalid config)
 
@@ -58,7 +58,8 @@ apps/server/src/
   app.ts              Hono app, middleware (auth, device, protocol, errors, request id)
   routes/             health.ts, devices.ts, sync.ts, status.ts, search.ts (step 4)
   sync/               apply-push.ts, read-pull.ts, with-sync-write.ts
-  workers/            embedder.ts, fallback-extractor.ts, brief-fallback.ts, janitor.ts
+  fallback/           server-device.ts, left-waiting.ts, from-env.ts, node-sqlite.ts
+  workers/            embedder.ts, brief-fallback.ts, janitor.ts (later steps)
   db/                 client.ts (uses @avchetan/db/pg)
 ```
 

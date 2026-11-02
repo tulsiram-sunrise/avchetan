@@ -50,7 +50,8 @@ export type CorrectionTargetType = (typeof CORRECTION_TARGET_TYPES)[number];
 export const LLM_PURPOSES = ['extraction', 'analysis', 'embedding', 'transcription'] as const;
 export type LlmPurpose = (typeof LLM_PURPOSES)[number];
 
-export const DEVICE_PLATFORMS = ['windows', 'macos', 'linux', 'android', 'ios'] as const;
+/** `server`: the server's own device, which organizes entries other devices left waiting. */
+export const DEVICE_PLATFORMS = ['windows', 'macos', 'linux', 'android', 'ios', 'server'] as const;
 export type DevicePlatform = (typeof DEVICE_PLATFORMS)[number];
 
 export const EXTRACTION_MODES = ['self', 'delegate'] as const;

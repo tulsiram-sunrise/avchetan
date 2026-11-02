@@ -44,6 +44,8 @@ For a machine that is always on, such as a home server or a second PC, without t
 
 1. Download the Avchetan source code from the project's GitHub page and open a terminal in its `avchetan-code` folder.
 2. Run `docker compose -f deploy/home-hub/compose.yml up -d --build`. The first build takes a few minutes.
+
+   To have the hub organize entries for your phone with [Ollama](https://ollama.com) on the same machine, start it like this instead, with a model you have downloaded in Ollama: `EXTRACTION_PROVIDER=ollama EXTRACTION_MODEL=<model name> docker compose -f deploy/home-hub/compose.yml up -d --build`. On Windows PowerShell, run `$env:EXTRACTION_PROVIDER="ollama"; $env:EXTRACTION_MODEL="<model name>"` first, then the command without the two settings.
 3. Run `docker compose -f deploy/home-hub/compose.yml logs server` and copy the **sync token**. It is shown only once, on the first start, so keep it somewhere safe.
 4. Connect each device with the server's address, for example `http://192.168.1.20:8787`, and the token: see [Connect by hand](pair-your-phone.md#connect-by-hand).
 

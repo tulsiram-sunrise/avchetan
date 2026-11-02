@@ -1,0 +1,2 @@
+ALTER TABLE "devices" DROP CONSTRAINT "devices_platform_check";--> statement-breakpoint
+ALTER TABLE "devices" ADD CONSTRAINT "devices_platform_check" CHECK ("devices"."platform" in ('windows', 'macos', 'linux', 'android', 'ios', 'server'));

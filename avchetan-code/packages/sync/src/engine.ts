@@ -1,4 +1,4 @@
-import type { ExtractionMode } from '@avchetan/db';
+import type { DevicePlatform, ExtractionMode } from '@avchetan/db';
 import type { ClientStore, RemoteChange, SyncedTableName } from '@avchetan/db/sqlite';
 import {
   type Cancel,
@@ -31,7 +31,7 @@ const DEBOUNCE_MS = 2_000;
 
 export type SyncDevice = {
   name: string;
-  platform: 'windows' | 'macos' | 'linux' | 'android' | 'ios';
+  platform: DevicePlatform;
   extractionMode: ExtractionMode;
 };
 

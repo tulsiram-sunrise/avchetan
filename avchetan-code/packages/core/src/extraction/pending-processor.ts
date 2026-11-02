@@ -27,9 +27,16 @@ export type PendingProcessorDeps = {
   network: NetworkMonitor;
   scheduler: Scheduler;
   loadSettings?: (store: ClientStore) => Promise<ExtractionSettings>;
+  /**
+   * The pending logs this processor may take now, oldest first. Defaults to this device's own
+   * captures; the server's device takes those other devices left waiting.
+   */
+  findClaimable?: (options: ClaimOptions) => Promise<RawLog[]>;
   /** Called when a log's state changed, so the UI can refresh. */
   onChange?: () => void;
 };
+
+export type ClaimOptions = { now: string; maxAttempts: number; limit: number };
 
 export type PendingProcessor = {
   /** Look for work now. Never awaited by capture. */
@@ -50,6 +57,10 @@ export type PendingProcessor = {
 export function createPendingProcessor(deps: PendingProcessorDeps): PendingProcessor {
   const { store, llm, network, scheduler } = deps;
   const loadSettings = deps.loadSettings ?? loadExtractionSettings;
+  const findClaimable =
+    deps.findClaimable ??
+    ((options: ClaimOptions) =>
+      store.queries.claimablePendingLogs(store.db, { ...options, deviceId: store.deviceId }));
   /** Set when a failure holds the whole queue. */
   let pausedUntil: string | null = null;
   /** Logs this run may still take; null when there's no limit. */
@@ -129,12 +140,7 @@ export function createPendingProcessor(deps: PendingProcessorDeps): PendingProce
     );
     if (models.length === 0) return 'idle';
 
-    const [next] = await store.queries.claimablePendingLogs(store.db, {
-      deviceId: store.deviceId,
-      now,
-      maxAttempts: MAX_ATTEMPTS,
-      limit: 1,
-    });
+    const [next] = await findClaimable({ now, maxAttempts: MAX_ATTEMPTS, limit: 1 });
     if (!next) return (await giveUpOnAbandoned(now)) ? 'more' : 'idle';
 
     if (budget !== null) budget -= 1;

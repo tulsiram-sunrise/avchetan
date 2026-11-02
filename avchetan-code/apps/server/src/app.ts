@@ -12,7 +12,7 @@ import { type Context, Hono } from 'hono';
 import { z } from 'zod';
 import { ApiError } from './api-error';
 import type { ServerIdentity } from './auth';
-import { tokenMatches } from './auth';
+import { hashToken, tokenMatches } from './auth';
 import type { ServerDb } from './db/client';
 import { createRateLimiter } from './rate-limit';
 import { deviceRoutes } from './routes/devices';
@@ -30,9 +30,16 @@ export type AppDeps = {
   profile: ServerProfile;
   /** Wall clock in ms, for the rate limiter. */
   nowMs?: () => number;
+  /**
+   * Held only in memory by the server's own device (fallback/server-device.ts). Accepted like
+   * the sync token, and not rate limited.
+   */
+  internalToken?: string;
+  /** After a device's push is applied, so waiting entries can be organized at once. */
+  onPush?: (deviceId: string) => void;
 };
 
-export type AppEnv = { Variables: { requestId: string; deviceId: string } };
+export type AppEnv = { Variables: { requestId: string; deviceId: string; internal: boolean } };
 
 function errorBody(
   c: Context<AppEnv>,
@@ -49,6 +56,7 @@ function errorBody(
 export function createApp(deps: AppDeps) {
   const { db, identity } = deps;
   const rateLimited = createRateLimiter(deps.nowMs ?? Date.now);
+  const internalHash = deps.internalToken ? hashToken(deps.internalToken) : null;
   const app = new Hono<AppEnv>();
 
   app.use(async (c, next) => {
@@ -78,9 +86,11 @@ export function createApp(deps: AppDeps) {
       });
     }
     const [scheme, token] = c.req.header('Authorization')?.split(' ') ?? [];
-    if (scheme !== 'Bearer' || !token || !tokenMatches(token, identity.tokenHash)) {
+    const internal = Boolean(token && internalHash && tokenMatches(token, internalHash));
+    if (scheme !== 'Bearer' || !token || !(internal || tokenMatches(token, identity.tokenHash))) {
       throw new ApiError(401, 'unauthorized', "This device's sync token is not valid");
     }
+    c.set('internal', internal);
     await next();
   });
 
@@ -97,7 +107,7 @@ export function createApp(deps: AppDeps) {
       if (!known) throw new ApiError(403, 'unknown_device', 'Pair this device again');
       c.set('deviceId', known.id);
     }
-    const retryAfter = rateLimited(deviceId ?? 'unregistered');
+    const retryAfter = c.get('internal') ? null : rateLimited(deviceId ?? 'unregistered');
     if (retryAfter !== null) {
       c.header('Retry-After', String(retryAfter));
       throw new ApiError(429, 'rate_limited', 'Too many requests');

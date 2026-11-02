@@ -370,6 +370,9 @@ importers:
 
   apps/server:
     dependencies:
+      '@avchetan/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@avchetan/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -407,6 +410,9 @@ importers:
       '@types/pg':
         specifier: 8.23.1
         version: 8.23.1
+      ai:
+        specifier: 7.0.156
+        version: 7.0.156(zod@4.6.7)
       esbuild:
         specifier: 0.28.2
         version: 0.28.2

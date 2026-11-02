@@ -33,6 +33,8 @@ export type OpenClientStoreOptions = {
   newId?: IdGenerator;
   /** Wall clock in epoch ms; injectable for tests. */
   wallClock?: () => number;
+  /** The device ID to use when this store has none yet; a new UUIDv7 otherwise. */
+  deviceId?: string;
 };
 
 /**
@@ -49,7 +51,7 @@ export async function openClientStore(options: OpenClientStoreOptions) {
 
   let deviceId = await getSyncState(database.db, 'device_id');
   if (!deviceId) {
-    const created = newId();
+    const created = options.deviceId ?? newId();
     await database.write((tx) => setSyncState(tx, 'device_id', created));
     deviceId = created;
   }

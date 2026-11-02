@@ -13,6 +13,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@avchetan/core": "workspace:*",
     "@avchetan/db": "workspace:*",
     "@avchetan/shared": "workspace:*",
     "@avchetan/sync": "workspace:*",
@@ -27,6 +28,7 @@
   },
   "devDependencies": {
     "@types/pg": "8.23.1",
+    "ai": "7.0.156",
     "esbuild": "0.28.2"
   }
 }

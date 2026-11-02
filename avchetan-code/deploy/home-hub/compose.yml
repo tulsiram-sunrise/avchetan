@@ -16,6 +16,16 @@ services:
       SERVER_PROFILE: hub
       SYNC_TOKEN: ${SYNC_TOKEN:-}
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      # To organize entries for phones set to let the hub do it, set both, for example
+      # EXTRACTION_PROVIDER=ollama EXTRACTION_MODEL=<a model you pulled in Ollama>.
+      # Ollama runs on this machine, outside the container. Empty: the hub organizes nothing.
+      EXTRACTION_PROVIDER: ${EXTRACTION_PROVIDER:-}
+      EXTRACTION_MODEL: ${EXTRACTION_MODEL:-}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434/v1}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - hub-data:/data
     ports:

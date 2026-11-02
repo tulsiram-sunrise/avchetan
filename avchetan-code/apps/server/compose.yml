@@ -30,6 +30,11 @@ services:
       SERVER_PROFILE: cloud
       SYNC_TOKEN: ${SYNC_TOKEN:-}
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      EXTRACTION_PROVIDER: ${EXTRACTION_PROVIDER:-}
+      EXTRACTION_MODEL: ${EXTRACTION_MODEL:-}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
     depends_on:
       postgres:
         condition: service_healthy

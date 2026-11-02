@@ -48,5 +48,12 @@ export const pgMigrations: readonly Migration[] = [
       "CREATE INDEX \"tasks_completed_at_due_date_idx\" ON \"tasks\" USING btree (\"completed_at\",\"due_date\");",
       "CREATE INDEX \"tasks_raw_log_id_idx\" ON \"tasks\" USING btree (\"raw_log_id\");"
     ]
+  },
+  {
+    "tag": "0001_server_device_platform",
+    "statements": [
+      "ALTER TABLE \"devices\" DROP CONSTRAINT \"devices_platform_check\";",
+      "ALTER TABLE \"devices\" ADD CONSTRAINT \"devices_platform_check\" CHECK (\"devices\".\"platform\" in ('windows', 'macos', 'linux', 'android', 'ios', 'server'));"
+    ]
   }
 ];

@@ -1,9 +1,12 @@
+import { randomBytes } from 'node:crypto';
 import { configureLogging, createLogger, createMonotonicClock } from '@avchetan/shared';
 import { serve } from '@hono/node-server';
 import { createApp } from './app';
 import { loadServerIdentity } from './auth';
 import { openPglite, openPostgres } from './db/client';
 import { loadEnv } from './env';
+import { extractionModelsFromEnv, llmFromEnv } from './fallback/from-env';
+import { openServerDevice, type ServerDevice } from './fallback/server-device';
 
 const VERSION = '0.0.0';
 
@@ -28,13 +31,38 @@ async function main(): Promise<void> {
     );
   }
 
+  // Only the server's own device holds this, in memory; it changes on every start.
+  const internalToken = randomBytes(32).toString('base64url');
+  let device: ServerDevice | null = null;
   const app = createApp({
     db: database.db,
     identity,
     clock,
     version: VERSION,
     profile: env.SERVER_PROFILE,
+    internalToken,
+    onPush: (deviceId) => {
+      if (device && deviceId !== device.store.deviceId) device.wake();
+    },
   });
+
+  const models = extractionModelsFromEnv(env);
+  if (env.FALLBACK_EXTRACTION_ENABLED && models.length > 0) {
+    device = await openServerDevice({
+      fetch: (input, init) => Promise.resolve(app.fetch(new Request(input, init))),
+      db: database.db,
+      serverId: identity.serverId,
+      internalToken,
+      models,
+      graceMinutes: env.FALLBACK_GRACE_MINUTES,
+      llm: llmFromEnv(env),
+    });
+    device.start();
+  } else {
+    log.info('not organizing entries', {
+      reason: env.FALLBACK_EXTRACTION_ENABLED ? 'no_extraction_provider' : 'disabled',
+    });
+  }
   const server = serve({ fetch: app.fetch, hostname: env.BIND_HOST, port: env.PORT }, (address) =>
     log.info('listening', {
       port: address.port,
@@ -44,6 +72,7 @@ async function main(): Promise<void> {
   );
 
   const shutDown = () => {
+    device?.stop();
     server.close(() => {
       void database.close().finally(() => process.exit(0));
     });
