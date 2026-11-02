@@ -108,7 +108,7 @@ As described in [server.md](server.md): container + Postgres with pgvector, HTTP
 | `sync.serverUrls` | clients | ordered list |
 | Hub mode on/off, port, data dir | desktop | sidecar control |
 | Slot provider per device | clients | `ollama`, cloud providers; `hub` (analysis, step 5) |
-| `extraction.mode` | client `settings` (local) | `self` | `delegate`: `delegate` gives the device's processor no model and registers it as `delegate`; the sync engine registers again when it changes |
+| `extraction.mode` | client `settings` (local) | `self` \| `delegate`: `delegate` gives the device's processor no model and registers it as `delegate`; the sync engine registers again when it changes |
 | `DB_DRIVER` | server env | `postgres` \| `pglite` |
 | `PGLITE_DATA_DIR` | server env | path |
 | Per-device `extraction_mode` | server `devices` table | `self` \| `delegate` |
