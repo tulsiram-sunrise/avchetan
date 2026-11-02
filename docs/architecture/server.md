@@ -66,7 +66,8 @@ apps/server/src/
 
 - **Home Hub:** desktop-app sidecar (single Node executable + PGlite data dir) or headless `start:hub` / `deploy/home-hub/compose.yml`. When the desktop app runs it as a sidecar, `SYNC_TOKEN` is generated on first run and stored in the OS keychain, then passed to the sidecar via env. See [deployment-modes.md](deployment-modes.md#2-home-hub).
 - **Cloud:**
-  - Multi-stage `Dockerfile` (pnpm deploy → slim Node image). Migrations run at startup.
-  - `docker-compose.yml` for local dev: `postgres` (pgvector image) + `server`.
+  - Multi-stage `apps/server/Dockerfile`, built from `avchetan-code/`: `pnpm build` bundles the server with esbuild into one `server.mjs`, and the slim Node image holds only that file and PGlite (which loads its WebAssembly from disk). A bundle, not `pnpm deploy`: the workspace lockfile links `drizzle-orm` to `expo-sqlite`, which made a deploy folder 649 MB of Expo and React Native. Migrations run at startup. Postgres is `pgvector/pgvector` on Postgres 18, the same major version as PGlite.
+  - `apps/server/compose.yml` for local dev: `postgres` (pgvector image, reachable only from the server, so no password) + `server`. `deploy/home-hub/compose.yml` runs a hub on PGlite with its data in a volume.
+  - CI runs the server tests on PGlite and again on Postgres (`TEST_DATABASE_URL`: one new database per test), then builds the image and checks it answers health.
   - Backups: nightly `pg_dump` (cron on host or provider feature). Documented in the hosting ADR once chosen.
   - Candidate hosts (decide later): managed Postgres with pgvector (Neon, Supabase) + a container host (Fly.io, Railway, Render), or a single VPS/home server with Compose + Caddy for TLS.

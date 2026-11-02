@@ -38,6 +38,17 @@ Or open **Settings → Setup check** on either device. All items should be green
 - **Backups** of the hub run every night automatically ([details](backup-and-restore.md)).
 - **Mixing in cloud AI:** you can still use a paid AI provider for some tasks ([AI models](ai-models.md)).
 
+## Run the hub on a home server instead (Docker)
+
+For a machine that is always on, such as a home server or a second PC, without the desktop app. This needs [Docker](https://docs.docker.com/get-started/get-docker/) and a terminal.
+
+1. Download the Avchetan source code from the project's GitHub page and open a terminal in its `avchetan-code` folder.
+2. Run `docker compose -f deploy/home-hub/compose.yml up -d --build`. The first build takes a few minutes.
+3. Run `docker compose -f deploy/home-hub/compose.yml logs server` and copy the **sync token**. It is shown only once, on the first start, so keep it somewhere safe.
+4. Connect each device with the server's address, for example `http://192.168.1.20:8787`, and the token: see [Connect by hand](pair-your-phone.md#connect-by-hand).
+
+Your data stays in a Docker volume on that machine, and the hub starts again by itself after a restart. To stop it, run `docker compose -f deploy/home-hub/compose.yml down`. Don't add `-v` unless you want to delete all your synced data.
+
 ## Common problems
 
 | Problem | Fix |

@@ -1,0 +1,40 @@
+# Local development: the server on Postgres with pgvector. From avchetan-code/:
+#   docker compose -f apps/server/compose.yml up --build
+# The sync token is printed once, on the first start:
+#   docker compose -f apps/server/compose.yml logs server
+# Postgres is reachable only from the server, so it needs no password. Not for deployment.
+name: avchetan-dev
+
+services:
+  postgres:
+    image: pgvector/pgvector:0.8.6-pg18
+    environment:
+      POSTGRES_USER: avchetan
+      POSTGRES_DB: avchetan
+      POSTGRES_HOST_AUTH_METHOD: trust
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "avchetan"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+  server:
+    build:
+      context: ../..
+      dockerfile: apps/server/Dockerfile
+    environment:
+      DB_DRIVER: postgres
+      DATABASE_URL: postgres://avchetan@postgres:5432/avchetan
+      SERVER_PROFILE: cloud
+      SYNC_TOKEN: ${SYNC_TOKEN:-}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${SERVER_PORT:-8787}:8787"
+
+volumes:
+  postgres-data:

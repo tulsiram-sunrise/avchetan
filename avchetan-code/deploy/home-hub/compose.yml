@@ -1,0 +1,26 @@
+# A Home Hub without the desktop app, for an always-on machine such as a home server.
+# Data stays in the hub-data volume on this machine. From avchetan-code/:
+#   docker compose -f deploy/home-hub/compose.yml up -d --build
+# The sync token is printed once, on the first start:
+#   docker compose -f deploy/home-hub/compose.yml logs server
+name: avchetan-hub
+
+services:
+  server:
+    build:
+      context: ../..
+      dockerfile: apps/server/Dockerfile
+    restart: unless-stopped
+    environment:
+      DB_DRIVER: pglite
+      SERVER_PROFILE: hub
+      SYNC_TOKEN: ${SYNC_TOKEN:-}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    volumes:
+      - hub-data:/data
+    ports:
+      # The desktop app reaches a hub over plain HTTP on 8787 only.
+      - "8787:8787"
+
+volumes:
+  hub-data:

@@ -11,7 +11,8 @@ import {
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createApp } from './app';
 import { loadServerIdentity } from './auth';
-import { openPglite, type ServerDatabase } from './db/client';
+import type { ServerDatabase } from './db/client';
+import { openTestDatabase } from './db/testing';
 import { toInstant } from './sync/read-pull';
 
 const TOKEN = 'test-token-that-is-long-enough-to-pass-32';
@@ -23,7 +24,7 @@ let app: ReturnType<typeof createApp>;
 let wallMs: number;
 
 beforeEach(async () => {
-  database = await openPglite();
+  database = await openTestDatabase();
   wallMs = Date.parse(NOW);
   const clock = createMonotonicClock({ source: () => wallMs });
   await database.migrate(() => clock.now());
@@ -339,7 +340,7 @@ describe('toInstant', () => {
 
 describe('server identity', () => {
   it('stays the same across starts, and generates a token only once', async () => {
-    const fresh = await openPglite();
+    const fresh = await openTestDatabase();
     await fresh.migrate(() => NOW);
 
     const first = await loadServerIdentity(fresh.db, undefined);

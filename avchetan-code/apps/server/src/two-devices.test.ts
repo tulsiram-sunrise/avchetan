@@ -6,7 +6,8 @@ import { createSyncEngine, loadSyncStatus, type SyncEngine, saveConnection } fro
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from './app';
 import { loadServerIdentity } from './auth';
-import { openPglite, type ServerDatabase } from './db/client';
+import type { ServerDatabase } from './db/client';
+import { openTestDatabase } from './db/testing';
 
 const TOKEN = 'test-token-that-is-long-enough-to-pass-32';
 const URL = 'https://hub.test';
@@ -24,7 +25,7 @@ let serverFetch: HttpFetch;
 let serverMs: number;
 
 beforeEach(async () => {
-  database = await openPglite();
+  database = await openTestDatabase();
   serverMs = Date.parse(START);
   const clock = createMonotonicClock({ source: () => serverMs });
   await database.migrate(() => clock.now());

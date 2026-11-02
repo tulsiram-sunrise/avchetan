@@ -40,6 +40,7 @@ avchetan-code/packages/db       Drizzle schemas (sqlite + pg), migrations, repos
 avchetan-code/packages/core     LLM provider registry, extraction + analysis, prompts, tag/metric normalization
 avchetan-code/packages/sync     sync client engine + wire protocol schemas (shared with server)
 avchetan-code/tooling           shared tsconfig, scripts
+avchetan-code/deploy            Compose files for self-hosting (home-hub/; cloud/ later)
 docs/                           all project documentation
 ```
 
@@ -78,6 +79,6 @@ Requirements: Node ≥ 24, pnpm (pinned via `packageManager`; `corepack enable`)
 | `pnpm docs:check-links` | Verify every relative link and `#anchor` in `docs/`, `CLAUDE.md`, `README.md` |
 | `pnpm docs:dev` / `pnpm docs:build` | Docs site (VitePress over repo `docs/`) locally / production build |
 
-CI (`.github/workflows/ci.yml`) runs `check`, the mobile bundle, `licenses:check`, `docs:check-links`, a full-history secret scan and (on Windows) `cargo fmt --check` + `cargo clippy -D warnings` for the desktop shell on every push; the default branch is `master`.
+CI (`.github/workflows/ci.yml`) runs `check`, the server tests again on Postgres, the server Docker image build, the mobile bundle, `licenses:check`, `docs:check-links`, a full-history secret scan and (on Windows) `cargo fmt --check` + `cargo clippy -D warnings` for the desktop shell on every push; the default branch is `master`.
 
 Dependency install scripts are blocked by default; allow one with `pnpm approve-builds <pkg>` (recorded under `allowBuilds` in `pnpm-workspace.yaml`).
