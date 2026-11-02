@@ -161,3 +161,14 @@ export const askEventSchema = z.discriminatedUnion('type', [
 ]);
 export type AskEvent = z.infer<typeof askEventSchema>;
 export type HubAskResult = Omit<Extract<AskEvent, { type: 'done' }>, 'type'>;
+
+/** `GET /v1/pairing`: what the pairing QR code carries, besides the token. */
+export const pairingResponseSchema = z.object({
+  serverId: z.uuid(),
+  /** Addresses a phone may reach this server at: home network first, Tailscale last. */
+  urls: z.array(z.string()),
+});
+export type PairingResponse = z.infer<typeof pairingResponseSchema>;
+
+/** `POST /v1/token/rotate`: the new token, shown once. Every other device pairs again. */
+export const rotateTokenResponseSchema = z.object({ token: z.string().min(32) });

@@ -20,6 +20,17 @@ const envSchema = z
     PORT: z.coerce.number().int().min(1).max(65_535).default(8787),
     BIND_HOST: z.string().min(1).default('0.0.0.0'),
     LOG_LEVEL: z.enum(LOG_LEVELS).default('info'),
+    /** Comma-separated addresses for the pairing QR code, when the server can't see its own. */
+    PAIRING_URLS: z
+      .string()
+      .transform((value) =>
+        value
+          .split(',')
+          .map((url) => url.trim())
+          .filter(Boolean),
+      )
+      .pipe(z.array(z.url()))
+      .optional(),
     // The server organizes entries other devices left waiting (extraction-pipeline §5).
     FALLBACK_EXTRACTION_ENABLED: flag,
     FALLBACK_GRACE_MINUTES: z.coerce.number().int().min(0).default(15),

@@ -26,6 +26,7 @@ import {
   llmFromEnv,
   secretsFromEnv,
 } from './from-env';
+import { pairingUrls } from './pairing';
 
 const VERSION = '0.0.0';
 
@@ -81,6 +82,11 @@ async function main(): Promise<void> {
     version: VERSION,
     profile: env.SERVER_PROFILE,
     internalToken,
+    pairing: {
+      urls: () =>
+        pairingUrls({ port: env.PORT, bindHost: env.BIND_HOST, configured: env.PAIRING_URLS }),
+      tokenFromEnv: env.SYNC_TOKEN !== undefined,
+    },
     onPush: (deviceId, acked) => {
       if (device && deviceId !== device.store.deviceId) device.wake();
       if (!embedder) return;

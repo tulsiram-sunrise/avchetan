@@ -6,6 +6,7 @@ import {
   PROTOCOL_VERSION,
   type PullResponse,
   type PushResponse,
+  rotateTokenResponseSchema,
   statusResponseSchema,
 } from '@avchetan/sync/protocol';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -325,6 +326,62 @@ describe('status', () => {
         lastSeenAt: expect.stringMatching(/^2026-10-26T10:00:00\.\d{3}Z$/),
       },
     ]);
+  });
+});
+
+describe('pairing', () => {
+  async function pairingApp(tokenFromEnv: boolean) {
+    const identity = await loadServerIdentity(database.db, TOKEN);
+    const clock = createMonotonicClock({ source: () => wallMs });
+    const paired = createApp({
+      db: database.db,
+      identity,
+      clock,
+      version: 'test',
+      profile: 'hub',
+      nowMs: () => wallMs,
+      pairing: { urls: () => ['http://192.168.1.5:8787'], tokenFromEnv },
+    });
+    return { paired, identity };
+  }
+
+  it('tells a device what the pairing code needs', async () => {
+    const { paired, identity } = await pairingApp(false);
+    app = paired;
+    await register();
+
+    const response = await app.request('/v1/pairing', { headers: headers() });
+
+    expect(await response.json()).toEqual({
+      serverId: identity.serverId,
+      urls: ['http://192.168.1.5:8787'],
+    });
+  });
+
+  it('gives a new token once, and the old one stops working', async () => {
+    app = (await pairingApp(false)).paired;
+    await register();
+
+    const response = await post('/v1/token/rotate', {});
+    const { token } = rotateTokenResponseSchema.parse(await response.json());
+
+    expect(token).not.toBe(TOKEN);
+    expect((await app.request('/v1/pairing', { headers: headers() })).status).toBe(401);
+    const withNew = headers({ Authorization: `Bearer ${token}` });
+    expect((await app.request('/v1/pairing', { headers: withNew })).status).toBe(200);
+    // It survives a restart, because only its hash was stored.
+    const restarted = await loadServerIdentity(database.db, undefined);
+    expect(restarted.generatedToken).toBeNull();
+  });
+
+  it('leaves a token set in the server settings alone', async () => {
+    app = (await pairingApp(true)).paired;
+    await register();
+
+    const response = await post('/v1/token/rotate', {});
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({ error: { code: 'token_from_env' } });
   });
 });
 

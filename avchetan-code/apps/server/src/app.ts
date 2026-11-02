@@ -19,6 +19,7 @@ import { createRateLimiter } from './rate-limit';
 import { askRoutes } from './routes/ask';
 import { deviceRoutes } from './routes/devices';
 import { healthRoutes } from './routes/health';
+import { pairingRoutes } from './routes/pairing';
 import { searchRoutes } from './routes/search';
 import { statusRoutes } from './routes/status';
 import { syncRoutes } from './routes/sync';
@@ -27,6 +28,7 @@ const log = createLogger('http');
 
 export type AppDeps = {
   db: ServerDb;
+  /** `tokenHash` changes in place when the token is rotated. */
   identity: Pick<ServerIdentity, 'serverId' | 'tokenHash'>;
   clock: Clock;
   version: string;
@@ -42,6 +44,8 @@ export type AppDeps = {
   onPush?: (deviceId: string, acked: readonly { table: string; id: string }[]) => void;
   /** Search by meaning; absent when the server has no embedding model. */
   search?: { model: string; embed: (text: string) => Promise<number[]> };
+  /** For the pairing QR code and token rotation. */
+  pairing?: { urls: () => string[]; tokenFromEnv: boolean };
   /** Answers questions with the hub's model; absent when it has none. */
   ask?: HubAsk;
 };
@@ -127,6 +131,7 @@ export function createApp(deps: AppDeps) {
   app.route('/v1', statusRoutes(deps));
   app.route('/v1', searchRoutes(deps));
   app.route('/v1', askRoutes(deps));
+  app.route('/v1', pairingRoutes(deps));
 
   app.notFound((c) => c.json(errorBody(c, 'not_found', 'No such endpoint'), 404));
   app.onError((error, c) => {
