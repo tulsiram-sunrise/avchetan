@@ -25,7 +25,8 @@ import { INITIAL_STATUS, type SyncState, type SyncStatus } from './status';
 
 const log = createLogger('sync');
 
-const POLL_MS = 60_000;
+// Another device's change waits for this at most, so it stays well inside the 60 s target.
+const POLL_MS = 30_000;
 const DEBOUNCE_MS = 2_000;
 
 export type SyncDevice = {

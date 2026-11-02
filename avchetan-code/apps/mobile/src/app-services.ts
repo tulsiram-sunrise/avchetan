@@ -2,6 +2,7 @@ import type { PendingProcessor } from '@avchetan/core';
 import { type ClientStore, openClientStore } from '@avchetan/db/sqlite';
 import { createLogger } from '@avchetan/shared';
 import type { SyncEngine } from '@avchetan/sync';
+import { AppState } from 'react-native';
 import { createExpoPlatform, type Platform } from './platform';
 import { refreshAll } from './query-client';
 import { type CaptureService, createCaptureService } from './services/capture';
@@ -26,7 +27,9 @@ async function openAppServices(platform: Platform): Promise<AppServices> {
   // Each needs the other: organizing queues a sync, and a sync may bring entries to organize.
   const extraction = createExtractionService(store, platform, () => {
     refreshAll();
-    sync.schedule();
+    // Off screen, Android has paused the timer the debounce waits on.
+    if (AppState.currentState === 'active') sync.schedule();
+    else void sync.syncNow();
   });
   const sync = createSyncService(store, platform, extraction);
   return {

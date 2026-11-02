@@ -48,7 +48,17 @@ export function createApp(deps: AppDeps) {
     const requestId = randomUUID();
     c.set('requestId', requestId);
     c.header(HEADERS.requestId, requestId);
+    const started = performance.now();
     await next();
+    // IDs and timings only, so the gaps between one device's pulls can be measured.
+    log.debug('request', {
+      requestId,
+      method: c.req.method,
+      path: c.req.path,
+      status: c.res.status,
+      deviceId: c.req.header(HEADERS.device),
+      durationMs: Math.round(performance.now() - started),
+    });
   });
 
   // Public, because pairing and URL failover ask it before they hold a working token.

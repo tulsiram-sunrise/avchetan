@@ -98,7 +98,9 @@ cycle():
 Triggers:
 - 2 s debounce after any local write that enqueued the outbox.
 - Network transition offline → online.
-- Every 60 s while the app is in foreground / dock process alive; every 15 min via background task on Android.
+- Every 30 s while the app is in foreground / dock process alive; every 15 min via background task on Android. Another device's change therefore reaches this one within about 32 s, inside the 60 s target.
+- Android: when the app leaves the screen, and when a write lands while it is off screen. Android pauses JS timers off screen (requests still run), so the debounce above would otherwise hold the change until the app is opened again.
+- Android: the app coming back to the foreground.
 - Manual: tray "Sync now", `/sync` command, pull-to-refresh on mobile.
 
 Failures: exponential backoff 2 s → 5 min with jitter; reset on success or network transition. HTTP 401 → stop and show "sync token invalid".

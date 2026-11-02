@@ -21,6 +21,10 @@ Until QR pairing arrives, type the details in on each device:
 3. Enter the address and paste the token. For an address on your home network, turn on **Trust this home network**.
 4. Tap **Save**. The screen should say **Up to date.** within a few seconds.
 
+After that, a change made on one device shows on the other within about half a minute. The phone sends its changes when you leave the app, and fetches new ones as soon as you open it.
+
+**Stopped syncing after the PC restarted?** Your router may have given the PC a new address. Find the new address, enter it again in **Sync** on each device and tap **Save**. To stop this happening, reserve the PC's address in your router's settings (often called *DHCP reservation*).
+
 ## Check it worked
 
 The phone shows **Connected to** followed by your PC's name, and your existing entries appear.

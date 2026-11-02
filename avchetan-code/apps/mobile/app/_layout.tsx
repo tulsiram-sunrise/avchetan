@@ -8,7 +8,7 @@ import { ActivityIndicator, AppState, Text, View } from 'react-native';
 import { type AppServices, getAppServices } from '../src/app-services';
 import { queryClient, refreshAll } from '../src/query-client';
 import { registerBackgroundWork } from '../src/services/background';
-import { watchForeground } from '../src/services/foreground';
+import { watchAppState } from '../src/services/foreground';
 import { ServicesProvider } from '../src/services-context';
 import { AppTheme } from '../src/theme/theme';
 import { HelpLink } from '../src/ui/parts';
@@ -71,11 +71,16 @@ export default function RootLayout() {
         services.extraction.start();
         services.sync.start();
         void registerBackgroundWork();
-        stopWatching = watchForeground(AppState, () => {
-          // Android may have stopped timers, and the background task may have changed rows.
-          refreshAll();
-          void services.extraction.wake();
-          void services.sync.syncNow();
+        stopWatching = watchAppState(AppState, {
+          onActive: () => {
+            // Android may have stopped timers, and the background task may have changed rows.
+            refreshAll();
+            void services.extraction.wake();
+            void services.sync.syncNow();
+          },
+          // Timers stop now, so a change waiting out the sync debounce would wait until the app
+          // came back. Requests still run, so send it before leaving.
+          onLeave: () => void services.sync.syncNow(),
         });
         setStartup({ status: 'ready', services });
       },

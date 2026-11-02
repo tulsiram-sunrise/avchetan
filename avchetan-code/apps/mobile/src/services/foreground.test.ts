@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { watchForeground } from './foreground';
+import { watchAppState } from './foreground';
 
 function fakeAppState() {
   let listener: (state: string) => void = () => {};
@@ -16,12 +16,12 @@ function fakeAppState() {
   };
 }
 
-describe('watchForeground', () => {
-  it('runs only when the app becomes active', () => {
+describe('watchAppState', () => {
+  it('runs onActive only when the app becomes active', () => {
     const { source, emit } = fakeAppState();
     const onActive = vi.fn();
 
-    watchForeground(source, onActive);
+    watchAppState(source, { onActive, onLeave: () => {} });
     emit('background');
     emit('inactive');
     expect(onActive).not.toHaveBeenCalled();
@@ -30,10 +30,23 @@ describe('watchForeground', () => {
     expect(onActive).toHaveBeenCalledOnce();
   });
 
+  it('runs onLeave only when the app goes to the background', () => {
+    const { source, emit } = fakeAppState();
+    const onLeave = vi.fn();
+
+    watchAppState(source, { onActive: () => {}, onLeave });
+    emit('inactive');
+    emit('active');
+    expect(onLeave).not.toHaveBeenCalled();
+
+    emit('background');
+    expect(onLeave).toHaveBeenCalledOnce();
+  });
+
   it('stops watching when cancelled', () => {
     const { source, remove } = fakeAppState();
 
-    watchForeground(source, () => {})();
+    watchAppState(source, { onActive: () => {}, onLeave: () => {} })();
 
     expect(remove).toHaveBeenCalledOnce();
   });
