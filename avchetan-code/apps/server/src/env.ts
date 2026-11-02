@@ -26,6 +26,9 @@ const envSchema = z
     /** With no provider, the server organizes nothing and devices do it themselves. */
     EXTRACTION_PROVIDER: z.enum(LLM_PROVIDERS).optional(),
     EXTRACTION_MODEL: z.string().min(1).optional(),
+    /** Search by meaning (docs/architecture/retrieval.md). With no provider, search is off. */
+    EMBEDDING_PROVIDER: z.enum(LLM_PROVIDERS).optional(),
+    EMBEDDING_MODEL: z.string().min(1).optional(),
     OLLAMA_BASE_URL: z.url().optional(),
     GROQ_API_KEY: z.string().min(1).optional(),
     GOOGLE_API_KEY: z.string().min(1).optional(),
@@ -37,6 +40,10 @@ const envSchema = z
   .refine((env) => !env.EXTRACTION_PROVIDER || env.EXTRACTION_MODEL, {
     path: ['EXTRACTION_MODEL'],
     message: 'EXTRACTION_MODEL is required when EXTRACTION_PROVIDER is set',
+  })
+  .refine((env) => !env.EMBEDDING_PROVIDER || env.EMBEDDING_MODEL, {
+    path: ['EMBEDDING_MODEL'],
+    message: 'EMBEDDING_MODEL is required when EMBEDDING_PROVIDER is set',
   });
 
 export type ServerEnv = z.infer<typeof envSchema>;

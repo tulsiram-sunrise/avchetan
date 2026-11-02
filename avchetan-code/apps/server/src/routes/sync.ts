@@ -21,7 +21,7 @@ export function syncRoutes({ db, clock, onPush }: AppDeps) {
     .post('/sync/push', limitBody, async (c) => {
       const { changes } = await readBody(c, pushRequestSchema);
       const result = await applyPush(db, changes, clock.now());
-      onPush?.(c.get('deviceId'));
+      onPush?.(c.get('deviceId'), result.acked);
       return c.json(result);
     })
     .get('/sync/pull', async (c) => {

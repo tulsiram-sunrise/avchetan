@@ -21,6 +21,12 @@ export const ollamaAdapter: ProviderAdapter = {
       supportsStructuredOutputs: true,
       fetch,
     })(model),
+  createEmbeddingModel: ({ provider, model, baseUrl }, { fetch }) =>
+    createOpenAICompatible({
+      name: provider,
+      baseURL: baseUrl ?? DEFAULT_BASE_URL,
+      fetch,
+    }).embeddingModel(model),
   // The fix is `ollama pull`, not waiting, so say so instead of "could not be reached".
   classifyError: (error) =>
     error.statusCode === 404

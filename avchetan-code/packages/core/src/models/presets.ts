@@ -8,6 +8,8 @@ export const modelPresetSchema = z.object({
   provider: z.enum(LLM_PROVIDERS),
   extractionModel: z.string().min(1).optional(),
   analysisModel: z.string().min(1).optional(),
+  /** For search by meaning, run by the hub. */
+  embeddingModel: z.string().min(1).optional(),
 });
 export type ModelPreset = z.infer<typeof modelPresetSchema>;
 

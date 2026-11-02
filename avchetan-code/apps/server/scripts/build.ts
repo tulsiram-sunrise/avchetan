@@ -10,9 +10,9 @@ await build({
   target: 'node24',
   format: 'esm',
   sourcemap: true,
-  // PGlite loads its WebAssembly and data files from beside its own modules, so it ships as a
-  // folder. pg only tries pg-native when asked for it.
-  external: ['@electric-sql/pglite', 'pg-native'],
+  // PGlite and its pgvector extension load their files from beside their own modules, so they
+  // ship as folders. pg only tries pg-native when asked for it.
+  external: ['@electric-sql/pglite', '@electric-sql/pglite-pgvector', 'pg-native'],
   // pg is CommonJS and calls require() for Node built-ins.
   banner: {
     js: "import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);",

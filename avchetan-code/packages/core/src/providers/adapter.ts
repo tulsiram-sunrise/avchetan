@@ -1,5 +1,5 @@
 import type { HttpFetch, LlmError } from '@avchetan/shared';
-import type { APICallError, LanguageModel } from 'ai';
+import type { APICallError, EmbeddingModel, LanguageModel } from 'ai';
 import type { LlmProvider, ModelConfig } from './config';
 
 export type ModelContext = {
@@ -26,6 +26,8 @@ export type ProviderAdapter = {
   /** Sent with Ask, keyed by SDK provider name. */
   readonly analysisOptions?: Record<string, Record<string, string>>;
   createModel(config: ModelConfig, context: ModelContext): LanguageModel;
+  /** For search by meaning. Absent when the provider offers no embedding models. */
+  createEmbeddingModel?(config: ModelConfig, context: ModelContext): EmbeddingModel;
   /** Provider-specific failures the shared mapping would misread. */
   classifyError?(error: APICallError): LlmError | undefined;
 };

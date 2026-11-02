@@ -23,7 +23,7 @@ COPY apps/server apps/server
 RUN pnpm --filter @avchetan/server build \
   && mkdir -p /out/node_modules/@electric-sql \
   && cp apps/server/dist/server.mjs apps/server/dist/server.mjs.map /out/ \
-  && cp -rL apps/server/node_modules/@electric-sql/pglite /out/node_modules/@electric-sql/
+  && cp -rL apps/server/node_modules/@electric-sql/pglite apps/server/node_modules/@electric-sql/pglite-pgvector /out/node_modules/@electric-sql/
 
 FROM node:24.22.1-slim
 ENV NODE_ENV=production \

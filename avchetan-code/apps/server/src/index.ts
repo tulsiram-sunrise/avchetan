@@ -1,12 +1,26 @@
 import { randomBytes } from 'node:crypto';
-import { configureLogging, createLogger, createMonotonicClock } from '@avchetan/shared';
+import { createEmbeddingModel, embedTexts } from '@avchetan/core';
+import {
+  configureLogging,
+  createLogger,
+  createMonotonicClock,
+  TimerScheduler,
+  toAppError,
+} from '@avchetan/shared';
 import { serve } from '@hono/node-server';
 import { createApp } from './app';
 import { loadServerIdentity } from './auth';
 import { openPglite, openPostgres } from './db/client';
+import { createEmbedder, type Embedder, embeddingModelId } from './embeddings/embedder';
+import { enqueueEmbedJobs, rawLogsTouchedBy } from './embeddings/jobs';
 import { loadEnv } from './env';
-import { extractionModelsFromEnv, llmFromEnv } from './fallback/from-env';
 import { openServerDevice, type ServerDevice } from './fallback/server-device';
+import {
+  embeddingModelFromEnv,
+  extractionModelsFromEnv,
+  llmFromEnv,
+  secretsFromEnv,
+} from './from-env';
 
 const VERSION = '0.0.0';
 
@@ -34,6 +48,14 @@ async function main(): Promise<void> {
   // Only the server's own device holds this, in memory; it changes on every start.
   const internalToken = randomBytes(32).toString('base64url');
   let device: ServerDevice | null = null;
+  let embedder: Embedder | null = null;
+
+  const embedding = embeddingModelFromEnv(env);
+  const resolveEmbedding = embedding
+    ? () =>
+        createEmbeddingModel(embedding, { fetch: globalThis.fetch, secrets: secretsFromEnv(env) })
+    : null;
+
   const app = createApp({
     db: database.db,
     identity,
@@ -41,9 +63,26 @@ async function main(): Promise<void> {
     version: VERSION,
     profile: env.SERVER_PROFILE,
     internalToken,
-    onPush: (deviceId) => {
+    onPush: (deviceId, acked) => {
       if (device && deviceId !== device.store.deviceId) device.wake();
+      if (!embedder) return;
+      const wakeAfter = embedder.wake;
+      rawLogsTouchedBy(database.db, acked)
+        .then((ids) => enqueueEmbedJobs(database.db, ids))
+        .then(wakeAfter)
+        .catch((error) => log.warn('could not queue embeddings', { code: toAppError(error).code }));
     },
+    ...(embedding && resolveEmbedding
+      ? {
+          search: {
+            model: embeddingModelId(embedding),
+            embed: async (text: string) => {
+              const [vector] = await embedTexts(await resolveEmbedding(), [text]);
+              return vector as number[];
+            },
+          },
+        }
+      : {}),
   });
 
   const models = extractionModelsFromEnv(env);
@@ -63,6 +102,18 @@ async function main(): Promise<void> {
       reason: env.FALLBACK_EXTRACTION_ENABLED ? 'no_extraction_provider' : 'disabled',
     });
   }
+  if (embedding && resolveEmbedding) {
+    embedder = createEmbedder({
+      db: database.db,
+      model: embedding,
+      resolveModel: resolveEmbedding,
+      scheduler: new TimerScheduler(),
+    });
+    await embedder.start();
+  } else {
+    log.info('search by meaning is off', { reason: 'no_embedding_provider' });
+  }
+
   const server = serve({ fetch: app.fetch, hostname: env.BIND_HOST, port: env.PORT }, (address) =>
     log.info('listening', {
       port: address.port,
@@ -73,6 +124,7 @@ async function main(): Promise<void> {
 
   const shutDown = () => {
     device?.stop();
+    embedder?.stop();
     server.close(() => {
       void database.close().finally(() => process.exit(0));
     });

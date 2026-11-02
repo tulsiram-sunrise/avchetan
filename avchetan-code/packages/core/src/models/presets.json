@@ -12,14 +12,16 @@
       "label": "Ollama on your PC (4 GB graphics card)",
       "provider": "ollama",
       "extractionModel": "granite4.2:3b",
-      "analysisModel": "granite4.2:8b"
+      "analysisModel": "granite4.2:8b",
+      "embeddingModel": "qwen3-embedding:0.6b"
     },
     {
       "id": "ollama-cpu",
       "label": "Ollama on your PC (no graphics card)",
       "provider": "ollama",
       "extractionModel": "granite4.2:8b",
-      "analysisModel": "granite4.2:8b"
+      "analysisModel": "granite4.2:8b",
+      "embeddingModel": "qwen3-embedding:0.6b"
     },
     {
       "id": "gemini-free",

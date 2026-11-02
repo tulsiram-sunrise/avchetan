@@ -1,5 +1,6 @@
 export { type AskRequest, type AskResult, type AskSource, ask } from './analysis/ask';
 export { buildCaptureInput } from './capture';
+export { type EmbeddingSource, embeddingText, embedTexts } from './embeddings/embed';
 export {
   EXTRACTION_PROMPT_VERSION,
   type ExtractionOptions,
@@ -76,6 +77,7 @@ export {
 export { LLM_ERROR_CODES, type LlmErrorCode, toLlmError } from './providers/errors';
 export {
   apiKeySecretName,
+  createEmbeddingModel,
   createModel,
   PROVIDER_ADAPTERS,
   type ProviderDeps,

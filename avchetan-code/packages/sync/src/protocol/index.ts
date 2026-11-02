@@ -114,3 +114,27 @@ export const pullResponseSchema = z.object({
   hasMore: z.boolean(),
 });
 export type PullResponse = z.infer<typeof pullResponseSchema>;
+
+export const MAX_SEARCH_RESULTS = 15;
+
+/** docs/architecture/retrieval.md#search-api. `from` and `to` bound `capturedAt`. */
+export const searchRequestSchema = z.object({
+  query: z.string().trim().min(1).max(500),
+  from: instant.optional(),
+  to: instant.optional(),
+  limit: z.int().min(1).max(MAX_SEARCH_RESULTS).default(8),
+});
+export type SearchRequest = z.input<typeof searchRequestSchema>;
+
+export const searchResponseSchema = z.object({
+  results: z.array(
+    z.object({
+      rawLogId: z.uuid(),
+      /** Cosine similarity: 1 is the same meaning. */
+      score: z.number(),
+      capturedAt: instant,
+      snippet: z.string(),
+    }),
+  ),
+});
+export type SearchResponse = z.infer<typeof searchResponseSchema>;

@@ -289,7 +289,7 @@ export const serverMeta = pgTable('server_meta', {
  */
 const vector = customType<{ data: number[]; driverData: string }>({
   dataType: () => 'vector',
-  toDriver: (value) => '[' + value.join(',') + ']',
+  toDriver: (value) => `[${value.join(',')}]`,
   fromDriver: (value) => JSON.parse(value) as number[],
 });
 
