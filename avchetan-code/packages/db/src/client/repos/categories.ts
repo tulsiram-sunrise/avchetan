@@ -5,7 +5,6 @@ import { categories } from '../../schema/sqlite/tables';
 import type { ClientDb, Tx } from '../database';
 import { type DataScope, shareableCategory } from '../privacy';
 import {
-  ensureSynced,
   getById,
   insertSynced,
   live,
@@ -17,6 +16,9 @@ import {
 } from '../synced';
 
 export type Category = Row<typeof categories>;
+
+/** 2000-01-01T00:00:00.000Z: older than any real edit, which therefore always wins. */
+const SEEDED_AT_MS = Date.UTC(2000, 0, 1);
 
 /** Default categories created on every device with the same derived IDs (ADR-0015). */
 export const SEED_CATEGORIES = [
@@ -107,16 +109,29 @@ export function categoriesRepo(deps: RepoDeps) {
       );
     },
 
-    /** Idempotent; never overwrites a seed the user renamed. */
+    /**
+     * Idempotent; never overwrites a seed the user renamed. Seeds are dated long ago, one
+     * millisecond apart to keep their order: a device set up later would otherwise sync its
+     * fresh copy over a rename made elsewhere, because the newer row wins.
+     */
     async ensureSeeds(tx: Tx): Promise<void> {
-      for (const seed of SEED_CATEGORIES) {
-        await ensureSynced(tx, deps, categories, {
-          id: seedCategoryId(seed.slug),
-          name: seed.name,
-          slug: seed.slug,
-          description: seed.description,
-          origin: 'seed',
-        });
+      for (const [index, seed] of SEED_CATEGORIES.entries()) {
+        const id = seedCategoryId(seed.slug);
+        if (await getById(tx, categories, id)) continue;
+        const seededAt = new Date(SEEDED_AT_MS + index).toISOString();
+        await insertSynced(
+          tx,
+          deps,
+          categories,
+          {
+            id,
+            name: seed.name,
+            slug: seed.slug,
+            description: seed.description,
+            origin: 'seed',
+          },
+          seededAt,
+        );
       }
     },
 

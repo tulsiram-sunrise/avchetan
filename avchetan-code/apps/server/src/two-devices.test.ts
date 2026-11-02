@@ -43,9 +43,9 @@ beforeEach(async () => {
 
 afterEach(() => database.close());
 
-async function device(fetch: HttpFetch = (input, init) => serverFetch(input, init)) {
+async function device(fetch: HttpFetch = (input, init) => serverFetch(input, init), start = START) {
   const { store, advance } = await openTestStore({
-    start: START,
+    start,
     newId: () => crypto.randomUUID(),
   });
   const secrets = new MemorySecretStore();
@@ -245,6 +245,29 @@ describe('two devices and a server', () => {
     await desktop.engine.syncNow();
 
     expect(await titles(desktop)).toHaveLength(120);
+  });
+
+  it('keeps a renamed default category when a new device joins later', async () => {
+    const desktop = await device();
+    const seed = await desktop.store.db.query.categories.findFirst({
+      where: (c, { eq }) => eq(c.origin, 'seed'),
+    });
+    if (!seed) throw new Error('no seed category');
+    await desktop.store.write((tx) =>
+      desktop.store.repos.categories.rename(tx, seed.id, 'Renamed'),
+    );
+    await desktop.engine.syncNow();
+
+    // Set up a day later, so its own copy of the default categories is newer than the rename.
+    const phone = await device(undefined, '2026-10-27T10:00:00.000Z');
+    serverMs += 86_400_000;
+    await converge(phone, desktop);
+
+    const nameOn = async ({ store }: Device) =>
+      (await store.db.query.categories.findFirst({ where: (c, { eq }) => eq(c.id, seed.id) }))
+        ?.name;
+    expect(await nameOn(phone)).toBe('Renamed');
+    expect(await nameOn(desktop)).toBe('Renamed');
   });
 
   it('does not put pulled rows back in the outbox', async () => {
