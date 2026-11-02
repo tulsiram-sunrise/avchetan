@@ -1,9 +1,11 @@
 import { createLogger } from '@avchetan/shared';
 import {
   type Connection,
+  loadPairingLink,
   loadServerUrls,
   loadSyncStatus,
   removeConnection,
+  rotateServerToken,
   SYNC_TOKEN_SECRET,
   saveConnection,
 } from '@avchetan/sync';
@@ -70,4 +72,21 @@ export function useRemoveConnection() {
 
 export function useSyncNow() {
   return useMutation({ mutationFn: askDockToSync });
+}
+
+/** Made on demand and kept only in memory: the code carries the sync token. */
+export function usePairingCode() {
+  const { store, platform } = useServices();
+  return useMutation({
+    mutationFn: () => loadPairingLink({ store, fetch: platform.fetch, secrets: platform.secrets }),
+  });
+}
+
+export function useRotateToken() {
+  const { store, platform } = useServices();
+  return useMutation({
+    mutationFn: () =>
+      rotateServerToken({ store, fetch: platform.fetch, secrets: platform.secrets }),
+    onSuccess: () => void askDockToSync(),
+  });
 }

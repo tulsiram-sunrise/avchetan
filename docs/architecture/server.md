@@ -16,6 +16,8 @@ Hono (`@hono/node-server`), Drizzle (`node-postgres` or `pglite` driver, same `p
 | `GET /v1/sync/pull` | See [sync-protocol](sync-protocol.md#pull--get-v1syncpullcursornlimit500) |
 | `POST /v1/search` | Semantic search ([retrieval](retrieval.md#search-api)) |
 | `POST /v1/ask` | `{ question, timeZone }`: runs the apps' Ask on the server device's copy with the hub's model ([ADR-0022](../decisions/0022-hub-answers-on-its-device.md)); streams `text`, then `done` with cited raw log IDs, or `error` (text/event-stream). 503 `ask_unavailable` without `ANALYSIS_PROVIDER`. Used by devices with `analysis.mode = hub` |
+| `GET /v1/pairing` | `{ serverId, urls }` for the pairing QR code ([deployment-modes](deployment-modes.md#pairing-no-typing-of-tokens)) |
+| `POST /v1/token/rotate` | New sync token, returned once; the old one stops working. 409 `token_from_env` when `SYNC_TOKEN` sets it |
 | `GET /v1/status` | For the settings screen: `serverId`, version, profile, server time, each device with its last-seen time, and raw logs still waiting for extraction or failed. The fallback queue, embedding backlog and last job runs join with their workers (steps 3–4); clients ignore fields they don't know |
 
 Headers: `Authorization: Bearer <SYNC_TOKEN>`, `X-Avchetan-Device: <deviceId>`, `X-Avchetan-Protocol: 1`. Error format per [conventions/api.md](../conventions/api.md).

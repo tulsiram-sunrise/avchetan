@@ -1,4 +1,5 @@
 import { describeSync } from '@avchetan/sync';
+import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ScrollView, Switch, Text, View } from 'react-native';
 import {
@@ -53,6 +54,8 @@ export default function SyncScreen() {
           stays on this phone.
         </Text>
         <SyncStatusLine />
+        <Button primary label="Scan pairing code" onPress={() => router.push('/settings/pair')} />
+        <Text className="text-sm text-inkMuted">Or type the address and token yourself:</Text>
         <Field
           label="Server address"
           value={home}

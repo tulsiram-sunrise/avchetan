@@ -8,6 +8,7 @@ import {
   useSyncNow,
   useSyncStatus,
 } from '../queries/sync';
+import { PairPhone } from './pair-phone';
 import { ActionError, fieldClass, QuietButton } from './ui';
 
 function SyncStatusLine() {
@@ -104,6 +105,7 @@ export function SyncSetting() {
         ) : null}
       </div>
       <ActionError errors={[save.error, remove.error]} />
+      {connected ? <PairPhone /> : null}
     </section>
   );
 }

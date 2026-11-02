@@ -48,7 +48,7 @@ An edit replaces the raw log with a new one, so the entry screen moves to the ne
 
 ## Connecting to a server
 
-- First-run wizard: *Standalone* / *Scan pairing QR* (Home Hub or Cloud) / *Enter URL + token manually*.
+- First run: until the phone can organize entries, Today shows a setup card: *Pair with the hub on my PC* (scan the QR code) or *Use an AI provider on this phone*. The Sync screen also offers *Scan pairing code* above the manual address and token. (The full first-run wizard is Phase 5b.)
 - QR scan via `expo-camera`; token → secure store; URLs → `sync.serverUrls` (tried in order, LAN first, then Tailscale).
 - Settings show which URL is in use, last sync, and hub status (`/v1/status`).
 

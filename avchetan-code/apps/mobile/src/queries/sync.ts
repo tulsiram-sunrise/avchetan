@@ -2,6 +2,7 @@ import {
   type Connection,
   loadServerUrls,
   loadSyncStatus,
+  pairWithLink,
   removeConnection,
   SYNC_TOKEN_SECRET,
   saveConnection,
@@ -60,4 +61,18 @@ export function useRemoveConnection() {
 export function useSyncNow() {
   const { sync } = useServices();
   return useMutation({ mutationFn: () => sync.syncNow() });
+}
+
+/** Pairs from a scanned code, then syncs: the phone gets everything already on the hub. */
+export function usePair() {
+  const { store, platform, sync } = useServices();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (code: string) =>
+      pairWithLink({ store, fetch: platform.fetch, secrets: platform.secrets }, code),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: connectionQuery });
+      void sync.syncNow();
+    },
+  });
 }
