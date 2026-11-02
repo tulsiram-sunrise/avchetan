@@ -1,6 +1,7 @@
 import { type MigrationDriver, pgMigrations, runMigrations } from '@avchetan/db/pg';
 import { createLogger } from '@avchetan/shared';
 import { PGlite } from '@electric-sql/pglite';
+import { vector } from '@electric-sql/pglite-pgvector';
 import { drizzle as drizzleNodePg } from 'drizzle-orm/node-postgres';
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
 import { drizzle as drizzlePglite } from 'drizzle-orm/pglite';
@@ -18,7 +19,8 @@ export type ServerDatabase = {
 
 /** Embedded Postgres in a folder, or in memory when no folder is given (tests). */
 export async function openPglite(dataDir?: string): Promise<ServerDatabase> {
-  const client = await PGlite.create(dataDir);
+  // pgvector for log_embeddings, as on Postgres.
+  const client = await PGlite.create(dataDir, { extensions: { vector } });
   const driver: MigrationDriver = {
     async run(statement) {
       await client.exec(statement);

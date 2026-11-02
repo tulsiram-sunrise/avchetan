@@ -3,6 +3,7 @@ import {
   bigint,
   boolean,
   check,
+  customType,
   date,
   doublePrecision,
   index,
@@ -280,6 +281,27 @@ export const serverMeta = pgTable('server_meta', {
   serverId: uuid('server_id').primaryKey(),
   syncTokenHash: text('sync_token_hash'),
   createdAt: instant('created_at').notNull().defaultNow(),
+});
+
+/**
+ * pgvector with no fixed length, so a new embedding model needs no migration; each row records
+ * its `dims`, and the server builds the index for the configured length (ADR-0012).
+ */
+const vector = customType<{ data: number[]; driverData: string }>({
+  dataType: () => 'vector',
+  toDriver: (value) => '[' + value.join(',') + ']',
+  fromDriver: (value) => JSON.parse(value) as number[],
+});
+
+/** One per raw log; written and read only by the server (docs/architecture/retrieval.md). */
+export const logEmbeddings = pgTable('log_embeddings', {
+  rawLogId: uuid('raw_log_id').primaryKey(),
+  model: text('model').notNull(),
+  dims: integer('dims').notNull(),
+  contentHash: text('content_hash').notNull(),
+  embedding: vector('embedding').notNull(),
+  createdAt: instant('created_at').notNull().defaultNow(),
+  updatedAt: instant('updated_at').notNull().defaultNow(),
 });
 
 export const serverJobs = pgTable(

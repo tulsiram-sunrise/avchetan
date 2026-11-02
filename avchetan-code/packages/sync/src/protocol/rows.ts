@@ -25,6 +25,9 @@ function baseSchema(spec: ColumnSpec): z.ZodType {
       return z.int();
     case 'real':
       return z.number();
+    // Server-only tables never sync; listed so a vector column on a synced table would be checked.
+    case 'vector':
+      return z.array(z.number());
   }
 }
 

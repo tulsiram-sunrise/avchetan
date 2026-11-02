@@ -15,6 +15,13 @@
       "when": 1793639567744,
       "tag": "0001_server_device_platform",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793642878964,
+      "tag": "0002_log_embeddings",
+      "breakpoints": true
     }
   ]
 }

@@ -15,7 +15,9 @@ export type LogicalType =
   | 'json'
   | 'int'
   | 'real'
-  | 'bigint';
+  | 'bigint'
+  /** pgvector, server only. No fixed length: each row records its `dims` (ADR-0012). */
+  | 'vector';
 
 export type ColumnSpec = {
   type: LogicalType;
@@ -226,6 +228,18 @@ export const TABLES = {
       server_id: req('uuid'),
       sync_token_hash: opt('text'),
       created_at: req('instant'),
+    },
+  },
+  log_embeddings: {
+    scope: 'server',
+    columns: {
+      raw_log_id: req('uuid'),
+      model: req('text'),
+      dims: req('int'),
+      content_hash: req('text'),
+      embedding: req('vector'),
+      created_at: req('instant'),
+      updated_at: req('instant'),
     },
   },
   server_jobs: {
