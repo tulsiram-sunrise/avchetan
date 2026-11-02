@@ -16,7 +16,7 @@ Hono (`@hono/node-server`), Drizzle (`node-postgres` or `pglite` driver, same `p
 | `GET /v1/sync/pull` | See [sync-protocol](sync-protocol.md#pull--get-v1syncpullcursornlimit500) |
 | `POST /v1/search` | Semantic search ([retrieval](retrieval.md#search-api)) |
 | `POST /v1/ask` | Run Ask on the server's analysis slot with server-side tools; streams the answer (text/event-stream) with citations. Used by devices whose analysis slot is `hub` |
-| `GET /v1/status` | Pending/fallback queue sizes, embedding backlog, last job runs (for the settings screen) |
+| `GET /v1/status` | For the settings screen: `serverId`, version, profile, server time, each device with its last-seen time, and raw logs still waiting for extraction or failed. The fallback queue, embedding backlog and last job runs join with their workers (steps 3–4); clients ignore fields they don't know |
 
 Headers: `Authorization: Bearer <SYNC_TOKEN>`, `X-Avchetan-Device: <deviceId>`, `X-Avchetan-Protocol: 1`. Error format per [conventions/api.md](../conventions/api.md).
 
@@ -56,7 +56,7 @@ apps/server/src/
   env.ts              Zod env schema
   auth.ts             server identity, sync token hash
   app.ts              Hono app, middleware (auth, device, protocol, errors, request id)
-  routes/             health.ts, devices.ts, sync.ts, search.ts, status.ts
+  routes/             health.ts, devices.ts, sync.ts, status.ts, search.ts (step 4)
   sync/               apply-push.ts, read-pull.ts, with-sync-write.ts
   workers/            embedder.ts, fallback-extractor.ts, brief-fallback.ts, janitor.ts
   db/                 client.ts (uses @avchetan/db/pg)

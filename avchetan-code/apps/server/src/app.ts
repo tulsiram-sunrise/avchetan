@@ -1,7 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import { devices } from '@avchetan/db/pg';
 import { type Clock, createLogger } from '@avchetan/shared';
-import { type ErrorResponse, HEADERS, PROTOCOL_VERSION } from '@avchetan/sync/protocol';
+import {
+  type ErrorResponse,
+  HEADERS,
+  PROTOCOL_VERSION,
+  type ServerProfile,
+} from '@avchetan/sync/protocol';
 import { eq } from 'drizzle-orm';
 import { type Context, Hono } from 'hono';
 import { z } from 'zod';
@@ -12,6 +17,7 @@ import type { ServerDb } from './db/client';
 import { createRateLimiter } from './rate-limit';
 import { deviceRoutes } from './routes/devices';
 import { healthRoutes } from './routes/health';
+import { statusRoutes } from './routes/status';
 import { syncRoutes } from './routes/sync';
 
 const log = createLogger('http');
@@ -21,6 +27,7 @@ export type AppDeps = {
   identity: Pick<ServerIdentity, 'serverId' | 'tokenHash'>;
   clock: Clock;
   version: string;
+  profile: ServerProfile;
   /** Wall clock in ms, for the rate limiter. */
   nowMs?: () => number;
 };
@@ -100,6 +107,7 @@ export function createApp(deps: AppDeps) {
 
   app.route('/v1', deviceRoutes(deps));
   app.route('/v1', syncRoutes(deps));
+  app.route('/v1', statusRoutes(deps));
 
   app.notFound((c) => c.json(errorBody(c, 'not_found', 'No such endpoint'), 404));
   app.onError((error, c) => {

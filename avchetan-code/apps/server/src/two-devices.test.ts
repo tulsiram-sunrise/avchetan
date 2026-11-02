@@ -34,6 +34,7 @@ beforeEach(async () => {
     identity,
     clock,
     version: 'test',
+    profile: 'hub',
     nowMs: () => serverMs,
   });
   serverFetch = (input, init) => Promise.resolve(app.fetch(new Request(input, init)));

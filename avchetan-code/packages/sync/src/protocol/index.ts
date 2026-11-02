@@ -37,6 +37,32 @@ export const healthResponseSchema = z.object({
 });
 export type HealthResponse = z.infer<typeof healthResponseSchema>;
 
+export const SERVER_PROFILES = ['cloud', 'hub'] as const;
+export type ServerProfile = (typeof SERVER_PROFILES)[number];
+
+/**
+ * What a settings screen shows about the server. Fields for the fallback extractor, embeddings
+ * and job runs join with those workers; older apps ignore fields they don't know.
+ */
+export const statusResponseSchema = z.object({
+  serverId: z.uuid(),
+  version: z.string(),
+  profile: z.enum(SERVER_PROFILES),
+  serverTime: instant,
+  devices: z.array(
+    z.object({
+      id: z.uuid(),
+      name: z.string(),
+      platform: z.enum(DEVICE_PLATFORMS),
+      extractionMode: z.enum(EXTRACTION_MODES),
+      lastSeenAt: instant.nullable(),
+    }),
+  ),
+  /** Raw logs not deleted, by the status that needs attention. */
+  logs: z.object({ waiting: z.int(), failed: z.int() }),
+});
+export type StatusResponse = z.infer<typeof statusResponseSchema>;
+
 export const registerDeviceRequestSchema = z.object({
   deviceId: z.uuid(),
   name: z.string().trim().min(1).max(100),

@@ -6,6 +6,7 @@ import {
   PROTOCOL_VERSION,
   type PullResponse,
   type PushResponse,
+  statusResponseSchema,
 } from '@avchetan/sync/protocol';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createApp } from './app';
@@ -27,7 +28,14 @@ beforeEach(async () => {
   const clock = createMonotonicClock({ source: () => wallMs });
   await database.migrate(() => clock.now());
   const identity = await loadServerIdentity(database.db, TOKEN);
-  app = createApp({ db: database.db, identity, clock, version: 'test', nowMs: () => wallMs });
+  app = createApp({
+    db: database.db,
+    identity,
+    clock,
+    version: 'test',
+    profile: 'hub',
+    nowMs: () => wallMs,
+  });
 });
 
 afterEach(() => database.close());
@@ -274,6 +282,48 @@ describe('push and pull', () => {
     expect(first.changes[1]?.row).toEqual(task);
     expect(second.hasMore).toBe(false);
     expect(second.changes.map((c) => c.row.content)).toEqual(['2']);
+  });
+});
+
+describe('status', () => {
+  const status = () => app.request('/v1/status', { headers: headers() });
+
+  it('needs the token', async () => {
+    await register();
+
+    const response = await app.request('/v1/status', {
+      headers: headers({ Authorization: 'Bearer wrong' }),
+    });
+
+    expect(response.status).toBe(401);
+  });
+
+  it('describes the server, its devices and the entries that need attention', async () => {
+    await register();
+    const waiting = await clientRow('waiting');
+    const failed = { ...(await clientRow('failed')), status: 'error' };
+    const deleted = { ...(await clientRow('deleted')), deletedAt: NOW };
+    await push([waiting, failed, deleted].map((row) => ({ table: 'raw_logs', row })));
+
+    const response = await status();
+
+    expect(response.status).toBe(200);
+    const body = statusResponseSchema.parse(await response.json());
+    expect(body).toMatchObject({
+      version: 'test',
+      profile: 'hub',
+      logs: { waiting: 1, failed: 1 },
+    });
+    expect(body.devices).toEqual([
+      {
+        id: DEVICE,
+        name: 'Test',
+        platform: 'windows',
+        extractionMode: 'self',
+        // The monotonic clock moves on a millisecond per reading.
+        lastSeenAt: expect.stringMatching(/^2026-10-26T10:00:00\.\d{3}Z$/),
+      },
+    ]);
   });
 });
 

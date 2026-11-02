@@ -28,7 +28,13 @@ async function main(): Promise<void> {
     );
   }
 
-  const app = createApp({ db: database.db, identity, clock, version: VERSION });
+  const app = createApp({
+    db: database.db,
+    identity,
+    clock,
+    version: VERSION,
+    profile: env.SERVER_PROFILE,
+  });
   const server = serve({ fetch: app.fetch, hostname: env.BIND_HOST, port: env.PORT }, (address) =>
     log.info('listening', {
       port: address.port,

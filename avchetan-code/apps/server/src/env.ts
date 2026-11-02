@@ -1,4 +1,5 @@
 import type { LogLevel } from '@avchetan/shared';
+import { SERVER_PROFILES } from '@avchetan/sync/protocol';
 import { z } from 'zod';
 
 const LOG_LEVELS = ['debug', 'info', 'warn', 'error'] as const satisfies readonly LogLevel[];
@@ -8,7 +9,7 @@ const envSchema = z
     DB_DRIVER: z.enum(['postgres', 'pglite']).default('postgres'),
     DATABASE_URL: z.string().min(1).optional(),
     PGLITE_DATA_DIR: z.string().min(1).default('./pglite-data'),
-    SERVER_PROFILE: z.enum(['cloud', 'hub']).default('cloud'),
+    SERVER_PROFILE: z.enum(SERVER_PROFILES).default('cloud'),
     SYNC_TOKEN: z.string().min(32).optional(),
     PORT: z.coerce.number().int().min(1).max(65_535).default(8787),
     BIND_HOST: z.string().min(1).default('0.0.0.0'),

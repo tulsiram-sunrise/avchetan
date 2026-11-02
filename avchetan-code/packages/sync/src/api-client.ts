@@ -13,6 +13,8 @@ import {
   pushResponseSchema,
   type RegisterDeviceRequest,
   registerDeviceResponseSchema,
+  type StatusResponse,
+  statusResponseSchema,
 } from './protocol';
 
 const TIMEOUT_MS = 30_000;
@@ -97,6 +99,9 @@ export function createApiClient({ fetch, baseUrl, token, deviceId }: ApiClientOp
       const query = new URLSearchParams({ cursor: String(cursor) });
       if (limit !== undefined) query.set('limit', String(limit));
       return send(fetch, `${baseUrl}/v1/sync/pull?${query}`, options(), pullResponseSchema);
+    },
+    status(): Promise<StatusResponse> {
+      return send(fetch, `${baseUrl}/v1/status`, options(), statusResponseSchema);
     },
   };
 }
