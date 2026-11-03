@@ -9,7 +9,6 @@ Questions not yet decided. When answered: record the answer here (or in an ADR i
 | Q3 | Offline semantic search on clients via `sqlite-vec`? Needs on-device embeddings (local model or cached vectors pulled from the server). | Not now; server-only | — |
 | Q5 | Sync private (`!private`) entries to the server? | Yes by default (own server), toggle to exclude | Phase 7 |
 | Q6 | SQLite encryption at rest (SQLCipher) on desktop/mobile? | Rely on OS disk encryption for now | — |
-| Q8 | Cloud hosting recommendation for the cloud guide (see ADR-0014). | Decide during Phase 5 | Phase 5 end |
 | Q9 | Should Ask mode be able to *propose* writes (e.g. "create task?") in Phase 3, or only after the command registry exists (Phase 6)? | Phase 6 | — |
 | Q10 | Display units: metric only, or allow imperial display (lb/mi)? Storage stays metric. | Metric; setting later | — |
 | Q11 | Daily brief time and whether to also send a morning plan (today's tasks + yesterday's rollovers). | 21:00 brief; morning plan as Phase 6 stretch | Phase 6 |
@@ -43,3 +42,4 @@ Questions not yet decided. When answered: record the answer here (or in an ADR i
 | R18 (Q2) | Timezone and day boundary | A day ends at midnight. The zone follows Windows, or a choice in Settings | 2026-10-30 |
 | R19 (Q21) | Where the main window's writes run | In the dock, through named actions (`apps/desktop/src/services/actions.ts`), so one clock issues every timestamp | 2026-10-30 |
 | R20 (Q7) | Which models go in `presets.json` | Keep the current presets. Eval on 37 fixtures: Gemini `gemini-3.5-flash-lite` 100%; Groq `openai/gpt-oss-20b` 86.5–89.2%; on a CPU, Ollama `granite4.2:8b` 64.9–70.3% and `qwen3.5:9b` 64.9% (slower, with duplicated items). Use `granite4.2:8b` on CPU-only PCs and re-measure Ollama on a working GPU. Groq's follow-up is in the [roadmap](roadmap.md#later--unscheduled) | 2026-10-31 |
+| R21 (Q8) | Cloud hosting recommendation | Supabase Free (session pooler, verified TLS) + Render Free web service from the Dockerfile; Neon for light use; a VM with Compose + Caddy as the own-server path ([ADR-0023](decisions/0023-free-cloud-supabase-render.md)) | 2026-11-03 |
