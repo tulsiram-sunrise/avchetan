@@ -111,6 +111,7 @@ Failures: exponential backoff 2 s → 5 min with jitter; reset on success or net
 
 - New device: `POST /v1/devices/register` (name, platform) → returns `deviceId` (or device generates UUIDv7 and registers it). Pull from cursor 0.
 - "Reset local data": wipe DB, keep device ID, pull from 0. Unpushed outbox items are exported to a JSON file first.
+- **Moving to another server:** the engine remembers the `serverId` from `/v1/health`. When a device that has synced before sees a different one (a cloud server, a rebuilt hub), it re-points the outbox at every row of every synced table, tombstones included (`store.sync.enqueueEverything()`), then pulls from 0. The new server gets the device's whole history. Rows it already has from other devices settle by LWW.
 
 ## Schema evolution
 

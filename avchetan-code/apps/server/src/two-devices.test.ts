@@ -367,6 +367,37 @@ describe('two devices and a server', () => {
     expect((await loadSyncStatus(store)).state).toBe('not_configured');
   });
 
+  it('sends its whole history to a new server it moves to', async () => {
+    let target = serverFetch;
+    const phone = await device((input, init) => target(input, init));
+    await capture(phone, 'Walked to the park');
+    await phone.engine.syncNow();
+
+    // A fresh server (a cloud one, or a rebuilt hub) with the same token.
+    const fresh = await openTestDatabase();
+    const clock = createMonotonicClock({ source: () => serverMs });
+    await fresh.migrate(() => clock.now());
+    const app = createApp({
+      db: fresh.db,
+      identity: await loadServerIdentity(fresh.db, TOKEN),
+      clock,
+      version: 'test',
+      profile: 'cloud',
+      nowMs: () => serverMs,
+      pairing: { urls: () => [URL], tokenFromEnv: true },
+    });
+    target = (input, init) => Promise.resolve(app.fetch(new Request(input, init)));
+    try {
+      await phone.engine.syncNow();
+      const laptop = await device(target);
+      await laptop.engine.syncNow();
+      const contents = await laptop.store.db.query.rawLogs.findMany();
+      expect(contents.map((log) => log.content)).toEqual(['Walked to the park']);
+    } finally {
+      await fresh.close();
+    }
+  });
+
   it('uses the next address when the first is down', async () => {
     const phone = await device(async (input, init) => {
       if (String(input).startsWith('https://down.test')) throw new TypeError('no route');

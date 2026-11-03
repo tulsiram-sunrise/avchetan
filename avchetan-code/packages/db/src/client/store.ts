@@ -16,7 +16,7 @@ import {
   type SyncStateKey,
   setSyncState,
 } from './local';
-import { ackOutbox, listOutbox, rejectOutbox, stuckOutboxCount } from './outbox';
+import { ackOutbox, enqueueEverything, listOutbox, rejectOutbox, stuckOutboxCount } from './outbox';
 import * as queries from './queries';
 import { activitiesRepo } from './repos/activities';
 import { categoriesRepo } from './repos/categories';
@@ -112,6 +112,8 @@ export async function openClientStore(options: OpenClientStoreOptions) {
       rejectOutbox: (entries: Parameters<typeof rejectOutbox>[1]) =>
         database.write((tx) => rejectOutbox(tx, entries)),
       stuckCount: () => stuckOutboxCount(database.db),
+      /** Queues every row again, for a server that has none of them. */
+      enqueueEverything: (): Promise<void> => write((tx) => enqueueEverything(tx, clock.now())),
       applyRemote: (changes: readonly RemoteChange[]): Promise<ApplyResult> =>
         database.write((tx) => applyRemoteChanges(tx, changes)),
       /** One pulled page and its cursor, together: a crash can't skip or repeat part of a page. */

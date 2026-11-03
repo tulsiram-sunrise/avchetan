@@ -1,7 +1,7 @@
 import { and, asc, count, eq, gte, lt, sql } from 'drizzle-orm';
 import { syncOutbox } from '../schema/sqlite/tables';
 import type { ClientDb, Tx } from './database';
-import type { SyncedTableName } from './synced';
+import { SYNCED_TABLES, type SyncedTableName } from './synced';
 
 /** After this many rejections a change waits for the user instead of being sent again. */
 export const MAX_OUTBOX_ATTEMPTS = 10;
@@ -84,4 +84,20 @@ export async function removeOutboxEntry(
   await tx
     .delete(syncOutbox)
     .where(and(eq(syncOutbox.tableName, tableName), eq(syncOutbox.recordId, recordId)));
+}
+
+/**
+ * Points the outbox at every row of every synced table, deleted ones included. A device that
+ * moves to a new server (a cloud server, a rebuilt hub) sends its whole history this way;
+ * pointers already waiting keep their place and attempts.
+ */
+export async function enqueueEverything(tx: Tx, enqueuedAt: string): Promise<void> {
+  for (const [tableName, table] of Object.entries(SYNCED_TABLES)) {
+    await tx.run(
+      sql`insert into ${syncOutbox} (table_name, record_id, enqueued_at, attempts)
+          select ${tableName}, id, ${enqueuedAt}, 0 from ${table}
+          where true -- SQLite needs a WHERE before ON CONFLICT in INSERT … SELECT
+          on conflict do nothing`,
+    );
+  }
 }

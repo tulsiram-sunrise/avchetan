@@ -98,9 +98,14 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
     return null;
   }
 
-  /** A new server has none of this history, so pulling starts again from the beginning. */
+  /**
+   * A different server knows nothing of what the last one held: pull from the beginning, and
+   * push every row again (last write wins, so rows it has from other devices settle as usual).
+   */
   async function followServer(serverId: string): Promise<void> {
-    if ((await store.sync.getState('server_id')) === serverId) return;
+    const previous = await store.sync.getState('server_id');
+    if (previous === serverId) return;
+    if (previous) await store.sync.enqueueEverything();
     await store.sync.setState('server_id', serverId);
     await store.sync.setState('pull_cursor', '0');
   }

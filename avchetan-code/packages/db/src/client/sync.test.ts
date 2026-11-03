@@ -69,6 +69,20 @@ describe('outbox', () => {
     expect(await store.sync.ackOutbox(inFlight)).toBe(0);
     expect((await store.sync.listOutbox()).some((e) => e.recordId === task.id)).toBe(true);
   });
+
+  it('queues every row again, deleted ones too, for a new server', async () => {
+    const { store } = await openTestStore();
+    const kept = await store.write((tx) => store.repos.tasks.create(tx, { title: 'Buy milk' }));
+    const gone = await store.write((tx) => store.repos.tasks.create(tx, { title: 'Typo' }));
+    await store.write((tx) => store.repos.tasks.softDelete(tx, gone.id));
+    await store.sync.ackOutbox(await store.sync.listOutbox());
+    expect(await store.sync.listOutbox()).toEqual([]);
+
+    await store.sync.enqueueEverything();
+
+    const ids = (await store.sync.listOutbox(1000)).map((entry) => entry.recordId);
+    expect(ids).toEqual(expect.arrayContaining([kept.id, gone.id, seedCategoryId('work')]));
+  });
 });
 
 describe('applyRemoteChanges (LWW)', () => {
