@@ -13,6 +13,7 @@ import { ApiError } from './api-error';
 import { createApp } from './app';
 import { createHubAsk, type HubAsk } from './ask/hub-ask';
 import { loadServerIdentity } from './auth';
+import { startHubSnapshots } from './backups/snapshots';
 import { openPglite, openPostgres } from './db/client';
 import { createEmbedder, type Embedder, embeddingModelId } from './embeddings/embedder';
 import { enqueueEmbedJobs, rawLogsTouchedBy } from './embeddings/jobs';
@@ -155,6 +156,16 @@ async function main(): Promise<void> {
     log.info('search by meaning is off', { reason: 'no_embedding_provider' });
   }
 
+  const stopSnapshots =
+    env.BACKUPS_ENABLED && database.dump
+      ? startHubSnapshots({
+          dump: database.dump,
+          dir: env.BACKUP_DIR,
+          scheduler: new TimerScheduler(),
+          now: () => clock.now(),
+        })
+      : null;
+
   const server = serve({ fetch: app.fetch, hostname: env.BIND_HOST, port: env.PORT }, (address) =>
     log.info('listening', {
       port: address.port,
@@ -166,6 +177,7 @@ async function main(): Promise<void> {
   const shutDown = () => {
     device?.stop();
     embedder?.stop();
+    stopSnapshots?.();
     server.close(() => {
       void database.close().finally(() => process.exit(0));
     });

@@ -92,7 +92,7 @@ Model IDs are never hard-coded; the setup wizard lists models installed in Ollam
 ### Operational notes
 
 - **PC sleep:** while the hub sleeps, phones queue locally. The wizard offers to keep the server running in the tray and to prevent sleep while plugged in; Wake-on-LAN is out of scope.
-- **Backups:** the hub is the sync point, but every device also holds a full copy. The hub takes a nightly snapshot of its data directory (PGlite) or `pg_dump` (Postgres), keeping 7.
+- **Backups:** the hub is the sync point, but every device also holds a full copy. A PGlite hub writes a snapshot of its data directory once per local day (`dumpDataDir('gzip')` → `BACKUP_DIR/hub-YYYY-MM-DD.tar.gz`, outside the data directory so snapshots never nest), keeping 7; `BACKUPS_ENABLED=false` turns it off, and `restore:hub <file>` unpacks one into an empty `PGLITE_DATA_DIR`. A Postgres server uses `pg_dump` instead.
 - **Scale:** PGlite is single-connection; fine for one user. Switching a hub to real Postgres later = set `DB_DRIVER=postgres` and run the built-in `export → import` (or just bootstrap a fresh server: devices re-push everything they hold).
 - **Moving from Home Hub to Cloud:** point devices at the new server via re-pairing; devices bootstrap from cursor 0 and push their outbox; or migrate the DB dump.
 

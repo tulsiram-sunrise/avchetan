@@ -15,6 +15,8 @@ export type ServerDatabase = {
   db: ServerDb;
   migrate: (now: () => string) => Promise<void>;
   close: () => Promise<void>;
+  /** PGlite only: the data folder as a gzipped tarball, for snapshots. */
+  dump?: () => Promise<Blob>;
 };
 
 /** Embedded Postgres in a folder, or in memory when no folder is given (tests). */
@@ -35,6 +37,7 @@ export async function openPglite(dataDir?: string): Promise<ServerDatabase> {
       await runMigrations(driver, pgMigrations, { now });
     },
     close: () => client.close(),
+    dump: () => client.dumpDataDir('gzip'),
   };
 }
 

@@ -6,6 +6,7 @@ import { tauriActionBus } from '../native/action-bus';
 import { onAppEvent } from '../native/events';
 import { serveActions } from '../services/actions';
 import { ensureAutostartDefault } from '../services/autostart';
+import { startBackups } from '../services/data';
 import { loadDraft } from '../services/draft';
 import { announce } from '../services/extraction';
 import { DEFAULT_HOTKEY, savedHotkey } from '../services/hotkey';
@@ -49,6 +50,7 @@ void bootstrap(
     void settleNativeState(services);
     services.extraction.start();
     services.sync.start();
+    startBackups(services);
     // A changed model or key may clear whatever the queue is waiting for.
     onAppEvent('logs:changed', ({ tables }) => {
       if (!tables.includes('settings')) return;

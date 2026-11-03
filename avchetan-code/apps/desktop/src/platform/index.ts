@@ -8,6 +8,7 @@ import {
 } from '@avchetan/shared';
 import { invoke } from '@tauri-apps/api/core';
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
+import { createDataFiles, type DataFiles } from '../native/data-files';
 import type { Invoke } from '../native/ipc';
 import { TauriSecretStore } from '../native/secrets';
 import { createShell, type Shell } from '../native/shell';
@@ -24,6 +25,7 @@ export type Platform = {
   /** Goes through Rust: webview fetch would be blocked by CORS. */
   fetch: HttpFetch;
   shell: Shell;
+  files: DataFiles;
 };
 
 export function createTauriPlatform(call: Invoke = invoke): Platform {
@@ -35,5 +37,6 @@ export function createTauriPlatform(call: Invoke = invoke): Platform {
     scheduler: new TimerScheduler(),
     fetch: tauriFetch,
     shell: createShell(call),
+    files: createDataFiles(call),
   };
 }

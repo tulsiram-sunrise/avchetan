@@ -10,6 +10,7 @@ import NetInfo from '@react-native-community/netinfo';
 import { fetch as expoFetch } from 'expo/fetch';
 import * as SecureStore from 'expo-secure-store';
 import { openDatabaseAsync } from 'expo-sqlite';
+import { createDataFiles, type DataFiles } from './data-files';
 import { createExpoSqliteExecutor } from './expo-sqlite';
 import { NetInfoMonitor } from './netinfo-monitor';
 import { ExpoSecretStore } from './secure-store';
@@ -23,6 +24,7 @@ export type Platform = {
   scheduler: Scheduler;
   /** Streams responses, which React Native's global fetch can't. */
   fetch: HttpFetch;
+  files: DataFiles;
 };
 
 const DATABASE_NAME = 'avchetan.db';
@@ -46,5 +48,6 @@ export async function createExpoPlatform(): Promise<Platform> {
     network: new NetInfoMonitor(NetInfo.addEventListener),
     scheduler: new TimerScheduler(),
     fetch: withStandardFailures(expoFetch as HttpFetch),
+    files: createDataFiles(DATABASE_NAME),
   };
 }

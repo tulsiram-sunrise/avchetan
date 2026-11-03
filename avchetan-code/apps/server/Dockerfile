@@ -28,12 +28,13 @@ RUN pnpm --filter @avchetan/server build \
 FROM node:24.22.1-slim
 ENV NODE_ENV=production \
   PGLITE_DATA_DIR=/data \
+  BACKUP_DIR=/backups \
   PORT=8787 \
   BIND_HOST=0.0.0.0
 WORKDIR /app
 COPY --from=build /out ./
-RUN mkdir /data && chown node:node /data
-VOLUME /data
+RUN mkdir /data /backups && chown node:node /data /backups
+VOLUME ["/data", "/backups"]
 USER node
 EXPOSE 8787
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \

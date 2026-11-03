@@ -39,6 +39,10 @@ pub fn run() {
         })
         .on_window_event(windows::on_window_event)
         .invoke_handler(tauri::generate_handler![
+            commands::data::backup_create,
+            commands::data::backup_list,
+            commands::data::data_folder_open,
+            commands::data::export_write,
             commands::db::db_open,
             commands::db::db_run,
             commands::db::db_values,

@@ -1,6 +1,12 @@
 /** Client (SQLite) entry point: `@avchetan/db/sqlite`. */
 export { type ApplyResult, applyRemoteChanges, type RemoteChange } from './client/apply-remote';
 export {
+  BACKUPS_KEPT,
+  backupFileName,
+  type DailyBackupOptions,
+  startDailyBackups,
+} from './client/backup';
+export {
   type ClientDatabase,
   type ClientDb,
   type ClientSchema,
@@ -8,6 +14,15 @@ export {
   type SqliteExecutor,
   type Tx,
 } from './client/database';
+export {
+  collectExport,
+  type DataExport,
+  EXPORT_FORMAT,
+  EXPORT_VERSION,
+  type ExportFile,
+  exportFiles,
+  toCsv,
+} from './client/export';
 export {
   getSetting,
   getSyncState,

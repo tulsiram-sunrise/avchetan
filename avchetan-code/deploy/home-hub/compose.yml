@@ -33,9 +33,12 @@ services:
       - "host.docker.internal:host-gateway"
     volumes:
       - hub-data:/data
+      # A snapshot of hub-data each day, the newest 7 kept.
+      - hub-backups:/backups
     ports:
       # The desktop app reaches a hub over plain HTTP on 8787 only.
       - "8787:8787"
 
 volumes:
   hub-data:
+  hub-backups:

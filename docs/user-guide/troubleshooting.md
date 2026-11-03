@@ -61,5 +61,23 @@ Start with **Settings → Setup check**. It tests everything and tells you what 
 ## dock_unavailable
 **"The capture box isn't responding."** Your change wasn't saved. Right-click the tray icon → **Quit Avchetan**, start it again, and repeat the change.
 
+## backup_failed
+**"Couldn't back up the database."** Your entries are fine; only the copy failed. Check that the disk (or the phone) has free space, then try **Back up now** in **Your data**. Avchetan tries again every hour on its own.
+
+## backup_invalid
+**"Invalid backup name."** This is a bug in Avchetan, not something you did. Please report it; your data is not affected.
+
+## export_failed
+**"Could not save the export."** Check that the disk has free space. On Android, pick a folder you can write to, such as *Downloads*, and try again.
+
+## export_invalid
+**"Invalid export file name."** This is a bug in Avchetan, not something you did. Please report it; your data is not affected.
+
+## open_failed
+**"Couldn't open the folder."** Open File Explorer and go to the folder by hand: `%APPDATA%\app.avchetan\backups` for backups, or `Documents\Avchetan exports` for exports.
+
+## restore_target_not_empty
+**"The data folder is not empty."** A hub restore never overwrites data. Stop the hub, rename the `pglite-data` folder, and run the restore again ([Back up and restore](backup-and-restore.md#restore)).
+
 ## Entries stay "pending"
 Normal when offline or when the hub is unreachable. They are processed automatically later. If they stay pending while everything is connected, open **Review** in the main window: it shows the reason for each entry.

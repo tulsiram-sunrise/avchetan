@@ -3,6 +3,7 @@
 **/dist
 **/.turbo
 **/pglite-data
+**/pglite-backups
 **/.env
 **/.env.*
 !**/.env.example

@@ -6,6 +6,7 @@ import {
 } from '@avchetan/shared';
 import { type ApplyResult, applyRemoteChanges, type RemoteChange } from './apply-remote';
 import { createClientDatabase, type SqliteExecutor, type Tx } from './database';
+import { collectExport, type DataExport } from './export';
 import {
   getSyncState,
   insertAskEntry,
@@ -96,6 +97,9 @@ export async function openClientStore(options: OpenClientStoreOptions) {
     queries,
     recordLlmRun: (run: Omit<NewLlmRun, 'id' | 'createdAt'>): Promise<void> =>
       write((tx) => insertLlmRun(tx, { ...run, id: newId(), createdAt: clock.now() })),
+    /** Everything for "Export my data" (see export.ts for what is left out). */
+    exportData: (): Promise<DataExport> =>
+      collectExport(database.db, { exportedAt: clock.now(), deviceId }),
     recordAsk: (entry: Omit<NewAskEntry, 'id' | 'createdAt'>): Promise<void> =>
       write((tx) => insertAskEntry(tx, { ...entry, id: newId(), createdAt: clock.now() })),
     sync: {

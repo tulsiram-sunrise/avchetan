@@ -15,6 +15,9 @@ const envSchema = z
     DB_DRIVER: z.enum(['postgres', 'pglite']).default('postgres'),
     DATABASE_URL: z.string().min(1).optional(),
     PGLITE_DATA_DIR: z.string().min(1).default('./pglite-data'),
+    /** Daily snapshots of the PGlite folder, the newest 7 kept. Outside the data folder. */
+    BACKUPS_ENABLED: flag,
+    BACKUP_DIR: z.string().min(1).default('./pglite-backups'),
     SERVER_PROFILE: z.enum(SERVER_PROFILES).default('cloud'),
     SYNC_TOKEN: z.string().min(32).optional(),
     PORT: z.coerce.number().int().min(1).max(65_535).default(8787),

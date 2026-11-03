@@ -6,6 +6,7 @@ import { AppState } from 'react-native';
 import { createExpoPlatform, type Platform } from './platform';
 import { refreshAll } from './query-client';
 import { type CaptureService, createCaptureService } from './services/capture';
+import { startBackups } from './services/data';
 import { createExtractionService } from './services/extraction';
 import { createSyncService } from './services/sync';
 
@@ -32,6 +33,7 @@ async function openAppServices(platform: Platform): Promise<AppServices> {
     else void sync.syncNow();
   });
   const sync = createSyncService(store, platform, extraction);
+  startBackups({ store, platform });
   return {
     platform,
     store,
