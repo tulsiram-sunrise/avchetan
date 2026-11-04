@@ -4,7 +4,7 @@ Anyone should be able to install and self-host Avchetan ([ADR-0017](../decisions
 
 ## Onboarding rules
 
-1. **Guided first run.** First launch on any device opens the setup wizard: choose mode (*Just this device* / *Home Hub on this PC* / *Connect to my hub or server*) → AI models → (hub) pair phone → done. Every step has "Skip, I'll do it later" except where data safety needs it.
+1. **Guided first run.** First launch on any device opens the setup wizard: choose mode (*Just this PC* or *Just this phone* / *Home Hub on this PC*, desktop only / *Connect to my hub or server*) → AI models → (hub) pair phone → done. Every step has "Skip, I'll do it later" except where data safety needs it.
 2. **No terminal** for Standalone or Home Hub. If a feature would need one, design a UI for it or move it to the Cloud guide.
 3. **Detect, don't ask.** Auto-detect Ollama and its installed models, the timezone, the LAN IP and the Tailscale hostname. Ask only when detection fails.
 4. **Explain consequences in one sentence** at each choice ("Your entries will be sent to Google to be organized").

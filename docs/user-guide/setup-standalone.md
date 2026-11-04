@@ -8,10 +8,9 @@
 ## Steps (Windows)
 
 1. Download and run the Avchetan installer.
-2. On the welcome screen, choose **Just this device**.
-3. AI models: if Ollama is installed, Avchetan finds it and suggests models. Click **Download suggested models** if any are missing. Otherwise choose a provider and paste your API key ([details](ai-models.md)).
-4. Choose your shortcut (default **Ctrl+Shift+Space**).
-5. Click **Finish**.
+2. On the **Welcome to Avchetan** screen, choose **Just this PC**.
+3. Choose the AI that organizes your entries: Ollama on this PC if you have it, or a provider with an API key ([details](ai-models.md)).
+4. Click **Finish**. The shortcut is **Ctrl+Shift+Space**; you can change it in **Settings**.
 
 ## Check it worked
 
@@ -19,8 +18,8 @@ Press **Ctrl+Shift+Space**, type `Walked 30 minutes, remind me to buy milk tomor
 
 ## Steps (Android)
 
-1. Install the Avchetan app → **Just this device**.
-2. AI models: choose a provider and paste your API key (phones can't run local models).
+1. Install the Avchetan app and open it. On **Welcome to Avchetan**, tap **Just this phone**.
+2. Choose a provider and paste your API key ([details](ai-models.md)).
 
 ## Later
 

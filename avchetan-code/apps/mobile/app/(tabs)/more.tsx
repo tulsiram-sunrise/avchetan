@@ -29,6 +29,14 @@ export default function MoreScreen() {
         <Text className="text-base text-ink">Your data</Text>
         <Text className="text-sm text-inkMuted">Export everything, and daily backups.</Text>
       </Pressable>
+      <Pressable
+        accessibilityRole="button"
+        className="border-b border-line bg-surfaceRaised p-4"
+        onPress={() => router.push('/setup')}
+      >
+        <Text className="text-base text-ink">Run setup again</Text>
+        <Text className="text-sm text-inkMuted">Choose how this phone syncs and organizes.</Text>
+      </Pressable>
       <CaptureButton />
     </View>
   );
