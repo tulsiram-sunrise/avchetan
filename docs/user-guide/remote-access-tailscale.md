@@ -15,6 +15,8 @@ Tailscale creates a private, encrypted network between your own devices. It's fr
    It allows only the hub's port, and only from Tailscale addresses (`100.64.0.0/10`), whatever network the PC is on.
 4. Pair your phone again ([Pair your phone](pair-your-phone.md)), so it learns the PC's Tailscale address as well. The hub adds it to the pairing code by itself while Tailscale is running. The phone uses your home Wi-Fi address when at home and Tailscale everywhere else, automatically.
 
+   Or add it by hand: click the Tailscale icon in the PC's taskbar and copy **This device**'s address (`100.x.y.z`). On the phone, open **More → Sync**, enter `http://100.x.y.z:8787` as **Second address**, and tap **Save**. The saved token stays.
+
 ## Check it worked
 
 1. On the phone, turn off Wi-Fi so it uses mobile data, and check that the Tailscale app shows **Connected**.
