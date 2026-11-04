@@ -1,8 +1,7 @@
 import type { Activity, RawLog, Task } from '@avchetan/db/sqlite';
-import { formatTime } from '@avchetan/shared';
+import { describeError, formatTime, parseLastError } from '@avchetan/shared';
 import { router } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
-import { parseLastError } from '../services/last-error';
 import { StatusBadge } from './status-badge';
 import { TaskCheck } from './task-row';
 
@@ -22,7 +21,7 @@ export function EntryRow(props: { rawLog: RawLog; activities: Activity[]; tasks:
       <Text className="text-sm text-ink">{rawLog.content}</Text>
       {rawLog.lastError ? (
         <Text numberOfLines={2} className="text-xs text-danger">
-          {parseLastError(rawLog.lastError).message}
+          {describeError(parseLastError(rawLog.lastError)).message}
         </Text>
       ) : null}
       {activities.map((activity) => (

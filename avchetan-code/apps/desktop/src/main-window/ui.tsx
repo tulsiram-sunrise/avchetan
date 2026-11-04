@@ -1,4 +1,4 @@
-import { toAppError } from '@avchetan/shared';
+import { describeError, toAppError } from '@avchetan/shared';
 import { isConnectionError } from '@avchetan/sync';
 import { type ReactNode, useState } from 'react';
 import { HelpLink, SetupCheckLink } from '../help-link';
@@ -31,7 +31,7 @@ export function ActionError(props: { errors: readonly unknown[] }) {
   const appError = toAppError(error);
   return (
     <p role="alert" className="text-sm text-danger">
-      {appError.message}. <HelpLink code={appError.code} />
+      {describeError(appError).message}. <HelpLink code={appError.code} />
       {isConnectionError(appError.code) ? (
         <>
           {' · '}

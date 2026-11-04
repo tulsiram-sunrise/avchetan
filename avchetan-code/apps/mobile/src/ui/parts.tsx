@@ -1,4 +1,4 @@
-import { createLogger, toAppError } from '@avchetan/shared';
+import { createLogger, describeError, helpSection, toAppError } from '@avchetan/shared';
 import { isConnectionError } from '@avchetan/sync';
 import { router } from 'expo-router';
 import { Pressable, Text, TextInput, type TextInputProps, View } from 'react-native';
@@ -45,13 +45,16 @@ export function Field({ label, ...input }: TextInputProps & { label: string }) {
   );
 }
 
+/** "Help" link for an error code (ERROR_HELP); nothing when the message is the whole fix. */
 export function HelpLink({ code }: { code: string }) {
+  const section = helpSection(code);
+  if (!section) return null;
   return (
     <Text
       accessibilityRole="link"
       className="text-accent underline"
       onPress={() => {
-        openHelp(code).catch(() => log.warn('could not open help', { code }));
+        openHelp(section).catch(() => log.warn('could not open help', { section }));
       }}
     >
       Help
@@ -75,7 +78,9 @@ export function SetupCheckLink() {
 /** Any failed action: what went wrong, and where the fix is. */
 export function Failure({ error }: { error: unknown }) {
   if (!error) return null;
-  const { code, message } = toAppError(error);
+  const appError = toAppError(error);
+  const { code } = appError;
+  const { message } = describeError(appError);
   return (
     <Text accessibilityRole="alert" className="text-sm text-danger">
       {message}. <HelpLink code={code} />

@@ -37,6 +37,40 @@ Problems come first, each with its fix and a **Help** link to its section below.
 ## sync_issue
 **"Changes keep failing to sync."** The server refused these changes ten times, so they're waiting and nothing is lost. Check that both devices run the same version of Avchetan, then report it if it doesn't clear.
 
+## not_configured
+**"Set up Sync on this device first."** Pairing a phone, changing the token and asking your hub all need this device connected to a hub or server. On the PC, fill in **Settings → Sync**; on the phone, use **More → Sync → Scan pairing code** ([Pair your phone](pair-your-phone.md)).
+
+## invalid_pairing_code
+**"This isn't an Avchetan pairing code."** The camera read a different QR code. On the PC, open **Settings → Sync → Pair a phone** (or the checklist in **Home Hub on this PC**) and scan the code shown there.
+
+## wrong_server
+**"A different Avchetan server answered at that address."** The address in the pairing code now belongs to another Avchetan hub, for example after you set up a new hub on another PC that got the same address. Show the pairing code again on the PC whose hub you want, and scan that one.
+
+## no_pairing_address
+**"The hub doesn't know an address a phone can reach."** The hub found no Wi-Fi or Tailscale address on its PC. Check that the PC is connected to your home Wi-Fi (or Ethernet), then show the code again. Away from home, start Tailscale on the PC first ([Use your phone away from home](remote-access-tailscale.md)).
+
+## token_from_env
+**"This server's token is set in its SYNC_TOKEN setting."** A server you run yourself (cloud, or `start:hub` from the source code) takes its token from the `SYNC_TOKEN` setting, so **Change token** can't replace it. Put a new token into `SYNC_TOKEN` where the server is set up, restart the server, then pair every device again.
+
+## protocol_unsupported
+**"This app and your hub or server are different versions."** Install the latest Avchetan on every device, and update the server if you run one yourself. Your entries wait on each device until they can sync.
+
+## rate_limited
+**"Your hub got too many requests from this device."** The hub accepts 60 requests a minute from one device. Avchetan waits and tries again by itself; nothing is lost. If it keeps happening, quit and restart Avchetan on that device.
+
+## server_error
+**"Your hub or server answered with an error"**, **"sent something unexpected"**, **"didn't accept the request"** or **"can't reach its database."**
+- Check that every device and the server run the same version of Avchetan.
+- Home Hub: open **Settings → Home Hub on this PC → Recent hub log** on the PC for the reason.
+- Cloud: open the server's log, and `https://<your-domain>/v1/health` in a browser.
+- Your changes wait on the device and sync once the server answers normally.
+
+## ask_unavailable
+**"Your hub can't answer questions right now."** The hub has just started, or has no model for answering. Wait a minute and ask again. If it keeps failing, open the Setup check: it shows whether the hub's Ollama runs and has its models. You can also let this device answer with its own model in **AI models**.
+
+## search_unavailable
+**"Your hub can't search by meaning right now."** The hub's search model isn't set up or didn't answer, often because Ollama isn't running on the hub's PC. Ask still works, searching by words instead. Open the Setup check to see which model is missing.
+
 ## llm_auth
 **"The provider rejected the API key"** or **"No API key is set for this provider."** Paste the key again in **Settings → AI models** and click **Test**. Your entries wait safely and are organized once the key works.
 
@@ -58,6 +92,9 @@ Problems come first, each with its fix and a **Help** link to its section below.
 ## llm_refused
 **"The model returned no answer."** The provider declined this entry or sent back nothing. Avchetan won't retry it by itself, as the answer would likely be the same. Your entry is still saved.
 
+## llm_context_overflow
+**"The request is too long for this model."** The entry and the instructions Avchetan sends with it don't fit in what the model can read at once. Avchetan first tries again with shorter instructions by itself. If an entry still fails, split it into shorter entries, or choose a model that reads longer text in **Settings → AI models**.
+
 ## hotkey_unavailable
 **"The shortcut is used by another app."** Choose another shortcut in **Settings → Shortcut**.
 
@@ -70,6 +107,12 @@ Problems come first, each with its fix and a **Help** link to its section below.
 
 ## db_query_failed
 **"Couldn't save this entry."** Your text stays in the box, so nothing is lost. Press Enter to try again. If it keeps failing, quit and restart Avchetan, then see [database_unavailable](#database_unavailable).
+
+## db_newer_than_app
+**"Your data was saved by a newer Avchetan."** A newer version of Avchetan updated this device's database, and this older version can't read it safely, so it doesn't touch it. Install the latest version of Avchetan; your entries are all there. If you restored an older app on purpose, keep the newer one instead.
+
+## secret_store_failed
+**"Couldn't reach this device's password store."** Avchetan keeps API keys and the sync token in Windows Credential Manager (on Android, the phone's keystore), never in its own files. Restart Avchetan. On Windows, if it keeps failing, restart the PC: the Credential Manager service may have stopped. Nothing is lost, but sync and cloud models wait until the key or token can be read.
 
 ## dock_unavailable
 **"The capture box isn't responding."** Your change wasn't saved. Right-click the tray icon → **Quit Avchetan**, start it again, and repeat the change.
@@ -106,6 +149,12 @@ Problems come first, each with its fix and a **Help** link to its section below.
 ## hub_token_missing
 **"The hub has no sync token yet."** Turn the hub off and on again in **Settings → Home Hub on this PC**. Avchetan makes a token when it turns the hub on.
 
+## hub_config_failed
+**"Couldn't save the hub's settings."** Avchetan writes them to `%APPDATA%\app.avchetan\hub\hub.json`. Check that the disk isn't full, and that a backup or sync tool (OneDrive, Dropbox) isn't locking that folder. Then try again.
+
+## hub_import_failed
+**"Couldn't copy the hub data."** Copying the `pglite-data` folder stopped partway, usually because the disk is full or another program has the folder open. Nothing was changed: the built-in hub still has no data, and the folder you chose is untouched. Make room on the disk, close the program that started the old hub, and try again.
+
 ## hub_import_not_hub_data
 **"That folder doesn't hold hub data."** Choose the folder named `pglite-data` itself, not the folder around it. For a hub started from the source code, it is `avchetan-code\apps\server\pglite-data`.
 
@@ -117,6 +166,9 @@ Problems come first, each with its fix and a **Help** link to its section below.
 
 ## hub_backup_invalid
 **"Not a hub backup"** or **"That backup is gone."** The file was renamed or deleted. Close and reopen **Hub backups** to see the backups that are there.
+
+## hub_backup_failed
+**"Couldn't read the hub's backups."** Avchetan couldn't open `%APPDATA%\app.avchetan\hub\backups`. Check that a backup or sync tool isn't locking it, then close and reopen **Hub backups**. The hub keeps making its daily backups regardless.
 
 ## hub_running
 **"Turn the hub off before using other hub data."** Click **Turn off the hub** first.
@@ -155,6 +207,12 @@ Problems come first, each with its fix and a **Help** link to its section below.
 
 ## database_password_wrong
 **Cloud server log: "The database rejected the password."** Reset the database password in Supabase (**Project Settings → Database**), and put the new one into `DATABASE_URL` in place of the old one.
+
+## other_errors
+**"Something inside Avchetan went wrong"**, or an error whose **Help** link brought you here. This is a bug in Avchetan, not something you did.
+1. Quit Avchetan (on Windows: right-click the tray icon → **Quit Avchetan**; on Android: close it from recent apps) and open it again.
+2. Run the [Setup check](#setup-check).
+3. If it happens again, report it on the project's GitHub page, with the error text and what you were doing. Don't include your entries or tokens.
 
 ## Entries stay "pending"
 Normal when offline or when the hub is unreachable. They are processed automatically later. If they stay pending while everything is connected, open **Review** in the main window: it shows the reason for each entry.

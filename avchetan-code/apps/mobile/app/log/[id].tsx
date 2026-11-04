@@ -1,6 +1,6 @@
 import { exerciseLines, metricsText } from '@avchetan/core';
 import type { Activity, RawLog } from '@avchetan/db/sqlite';
-import { formatDay, formatTime } from '@avchetan/shared';
+import { describeError, formatDay, formatTime, parseLastError } from '@avchetan/shared';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
@@ -11,7 +11,6 @@ import {
   useEditLog,
   useRequeueLog,
 } from '../../src/queries/writes';
-import { parseLastError } from '../../src/services/last-error';
 import { Button, Failure, Field, HelpLink } from '../../src/ui/parts';
 import { StatusBadge } from '../../src/ui/status-badge';
 import { TaskCheck } from '../../src/ui/task-row';
@@ -45,7 +44,9 @@ function ActivityItem({ activity }: { activity: Activity }) {
 
 function LastError({ rawLog }: { rawLog: RawLog }) {
   if (!rawLog.lastError) return null;
-  const { code, message } = parseLastError(rawLog.lastError);
+  const stored = parseLastError(rawLog.lastError);
+  const { code } = stored;
+  const { message } = describeError(stored);
   return (
     <Text accessibilityRole="alert" className="text-sm text-danger">
       {message}. <HelpLink code={code} />

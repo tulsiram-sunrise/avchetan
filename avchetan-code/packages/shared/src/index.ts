@@ -19,6 +19,14 @@ export {
   systemTimeZone,
   weekdayOf,
 } from './dates';
+export type { ErrorHelp, KnownErrorCode } from './error-help';
+export {
+  describeError,
+  ERROR_HELP,
+  helpSection,
+  OTHER_ERRORS_SECTION,
+  parseLastError,
+} from './error-help';
 export type { Result } from './errors';
 export {
   AppError,

@@ -45,6 +45,7 @@ jobs:
           EXPO_NO_TELEMETRY: 1
       - run: pnpm licenses:check
       - run: pnpm docs:check-links
+      - run: pnpm errors:check
 
   server-postgres:
     name: Server on Postgres, server image

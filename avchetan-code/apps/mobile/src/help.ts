@@ -4,6 +4,6 @@ import { Linking } from 'react-native';
 const GUIDE_URL = 'https://tulsiram-sunrise.github.io/avchetan/user-guide';
 
 /** Opens a troubleshooting section in the browser. */
-export function openHelp(code: string): Promise<void> {
-  return Linking.openURL(`${GUIDE_URL}/troubleshooting#${code}`);
+export function openHelp(section: string): Promise<void> {
+  return Linking.openURL(`${GUIDE_URL}/troubleshooting#${section}`);
 }

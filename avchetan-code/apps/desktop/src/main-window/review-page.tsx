@@ -1,9 +1,20 @@
 import type { RawLog } from '@avchetan/db/sqlite';
-import { formatDay, formatTime } from '@avchetan/shared';
+import { describeError, formatDay, formatTime, parseLastError } from '@avchetan/shared';
 import { StatusBadge } from '../dock/status-badge';
+import { HelpLink } from '../help-link';
 import { useLogsToReview } from '../queries/organize';
 import { EntryActions } from './timeline-items';
 import { panelClass } from './ui';
+
+/** Why the entry wasn't organized, with the fix. */
+function LastError({ lastError }: { lastError: string }) {
+  const stored = parseLastError(lastError);
+  return (
+    <p className="text-xs text-danger">
+      {describeError(stored).message}. <HelpLink code={stored.code} />
+    </p>
+  );
+}
 
 function LogLine({ rawLog }: { rawLog: RawLog }) {
   return (
@@ -14,8 +25,8 @@ function LogLine({ rawLog }: { rawLog: RawLog }) {
       </div>
       <p className="text-xs text-ink-muted">
         {formatDay(rawLog.capturedAt)}, {formatTime(rawLog.capturedAt)}
-        {rawLog.lastError ? ` · ${rawLog.lastError}` : ''}
       </p>
+      {rawLog.lastError ? <LastError lastError={rawLog.lastError} /> : null}
       <EntryActions rawLog={rawLog} />
     </li>
   );

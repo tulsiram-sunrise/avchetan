@@ -5,7 +5,7 @@ import {
   type ModelSlot,
   PROVIDER_ADAPTERS,
 } from '@avchetan/core';
-import { toAppError } from '@avchetan/shared';
+import { describeError, toAppError } from '@avchetan/shared';
 import { useState } from 'react';
 import { HelpLink } from '../help-link';
 import {
@@ -264,7 +264,7 @@ function AiModelsForm(props: {
       ) : null}
       {failedCode && failure ? (
         <p role="alert" className="text-sm text-danger">
-          {toAppError(failure).message}. <HelpLink code={failedCode} />
+          {describeError(toAppError(failure)).message}. <HelpLink code={failedCode} />
         </p>
       ) : null}
     </div>
