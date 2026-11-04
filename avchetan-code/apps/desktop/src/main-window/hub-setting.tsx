@@ -4,8 +4,9 @@ import { open } from '@tauri-apps/plugin-dialog';
 import { useState } from 'react';
 import { HelpLink } from '../help-link';
 import type { HubStatus } from '../native/hub';
-import { turnOffHub, turnOnHub } from '../services/hub';
+import { hubModels, turnOffHub, turnOnHub } from '../services/hub';
 import { useServices } from '../services-context';
+import { HubChecklist } from './hub-checklist';
 import { ActionError, fieldClass, QuietButton } from './ui';
 
 const STATUS_KEY = ['native', 'hub'] as const;
@@ -72,6 +73,14 @@ export function HubSetting() {
 
   const current = status.data;
   const on = current ? current.phase !== 'off' : false;
+  const chosen = MODEL_PRESETS.find((p) => p.id === presetId);
+  const slots =
+    on && current
+      ? [current.config.extraction, current.config.analysis, current.config.embedding]
+      : chosen
+        ? Object.values(hubModels(chosen))
+        : [];
+  const ollamaModels = slots.flatMap((slot) => (slot?.provider === 'ollama' ? [slot.model] : []));
 
   return (
     <section className="flex flex-col gap-2">
@@ -89,6 +98,7 @@ export function HubSetting() {
           {current.phase === 'failed' && current.error ? <HelpLink code={current.error} /> : null}
         </p>
       ) : null}
+      {current ? <HubChecklist port={current.config.port} ollamaModels={ollamaModels} /> : null}
 
       {current && !on ? (
         <>

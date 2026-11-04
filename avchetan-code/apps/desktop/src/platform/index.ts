@@ -11,6 +11,7 @@ import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { createDataFiles, type DataFiles } from '../native/data-files';
 import { createHub, type Hub } from '../native/hub';
 import type { Invoke } from '../native/ipc';
+import { createHubNetwork, type HubNetworkControl } from '../native/network';
 import { TauriSecretStore } from '../native/secrets';
 import { createShell, type Shell } from '../native/shell';
 import { createTauriSqliteExecutor, openNativeDatabase } from '../native/sqlite';
@@ -29,6 +30,7 @@ export type Platform = {
   files: DataFiles;
   /** The Home Hub this app can run (ADR-0024). */
   hub: Hub;
+  hubNetwork: HubNetworkControl;
 };
 
 export function createTauriPlatform(call: Invoke = invoke): Platform {
@@ -42,5 +44,6 @@ export function createTauriPlatform(call: Invoke = invoke): Platform {
     shell: createShell(call),
     files: createDataFiles(call),
     hub: createHub(call),
+    hubNetwork: createHubNetwork(call),
   };
 }

@@ -82,6 +82,14 @@ export {
 } from './providers/config';
 export { LLM_ERROR_CODES, type LlmErrorCode, toLlmError } from './providers/errors';
 export {
+  listOllamaModels,
+  missingOllamaModels,
+  type OllamaModels,
+  ollamaRoot,
+  type PullProgress,
+  pullOllamaModel,
+} from './providers/ollama-models';
+export {
   apiKeySecretName,
   createEmbeddingModel,
   createModel,

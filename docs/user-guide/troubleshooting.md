@@ -102,6 +102,24 @@ Start with **Settings → Setup check**. It tests everything and tells you what 
 ## hub_running
 **"Turn the hub off before using other hub data."** Click **Turn off the hub** first.
 
+## ollama_not_running
+**"Ollama isn't running on this PC."** Install Ollama from [ollama.com/download](https://ollama.com/download) and open it once; it then runs in the background and starts with Windows. Click **Check again**. If it is installed, look for its llama icon in the taskbar tray, or open it from the Start menu.
+
+## network_public
+**"Your network is set as Public."** Windows blocks phones from reaching a PC on a Public network. For your home network only, open **Settings → Network & internet → Wi-Fi** (or **Ethernet**), click the network, and set **Network profile type** to **Private**. Keep café, office and hotel networks Public.
+
+## firewall_declined
+**"Windows wasn't allowed to add the firewall rule."** You clicked **No** when Windows asked. Click **Allow phones to connect** again and choose **Yes**. Your Windows account needs to be an administrator; if it isn't, ask whoever manages the PC to approve it.
+
+## firewall_failed
+**"Adding the firewall rule failed."** Add the rules by hand instead: [Setup: Home Hub, step 5](setup-home-hub.md#5-let-your-phone-reach-the-pc) and the rule in [Tailscale](remote-access-tailscale.md). Some antivirus programs replace the Windows firewall; then allow port 8787 in that program instead.
+
+## network_check_failed
+**"Couldn't check this PC's network."** Avchetan asks Windows PowerShell about the network and firewall, and it didn't answer. Restart Avchetan. Phones can still connect if the network is Private and the firewall rule exists ([Setup: Home Hub, step 5](setup-home-hub.md#5-let-your-phone-reach-the-pc)).
+
+## tailscale
+**"Tailscale isn't running."** This is optional. To sync with your phone away from home, follow [Use your phone away from home](remote-access-tailscale.md).
+
 ## database_url_invalid
 **Cloud server log: "DATABASE_URL is not a valid address."** Usually the database password contains `#`, `/`, `?` or `%`, which break the address. Reset the database password to one with only letters and numbers, build the line again ([Setup: Cloud server](setup-cloud.md#part-1--the-database-supabase), Part 1, step 4), and paste it into `DATABASE_URL`. Also check that it starts with `postgresql://`, has no spaces, and that `[YOUR-PASSWORD]` was replaced including the square brackets.
 
