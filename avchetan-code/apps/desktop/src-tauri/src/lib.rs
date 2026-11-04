@@ -31,6 +31,8 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(hotkey::plugin())
         .setup(|app| {
+            // Before anything reads a secret, such as the hub's token at start.
+            commands::secrets::use_service(&app.config().identifier);
             let data_dir = app.path().app_data_dir()?;
             app.manage(commands::db::DbState::new(data_dir.join("avchetan.db")));
             let hub = commands::hub::HubState::load(data_dir.join("hub"));

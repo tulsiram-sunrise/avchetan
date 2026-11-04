@@ -1,4 +1,9 @@
-import type { ModelPreset } from '@avchetan/core';
+import {
+  loadAnalysisMode,
+  loadExtractionMode,
+  type ModelPreset,
+  saveSlotModel,
+} from '@avchetan/core';
 import { openTestStore } from '@avchetan/db/testing';
 import { MemorySecretStore } from '@avchetan/shared/testing';
 import { loadServerUrls, SYNC_TOKEN_SECRET } from '@avchetan/sync';
@@ -47,6 +52,27 @@ function fakeHub() {
 }
 
 describe('turnOnHub', () => {
+  it('lets the hub organize and answer for a PC with no model of its own', async () => {
+    const { store } = await openTestStore();
+
+    await turnOnHub({ hub: fakeHub(), secrets: new MemorySecretStore(), store }, { preset });
+
+    expect(await loadExtractionMode(store)).toBe('delegate');
+    expect(await loadAnalysisMode(store)).toBe('hub');
+  });
+
+  it('keeps the model a user chose for this PC', async () => {
+    const { store } = await openTestStore();
+    const secrets = new MemorySecretStore();
+    const config = { provider: 'ollama', model: 'own-model' } as const;
+    await saveSlotModel(store, secrets, 'extraction', { config, apiKey: '' });
+
+    await turnOnHub({ hub: fakeHub(), secrets, store }, { preset });
+
+    expect(await loadExtractionMode(store)).toBe('self');
+    expect(await loadAnalysisMode(store)).toBe('self');
+  });
+
   it('keeps the token this PC syncs with when it moves another hub data in', async () => {
     const { store } = await openTestStore();
     const secrets = new MemorySecretStore();

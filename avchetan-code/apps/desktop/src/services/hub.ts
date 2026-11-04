@@ -1,4 +1,9 @@
-import type { ModelPreset } from '@avchetan/core';
+import {
+  loadSlotModel,
+  type ModelPreset,
+  saveAnalysisMode,
+  saveExtractionMode,
+} from '@avchetan/core';
 import type { ClientStore } from '@avchetan/db/sqlite';
 import type { SecretName, SecretStore } from '@avchetan/shared';
 import { SYNC_TOKEN_SECRET, saveConnection } from '@avchetan/sync';
@@ -47,7 +52,20 @@ export async function turnOnHub(
   const port = options.port ?? DEFAULT_HUB_PORT;
   const status = await hub.configure({ enabled: true, port, ...hubModels(options.preset) });
   await saveConnection(store, secrets, { urls: [hubUrl(port)], token, trustLocalNetwork: false });
+  await letOwnHubDoAi(store);
   return status;
+}
+
+/**
+ * A PC with no model of its own lets the hub it runs organize its entries and answer its
+ * questions, as a phone set to "My hub" does; otherwise its entries would never be organized.
+ * A model the user chose for this PC is kept.
+ */
+async function letOwnHubDoAi(store: ClientStore): Promise<void> {
+  if (!(await loadSlotModel(store, 'extraction'))) await saveExtractionMode(store, 'delegate');
+  if (!(await loadSlotModel(store, 'analysis')) && !(await loadSlotModel(store, 'extraction'))) {
+    await saveAnalysisMode(store, 'hub');
+  }
 }
 
 /** This PC syncs with the hub it runs itself, and with nothing else. */

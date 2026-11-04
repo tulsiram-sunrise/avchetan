@@ -1,5 +1,5 @@
 import { listOllamaModels, missingOllamaModels, pullOllamaModel } from '@avchetan/core';
-import { formatAgo } from '@avchetan/shared';
+import { formatAgo, toAppError } from '@avchetan/shared';
 import { loadServerStatus } from '@avchetan/sync';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { type ReactNode, useState } from 'react';
@@ -206,14 +206,28 @@ function NetworkRows(props: { port: number }) {
 }
 
 /** The phones the hub knows. Asked of the hub itself, so it is only shown while it runs. */
+/**
+ * Right after the hub is turned on, this PC hasn't synced with it yet: the hub doesn't know it
+ * (or Sync isn't saved yet). That clears with the first sync, a few seconds later.
+ */
+function joining(error: unknown): boolean {
+  if (!error) return false;
+  const { code } = toAppError(error);
+  return code === 'unknown_device' || code === 'not_configured';
+}
+
 function PhonesRow() {
   const { store, platform } = useServices();
   const server = useQuery({
     queryKey: ['sync', 'server-status'],
     queryFn: () => loadServerStatus({ store, fetch: platform.fetch, secrets: platform.secrets }),
-    refetchInterval: 15_000,
+    // Soon while this PC is still joining its new hub, then every 15 s.
+    refetchInterval: (query) => (joining(query.state.error) ? 2_000 : 15_000),
+    retry: (count, error) => !joining(error) && count < 3,
   });
   if (!server.data) {
+    if (joining(server.error))
+      return <Row state="checking" title="Connecting this PC to the hub…" />;
     return server.error ? (
       <Row state="todo" title="Couldn't ask the hub which phones it knows">
         <ActionError errors={[server.error]} />

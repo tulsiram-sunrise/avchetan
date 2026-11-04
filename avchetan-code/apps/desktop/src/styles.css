@@ -25,6 +25,11 @@
   }
 }
 
+/* Scrollbars, form controls and checkboxes follow the OS theme too. */
+:root {
+  color-scheme: light dark;
+}
+
 html,
 body {
   margin: 0;

@@ -1,9 +1,10 @@
 import { MODEL_PRESETS } from '@avchetan/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { open } from '@tauri-apps/plugin-dialog';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { HelpLink } from '../help-link';
 import type { HubStatus } from '../native/hub';
+import { askDockToSync } from '../queries/sync';
 import { hubModels, hubOllamaModels, turnOffHub, turnOnHub } from '../services/hub';
 import { useServices } from '../services-context';
 import { HubBackups } from './hub-backups';
@@ -73,6 +74,11 @@ export function HubSetting() {
   });
 
   const current = status.data;
+  const phase = current?.phase;
+  // A hub that just started doesn't know this PC yet; the first sync introduces it.
+  useEffect(() => {
+    if (phase === 'running') void askDockToSync();
+  }, [phase]);
   const on = current ? current.phase !== 'off' : false;
   const chosen = MODEL_PRESETS.find((p) => p.id === presetId);
   const ollamaModels =

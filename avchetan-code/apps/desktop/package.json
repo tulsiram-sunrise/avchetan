@@ -8,6 +8,7 @@
     "dev": "tauri dev",
     "build": "tauri build",
     "build:release": "tauri build --config src-tauri/tauri.release.conf.json",
+    "dev:demo": "tauri dev --config src-tauri/tauri.demo.conf.json",
     "tauri": "tauri",
     "vite:dev": "vite",
     "vite:build": "vite build",

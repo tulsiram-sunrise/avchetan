@@ -22,7 +22,7 @@ const connectionQuery = ['settings', 'sync.connection'] as const;
 const STATUS_REFRESH_MS = 5_000;
 
 /** The dock syncs when it hears that settings changed. */
-const askDockToSync = () =>
+export const askDockToSync = () =>
   emitAppEvent('logs:changed', { tables: ['settings'] }).catch(() =>
     log.warn('could not announce setting change'),
   );
