@@ -79,6 +79,29 @@ Start with **Settings → Setup check**. It tests everything and tells you what 
 ## restore_target_not_empty
 **"The data folder is not empty."** A hub restore never overwrites data. Stop the hub, rename the `pglite-data` folder, and run the restore again ([Back up and restore](backup-and-restore.md#restore)).
 
+## hub_port_in_use
+**"Couldn't start: another program is using port 8787."** Usually a hub you started by hand in a terminal (`start:hub`) or with Docker is still running. Stop it: press **Ctrl+C** in its window, or run `docker compose -f deploy/home-hub/compose.yml down`. Then click **Turn on the hub** again.
+
+## hub_crashed
+**"Couldn't start the hub."** The hub stopped five times in a row soon after starting. Open **Settings → Home Hub on this PC → Recent hub log** and look at the last lines:
+- `database setup problem` or `startup failed`: the line names the cause.
+- Nothing useful: quit Avchetan from the tray, start it again, and turn on the hub. If it still fails, restore the hub's data from a backup ([Back up and restore](backup-and-restore.md)).
+
+## hub_program_missing
+**"The hub program isn't installed with this copy of Avchetan."** Install Avchetan again from the installer. In a development copy, build it first: `pnpm --filter @avchetan/server build:sidecar`.
+
+## hub_token_missing
+**"The hub has no sync token yet."** Turn the hub off and on again in **Settings → Home Hub on this PC**. Avchetan makes a token when it turns the hub on.
+
+## hub_import_not_hub_data
+**"That folder doesn't hold hub data."** Choose the folder named `pglite-data` itself, not the folder around it. For a hub started from the source code, it is `avchetan-code\apps\server\pglite-data`.
+
+## hub_import_target_not_empty
+**"The built-in hub already has data."** Avchetan never overwrites a hub's data. To use other data instead, turn the hub off, quit Avchetan, rename `%APPDATA%\app.avchetan\hub\pglite-data`, and try again.
+
+## hub_running
+**"Turn the hub off before using other hub data."** Click **Turn off the hub** first.
+
 ## database_url_invalid
 **Cloud server log: "DATABASE_URL is not a valid address."** Usually the database password contains `#`, `/`, `?` or `%`, which break the address. Reset the database password to one with only letters and numbers, build the line again ([Setup: Cloud server](setup-cloud.md#part-1--the-database-supabase), Part 1, step 4), and paste it into `DATABASE_URL`. Also check that it starts with `postgresql://`, has no spaces, and that `[YOUR-PASSWORD]` was replaced including the square brackets.
 

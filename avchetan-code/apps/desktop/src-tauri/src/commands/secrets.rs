@@ -21,6 +21,11 @@ fn entry(name: &str) -> CommandResult<keyring::Entry> {
     keyring::Entry::new(SERVICE, name).map_err(store_failed)
 }
 
+/// For Rust code that hands a secret straight to a child process, never back to a webview.
+pub fn read(name: &str) -> CommandResult<Option<String>> {
+    secret_get(name.to_string())
+}
+
 #[tauri::command(async)]
 pub fn secret_get(name: String) -> CommandResult<Option<String>> {
     match entry(&name)?.get_password() {

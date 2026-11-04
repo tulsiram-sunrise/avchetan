@@ -14,6 +14,7 @@ import type { SubmitKey } from '../services/submit-key';
 import { useServices } from '../services-context';
 import { AiModelsSetting } from './ai-models-setting';
 import { DataSetting } from './data-setting';
+import { HubSetting } from './hub-setting';
 import { SyncSetting } from './sync-setting';
 import { UsageSetting } from './usage-setting';
 
@@ -21,6 +22,7 @@ export function SettingsPage() {
   return (
     <div className="flex max-w-xl flex-col gap-6">
       <AiModelsSetting />
+      <HubSetting />
       <SyncSetting />
       <DataSetting />
       <UsageSetting />

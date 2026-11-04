@@ -7,7 +7,7 @@ mod hotkey;
 mod tray;
 mod windows;
 
-use tauri::Manager;
+use tauri::{Manager, RunEvent};
 use tauri_plugin_autostart::MacosLauncher;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -26,12 +26,16 @@ pub fn run() {
                 .with_denylist(&[windows::DOCK])
                 .build(),
         )
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(hotkey::plugin())
         .setup(|app| {
             let data_dir = app.path().app_data_dir()?;
             app.manage(commands::db::DbState::new(data_dir.join("avchetan.db")));
+            let hub = commands::hub::HubState::load(data_dir.join("hub"));
+            hub.start_if_enabled();
+            app.manage(hub);
             app.manage(hotkey::HotkeyState::default());
             hotkey::register_default(app.handle());
             tray::create(app)?;
@@ -48,6 +52,9 @@ pub fn run() {
             commands::db::db_values,
             commands::db::db_batch,
             commands::db::db_rollback,
+            commands::hub::hub_status,
+            commands::hub::hub_configure,
+            commands::hub::hub_import_data,
             commands::secrets::secret_get,
             commands::secrets::secret_set,
             commands::secrets::secret_delete,
@@ -57,6 +64,12 @@ pub fn run() {
             hotkey::hotkey_set,
             tray::tray_set_pending,
         ])
-        .run(tauri::generate_context!())
-        .expect("failed to start Avchetan");
+        .build(tauri::generate_context!())
+        .expect("failed to start Avchetan")
+        .run(|app, event| {
+            // Closing the hub's stdin stops it cleanly; it would also stop if this process died.
+            if let RunEvent::Exit = event {
+                app.state::<commands::hub::HubState>().stop();
+            }
+        });
 }
