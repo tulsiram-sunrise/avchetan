@@ -8,6 +8,7 @@ declare global {
   }
 }
 
-const initialView = window.__AVCHETAN_INITIAL_VIEW__ === 'settings' ? 'settings' : 'timeline';
+const requested = window.__AVCHETAN_INITIAL_VIEW__;
+const initialView = requested === 'settings' || requested === 'setup' ? requested : 'timeline';
 
 void bootstrap(() => <MainApp initialView={initialView} />);

@@ -1,8 +1,9 @@
-import { systemTimeZone, toAppError } from '@avchetan/shared';
+import { createLogger, systemTimeZone, toAppError } from '@avchetan/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { disable, enable, isEnabled } from '@tauri-apps/plugin-autostart';
 import { useMemo, useState } from 'react';
 import { HelpLink } from '../help-link';
+import { emitAppEvent } from '../native/events';
 import {
   useSetSubmitKey,
   useSetTimeZone,
@@ -16,11 +17,25 @@ import { AiModelsSetting } from './ai-models-setting';
 import { DataSetting } from './data-setting';
 import { HubSetting } from './hub-setting';
 import { SyncSetting } from './sync-setting';
+import { QuietButton } from './ui';
 import { UsageSetting } from './usage-setting';
+
+const log = createLogger('settings');
 
 export function SettingsPage() {
   return (
     <div className="flex max-w-xl flex-col gap-6">
+      <div>
+        <QuietButton
+          onClick={() =>
+            void emitAppEvent('main:navigate', { view: 'setup' }).catch(() =>
+              log.warn('could not open setup'),
+            )
+          }
+        >
+          Run setup again
+        </QuietButton>
+      </div>
       <AiModelsSetting />
       <HubSetting />
       <SyncSetting />
