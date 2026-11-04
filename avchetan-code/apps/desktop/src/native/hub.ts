@@ -26,6 +26,10 @@ const hubStatusSchema = z.object({
 });
 export type HubStatus = z.infer<typeof hubStatusSchema>;
 
+const hubBackupsSchema = z.array(
+  z.object({ name: z.string(), sizeBytes: z.number().int().nonnegative() }),
+);
+
 /** The built-in Home Hub process (src-tauri/src/commands/hub.rs, ADR-0024). */
 export function createHub(invoke: Invoke) {
   return {
@@ -36,6 +40,12 @@ export function createHub(invoke: Invoke) {
     /** Copies another hub's `pglite-data` folder in. Only while the hub is off and empty. */
     importData: (source: string) =>
       callNative(invoke, 'hub_import_data', { source }, hubStatusSchema),
+    /** The hub's daily snapshots, newest first. */
+    listBackups: () => callNative(invoke, 'hub_backup_list', {}, hubBackupsSchema),
+    /** Puts a snapshot back, keeping the current data beside it, and starts the hub again. */
+    restore: (name: string) => callNative(invoke, 'hub_restore', { name }, hubStatusSchema),
+    openFolder: (folder: 'data' | 'backups') =>
+      callNative(invoke, 'hub_folder_open', { folder }, z.null()),
   };
 }
 

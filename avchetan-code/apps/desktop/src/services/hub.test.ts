@@ -39,6 +39,9 @@ function fakeHub() {
       return status();
     }),
     importData: vi.fn(async () => status()),
+    listBackups: vi.fn(async () => []),
+    restore: vi.fn(async () => status()),
+    openFolder: vi.fn(async () => null),
   };
   return hub satisfies Hub;
 }

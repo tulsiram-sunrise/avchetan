@@ -6,6 +6,7 @@ import { HelpLink } from '../help-link';
 import type { HubStatus } from '../native/hub';
 import { hubModels, turnOffHub, turnOnHub } from '../services/hub';
 import { useServices } from '../services-context';
+import { HubBackups } from './hub-backups';
 import { HubChecklist } from './hub-checklist';
 import { ActionError, fieldClass, QuietButton } from './ui';
 
@@ -162,6 +163,7 @@ export function HubSetting() {
           </details>
         </>
       ) : null}
+      {current?.hasData ? <HubBackups onRestored={onChanged} /> : null}
       <ActionError errors={[turnOn.error, turnOff.error, choose.error, status.error]} />
     </section>
   );

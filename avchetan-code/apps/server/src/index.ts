@@ -13,6 +13,7 @@ import { ApiError } from './api-error';
 import { createApp } from './app';
 import { createHubAsk, type HubAsk } from './ask/hub-ask';
 import { loadServerIdentity } from './auth';
+import { restoreSnapshot } from './backups/restore';
 import { startHubSnapshots } from './backups/snapshots';
 import { openPglite, openPostgres, type ServerDatabase } from './db/client';
 import { databaseStartupHint } from './db/startup-hint';
@@ -56,6 +57,13 @@ async function openDatabase(env: ServerEnv, now: () => string): Promise<ServerDa
 async function main(): Promise<void> {
   const env = loadEnv(process.env);
   configureLogging({ level: env.LOG_LEVEL });
+
+  if (env.RESTORE_SNAPSHOT) {
+    // The desktop app's hub restores this way: its program is this one file (ADR-0024).
+    await restoreSnapshot(env.RESTORE_SNAPSHOT, env.PGLITE_DATA_DIR);
+    log.info('snapshot restored');
+    return;
+  }
 
   const clock = createMonotonicClock();
   const database = await openDatabase(env, () => clock.now());

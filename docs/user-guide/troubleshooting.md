@@ -99,6 +99,12 @@ Start with **Settings → Setup check**. It tests everything and tells you what 
 ## hub_import_target_not_empty
 **"The built-in hub already has data."** Avchetan never overwrites a hub's data. To use other data instead, turn the hub off, quit Avchetan, rename `%APPDATA%\app.avchetan\hub\pglite-data`, and try again.
 
+## hub_restore_failed
+**"The backup couldn't be restored; the hub kept its data."** Nothing changed: the hub is back on the data it had. Open **Recent hub log** for the reason. Try an older backup, or check that the disk isn't full.
+
+## hub_backup_invalid
+**"Not a hub backup"** or **"That backup is gone."** The file was renamed or deleted. Close and reopen **Hub backups** to see the backups that are there.
+
 ## hub_running
 **"Turn the hub off before using other hub data."** Click **Turn off the hub** first.
 

@@ -49,6 +49,7 @@ EMBEDDING_PROVIDER, EMBEDDING_MODEL   (no EMBEDDING_DIMS: each row records its l
 FALLBACK_EXTRACTION_ENABLED=true, FALLBACK_GRACE_MINUTES=15
 SHUTDOWN_ON_STDIN_CLOSE=false  (true: stop cleanly when stdin closes; set by the desktop app for its hub, ADR-0024)
 RESET_DATA_EPOCH=false  (true: a new data epoch on this start, after data was moved in; ADR-0025)
+RESTORE_SNAPSHOT  (a hub snapshot file: restore it into the empty PGLITE_DATA_DIR and exit; how the desktop app restores its hub)
 ```
 `.env.example` documents every variable; real `.env` is git-ignored.
 

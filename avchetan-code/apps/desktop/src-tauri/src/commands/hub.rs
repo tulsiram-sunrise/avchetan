@@ -349,8 +349,127 @@ impl HubState {
             ));
         }
         import_data(source, &self.data_dir())?;
+        self.mark_reset_epoch()
+    }
+
+    fn mark_reset_epoch(&self) -> CommandResult<()> {
         // Moved-in data may be older than what devices sent: they must send everything again.
         fs::write(self.dir.join(RESET_EPOCH_MARKER), "").map_err(io_failed("hub_import_failed"))
+    }
+
+    fn backups(&self) -> CommandResult<Vec<HubBackup>> {
+        list_backups(&self.dir.join(BACKUP_FOLDER))
+    }
+
+    /// Puts a daily snapshot back. The current data is kept beside it, renamed, never deleted;
+    /// if the restore fails, it goes back. The restored hub gets a new data epoch by itself.
+    fn restore(&self, name: &str) -> CommandResult<()> {
+        if !is_snapshot_name(name) {
+            return Err(CommandError::new("hub_backup_invalid", "Not a hub backup"));
+        }
+        let snapshot = self.dir.join(BACKUP_FOLDER).join(name);
+        if !snapshot.is_file() {
+            return Err(CommandError::new(
+                "hub_backup_invalid",
+                "That backup is gone",
+            ));
+        }
+        let program = program_path()?;
+        let was_on = self.lock().config.enabled;
+        self.stop();
+
+        let data = self.data_dir();
+        let aside = self
+            .dir
+            .join(format!("{DATA_FOLDER}-before-restore-{}", unix_seconds()));
+        if data.exists() {
+            fs::rename(&data, &aside).map_err(io_failed("hub_restore_failed"))?;
+        }
+        let output = hub_command(&program, &data)
+            .env("RESTORE_SNAPSHOT", &snapshot)
+            .stdin(Stdio::null())
+            .output();
+        let restored = matches!(&output, Ok(output) if output.status.success());
+        if !restored {
+            if let Ok(output) = &output {
+                let mut inner = self.lock();
+                for line in String::from_utf8_lossy(&output.stdout).lines() {
+                    push_log(&mut inner.logs, line.to_string());
+                }
+            }
+            crate::error::warn_on_err("undo restore", remove_dir_if_present(&data));
+            if aside.exists() {
+                crate::error::warn_on_err("undo restore", fs::rename(&aside, &data));
+            }
+        }
+        if was_on {
+            self.start(false);
+        }
+        if restored {
+            Ok(())
+        } else {
+            Err(CommandError::new(
+                "hub_restore_failed",
+                "The backup couldn't be restored; the hub kept its data",
+            ))
+        }
+    }
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HubBackup {
+    name: String,
+    size_bytes: u64,
+}
+
+/// `hub-YYYY-MM-DD.tar.gz`, as the hub names its daily snapshots.
+fn is_snapshot_name(name: &str) -> bool {
+    let Some(date) = name
+        .strip_prefix("hub-")
+        .and_then(|rest| rest.strip_suffix(".tar.gz"))
+    else {
+        return false;
+    };
+    date.len() == 10
+        && date.char_indices().all(|(index, c)| {
+            if index == 4 || index == 7 {
+                c == '-'
+            } else {
+                c.is_ascii_digit()
+            }
+        })
+}
+
+/// Newest first; a missing folder means no backups yet.
+fn list_backups(dir: &Path) -> CommandResult<Vec<HubBackup>> {
+    let entries = match fs::read_dir(dir) {
+        Ok(entries) => entries,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
+        Err(error) => return Err(io_failed("hub_backup_failed")(error)),
+    };
+    let mut backups: Vec<HubBackup> = entries
+        .flatten()
+        .filter_map(|entry| {
+            let name = entry.file_name().into_string().ok()?;
+            let size_bytes = entry.metadata().ok()?.len();
+            is_snapshot_name(&name).then_some(HubBackup { name, size_bytes })
+        })
+        .collect();
+    backups.sort_by(|a, b| b.name.cmp(&a.name));
+    Ok(backups)
+}
+
+fn unix_seconds() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |elapsed| elapsed.as_secs())
+}
+
+fn remove_dir_if_present(path: &Path) -> std::io::Result<()> {
+    match fs::remove_dir_all(path) {
+        Err(error) if error.kind() != std::io::ErrorKind::NotFound => Err(error),
+        _ => Ok(()),
     }
 }
 
@@ -421,6 +540,31 @@ fn program_path() -> CommandResult<PathBuf> {
         })
 }
 
+/// The hub program on a PGlite folder, with only the env vars Node needs from this app, and no
+/// console window.
+fn hub_command(program: &Path, data: &Path) -> Command {
+    let mut command = Command::new(program);
+    command.env_clear();
+    for name in PASSED_ENV {
+        if let Some(value) = std::env::var_os(name) {
+            command.env(name, value);
+        }
+    }
+    command
+        .env("DB_DRIVER", "pglite")
+        .env("PGLITE_DATA_DIR", data);
+    if let Some(dir) = program.parent() {
+        command.current_dir(dir);
+    }
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        command.creation_flags(CREATE_NO_WINDOW);
+    }
+    command
+}
+
 fn spawn(dir: &Path, config: &HubConfig) -> CommandResult<Child> {
     let program = program_path()?;
     let token = secrets::read(TOKEN_SECRET)?
@@ -429,23 +573,15 @@ fn spawn(dir: &Path, config: &HubConfig) -> CommandResult<Child> {
     let backups = dir.join(BACKUP_FOLDER);
     fs::create_dir_all(&backups).map_err(io_failed("hub_start_failed"))?;
 
-    let mut command = Command::new(&program);
-    command.env_clear();
-    for name in PASSED_ENV {
-        if let Some(value) = std::env::var_os(name) {
-            command.env(name, value);
-        }
-    }
+    let mut command = hub_command(&program, &data);
     command
         .envs([
-            ("DB_DRIVER", "pglite"),
             ("SERVER_PROFILE", "hub"),
             ("BIND_HOST", "0.0.0.0"),
             ("SHUTDOWN_ON_STDIN_CLOSE", "true"),
             ("NODE_ENV", "production"),
         ])
         .env("PORT", config.port.to_string())
-        .env("PGLITE_DATA_DIR", &data)
         .env("BACKUP_DIR", &backups)
         .env("SYNC_TOKEN", token);
     if dir.join(RESET_EPOCH_MARKER).is_file() {
@@ -466,15 +602,6 @@ fn spawn(dir: &Path, config: &HubConfig) -> CommandResult<Child> {
                 command.env(format!("{}_API_KEY", slot.provider.to_uppercase()), key);
             }
         }
-    }
-    if let Some(dir) = program.parent() {
-        command.current_dir(dir);
-    }
-    #[cfg(windows)]
-    {
-        use std::os::windows::process::CommandExt;
-        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-        command.creation_flags(CREATE_NO_WINDOW);
     }
     command
         .stdin(Stdio::piped())
@@ -541,6 +668,36 @@ pub fn hub_import_data(state: State<'_, HubState>, source: String) -> CommandRes
     Ok(state.status())
 }
 
+#[tauri::command(async)]
+pub fn hub_backup_list(state: State<'_, HubState>) -> CommandResult<Vec<HubBackup>> {
+    state.backups()
+}
+
+#[tauri::command(async)]
+pub fn hub_restore(state: State<'_, HubState>, name: String) -> CommandResult<HubStatus> {
+    state.restore(&name)?;
+    Ok(state.status())
+}
+
+/// `data` or `backups`, in the system file manager.
+#[tauri::command]
+pub fn hub_folder_open(
+    app: tauri::AppHandle,
+    state: State<'_, HubState>,
+    folder: String,
+) -> CommandResult<()> {
+    use tauri_plugin_opener::OpenerExt;
+    let path = match folder.as_str() {
+        "data" => state.dir.clone(),
+        "backups" => state.dir.join(BACKUP_FOLDER),
+        _ => return Err(CommandError::new("open_failed", "Unknown folder")),
+    };
+    fs::create_dir_all(&path).map_err(io_failed("open_failed"))?;
+    app.opener()
+        .open_path(path.to_string_lossy(), None::<&str>)
+        .map_err(|error| CommandError::new("open_failed", error.to_string()))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -595,6 +752,27 @@ mod tests {
         assert!(dir.join("hub").join(RESET_EPOCH_MARKER).is_file());
         remove_if_present(&dir.join("hub").join(RESET_EPOCH_MARKER)).unwrap();
         remove_if_present(&dir.join("hub").join(RESET_EPOCH_MARKER)).unwrap();
+    }
+
+    #[test]
+    fn lists_only_dated_hub_backups_newest_first() {
+        let dir = temp_dir("backups");
+        for name in [
+            "hub-2026-11-02.tar.gz",
+            "hub-2026-11-04.tar.gz",
+            "notes.txt",
+            "hub-x.tar.gz",
+        ] {
+            fs::write(dir.join(name), "x").unwrap();
+        }
+        let names: Vec<String> = list_backups(&dir)
+            .unwrap()
+            .into_iter()
+            .map(|b| b.name)
+            .collect();
+        assert_eq!(names, ["hub-2026-11-04.tar.gz", "hub-2026-11-02.tar.gz"]);
+        assert!(list_backups(&dir.join("missing")).unwrap().is_empty());
+        assert!(!is_snapshot_name("../hub-2026-11-04.tar.gz"));
     }
 
     #[test]

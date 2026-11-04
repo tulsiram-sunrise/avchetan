@@ -39,6 +39,8 @@ const envSchema = z
       .enum(['true', 'false'])
       .default('false')
       .transform((value) => value === 'true'),
+    /** A hub snapshot to put into PGLITE_DATA_DIR, which must be empty; then the server exits. */
+    RESTORE_SNAPSHOT: z.string().min(1).optional(),
     /** Set after data was moved in from elsewhere, so devices sync everything again. */
     RESET_DATA_EPOCH: z
       .enum(['true', 'false'])
