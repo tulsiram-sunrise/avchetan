@@ -19,6 +19,8 @@ Press **Ctrl+Shift+Space**, type `Walked 30 minutes, remind me to buy milk tomor
 ## Steps (Android)
 
 1. Install the Avchetan app and open it. On **Welcome to Avchetan**, tap **Just this phone**.
+
+![The phone's Welcome to Avchetan screen with Connect to my hub or server and Just this phone](images/capture-on-android-welcome.png)
 2. Choose a provider and paste your API key ([details](ai-models.md)).
 
 ## Later

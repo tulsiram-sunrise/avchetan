@@ -5,9 +5,13 @@
 The PC must already be connected to the hub (in Home Hub mode, the hub runs on that PC).
 
 1. On the PC: open Avchetan → **Settings → Sync → Pair a phone**. A code appears.
+
+![Settings → Sync on the PC showing a pairing code (blurred here, because it holds the sync token)](images/pair-your-phone-code.png)
 2. On the phone: install Avchetan from the project's GitHub Releases page (download the `.apk` file, open it, and allow installing from your browser when Android asks). Open it, tap **Connect to my hub or server**, then **Scan the pairing code**. On a phone already set up, go to **More → Sync → Scan pairing code**. Allow the camera when Android asks.
 3. Point the camera at the code. The phone checks which of the hub's addresses it can reach, saves them with the token, and starts syncing. It says **Paired with your hub** when it's done.
 4. Choose how the phone uses AI. The welcome screen offers **Use the hub's AI (recommended)** right after pairing; later, it's in **More → AI models**:
+
+![The phone's Your phone is paired screen offering Use the hub's AI (recommended)](images/pair-your-phone-hub-ai.png)
    - **My hub** (recommended for Home Hub), for organizing entries and for answering questions: your PC does the work. The phone needs no AI keys.
    - **This phone**: choose a provider and paste an API key.
 5. On the PC, click **Hide the code**.

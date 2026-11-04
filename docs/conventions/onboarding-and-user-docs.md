@@ -19,7 +19,7 @@ Anyone should be able to install and self-host Avchetan ([ADR-0017](../decisions
 - Write links and headings so they work both on GitHub and on the site. CI checks for dead links and anchors. VitePress is configured with GitHub-style heading slugs so existing anchors such as `#5-server-fallback` keep working; for new headings, prefer starting with a word, not a number.
 - Screenshots and examples use **made-up data only** (the repo and site are public).
 - Each page: goal → what you need → numbered steps (one action per step) → "check it worked" → common problems.
-- Screenshots in `docs/user-guide/images/`, named `<page>-<step>.png`, refreshed whenever the UI they show changes.
+- Screenshots in `docs/user-guide/images/`, named `<page>-<what>.png`, taken from the demo copy of the app (`dev:demo`, its own data and keychain) with made-up entries, and retaken whenever the UI they show changes: [tooling/screenshots](../../avchetan-code/tooling/screenshots/README.md).
 - Commands (Cloud guide only) are copy-paste ready and complete; never "edit as appropriate" without saying exactly what to edit.
 - Pages describing unshipped features carry the banner `> Draft — describes planned behavior.` Remove it when the feature ships and the steps have been followed on a fresh machine.
 - A feature is not done until its user-guide page is updated (part of each roadmap phase's "done when").

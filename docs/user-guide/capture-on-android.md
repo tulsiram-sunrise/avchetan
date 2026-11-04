@@ -19,9 +19,13 @@ Until you choose one, your entries are saved and wait.
 2. Type what happened or what you need to do, for example `Walked 30 minutes, call the plumber tomorrow`.
 3. Tap **Save**. The entry appears on **Today** with a *Pending* badge, then changes to *✓ Organized*.
 
+![Today on the phone: the day's entries, each marked Organized, with their activities and tasks](images/capture-on-android-today.png)
+
 This works without a connection too. The entry waits, and it's organized when you're back online. Opening the app does this right away. With the app closed, Android organizes a few entries at a time every so often, and it decides when.
 
 If you close the box without saving, your text is still there the next time you open it, unless the app has fully closed.
+
+![Typing an entry on the phone, with the Save button above it](images/capture-on-android-capture.png)
 
 ## Add tags and keep entries private
 
@@ -46,6 +50,8 @@ Tasks found in your entries appear on the **Tasks** tab: *Overdue*, *Today*, *Co
 - Tap the box to mark a task done.
 - Tap the task to change its name or due date, or to delete it. Write dates like `2026-11-25`.
 
+![The Tasks tab listing two tasks with their due dates](images/capture-on-android-tasks.png)
+
 ## Ask about your entries
 
 Open the **Ask** tab and type a question, like `how many workouts this week?`. The answer lists the entries it used, and you can tap one to open it.
@@ -53,3 +59,5 @@ Open the **Ask** tab and type a question, like `how many workouts this week?`. T
 To answer, your question and the entries it needs are sent to your AI model. Without a connection, you'll get today's activity and open task counts from your phone instead.
 
 **Search by meaning.** If your hub has a search model (see [Home Hub](setup-home-hub.md#search-by-meaning)), a question like `when did my knee hurt` also finds entries that say "stiff leg" or "physio". Without a hub, or when it can't be reached, Avchetan searches for the words you used.
+
+![The Ask tab: a question about lunch, the answer, and the entry it came from](images/capture-on-android-ask.png)

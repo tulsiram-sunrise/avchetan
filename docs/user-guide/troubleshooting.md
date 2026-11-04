@@ -17,6 +17,8 @@ It checks:
 
 Problems come first, each with its fix and a **Help** link to its section below. Click **Check again** after fixing something.
 
+![The Setup check on a PC running the hub: AI on this PC, Home Hub on this PC and Sync, every line ticked](images/troubleshooting-setup-check.png)
+
 ## unauthorized
 **"Your hub or server refused this device's sync token"** or **"Your hub doesn't know this device. Pair it again."** The sync token changed or was rotated, or the hub lost what it knew about this device. Pair the device again ([Pair your phone](pair-your-phone.md)).
 

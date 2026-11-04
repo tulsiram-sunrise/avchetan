@@ -93,6 +93,8 @@ To use your phone away from home, set up [Tailscale](remote-access-tailscale.md)
 2. Download and run the Avchetan installer.
 3. Open Avchetan's **Settings** (tray icon → **Preferences**) and find **Home Hub on this PC**.
 4. Under **AI models for the hub**, choose the set that fits your PC, for example **Ollama on your PC (no graphics card)**.
+
+![Home Hub on this PC, off, with its checklist, the AI models for the hub and the Turn on the hub button](images/setup-home-hub-turn-on.png)
 5. If you ran a hub before (from a terminal or Docker) and want to keep its entries, click **Use data from a hub I ran before…** and choose its `pglite-data` folder. Phones paired with it keep syncing.
 6. Click **Turn on the hub**. The first start takes about 15 seconds while it sets up its database; then it says **Running on port 8787**.
 7. Work down the checklist under it until every line has a ✓:
@@ -101,11 +103,15 @@ To use your phone away from home, set up [Tailscale](remote-access-tailscale.md)
    - **Windows' firewall blocks phones** — click **Allow phones to connect**, then **Yes** when Windows asks.
    - **Tailscale** is optional, for syncing away from home ([Tailscale](remote-access-tailscale.md)).
 
+![The running hub's checklist with every line ticked, ending with A phone is paired](images/setup-home-hub-checklist.png)
+
 The hub runs whenever Avchetan is open, including when only its tray icon is showing, and starts again with it. If it stops unexpectedly, Avchetan starts it again.
+
+The hub also organizes the entries you type on this PC and answers its questions, unless you chose a model for this PC itself in **Settings → AI models**.
 
 ### Part 2 — Connect your phone
 
-The checklist's last line says **No phone is paired with the hub yet**. Click **Pair a phone** there, and on the phone open **More → Sync → Scan pairing code**. When the phone has synced, the line shows its name.
+The checklist's last line says **No phone is paired with the hub yet**. Click **Pair a phone** there, and on the phone open **More → Sync → Scan pairing code**. When the phone has synced, the line says **A phone is paired**, with its name and when it last synced.
 
 ### Check it worked
 

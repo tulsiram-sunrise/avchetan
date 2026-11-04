@@ -22,3 +22,7 @@ Answer two questions:
 | Difficulty | Easiest | Easy (guided in the app) | Medium; own server: advanced |
 
 You can switch setups later; your entries are kept.
+
+The first time you open Avchetan on a PC, it asks the same question:
+
+![The Welcome to Avchetan screen with three choices: Just this PC, Home Hub on this PC, and Connect to my hub or server](images/getting-started-welcome.png)
