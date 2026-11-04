@@ -15,7 +15,7 @@
 - State: Zustand + TanStack Query (same pattern as desktop). There's one process, so writes call the repositories directly (`src/queries/writes.ts`) rather than going through desktop's window actions.
 - LLM: `@avchetan/core` with `expo/fetch` injected (streaming support). The AI SDK needs no extra polyfills on Hermes: streaming, tool calls, `AbortSignal.any` and `AbortSignal.timeout` were checked on an emulator.
 - Required polyfill: `crypto.getRandomValues` (used by `uuid` in `@avchetan/shared` for `newId()`), from `expo-crypto`, in `src/polyfills.ts`, which `index.ts` imports first. `@avchetan/shared` date helpers use `Intl.DateTimeFormat` with `timeZone`, which works on Hermes. Android may report an older zone name, such as `Asia/Calcutta`.
-- Android backup is off (`allowBackup: false`), so entries and keystore items never go to a Google account. Export arrives in Phase 5.
+- Android backup is off (`allowBackup: false`), so entries and keystore items never go to a Google account. Instead, the app keeps 7 daily `VACUUM INTO` copies in its private storage (`<files>/SQLite/backups`), and **More → Your data** exports JSON + CSV to a folder the person picks through the Storage Access Framework (`expo-file-system`), with no extra permission.
 - NetInfo's reachability check is off, because it pings a Google address. The app relies on Android's connected state, so a phone on a home network without internet still counts as online and can reach a Home Hub.
 - Version pins: React must match the version Expo ships, so mobile can lag behind desktop's React. `pnpm-workspace.yaml` overrides two Expo packages to stay within pnpm's release-age check; remove those overrides when upgrading Expo.
 
@@ -48,7 +48,7 @@ An edit replaces the raw log with a new one, so the entry screen moves to the ne
 
 ## Connecting to a server
 
-- First-run wizard: *Standalone* / *Scan pairing QR* (Home Hub or Cloud) / *Enter URL + token manually*.
+- First run: until the phone can organize entries, Today shows a setup card: *Pair with the hub on my PC* (scan the QR code) or *Use an AI provider on this phone*. The Sync screen also offers *Scan pairing code* above the manual address and token. (The full first-run wizard is Phase 5b.)
 - QR scan via `expo-camera`; token → secure store; URLs → `sync.serverUrls` (tried in order, LAN first, then Tailscale).
 - Settings show which URL is in use, last sync, and hub status (`/v1/status`).
 

@@ -7,6 +7,10 @@ export type SyncStateKey =
   | 'device_id'
   | 'clock_last'
   | 'pull_cursor'
+  | 'server_id'
+  /** The server and device details last registered there, as JSON. */
+  | 'registration'
+  | 'status'
   | 'last_push_at'
   | 'last_pull_at';
 

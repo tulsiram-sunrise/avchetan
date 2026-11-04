@@ -69,6 +69,11 @@ Runs in the dock webview (always alive): pending processor, sync engine timers, 
 
 Vite + React + TypeScript + Tailwind. State: Zustand (UI state), TanStack Query (data reads, invalidated by `logs:changed`/`sync:done` events). Router only in `main` window (TanStack Router or React Router), added when it outgrows the two-view switch in Phase 3. Two Vite entry points: `dock.html`, `main.html`.
 
+## Backups and export
+
+- The dock (it never closes) runs `startDailyBackups` from `@avchetan/db`: on start and then hourly, it asks Rust for today's copy. `backup_create` (`commands/data.rs`) runs `VACUUM INTO` on a connection of its own into `<app data>/backups/avchetan-YYYY-MM-DD.db.partial`, renames it into place and keeps the newest 7. The webview's executor isn't used, because it queues statements during an open transaction and `VACUUM` can't run inside one.
+- **Settings → Your data**: *Export everything* builds the files in TypeScript (`store.exportData()` + `exportFiles()`), and `export_write` writes them under `Documents/Avchetan exports/<dated folder>/`. `data_folder_open` opens the backups or exports folder. Rust accepts only plain file names, so the webview can't write outside those folders.
+
 ## Packaging
 
 Windows installer via Tauri bundler (NSIS). App identifier `app.avchetan`. Code signing deferred.

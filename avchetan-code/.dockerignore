@@ -1,0 +1,13 @@
+# The build context is this folder. Only what the server image needs goes in, and never data or secrets.
+**/node_modules
+**/dist
+**/.turbo
+**/pglite-data
+**/pglite-backups
+**/.env
+**/.env.*
+!**/.env.example
+**/*.log
+apps/desktop
+apps/mobile
+tooling/docs-site

@@ -1,11 +1,40 @@
-import { type ClientStore, getSetting } from '@avchetan/db/sqlite';
+import { EXTRACTION_MODES, type ExtractionMode } from '@avchetan/db';
+import { type ClientStore, getSetting, setSetting } from '@avchetan/db/sqlite';
 import { createLogger } from '@avchetan/shared';
+import { z } from 'zod';
 import { extractionChain, type ModelConfig, modelSlotsSchema } from '../providers/config';
 import { LLM_MAY_CREATE_SETTING, type LlmMayCreate, llmMayCreateSchema } from './normalize';
 
 const log = createLogger('extraction');
 
 export const MODEL_SLOTS_SETTING = 'llm.slots';
+/** Who organizes this device's entries: the device (`self`) or its hub (`delegate`). */
+export const EXTRACTION_MODE_SETTING = 'extraction.mode';
+
+export async function loadExtractionMode(store: ClientStore): Promise<ExtractionMode> {
+  const mode = z
+    .enum(EXTRACTION_MODES)
+    .safeParse(await getSetting(store.db, EXTRACTION_MODE_SETTING));
+  return mode.success ? mode.data : 'self';
+}
+
+/** Who answers this device's questions: its own model (`self`) or its hub (`hub`, ADR-0022). */
+export const ANALYSIS_MODES = ['self', 'hub'] as const;
+export type AnalysisMode = (typeof ANALYSIS_MODES)[number];
+export const ANALYSIS_MODE_SETTING = 'analysis.mode';
+
+export async function loadAnalysisMode(store: ClientStore): Promise<AnalysisMode> {
+  const mode = z.enum(ANALYSIS_MODES).safeParse(await getSetting(store.db, ANALYSIS_MODE_SETTING));
+  return mode.success ? mode.data : 'self';
+}
+
+export async function saveAnalysisMode(store: ClientStore, mode: AnalysisMode): Promise<void> {
+  await store.write((tx) => setSetting(tx, ANALYSIS_MODE_SETTING, mode, store.clock.now()));
+}
+
+export async function saveExtractionMode(store: ClientStore, mode: ExtractionMode): Promise<void> {
+  await store.write((tx) => setSetting(tx, EXTRACTION_MODE_SETTING, mode, store.clock.now()));
+}
 
 export type ExtractionSettings = { models: ModelConfig[]; llmMayCreate: LlmMayCreate };
 
@@ -23,8 +52,10 @@ export async function loadExtractionSettings(store: ClientStore): Promise<Extrac
   const mayCreate = llmMayCreateSchema.safeParse(
     await getSetting(store.db, LLM_MAY_CREATE_SETTING),
   );
+  // The hub organizes this device's entries, so it calls no model of its own.
+  const delegated = (await loadExtractionMode(store)) === 'delegate';
   return {
-    models: slots.success ? extractionChain(slots.data) : [],
+    models: slots.success && !delegated ? extractionChain(slots.data) : [],
     llmMayCreate: mayCreate.success ? mayCreate.data : 'auto',
   };
 }

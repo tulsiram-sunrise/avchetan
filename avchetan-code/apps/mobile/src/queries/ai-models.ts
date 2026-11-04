@@ -1,18 +1,62 @@
 import {
+  type AnalysisMode,
   hasApiKey,
   type LlmProvider,
+  loadAnalysisMode,
+  loadExtractionMode,
   loadSlotModel,
   type ModelConfig,
   type ModelSlot,
   removeApiKey,
+  saveAnalysisMode,
+  saveExtractionMode,
   saveSlotModel,
   testDraftModel,
 } from '@avchetan/core';
+import type { ExtractionMode } from '@avchetan/db';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useServices } from '../services-context';
 
 const slotQuery = (slot: ModelSlot) => ['settings', 'llm.slots', slot] as const;
 const apiKeyQuery = (provider: LlmProvider) => ['native', 'apiKey', provider] as const;
+const modeQuery = ['settings', 'extraction.mode'] as const;
+
+/** Who organizes this phone's entries: the phone, or the hub it syncs with. */
+export function useExtractionMode() {
+  const { store } = useServices();
+  return useQuery({ queryKey: modeQuery, queryFn: () => loadExtractionMode(store) });
+}
+
+const analysisModeQuery = ['settings', 'analysis.mode'] as const;
+
+/** Who answers this phone's questions: its own model, or the hub. */
+export function useAnalysisMode() {
+  const { store } = useServices();
+  return useQuery({ queryKey: analysisModeQuery, queryFn: () => loadAnalysisMode(store) });
+}
+
+export function useSaveAnalysisMode() {
+  const { store } = useServices();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (mode: AnalysisMode) => saveAnalysisMode(store, mode),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: analysisModeQuery }),
+  });
+}
+
+export function useSaveExtractionMode() {
+  const { store, extraction, sync } = useServices();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (mode: ExtractionMode) => saveExtractionMode(store, mode),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: modeQuery });
+      // The hub hears about it at the next sync, so sync now; the phone may start or stop.
+      void sync.syncNow();
+      extraction.resume();
+    },
+  });
+}
 
 export type ModelDraft = { config: ModelConfig; apiKey: string };
 

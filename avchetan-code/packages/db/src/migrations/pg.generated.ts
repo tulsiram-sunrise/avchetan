@@ -48,5 +48,39 @@ export const pgMigrations: readonly Migration[] = [
       "CREATE INDEX \"tasks_completed_at_due_date_idx\" ON \"tasks\" USING btree (\"completed_at\",\"due_date\");",
       "CREATE INDEX \"tasks_raw_log_id_idx\" ON \"tasks\" USING btree (\"raw_log_id\");"
     ]
+  },
+  {
+    "tag": "0001_server_device_platform",
+    "statements": [
+      "ALTER TABLE \"devices\" DROP CONSTRAINT \"devices_platform_check\";",
+      "ALTER TABLE \"devices\" ADD CONSTRAINT \"devices_platform_check\" CHECK (\"devices\".\"platform\" in ('windows', 'macos', 'linux', 'android', 'ios', 'server'));"
+    ]
+  },
+  {
+    "tag": "0002_log_embeddings",
+    "statements": [
+      "CREATE EXTENSION IF NOT EXISTS vector;",
+      "CREATE TABLE \"log_embeddings\" (\n\t\"raw_log_id\" uuid PRIMARY KEY NOT NULL,\n\t\"model\" text NOT NULL,\n\t\"dims\" integer NOT NULL,\n\t\"content_hash\" text NOT NULL,\n\t\"embedding\" vector NOT NULL,\n\t\"created_at\" timestamp(3) with time zone DEFAULT now() NOT NULL,\n\t\"updated_at\" timestamp(3) with time zone DEFAULT now() NOT NULL\n);"
+    ]
+  },
+  {
+    "tag": "0003_row_level_security",
+    "statements": [
+      "ALTER TABLE \"activities\" ENABLE ROW LEVEL SECURITY;",
+      "ALTER TABLE \"categories\" ENABLE ROW LEVEL SECURITY;",
+      "ALTER TABLE \"context_rules\" ENABLE ROW LEVEL SECURITY;",
+      "ALTER TABLE \"devices\" ENABLE ROW LEVEL SECURITY;",
+      "ALTER TABLE \"entities\" ENABLE ROW LEVEL SECURITY;",
+      "ALTER TABLE \"entity_mentions\" ENABLE ROW LEVEL SECURITY;",
+      "ALTER TABLE \"entity_tags\" ENABLE ROW LEVEL SECURITY;",
+      "ALTER TABLE \"log_embeddings\" ENABLE ROW LEVEL SECURITY;",
+      "ALTER TABLE \"projects\" ENABLE ROW LEVEL SECURITY;",
+      "ALTER TABLE \"raw_logs\" ENABLE ROW LEVEL SECURITY;",
+      "ALTER TABLE \"server_jobs\" ENABLE ROW LEVEL SECURITY;",
+      "ALTER TABLE \"server_meta\" ENABLE ROW LEVEL SECURITY;",
+      "ALTER TABLE \"tags\" ENABLE ROW LEVEL SECURITY;",
+      "ALTER TABLE \"tasks\" ENABLE ROW LEVEL SECURITY;",
+      "-- The migration runner creates this table itself, outside the schema.\nALTER TABLE \"avchetan_migrations\" ENABLE ROW LEVEL SECURITY;"
+    ]
   }
 ];

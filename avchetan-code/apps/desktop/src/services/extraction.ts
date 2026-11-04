@@ -19,7 +19,11 @@ export async function announce(store: ClientStore, platform: Platform): Promise<
 }
 
 /** Wires the processor to this platform. Only the dock starts it, as it never closes. */
-export function createExtractionService(store: ClientStore, platform: Platform): PendingProcessor {
+export function createExtractionService(
+  store: ClientStore,
+  platform: Platform,
+  onChange: () => void,
+): PendingProcessor {
   const { fetch, secrets, network, scheduler } = platform;
   return createPendingProcessor({
     store,
@@ -29,6 +33,9 @@ export function createExtractionService(store: ClientStore, platform: Platform):
       resolveModel: (config) => createModel(config, { fetch, secrets }),
       recordRun: (run) => store.recordLlmRun(run),
     },
-    onChange: () => void announce(store, platform),
+    onChange: () => {
+      void announce(store, platform);
+      onChange();
+    },
   });
 }

@@ -6,7 +6,12 @@ import { buildSystem } from '../prompts/analysis.v1';
 import type { ModelConfig } from '../providers/config';
 import { modelTimeoutError, toLlmError } from '../providers/errors';
 import { PROVIDER_ADAPTERS } from '../providers/registry';
-import { createAnalysisTools, createCitations, normalizeCitations } from './tools';
+import {
+  createAnalysisTools,
+  createCitations,
+  normalizeCitations,
+  type SearchHistory,
+} from './tools';
 
 const MAX_STEPS = 6;
 const CLOUD_TIMEOUT_MS = 90_000;
@@ -22,6 +27,8 @@ export type AskRequest = {
   /** Receives the answer as it arrives. */
   onText: (text: string) => void;
   abortSignal?: AbortSignal;
+  /** Search by meaning on the hub; without it Ask searches by words only. */
+  searchHistory?: SearchHistory;
 };
 
 /** Answers from the local database through read-only tools. Never writes entries. */
@@ -55,13 +62,18 @@ export async function ask(
   try {
     const result = streamText({
       model: await llm.resolveModel(model),
-      system: buildSystem({ today, weekday: weekdayOf(today) }),
+      system: buildSystem({
+        today,
+        weekday: weekdayOf(today),
+        semanticSearch: request.searchHistory !== undefined,
+      }),
       prompt: question,
       tools: createAnalysisTools(store, {
         // The privacy line: only a model on this PC may read private entries.
         scope: { includePrivate: adapter.local },
         today,
         citations,
+        searchHistory: request.searchHistory,
       }),
       stopWhen: stepCountIs(MAX_STEPS),
       temperature: model.temperature ?? 0,

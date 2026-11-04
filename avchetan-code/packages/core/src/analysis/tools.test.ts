@@ -2,7 +2,12 @@ import { type ClientStore, seedCategoryId } from '@avchetan/db/sqlite';
 import { openTestStore } from '@avchetan/db/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { buildCaptureInput } from '../capture';
-import { createAnalysisTools, createCitations, normalizeCitations } from './tools';
+import {
+  createAnalysisTools,
+  createCitations,
+  normalizeCitations,
+  type SearchHistory,
+} from './tools';
 
 let store: ClientStore;
 
@@ -18,9 +23,11 @@ const toolsFor = (includePrivate: boolean) =>
     citations: createCitations(),
   });
 
-const run = async (tool: { execute?: unknown }, input: unknown) =>
+const run = async (tool: { execute?: unknown } | undefined, input: unknown) => {
+  if (!tool) throw new Error('tool not offered');
   // biome-ignore lint/suspicious/noExplicitAny: the SDK's execute options aren't used by these tools
-  (tool.execute as any)(input, {});
+  return (tool.execute as any)(input, {});
+};
 
 async function logWith(
   text: string,
@@ -195,5 +202,46 @@ describe('analysis tools', () => {
 
       expect(result).toMatchObject({ result: 2 });
     });
+  });
+});
+
+describe('search_history', () => {
+  const withSearch = (includePrivate: boolean, searchHistory: SearchHistory) =>
+    createAnalysisTools(store, {
+      scope: { includePrivate },
+      today,
+      citations: createCitations(),
+      searchHistory,
+    });
+
+  it('is offered only when the device knows a hub', () => {
+    expect(toolsFor(false)).not.toHaveProperty('search_history');
+    expect(withSearch(false, async () => [])).toHaveProperty('search_history');
+  });
+
+  it('keeps the hub’s order, and dates entries by when they happened', async () => {
+    const run1 = await logWith('stiff leg after the run', { title: 'Run', date: '2026-10-28' });
+    const physio = await logWith('physio session', { title: 'Physio', date: '2026-10-29' });
+    const tools = withSearch(false, async () => [{ rawLogId: physio.id }, { rawLogId: run1.id }]);
+
+    const result = await run(tools.search_history, { query: 'knee pain' });
+
+    expect(result).toEqual([
+      { ref: 1, date: '2026-10-29', text: 'physio session' },
+      { ref: 2, date: '2026-10-28', text: 'stiff leg after the run' },
+    ]);
+  });
+
+  it('says so when the hub can’t be reached', async () => {
+    const tools = withSearch(false, async () => null);
+
+    expect(await run(tools.search_history, { query: 'knee' })).toEqual({ unavailable: true });
+  });
+
+  it('keeps private entries from a cloud model, whatever the hub returns', async () => {
+    const hidden = await logWith('!private knee hurts', { title: 'Note', date: '2026-10-29' });
+    const tools = withSearch(false, async () => [{ rawLogId: hidden.id }]);
+
+    expect(await run(tools.search_history, { query: 'knee' })).toEqual([]);
   });
 });

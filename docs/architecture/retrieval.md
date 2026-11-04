@@ -15,23 +15,24 @@ Hybrid retrieval: **deterministic SQL** for anything with numbers, dates, tags o
 ## Where it sits
 
 - **Clients:** relational SQLite only. All SQL tools run locally and offline.
-- **Server:** Postgres + `pgvector`. `log_embeddings` (separate table, not a column on `raw_logs`, so the embedding model can change without touching synced rows). HNSW index, cosine distance.
+- **Server:** Postgres + `pgvector` (on PGlite, the `@electric-sql/pglite-pgvector` extension). `log_embeddings` (separate table, not a column on `raw_logs`, so the embedding model can change without touching synced rows). The `embedding` column has no fixed length; each row records `model` and `dims`, and the embedder creates a partial HNSW cosine index for the length in use: `USING hnsw ((embedding::vector(N)) vector_cosine_ops) WHERE dims = N`. Search casts the same way, so it uses that index.
 - No standalone vector DB (Pinecone, Qdrant…) — overkill for one user ([ADR-0012](../decisions/0012-server-side-vector-search.md)).
 - Local vectors (`sqlite-vec`) are an open option for offline semantic search — see [open-questions.md](../open-questions.md).
 
 ## Embedding pipeline (server)
 
-1. After a push touches `raw_logs` (or its derived rows), enqueue `embed` job for that raw log (`server_jobs`).
-2. Worker batches up to 64 jobs: build text = content + extracted titles + tag paths; hash; skip if hash unchanged; call embedding slot; upsert `log_embeddings`.
+1. After a push touches `raw_logs` (or its activities, tasks or tag links), enqueue an `embed` job for that raw log (`server_jobs`, one job per log: its ID is `md5('embed:' || raw_log_id)`). On start, every live raw log with no vector from the current model is queued, which covers existing entries and a model change.
+2. Worker (`apps/server/src/embeddings/`, every 10 s and after each push) batches up to 64 jobs: build text = content + extracted titles + tag paths (`embeddingText` in core); hash; skip if hash and model unchanged; call the embedding model (`EMBEDDING_PROVIDER`, `EMBEDDING_MODEL`); upsert `log_embeddings`. A failed call retries the batch later; a job fails after 5 tries.
 3. `privacy = 'local_only'` logs are never embedded by a cloud model (only if the embedding slot is local).
 4. Tombstoned raw logs → delete embedding.
 5. Changing the embedding model = migration (new dims) + backfill job; record `model` and `dims` per row.
 
 ## Search API
 
-`POST /v1/search` `{ query, from?, to?, category?, tags?, limit ≤ 15 }` →
+`POST /v1/search` `{ query, from?, to?, limit ≤ 15 }` (`from`/`to` are instants on `captured_at`; category and tag filters are not built yet) →
 `{ results: [{ rawLogId, score, capturedAt, snippet }] }`
-- Embeds the query, `ORDER BY embedding <=> $q LIMIT k` with SQL pre-filters on date/category (joined via derived rows).
+- Embeds the query, `ORDER BY (embedding::vector(N)) <=> $q LIMIT k`, only rows of the same `model` and `dims`. With no embedding model the server answers 503 `search_unavailable`.
+- Clients call it through `searchServer` (`@avchetan/sync`), which tries each server address and returns `null` instead of failing. Ask offers `search_history` only when a server is set up, and reads the found entries from the local database, so the privacy scope applies whatever the server returned.
 - Optional hybrid boost: union with Postgres full-text (`tsvector`) hits, merged with reciprocal-rank fusion. Start vector-only; add FTS if recall is poor.
 
 ## Ask mode flow

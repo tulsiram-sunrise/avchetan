@@ -1,4 +1,4 @@
-import type { Activity, ClientStore, DataScope, Task } from '@avchetan/db/sqlite';
+import type { Activity, ClientStore, DataScope, RawLog, Task } from '@avchetan/db/sqlite';
 import { type LocalDate, localDate } from '@avchetan/shared';
 import { tool } from 'ai';
 import { z } from 'zod';
@@ -65,14 +65,25 @@ export function createCitations() {
 export type Citations = ReturnType<typeof createCitations>;
 
 /**
+ * Search by meaning on the hub (`POST /v1/search`): raw log IDs, closest first, or `null` when
+ * the hub can't be reached or has search off. Apps pass it; without it the tool isn't offered.
+ */
+export type SearchHistory = (input: { query: string }) => Promise<{ rawLogId: string }[] | null>;
+
+/**
  * Read-only tools the model answers from. `scope` decides whether private entries are visible:
  * they never are when the model is a cloud one, whatever the question.
  */
 export function createAnalysisTools(
   store: ClientStore,
-  context: { scope: DataScope; today: LocalDate; citations: Citations },
+  context: {
+    scope: DataScope;
+    today: LocalDate;
+    citations: Citations;
+    searchHistory?: SearchHistory | undefined;
+  },
 ) {
-  const { scope, today, citations } = context;
+  const { scope, today, citations, searchHistory } = context;
   const { db, queries, repos } = store;
   const cite = (rawLogId: string | null) => (rawLogId ? citations.numberOf(rawLogId) : null);
 
@@ -93,6 +104,26 @@ export function createAnalysisTools(
     return (row: Activity | Task, type: 'activity' | 'task') =>
       (type === 'activity' ? activities : tasks).has(row.id) ||
       (row.rawLogId !== null && logs.has(row.rawLogId));
+  }
+
+  /** "Yesterday my knee hurt" belongs to the day it happened, not the day it was typed. */
+  async function dated(logs: readonly RawLog[], from?: string, to?: string) {
+    const { activities } = await queries.extractedFrom(
+      db,
+      logs.map((log) => log.id),
+    );
+    const happenedOn = new Map(activities.map((row) => [row.rawLogId, row.loggedDate]));
+    return logs
+      .map((log) => ({
+        log,
+        date: happenedOn.get(log.id) ?? localDate(log.capturedAt, log.capturedTz),
+      }))
+      .filter(({ date }) => (!from || date >= from) && (!to || date <= to))
+      .map(({ log, date }) => ({
+        ref: citations.numberOf(log.id),
+        date,
+        text: clip(log.content),
+      }));
   }
 
   async function matchingActivities(input: {
@@ -151,25 +182,34 @@ export function createAnalysisTools(
           text,
           limit: limit ?? DEFAULT_LIST,
         });
-        // "Yesterday my knee hurt" belongs to the day it happened, not the day it was typed.
-        const { activities } = await queries.extractedFrom(
-          db,
-          logs.map((log) => log.id),
-        );
-        const happenedOn = new Map(activities.map((row) => [row.rawLogId, row.loggedDate]));
-        return logs
-          .map((log) => ({
-            log,
-            date: happenedOn.get(log.id) ?? localDate(log.capturedAt, log.capturedTz),
-          }))
-          .filter(({ date }) => (!from || date >= from) && (!to || date <= to))
-          .map(({ log, date }) => ({
-            ref: citations.numberOf(log.id),
-            date,
-            text: clip(log.content),
-          }));
+        return dated(logs, from, to);
       },
     }),
+
+    ...(searchHistory
+      ? {
+          search_history: tool({
+            description:
+              'Find entries by meaning, when the words may differ: "knee pain" also finds "stiff ' +
+              'leg". Closest first. Answers unavailable when the hub cannot be reached; then use ' +
+              'search_entries.',
+            inputSchema: z.object({
+              query: z.string().min(1).describe('What to look for, in a few words'),
+              from: date,
+              to: date,
+            }),
+            execute: async ({ query, from, to }) => {
+              const found = await searchHistory({ query });
+              if (found === null) return { unavailable: true };
+              // Read here, so the privacy scope applies whatever the hub returned.
+              const order = new Map(found.map(({ rawLogId }, index) => [rawLogId, index]));
+              const logs = await queries.logsById(db, [...order.keys()], scope);
+              logs.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+              return dated(logs, from, to);
+            },
+          }),
+        }
+      : {}),
 
     query_activities: tool({
       description:

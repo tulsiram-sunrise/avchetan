@@ -15,6 +15,15 @@ Start with **Settings → Setup check**. It tests everything and tells you what 
 ## clock_skew
 **"This device's clock is wrong."** Turn on automatic date & time in the device settings.
 
+## untrusted_local_network
+**"Turn on Trust this home network to use this address."** The address is on your home network and uses plain `http://`, so your sync token travels unencrypted on that Wi-Fi. Turn on **Trust this home network** if you trust everyone on it, or connect through [Tailscale](remote-access-tailscale.md), which encrypts it.
+
+## insecure_server_url
+**"This address needs https://."** Plain `http://` only works on this device, on a home network or through Tailscale. Anywhere else your token would cross the internet unprotected, so use the server's `https://` address.
+
+## sync_issue
+**"Changes keep failing to sync."** The server refused these changes ten times, so they're waiting and nothing is lost. Check that both devices run the same version of Avchetan, then report it if it doesn't clear.
+
 ## llm_auth
 **"The provider rejected the API key"** or **"No API key is set for this provider."** Paste the key again in **Settings → AI models** and click **Test**. Your entries wait safely and are organized once the key works.
 
@@ -51,6 +60,36 @@ Start with **Settings → Setup check**. It tests everything and tells you what 
 
 ## dock_unavailable
 **"The capture box isn't responding."** Your change wasn't saved. Right-click the tray icon → **Quit Avchetan**, start it again, and repeat the change.
+
+## backup_failed
+**"Couldn't back up the database."** Your entries are fine; only the copy failed. Check that the disk (or the phone) has free space, then try **Back up now** in **Your data**. Avchetan tries again every hour on its own.
+
+## backup_invalid
+**"Invalid backup name."** This is a bug in Avchetan, not something you did. Please report it; your data is not affected.
+
+## export_failed
+**"Could not save the export."** Check that the disk has free space. On Android, pick a folder you can write to, such as *Downloads*, and try again.
+
+## export_invalid
+**"Invalid export file name."** This is a bug in Avchetan, not something you did. Please report it; your data is not affected.
+
+## open_failed
+**"Couldn't open the folder."** Open File Explorer and go to the folder by hand: `%APPDATA%\app.avchetan\backups` for backups, or `Documents\Avchetan exports` for exports.
+
+## restore_target_not_empty
+**"The data folder is not empty."** A hub restore never overwrites data. Stop the hub, rename the `pglite-data` folder, and run the restore again ([Back up and restore](backup-and-restore.md#restore)).
+
+## database_url_invalid
+**Cloud server log: "DATABASE_URL is not a valid address."** Usually the database password contains `#`, `/`, `?` or `%`, which break the address. Reset the database password to one with only letters and numbers, build the line again ([Setup: Cloud server](setup-cloud.md#part-1--the-database-supabase), Part 1, step 4), and paste it into `DATABASE_URL`. Also check that it starts with `postgresql://`, has no spaces, and that `[YOUR-PASSWORD]` was replaced including the square brackets.
+
+## database_ipv6_unreachable
+**Cloud server log: "The database address is IPv6 only."** You copied Supabase's **Direct connection** string. In Supabase, click **Connect**, change **Method** to **Session pooler**, and use that string. Its host ends in `pooler.supabase.com` and the user is `postgres.` followed by your project id.
+
+## database_certificate_missing
+**Cloud server log: "The database certificate file … is missing."** In Render, open your service → **Environment → Secret Files**, and check that there's a file named exactly `supabase-ca.crt` holding the certificate you downloaded from Supabase.
+
+## database_password_wrong
+**Cloud server log: "The database rejected the password."** Reset the database password in Supabase (**Project Settings → Database**), and put the new one into `DATABASE_URL` in place of the old one.
 
 ## Entries stay "pending"
 Normal when offline or when the hub is unreachable. They are processed automatically later. If they stay pending while everything is connected, open **Review** in the main window: it shows the reason for each entry.

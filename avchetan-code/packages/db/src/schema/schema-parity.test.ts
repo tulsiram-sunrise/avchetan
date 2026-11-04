@@ -23,6 +23,8 @@ const SQLITE_TYPES: Record<LogicalType, string> = {
   int: 'SQLiteInteger',
   real: 'SQLiteReal',
   bigint: 'SQLiteInteger',
+  // Server-only, so never on SQLite.
+  vector: 'none',
 };
 
 const PG_TYPES: Record<LogicalType, string> = {
@@ -35,6 +37,7 @@ const PG_TYPES: Record<LogicalType, string> = {
   int: 'PgInteger',
   real: 'PgDoublePrecision',
   bigint: 'PgBigInt53',
+  vector: 'PgCustomColumn',
 };
 
 type ColumnShape = { type: string; nullable: boolean; enum: readonly string[] | undefined };

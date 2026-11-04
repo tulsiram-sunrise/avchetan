@@ -6,6 +6,8 @@ import {
   PROVIDER_ADAPTERS,
 } from '@avchetan/core';
 import { LlmError, localDate } from '@avchetan/shared';
+import { loadServerUrls, searchServer } from '@avchetan/sync';
+import { MAX_SEARCH_RESULTS } from '@avchetan/sync/protocol';
 import type { AppServices } from '../app-services';
 
 const ASK_PREFIX = '?';
@@ -41,9 +43,21 @@ export async function askQuestion(
     return offlineSummary(services);
   }
   const { fetch, secrets } = platform;
+  // Search by meaning runs on the hub, so it's offered only once one is set up.
+  const searchHistory =
+    (await loadServerUrls(store)).length > 0
+      ? ({ query }: { query: string }) =>
+          searchServer({ store, fetch, secrets }, { query, limit: MAX_SEARCH_RESULTS })
+      : undefined;
   return ask(
     store,
-    { question, model, timeZone: timeZone.current(), onText },
+    {
+      question,
+      model,
+      timeZone: timeZone.current(),
+      onText,
+      ...(searchHistory ? { searchHistory } : {}),
+    },
     {
       resolveModel: (config) => createModel(config, { fetch, secrets }),
       recordRun: (run) => store.recordLlmRun(run),

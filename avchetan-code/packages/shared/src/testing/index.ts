@@ -106,6 +106,9 @@ export function createTestClock(
       return last;
     },
     lastIssued: () => last,
+    observe(instant) {
+      currentMs = Math.max(currentMs, Date.parse(instant) + 1);
+    },
     set(instant) {
       currentMs = Date.parse(instant);
     },

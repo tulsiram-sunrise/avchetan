@@ -1,29 +1,46 @@
 import { router } from 'expo-router';
 import { useMemo } from 'react';
 import { Pressable, SectionList, Text, View } from 'react-native';
-import { useSlotModel } from '../../src/queries/ai-models';
+import { useExtractionMode, useSlotModel } from '../../src/queries/ai-models';
 import { useExtracted, usePendingCount, useTimeline } from '../../src/queries/entries';
+import { useConnection } from '../../src/queries/sync';
 import { byRawLog, groupByDay } from '../../src/services/grouping';
 import { CaptureButton } from '../../src/ui/capture-button';
 import { EntryRow } from '../../src/ui/entry-row';
 import { SectionTitle } from '../../src/ui/parts';
 
-/** Entries wait for a model, so say so before anyone wonders why. */
-function ChooseModelBanner() {
+/**
+ * Shown until the phone can organize entries: with no hub and no model, entries only wait. The
+ * two ways to set up (docs/architecture/mobile.md: Standalone, or pair with a hub).
+ */
+function SetupBanner() {
   const pending = usePendingCount();
   const model = useSlotModel('extraction');
-  if (!pending.data || !model.isSuccess || model.data) return null;
+  const mode = useExtractionMode();
+  const connection = useConnection();
+  if (!model.isSuccess || !mode.isSuccess || !connection.isSuccess) return null;
+  const connected = connection.data.urls.length > 0;
+  // With the hub organizing, entries wait for a sync, not for a model on the phone.
+  if (model.data || (mode.data === 'delegate' && connected)) return null;
+  // Already paired, with the phone organizing its own: only a model is missing.
+  if (connected && !pending.data) return null;
+
   return (
-    <Pressable
-      accessibilityRole="button"
-      className="border-b border-line bg-surfaceRaised p-4"
-      onPress={() => router.push('/settings/ai-models')}
-    >
+    <View className="gap-2 border-b border-line bg-surfaceRaised p-4">
       <Text className="text-sm text-ink">
-        Your entries are saved. Choose an AI model to organize them.
+        {pending.data
+          ? 'Your entries are saved. Set up AI to organize them.'
+          : 'Welcome. Choose how Avchetan organizes your entries.'}
       </Text>
-      <Text className="text-sm text-accent">Choose a model</Text>
-    </Pressable>
+      {connected ? null : (
+        <Pressable accessibilityRole="button" onPress={() => router.push('/settings/pair')}>
+          <Text className="text-sm text-accent">Pair with the hub on my PC (scan a code)</Text>
+        </Pressable>
+      )}
+      <Pressable accessibilityRole="button" onPress={() => router.push('/settings/ai-models')}>
+        <Text className="text-sm text-accent">Use an AI provider on this phone</Text>
+      </Pressable>
+    </View>
   );
 }
 
@@ -37,7 +54,7 @@ export default function TodayScreen() {
 
   return (
     <View className="flex-1 bg-surface">
-      <ChooseModelBanner />
+      <SetupBanner />
       <SectionList
         sections={groupByDay(logs)}
         keyExtractor={(rawLog) => rawLog.id}

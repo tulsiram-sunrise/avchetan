@@ -9,6 +9,8 @@ export const googleAdapter: ProviderAdapter = {
   local: false,
   freeTierUsesContent: true,
   createModel: ({ model }, { apiKey, fetch }) => createGoogle({ apiKey, fetch })(model),
+  createEmbeddingModel: ({ model }, { apiKey, fetch }) =>
+    createGoogle({ apiKey, fetch }).embeddingModel(model),
   // Gemini answers a bad key with 400 INVALID_ARGUMENT instead of 401.
   classifyError: (error) =>
     error.responseBody?.includes('API_KEY_INVALID')

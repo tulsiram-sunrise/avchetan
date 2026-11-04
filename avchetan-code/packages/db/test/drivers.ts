@@ -1,5 +1,6 @@
 import { DatabaseSync } from 'node:sqlite';
 import { PGlite } from '@electric-sql/pglite';
+import { vector } from '@electric-sql/pglite-pgvector';
 import type { MigrationDriver } from '../src/migrations/runner';
 
 /** In-memory SQLite (Node's built-in driver — no native build needed). */
@@ -18,7 +19,7 @@ export function createTestSqlite() {
 
 /** In-memory Postgres (PGlite, WASM). */
 export async function createTestPglite() {
-  const pg = await PGlite.create();
+  const pg = await PGlite.create({ extensions: { vector } });
   const driver: MigrationDriver = {
     async run(statement) {
       await pg.exec(statement);

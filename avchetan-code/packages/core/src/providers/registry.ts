@@ -1,5 +1,5 @@
 import { type HttpFetch, LlmError, type SecretName, type SecretStore } from '@avchetan/shared';
-import type { LanguageModel } from 'ai';
+import type { EmbeddingModel, LanguageModel } from 'ai';
 import type { ProviderAdapter } from './adapter';
 import { googleAdapter } from './adapters/google';
 import { groqAdapter } from './adapters/groq';
@@ -40,4 +40,24 @@ export async function createModel(
     });
   }
   return adapter.createModel(config, { apiKey, fetch });
+}
+
+/** The embedding counterpart of `createModel`, for search by meaning. */
+export async function createEmbeddingModel(
+  config: ModelConfig,
+  { fetch, secrets }: ProviderDeps,
+): Promise<EmbeddingModel> {
+  const adapter = PROVIDER_ADAPTERS[config.provider];
+  if (!adapter.createEmbeddingModel) {
+    throw new LlmError('llm_unavailable', 'This provider has no embedding models', {
+      details: { provider: config.provider, reason: 'no_embeddings' },
+    });
+  }
+  const apiKey = adapter.requiresApiKey ? await secrets.get(apiKeySecretName(config.provider)) : '';
+  if (apiKey === null) {
+    throw new LlmError('llm_auth', 'No API key is set for this provider', {
+      details: { provider: config.provider },
+    });
+  }
+  return adapter.createEmbeddingModel(config, { apiKey, fetch });
 }

@@ -6,6 +6,11 @@ export interface Clock {
   now(): UtcInstant;
   /** Last instant issued (for persisting in `sync_state.clock_last`), or null. */
   lastIssued(): UtcInstant | null;
+  /**
+   * Moves past an instant seen on another device. Without this, an edit made right after pulling
+   * from a device with a faster clock would carry an older time and silently lose.
+   */
+  observe(instant: UtcInstant): void;
 }
 
 export type MonotonicClockOptions = {
@@ -40,6 +45,12 @@ export function createMonotonicClock(options: MonotonicClockOptions = {}): Clock
     },
     lastIssued() {
       return last;
+    },
+    observe(instant) {
+      const ms = Date.parse(instant);
+      if (ms <= lastMs) return;
+      lastMs = ms;
+      last = instant;
     },
   };
 }

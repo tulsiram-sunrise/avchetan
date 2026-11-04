@@ -11,19 +11,30 @@
       "allowBackup": false,
       "blockedPermissions": [
         "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE"
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "plugins": [
       "expo-router",
       "expo-secure-store",
       "expo-sqlite",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Avchetan uses the camera only to scan the pairing code shown on your PC.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false,
+          "barcodeScannerEnabled": true
+        }
+      ],
       "./plugins/long-native-paths.js",
       [
         "expo-build-properties",
         {
           "android": {
-            "extraProguardRules": "-keep class androidx.work.** { *; }\n-keep class * extends androidx.work.ListenableWorker { *; }\n-keep class expo.modules.backgroundtask.** { *; }\n-keep class expo.modules.taskManager.** { *; }\n"
+            "extraProguardRules": "-keep class androidx.work.** { *; }\n-keep class * extends androidx.work.ListenableWorker { *; }\n-keep class expo.modules.backgroundtask.** { *; }\n-keep class expo.modules.taskManager.** { *; }\n",
+            "usesCleartextTraffic": true
           }
         }
       ]

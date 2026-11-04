@@ -271,6 +271,32 @@ export function claimablePendingLogs(
 }
 
 /**
+ * Of the given raw logs, those still claimable now, whichever device captured them. The server
+ * picks the candidates (grace period, delegating devices); this checks the replica agrees.
+ */
+export function claimableLogsAmong(
+  db: ClientDb,
+  options: { ids: readonly string[]; now: string; maxAttempts: number; limit: number },
+): Promise<RawLog[]> {
+  if (options.ids.length === 0) return Promise.resolve([]);
+  return db
+    .select()
+    .from(rawLogs)
+    .where(
+      and(
+        live(rawLogs),
+        inArray(rawLogs.id, [...options.ids]),
+        eq(rawLogs.status, 'pending_llm'),
+        lt(rawLogs.processingAttempts, options.maxAttempts),
+        or(isNull(rawLogs.processingLeaseUntil), lt(rawLogs.processingLeaseUntil, options.now)),
+        or(isNull(rawLogs.nextAttemptAt), lte(rawLogs.nextAttemptAt, options.now)),
+      ),
+    )
+    .orderBy(asc(rawLogs.capturedAt))
+    .limit(options.limit);
+}
+
+/**
  * Own logs out of attempts but still pending: each try was cut off before it could record a
  * failure, for example because Android stopped the app. Nothing would ever pick these up.
  */

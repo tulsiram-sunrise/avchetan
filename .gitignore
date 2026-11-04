@@ -27,6 +27,7 @@ avchetan-code/apps/mobile/ios/
 *.sqlite
 *.sqlite3
 pglite-data/
+pglite-backups/
 exports/
 *.wav
 *.m4a

@@ -28,6 +28,8 @@ A version is the pair `(updated_at, updated_by_device)`. Incoming wins iff it is
 - `clock.now()` is monotonic per device: `max(Date.now(), last + 1ms)`, persisted in `sync_state.clock_last`.
 - Server rejects pushed rows with `updated_at` more than 5 minutes ahead of server time (`rejected: clock_skew`); client surfaces "device clock is wrong" and retries after correction.
 - Clients never use their clock to decide *what to pull* — only the server cursor.
+- After applying a pulled page, a client moves its clock past the newest `updated_at` in it (`clock.observe`). Otherwise an edit made right after pulling from a device with a faster clock would carry an older time and silently lose.
+- The server compares `updated_by_device` with `COLLATE "C"`, the byte order clients use, so both sides pick the same winner.
 
 **Local edits vs incoming pull:** if a pulled row loses LWW against the local row, it is skipped (the local row is in the outbox and will win on the server too). If it wins, it overwrites the local row and any outbox pointer for that record is removed (the local change already lost).
 
@@ -96,7 +98,9 @@ cycle():
 Triggers:
 - 2 s debounce after any local write that enqueued the outbox.
 - Network transition offline → online.
-- Every 60 s while the app is in foreground / dock process alive; every 15 min via background task on Android.
+- Every 30 s while the app is in foreground / dock process alive; every 15 min via background task on Android. Another device's change therefore reaches this one within about 32 s, inside the 60 s target.
+- Android: when the app leaves the screen, and when a write lands while it is off screen. Android pauses JS timers off screen (requests still run), so the debounce above would otherwise hold the change until the app is opened again.
+- Android: the app coming back to the foreground.
 - Manual: tray "Sync now", `/sync` command, pull-to-refresh on mobile.
 
 Failures: exponential backoff 2 s → 5 min with jitter; reset on success or network transition. HTTP 401 → stop and show "sync token invalid".
@@ -107,6 +111,7 @@ Failures: exponential backoff 2 s → 5 min with jitter; reset on success or net
 
 - New device: `POST /v1/devices/register` (name, platform) → returns `deviceId` (or device generates UUIDv7 and registers it). Pull from cursor 0.
 - "Reset local data": wipe DB, keep device ID, pull from 0. Unpushed outbox items are exported to a JSON file first.
+- **Moving to another server:** the engine remembers the `serverId` from `/v1/health`. When a device that has synced before sees a different one (a cloud server, a rebuilt hub), it re-points the outbox at every row of every synced table, tombstones included (`store.sync.enqueueEverything()`), then pulls from 0. The new server gets the device's whole history. Rows it already has from other devices settle by LWW.
 
 ## Schema evolution
 

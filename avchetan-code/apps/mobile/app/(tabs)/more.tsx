@@ -13,6 +13,22 @@ export default function MoreScreen() {
         <Text className="text-base text-ink">AI models</Text>
         <Text className="text-sm text-inkMuted">Choose who organizes and answers.</Text>
       </Pressable>
+      <Pressable
+        accessibilityRole="button"
+        className="border-b border-line bg-surfaceRaised p-4"
+        onPress={() => router.push('/settings/sync')}
+      >
+        <Text className="text-base text-ink">Sync</Text>
+        <Text className="text-sm text-inkMuted">Connect to your Avchetan server.</Text>
+      </Pressable>
+      <Pressable
+        accessibilityRole="button"
+        className="border-b border-line bg-surfaceRaised p-4"
+        onPress={() => router.push('/settings/data')}
+      >
+        <Text className="text-base text-ink">Your data</Text>
+        <Text className="text-sm text-inkMuted">Export everything, and daily backups.</Text>
+      </Pressable>
       <CaptureButton />
     </View>
   );

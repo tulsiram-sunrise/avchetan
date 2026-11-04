@@ -3,6 +3,7 @@ import {
   bigint,
   boolean,
   check,
+  customType,
   date,
   doublePrecision,
   index,
@@ -57,6 +58,10 @@ const enumCheck = (column: PgColumn, values: readonly string[]): SQL =>
 const seqIndex = (table: string, t: { serverSeq: PgColumn }) =>
   index(`${table}_server_seq_idx`).on(t.serverSeq);
 
+// Every table has row level security on and no policies. The server connects as the tables'
+// owner, which RLS doesn't apply to; any other role, such as a host's auto-generated REST API
+// (Supabase's Data API), sees no rows.
+
 // ---------------------------------------------------------------- synced tables
 
 export const rawLogs = pgTable(
@@ -89,7 +94,7 @@ export const rawLogs = pgTable(
     check('raw_logs_privacy_check', enumCheck(t.privacy, E.RAW_LOG_PRIVACY)),
     check('raw_logs_status_check', enumCheck(t.status, E.RAW_LOG_STATUSES)),
   ],
-);
+).enableRLS();
 
 export const categories = pgTable(
   'categories',
@@ -110,7 +115,7 @@ export const categories = pgTable(
     index('categories_slug_idx').on(t.slug),
     check('categories_origin_check', enumCheck(t.origin, E.CATEGORY_ORIGINS)),
   ],
-);
+).enableRLS();
 
 export const projects = pgTable(
   'projects',
@@ -123,7 +128,7 @@ export const projects = pgTable(
     archivedAt: instant('archived_at'),
   },
   (t) => [seqIndex('projects', t), index('projects_slug_idx').on(t.slug)],
-);
+).enableRLS();
 
 export const activities = pgTable(
   'activities',
@@ -149,7 +154,7 @@ export const activities = pgTable(
     index('activities_project_id_idx').on(t.projectId),
     check('activities_origin_check', enumCheck(t.origin, E.ROW_ORIGINS)),
   ],
-);
+).enableRLS();
 
 export const tasks = pgTable(
   'tasks',
@@ -172,7 +177,7 @@ export const tasks = pgTable(
     index('tasks_raw_log_id_idx').on(t.rawLogId),
     check('tasks_origin_check', enumCheck(t.origin, E.ROW_ORIGINS)),
   ],
-);
+).enableRLS();
 
 export const tags = pgTable(
   'tags',
@@ -189,7 +194,7 @@ export const tags = pgTable(
     index('tags_path_idx').on(t.path),
     index('tags_parent_id_idx').on(t.parentId),
   ],
-);
+).enableRLS();
 
 export const entityTags = pgTable(
   'entity_tags',
@@ -207,7 +212,7 @@ export const entityTags = pgTable(
     index('entity_tags_tag_id_idx').on(t.tagId),
     check('entity_tags_target_type_check', enumCheck(t.targetType, E.LINK_TARGET_TYPES)),
   ],
-);
+).enableRLS();
 
 export const entities = pgTable(
   'entities',
@@ -224,7 +229,7 @@ export const entities = pgTable(
     index('entities_kind_normalized_name_idx').on(t.kind, t.normalizedName),
     check('entities_kind_check', enumCheck(t.kind, E.ENTITY_KINDS)),
   ],
-);
+).enableRLS();
 
 export const entityMentions = pgTable(
   'entity_mentions',
@@ -242,7 +247,7 @@ export const entityMentions = pgTable(
     check('entity_mentions_target_type_check', enumCheck(t.targetType, E.LINK_TARGET_TYPES)),
     check('entity_mentions_role_check', enumCheck(t.role, E.MENTION_ROLES)),
   ],
-);
+).enableRLS();
 
 export const contextRules = pgTable(
   'context_rules',
@@ -255,7 +260,7 @@ export const contextRules = pgTable(
     enabled: boolean('enabled').notNull().default(true),
   },
   (t) => [seqIndex('context_rules', t)],
-);
+).enableRLS();
 
 // ------------------------------------------------------------ server-only tables
 
@@ -274,13 +279,34 @@ export const devices = pgTable(
     check('devices_platform_check', enumCheck(t.platform, E.DEVICE_PLATFORMS)),
     check('devices_extraction_mode_check', enumCheck(t.extractionMode, E.EXTRACTION_MODES)),
   ],
-);
+).enableRLS();
 
 export const serverMeta = pgTable('server_meta', {
   serverId: uuid('server_id').primaryKey(),
   syncTokenHash: text('sync_token_hash'),
   createdAt: instant('created_at').notNull().defaultNow(),
+}).enableRLS();
+
+/**
+ * pgvector with no fixed length, so a new embedding model needs no migration; each row records
+ * its `dims`, and the server builds the index for the configured length (ADR-0012).
+ */
+const vector = customType<{ data: number[]; driverData: string }>({
+  dataType: () => 'vector',
+  toDriver: (value) => `[${value.join(',')}]`,
+  fromDriver: (value) => JSON.parse(value) as number[],
 });
+
+/** One per raw log; written and read only by the server (docs/architecture/retrieval.md). */
+export const logEmbeddings = pgTable('log_embeddings', {
+  rawLogId: uuid('raw_log_id').primaryKey(),
+  model: text('model').notNull(),
+  dims: integer('dims').notNull(),
+  contentHash: text('content_hash').notNull(),
+  embedding: vector('embedding').notNull(),
+  createdAt: instant('created_at').notNull().defaultNow(),
+  updatedAt: instant('updated_at').notNull().defaultNow(),
+}).enableRLS();
 
 export const serverJobs = pgTable(
   'server_jobs',
@@ -299,4 +325,4 @@ export const serverJobs = pgTable(
     index('server_jobs_status_run_after_idx').on(t.status, t.runAfter),
     check('server_jobs_status_check', enumCheck(t.status, E.SERVER_JOB_STATUSES)),
   ],
-);
+).enableRLS();

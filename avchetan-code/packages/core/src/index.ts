@@ -1,5 +1,7 @@
 export { type AskRequest, type AskResult, type AskSource, ask } from './analysis/ask';
+export type { SearchHistory } from './analysis/tools';
 export { buildCaptureInput } from './capture';
+export { type EmbeddingSource, embeddingText, embedTexts } from './embeddings/embed';
 export {
   EXTRACTION_PROMPT_VERSION,
   type ExtractionOptions,
@@ -19,16 +21,25 @@ export {
   normalizeExtraction,
 } from './extraction/normalize';
 export {
+  type ClaimOptions,
   createPendingProcessor,
   type PendingProcessor,
   type PendingProcessorDeps,
 } from './extraction/pending-processor';
 export { type ExtractionResult, extractionResultSchema } from './extraction/schema';
 export {
+  ANALYSIS_MODE_SETTING,
+  ANALYSIS_MODES,
+  type AnalysisMode,
+  EXTRACTION_MODE_SETTING,
   type ExtractionSettings,
+  loadAnalysisMode,
   loadAnalysisModel,
+  loadExtractionMode,
   loadExtractionSettings,
   MODEL_SLOTS_SETTING,
+  saveAnalysisMode,
+  saveExtractionMode,
 } from './extraction/settings';
 export {
   generateStructured,
@@ -72,6 +83,7 @@ export {
 export { LLM_ERROR_CODES, type LlmErrorCode, toLlmError } from './providers/errors';
 export {
   apiKeySecretName,
+  createEmbeddingModel,
   createModel,
   PROVIDER_ADAPTERS,
   type ProviderDeps,

@@ -14,7 +14,9 @@
         { "url": "https://api.groq.com/*" },
         { "url": "https://generativelanguage.googleapis.com/*" },
         { "url": "http://localhost:11434/*" },
-        { "url": "http://127.0.0.1:11434/*" }
+        { "url": "http://127.0.0.1:11434/*" },
+        { "url": "http://*:8787/v1/*" },
+        { "url": "https://*/v1/*" }
       ]
     },
     {

@@ -1,7 +1,10 @@
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, count, eq, gte, lt, sql } from 'drizzle-orm';
 import { syncOutbox } from '../schema/sqlite/tables';
 import type { ClientDb, Tx } from './database';
-import type { SyncedTableName } from './synced';
+import { SYNCED_TABLES, type SyncedTableName } from './synced';
+
+/** After this many rejections a change waits for the user instead of being sent again. */
+export const MAX_OUTBOX_ATTEMPTS = 10;
 
 export type OutboxEntry = {
   tableName: SyncedTableName;
@@ -20,9 +23,32 @@ export async function listOutbox(db: ClientDb, limit = 500): Promise<OutboxEntry
       attempts: syncOutbox.attempts,
     })
     .from(syncOutbox)
+    .where(lt(syncOutbox.attempts, MAX_OUTBOX_ATTEMPTS))
     .orderBy(asc(syncOutbox.enqueuedAt))
     .limit(limit);
   return rows as OutboxEntry[];
+}
+
+/** Changes the server refused too often, for the "sync issue" notice. */
+export async function stuckOutboxCount(db: ClientDb): Promise<number> {
+  const [row] = await db
+    .select({ value: count() })
+    .from(syncOutbox)
+    .where(gte(syncOutbox.attempts, MAX_OUTBOX_ATTEMPTS));
+  return row?.value ?? 0;
+}
+
+/** Keeps a refused change in the outbox, one attempt closer to waiting for the user. */
+export async function rejectOutbox(
+  tx: Tx,
+  entries: readonly { tableName: SyncedTableName; recordId: string; code: string }[],
+): Promise<void> {
+  for (const { tableName, recordId, code } of entries) {
+    await tx
+      .update(syncOutbox)
+      .set({ attempts: sql`${syncOutbox.attempts} + 1`, lastError: code })
+      .where(and(eq(syncOutbox.tableName, tableName), eq(syncOutbox.recordId, recordId)));
+  }
 }
 
 /**
@@ -58,4 +84,20 @@ export async function removeOutboxEntry(
   await tx
     .delete(syncOutbox)
     .where(and(eq(syncOutbox.tableName, tableName), eq(syncOutbox.recordId, recordId)));
+}
+
+/**
+ * Points the outbox at every row of every synced table, deleted ones included. A device that
+ * moves to a new server (a cloud server, a rebuilt hub) sends its whole history this way;
+ * pointers already waiting keep their place and attempts.
+ */
+export async function enqueueEverything(tx: Tx, enqueuedAt: string): Promise<void> {
+  for (const [tableName, table] of Object.entries(SYNCED_TABLES)) {
+    await tx.run(
+      sql`insert into ${syncOutbox} (table_name, record_id, enqueued_at, attempts)
+          select ${tableName}, id, ${enqueuedAt}, 0 from ${table}
+          where true -- SQLite needs a WHERE before ON CONFLICT in INSERT … SELECT
+          on conflict do nothing`,
+    );
+  }
 }

@@ -43,7 +43,7 @@ A single device (desktop or phone) with no server configured. Everything in the 
 - **Ollama** (native install, uses the GPU). It never needs to be exposed to the network: only the Avchetan server talks to it, over `localhost`.
 - **Avchetan server** — the same `apps/server`, started in *hub profile*:
   - `DB_DRIVER=pglite` → embedded Postgres (PGlite, WASM) stored in a data directory, with the `vector` extension. No Docker, no separate database install. Same Drizzle `pg` schema and migrations as cloud mode — no third dialect.
-  - Providers default to `ollama` at `http://localhost:11434`; embedding slot = an Ollama embedding model (`EMBEDDING_DIMS` set to match).
+  - Providers default to `ollama` at `http://localhost:11434`; embedding slot = an Ollama embedding model (`EMBEDDING_PROVIDER`, `EMBEDDING_MODEL`; the suggested one is in `presets.json`).
 - **Desktop app** — syncs to `http://localhost:8787`; its own extraction slot can use Ollama directly (local, instant).
 
 How the server process is started (two delivery options):
@@ -63,15 +63,15 @@ The phone stores an **ordered list of server URLs** (`sync.serverUrls`, e.g. LAN
 
 ### Pairing (no typing of tokens)
 
-Desktop → Settings → *Pair a phone* shows a QR code (on demand, never persisted as an image):
+Desktop → Settings → Sync → *Pair a phone* shows a QR code (made on demand and drawn from its squares, never stored as an image):
 `avchetan://pair?v=1&server=<serverId>&urls=<lan>,<tailscale>&token=<sync-token>`
-The phone scans it, stores the token in secure storage, saves the URLs, registers its device and runs the first sync. The token can be rotated from the desktop (all devices re-pair). The same pairing flow works for Cloud mode.
+The desktop asks the hub for `serverId` and the addresses (`GET /v1/pairing`: the hub's own IPv4 addresses, home network first, Tailscale last, without adapters named as virtual; `PAIRING_URLS` overrides, e.g. in a container) and adds the token it holds. The phone scans it, tries every address at once, keeps those where `/v1/health` answers with the same `serverId` (plus Tailscale ones, for away), stores the token in secure storage, saves the URLs, registers and syncs (`pairWithLink` in `@avchetan/sync`). *Change token* calls `POST /v1/token/rotate`: the old token stops at once and every other device pairs again; a token set by `SYNC_TOKEN` can only be changed there. The same pairing flow works for Cloud mode.
 
 ### LLM work for the phone: "delegate to hub"
 
 The phone can't run Ollama models itself. In Home Hub mode its model slots default to **delegate**:
 
-- **Extraction (delegate):** the phone captures and syncs; it does not call any LLM. The device is registered with `extraction_mode = 'delegate'`, so the hub's fallback extractor processes its logs **immediately** (grace period 0 for that device) instead of after 15 minutes. Results sync back within seconds when connected. Offline on the phone → logs stay *pending* and are processed as soon as it reaches the hub.
+- **Extraction (delegate):** the phone captures and syncs; it does not call any LLM. The device is registered with `extraction_mode = 'delegate'`, so the hub's server device ([ADR-0021](../decisions/0021-server-organizes-as-a-device.md)) processes its logs **immediately** (grace period 0 for that device) instead of after 15 minutes. Results sync back within seconds when connected. Offline on the phone → logs stay *pending* and are processed as soon as it reaches the hub.
 - **Ask (hub):** the phone sends the question to `POST /v1/ask`; the hub runs the analysis model (Ollama) with **server-side tool implementations** (SQL on its Postgres/PGlite copy + vector search) and streams the answer back. Offline → Ask falls back to local SQL summaries.
 - **Embeddings / semantic search:** always on the hub.
 - Optional alternative per slot: call Ollama on the hub directly (`ollama` provider with the hub URL) — discouraged, because Ollama has no authentication; only acceptable over Tailscale.
@@ -92,7 +92,7 @@ Model IDs are never hard-coded; the setup wizard lists models installed in Ollam
 ### Operational notes
 
 - **PC sleep:** while the hub sleeps, phones queue locally. The wizard offers to keep the server running in the tray and to prevent sleep while plugged in; Wake-on-LAN is out of scope.
-- **Backups:** the hub is the sync point, but every device also holds a full copy. The hub takes a nightly snapshot of its data directory (PGlite) or `pg_dump` (Postgres), keeping 7.
+- **Backups:** the hub is the sync point, but every device also holds a full copy. A PGlite hub writes a snapshot of its data directory once per local day (`dumpDataDir('gzip')` → `BACKUP_DIR/hub-YYYY-MM-DD.tar.gz`, outside the data directory so snapshots never nest), keeping 7; `BACKUPS_ENABLED=false` turns it off, and `restore:hub <file>` unpacks one into an empty `PGLITE_DATA_DIR`. A Postgres server uses `pg_dump` instead.
 - **Scale:** PGlite is single-connection; fine for one user. Switching a hub to real Postgres later = set `DB_DRIVER=postgres` and run the built-in `export → import` (or just bootstrap a fresh server: devices re-push everything they hold).
 - **Moving from Home Hub to Cloud:** point devices at the new server via re-pairing; devices bootstrap from cursor 0 and push their outbox; or migrate the DB dump.
 
@@ -107,7 +107,9 @@ As described in [server.md](server.md): container + Postgres with pgvector, HTTP
 | Deployment mode | all devices (wizard) | `standalone`, `hub`, `cloud` |
 | `sync.serverUrls` | clients | ordered list |
 | Hub mode on/off, port, data dir | desktop | sidecar control |
-| Slot provider per device | clients | `ollama`, cloud providers, `delegate` (extraction), `hub` (analysis) |
+| Slot provider per device | clients | `ollama`, cloud providers |
+| `analysis.mode` | client `settings` (local) | `self` \| `hub`: `hub` sends Ask to `POST /v1/ask` ([ADR-0022](../decisions/0022-hub-answers-on-its-device.md)) |
+| `extraction.mode` | client `settings` (local) | `self` \| `delegate`: `delegate` gives the device's processor no model and registers it as `delegate`; the sync engine registers again when it changes |
 | `DB_DRIVER` | server env | `postgres` \| `pglite` |
 | `PGLITE_DATA_DIR` | server env | path |
 | Per-device `extraction_mode` | server `devices` table | `self` \| `delegate` |

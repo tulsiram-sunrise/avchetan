@@ -28,6 +28,10 @@ impl DbState {
         }
     }
 
+    pub fn path(&self) -> &Path {
+        &self.path
+    }
+
     fn connection(&self, label: &str) -> CommandResult<Arc<Mutex<Connection>>> {
         let connections = self.connections.lock().map_err(|_| poisoned())?;
         connections

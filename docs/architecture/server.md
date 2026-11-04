@@ -4,7 +4,7 @@ Small Hono app on Node. Roles: sync hub, semantic search, hub-side Ask, fallback
 
 ## Stack
 
-Hono (`@hono/node-server`), Drizzle (`node-postgres` or `pglite` driver, same `pg` schema), Zod (`@hono/zod-validator`), `@avchetan/core` (extraction, analysis, embeddings, brief), `@avchetan/sync/protocol`, pino logging. Database: Postgres ≥ 16 with `pgvector` (`DB_DRIVER=postgres`) **or** PGlite with the `vector` extension (`DB_DRIVER=pglite`). Code must use only features both support.
+Hono (`@hono/node-server`), Drizzle (`node-postgres` or `pglite` driver, same `pg` schema), Zod, `@avchetan/core` (extraction, analysis, embeddings, brief), `@avchetan/sync/protocol`, `createLogger` from `@avchetan/shared`. Database: Postgres ≥ 16 with `pgvector` (`DB_DRIVER=postgres`) **or** PGlite with the `vector` extension (`DB_DRIVER=pglite`). Code must use only features both support.
 
 ## Endpoints (all under `/v1`, JSON, bearer auth except health)
 
@@ -15,8 +15,10 @@ Hono (`@hono/node-server`), Drizzle (`node-postgres` or `pglite` driver, same `p
 | `POST /v1/sync/push` | See [sync-protocol](sync-protocol.md#push--post-v1syncpush) |
 | `GET /v1/sync/pull` | See [sync-protocol](sync-protocol.md#pull--get-v1syncpullcursornlimit500) |
 | `POST /v1/search` | Semantic search ([retrieval](retrieval.md#search-api)) |
-| `POST /v1/ask` | Run Ask on the server's analysis slot with server-side tools; streams the answer (text/event-stream) with citations. Used by devices whose analysis slot is `hub` |
-| `GET /v1/status` | Pending/fallback queue sizes, embedding backlog, last job runs (for the settings screen) |
+| `POST /v1/ask` | `{ question, timeZone }`: runs the apps' Ask on the server device's copy with the hub's model ([ADR-0022](../decisions/0022-hub-answers-on-its-device.md)); streams `text`, then `done` with cited raw log IDs, or `error` (text/event-stream). 503 `ask_unavailable` without `ANALYSIS_PROVIDER`. Used by devices with `analysis.mode = hub` |
+| `GET /v1/pairing` | `{ serverId, urls }` for the pairing QR code ([deployment-modes](deployment-modes.md#pairing-no-typing-of-tokens)) |
+| `POST /v1/token/rotate` | New sync token, returned once; the old one stops working. 409 `token_from_env` when `SYNC_TOKEN` sets it |
+| `GET /v1/status` | For the settings screen: `serverId`, version, profile, server time, each device with its last-seen time, and raw logs still waiting for extraction or failed. The fallback queue, embedding backlog and last job runs join with their workers (steps 3–4); clients ignore fields they don't know |
 
 Headers: `Authorization: Bearer <SYNC_TOKEN>`, `X-Avchetan-Device: <deviceId>`, `X-Avchetan-Protocol: 1`. Error format per [conventions/api.md](../conventions/api.md).
 
@@ -29,11 +31,11 @@ Single shared secret (≥ 32 random bytes), compared in constant time. If `SYNC_
 | Worker | Interval | Work |
 |---|---|---|
 | `embedder` | 10 s | Drain `server_jobs` kind `embed` in batches |
-| `fallback-extractor` | 60 s, plus an immediate wake after a push containing new `pending_llm` logs from a `delegate` device | Claim stale `pending_llm` raw logs ([extraction-pipeline §5](extraction-pipeline.md#5-server-fallback)) |
+| server device (`fallback/`) | 60 s, plus a wake after any other device's push | Organize entries devices left waiting, as one more device ([ADR-0021](../decisions/0021-server-organizes-as-a-device.md), [extraction-pipeline §5](extraction-pipeline.md#5-server-fallback)) |
 | `brief-fallback` | 15 min | If past the user's brief time + 2.5 h and no daily brief for that date exists, generate it (Phase 6) |
 | `janitor` | daily | Purge tombstones older than 90 days *that all devices have pulled past* (`devices.last_pull_cursor`), prune `server_jobs` |
 
-All writes to synced tables go through `withSyncWrite` (advisory lock + `server_seq` assignment).
+The server device writes through the sync API like any device. All writes to synced tables go through `withSyncWrite` (advisory lock + `server_seq` assignment).
 
 ## Configuration (env, Zod-validated at boot; process exits on invalid config)
 
@@ -41,8 +43,8 @@ All writes to synced tables go through `withSyncWrite` (advisory lock + `server_
 DB_DRIVER=postgres|pglite, DATABASE_URL (postgres) | PGLITE_DATA_DIR (pglite)
 SERVER_PROFILE=cloud|hub   (hub: defaults providers to local Ollama, allows LAN/Tailscale HTTP, enables snapshot backups)
 SYNC_TOKEN, PORT=8787, BIND_HOST=0.0.0.0, LOG_LEVEL=info, TZ_DEFAULT=UTC  (fallback only; each raw log carries its own captured_tz)
-EXTRACTION_PROVIDER, EXTRACTION_MODEL, ANALYSIS_PROVIDER, ANALYSIS_MODEL,
-EMBEDDING_PROVIDER, EMBEDDING_MODEL, EMBEDDING_DIMS
+EXTRACTION_PROVIDER, EXTRACTION_MODEL, ANALYSIS_PROVIDER (hub answers questions), ANALYSIS_MODEL,
+EMBEDDING_PROVIDER, EMBEDDING_MODEL   (no EMBEDDING_DIMS: each row records its length; see retrieval.md)
 <PROVIDER>_API_KEY …, OLLAMA_BASE_URL (optional)
 FALLBACK_EXTRACTION_ENABLED=true, FALLBACK_GRACE_MINUTES=15
 ```
@@ -54,10 +56,12 @@ FALLBACK_EXTRACTION_ENABLED=true, FALLBACK_GRACE_MINUTES=15
 apps/server/src/
   index.ts            boot: env, db, migrations, app, workers
   env.ts              Zod env schema
+  auth.ts             server identity, sync token hash
   app.ts              Hono app, middleware (auth, device, protocol, errors, request id)
-  routes/             health.ts, devices.ts, sync.ts, search.ts, status.ts
+  routes/             health.ts, devices.ts, sync.ts, status.ts, search.ts (step 4)
   sync/               apply-push.ts, read-pull.ts, with-sync-write.ts
-  workers/            embedder.ts, fallback-extractor.ts, brief-fallback.ts, janitor.ts
+  fallback/           server-device.ts, left-waiting.ts, from-env.ts, node-sqlite.ts
+  workers/            embedder.ts, brief-fallback.ts, janitor.ts (later steps)
   db/                 client.ts (uses @avchetan/db/pg)
 ```
 
@@ -65,7 +69,8 @@ apps/server/src/
 
 - **Home Hub:** desktop-app sidecar (single Node executable + PGlite data dir) or headless `start:hub` / `deploy/home-hub/compose.yml`. When the desktop app runs it as a sidecar, `SYNC_TOKEN` is generated on first run and stored in the OS keychain, then passed to the sidecar via env. See [deployment-modes.md](deployment-modes.md#2-home-hub).
 - **Cloud:**
-  - Multi-stage `Dockerfile` (pnpm deploy → slim Node image). Migrations run at startup.
-  - `docker-compose.yml` for local dev: `postgres` (pgvector image) + `server`.
-  - Backups: nightly `pg_dump` (cron on host or provider feature). Documented in the hosting ADR once chosen.
-  - Candidate hosts (decide later): managed Postgres with pgvector (Neon, Supabase) + a container host (Fly.io, Railway, Render), or a single VPS/home server with Compose + Caddy for TLS.
+  - Multi-stage `apps/server/Dockerfile`, built from `avchetan-code/`: `pnpm build` bundles the server with esbuild into one `server.mjs`, and the slim Node image holds only that file and PGlite (which loads its WebAssembly from disk). A bundle, not `pnpm deploy`: the workspace lockfile links `drizzle-orm` to `expo-sqlite`, which made a deploy folder 649 MB of Expo and React Native. Migrations run at startup. Postgres is `pgvector/pgvector` on Postgres 18, the same major version as PGlite.
+  - `apps/server/compose.yml` for local dev: `postgres` (pgvector image, reachable only from the server, so no password) + `server`. `deploy/home-hub/compose.yml` runs a hub on PGlite with its data in a volume.
+  - CI runs the server tests on PGlite and again on Postgres (`TEST_DATABASE_URL`: one new database per test), then builds the image and checks it answers health.
+  - Recommended free host ([ADR-0023](../decisions/0023-free-cloud-supabase-render.md)): Supabase Postgres through its session pooler, with TLS verified against Supabase's CA (`sslmode=verify-full&sslrootcert=` in `DATABASE_URL`, the CA as a Render Secret File), plus a Render free web service built from the Dockerfile. Every table has row level security on with no policies, so only the owner (the server) sees rows, never a host's auto-generated API. Guide: [setup-cloud](../user-guide/setup-cloud.md). An own server with Compose + Caddy is `deploy/cloud/` in Phase 5b.
+  - Backups: on hosts that provide none (Supabase Free), the devices' full copies are the recovery path; `pg_dump` (cron on the host, or a provider feature) where available.
