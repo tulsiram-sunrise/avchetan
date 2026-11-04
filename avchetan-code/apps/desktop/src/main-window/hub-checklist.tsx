@@ -1,4 +1,5 @@
 import { listOllamaModels, missingOllamaModels, pullOllamaModel } from '@avchetan/core';
+import { formatAgo } from '@avchetan/shared';
 import { loadServerStatus } from '@avchetan/sync';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { type ReactNode, useState } from 'react';
@@ -69,7 +70,18 @@ function OllamaRow(props: { models: readonly string[] }) {
   });
 
   if (props.models.length === 0) return null;
-  if (!ollama.data) return <Row state="checking" title="Checking Ollama…" />;
+  if (!ollama.data) {
+    return ollama.error ? (
+      <Row state="todo" title="Couldn't ask Ollama which models it has">
+        <ActionError errors={[ollama.error]} />
+        <div>
+          <QuietButton onClick={() => void ollama.refetch()}>Check again</QuietButton>
+        </div>
+      </Row>
+    ) : (
+      <Row state="checking" title="Checking Ollama…" />
+    );
+  }
   if (!ollama.data.running) {
     return (
       <Row state="todo" title="Ollama isn't running on this PC">
@@ -214,7 +226,21 @@ function PhonesRow() {
     (d) => d.platform === 'android' || d.platform === 'ios',
   );
   return phones.length > 0 ? (
-    <Row state="ok" title={`Paired: ${phones.map((p) => p.name).join(', ')}`} />
+    <Row
+      state="ok"
+      title={phones.length === 1 ? 'A phone is paired' : `${phones.length} phones are paired`}
+    >
+      <ul className="text-ink-muted">
+        {phones.map((phone) => (
+          <li key={phone.id}>
+            {phone.name}:{' '}
+            {phone.lastSeenAt
+              ? `synced ${formatAgo(phone.lastSeenAt, Date.now())}`
+              : 'not synced yet'}
+          </li>
+        ))}
+      </ul>
+    </Row>
   ) : (
     <Row state="todo" title="No phone is paired with the hub yet">
       <span className="text-ink-muted">

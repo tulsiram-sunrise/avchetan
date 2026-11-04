@@ -8,6 +8,9 @@ export function ollamaRoot(baseUrl?: string): string {
   return (baseUrl ?? DEFAULT_ROOT).replace(/\/+$/, '').replace(/\/v1$/, '');
 }
 
+/** Ollama lists its models at once; no answer by then counts as not running. */
+const TAGS_TIMEOUT_MS = 5_000;
+
 const tagsSchema = z.object({ models: z.array(z.object({ name: z.string() })) });
 
 export type OllamaModels = { running: false } | { running: true; models: string[] };
@@ -16,7 +19,9 @@ export type OllamaModels = { running: false } | { running: true; models: string[
 export async function listOllamaModels(fetch: HttpFetch, baseUrl?: string): Promise<OllamaModels> {
   let response: Response;
   try {
-    response = await fetch(`${ollamaRoot(baseUrl)}/api/tags`);
+    response = await fetch(`${ollamaRoot(baseUrl)}/api/tags`, {
+      signal: AbortSignal.timeout(TAGS_TIMEOUT_MS),
+    });
   } catch {
     return { running: false };
   }

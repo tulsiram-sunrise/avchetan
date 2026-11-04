@@ -35,7 +35,9 @@ describe('listOllamaModels', () => {
       running: true,
       models: ['small-model:3b', 'embed:latest'],
     });
-    expect(fetch).toHaveBeenCalledWith('http://localhost:11434/api/tags');
+    expect(fetch).toHaveBeenCalledWith('http://localhost:11434/api/tags', {
+      signal: expect.any(AbortSignal),
+    });
   });
 
   it('says Ollama is not running when nothing answers', async () => {

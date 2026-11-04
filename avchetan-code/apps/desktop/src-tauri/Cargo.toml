@@ -19,7 +19,8 @@ tauri = { version = "=2.12.5", features = ["tray-icon"] }
 tauri-plugin-autostart = "=2.7.0"
 tauri-plugin-dialog = "=2.8.4"
 tauri-plugin-global-shortcut = "=2.4.1"
-tauri-plugin-http = "=2.8.3"
+# unsafe-headers: the app sends no Origin, which Ollama would refuse (src/platform/native-fetch.ts).
+tauri-plugin-http = { version = "=2.8.3", features = ["unsafe-headers"] }
 tauri-plugin-opener = "=2.7.2"
 tauri-plugin-single-instance = "=2.5.5"
 tauri-plugin-window-state = "=2.5.0"

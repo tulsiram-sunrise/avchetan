@@ -1,6 +1,8 @@
 import type { ClientStore } from '@avchetan/db/sqlite';
 import {
   type CheckRow,
+  formatAgo,
+  formatMinutes,
   type HttpFetch,
   type ModelCheck,
   type SecretStore,
@@ -87,19 +89,6 @@ export async function checkConnection(deps: ConnectionCheckDeps): Promise<Connec
     if (code === 'unauthorized') return { ...result, token: 'refused' };
     return { ...result, error: code };
   }
-}
-
-function minutes(ms: number): string {
-  const count = Math.max(1, Math.round(Math.abs(ms) / 60_000));
-  return count === 1 ? '1 minute' : `${count} minutes`;
-}
-
-function ago(instant: string, nowMs: number): string {
-  const ms = nowMs - Date.parse(instant);
-  if (ms < 60_000) return 'just now';
-  if (ms < 3_600_000) return `${minutes(ms)} ago`;
-  const hours = Math.round(ms / 3_600_000);
-  return hours < 48 ? `${hours} hours ago` : `${Math.round(hours / 24)} days ago`;
 }
 
 const JOB_NAME: Record<ModelCheck['job'], string> = {
@@ -233,7 +222,7 @@ export function connectionRows(
         ? {
             id: 'clock',
             state: 'problem',
-            title: `This device's clock is ${minutes(check.clockOffsetMs)} ${check.clockOffsetMs > 0 ? 'behind' : 'ahead of'} the server's`,
+            title: `This device's clock is ${formatMinutes(check.clockOffsetMs)} ${check.clockOffsetMs > 0 ? 'behind' : 'ahead of'} the server's`,
             detail: 'Turn on automatic date and time in the device settings.',
             helpCode: 'clock_skew',
             action: 'date_settings',
@@ -268,7 +257,7 @@ export function connectionRows(
     rows.push({
       id: 'last-synced',
       state: 'info',
-      title: `Last synced ${ago(check.lastSyncedAt, nowMs)}`,
+      title: `Last synced ${formatAgo(check.lastSyncedAt, nowMs)}`,
     });
   }
   return rows;

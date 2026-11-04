@@ -16,6 +16,7 @@ import { TauriSecretStore } from '../native/secrets';
 import { createShell, type Shell } from '../native/shell';
 import { createTauriSqliteExecutor, openNativeDatabase } from '../native/sqlite';
 import { BrowserNetworkMonitor } from './browser-network';
+import { withoutOrigin } from './native-fetch';
 
 /** Every platform capability the app uses, built once per window (docs/patterns/platform-adapters.md). */
 export type Platform = {
@@ -24,7 +25,7 @@ export type Platform = {
   secrets: SecretStore;
   network: NetworkMonitor;
   scheduler: Scheduler;
-  /** Goes through Rust: webview fetch would be blocked by CORS. */
+  /** Goes through Rust, as the app rather than a web page: webview fetch would be blocked by CORS. */
   fetch: HttpFetch;
   shell: Shell;
   files: DataFiles;
@@ -40,7 +41,7 @@ export function createTauriPlatform(call: Invoke = invoke): Platform {
     secrets: new TauriSecretStore(call),
     network: new BrowserNetworkMonitor(),
     scheduler: new TimerScheduler(),
-    fetch: tauriFetch,
+    fetch: withoutOrigin(tauriFetch),
     shell: createShell(call),
     files: createDataFiles(call),
     hub: createHub(call),
