@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { describeError, helpSection, parseLastError } from './error-help';
+import { describeError, errorMessage, helpSection, parseLastError } from './error-help';
 
 describe('describeError', () => {
   it('replaces a developer message with the plain one, and names the guide section', () => {
@@ -29,6 +29,12 @@ describe('describeError', () => {
 
   it('does not treat object properties as codes', () => {
     expect(helpSection('constructor')).toBe('other_errors');
+  });
+});
+
+describe('errorMessage', () => {
+  it('gives the plain message for a code', () => {
+    expect(errorMessage('server_unreachable')).toBe('Can’t reach your hub or server');
   });
 });
 

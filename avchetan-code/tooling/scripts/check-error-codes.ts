@@ -73,9 +73,15 @@ const found: Found[] = [
 
 const guide = readFileSync(join(repoRoot, 'docs', 'user-guide', 'troubleshooting.md'), 'utf8');
 const slugger = new GithubSlugger();
-const headings = new Set(
-  [...guide.matchAll(/^#{2,3} (.+)$/gm)].map((match) => slugger.slug(match[1] as string)),
-);
+/** Each section's text by its slug, so the message the app shows can be found in it. */
+const sections = new Map<string, string>();
+for (const part of guide.split(/^(?=#{2,3} )/m)) {
+  const heading = /^#{2,3} (.+)$/m.exec(part)?.[1];
+  if (heading) sections.set(slugger.slug(heading), part);
+}
+const headings = new Set(sections.keys());
+/** Typographic and straight apostrophes are the same to a reader. */
+const plain = (text: string) => text.replaceAll('’', "'");
 
 const problems: string[] = [];
 const known = new Set(Object.keys(ERROR_HELP));
@@ -85,6 +91,12 @@ for (const { code: name, where } of found) {
 for (const [name, help] of Object.entries(ERROR_HELP)) {
   if (help.section !== null && !headings.has(help.section)) {
     problems.push(`ERROR_HELP.${name}: no "## ${help.section}" in troubleshooting.md`);
+  } else if (help.section !== null && help.message !== null) {
+    // People search the guide for the words on their screen.
+    const text = plain(sections.get(help.section) ?? '');
+    if (!text.includes(plain(help.message))) {
+      problems.push(`ERROR_HELP.${name}: "## ${help.section}" doesn't quote "${help.message}"`);
+    }
   }
 }
 if (!headings.has('other_errors')) problems.push('troubleshooting.md needs "## other_errors"');

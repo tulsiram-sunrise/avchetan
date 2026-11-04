@@ -23,6 +23,7 @@ export type { ErrorHelp, KnownErrorCode } from './error-help';
 export {
   describeError,
   ERROR_HELP,
+  errorMessage,
   helpSection,
   OTHER_ERRORS_SECTION,
   parseLastError,

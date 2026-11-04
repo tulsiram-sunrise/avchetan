@@ -1,6 +1,7 @@
 import type { ClientStore } from '@avchetan/db/sqlite';
 import {
   type CheckRow,
+  errorMessage,
   formatAgo,
   formatMinutes,
   type HttpFetch,
@@ -160,7 +161,7 @@ export function connectionRows(
     rows.push({
       id: 'reachable',
       state: 'problem',
-      title: "Can't reach your hub or server",
+      title: errorMessage('server_unreachable'),
       detail: `Tried ${check.addresses.map((a) => a.url).join(', ')}. For a hub: is the PC on with Avchetan open, and is ${options.device} on the same Wi-Fi or on Tailscale?`,
       helpCode: 'server_unreachable',
     });
@@ -185,7 +186,7 @@ export function connectionRows(
       rows.push({
         id: 'token',
         state: 'problem',
-        title: 'The server refused this sync token',
+        title: errorMessage('unauthorized'),
         detail:
           'The token was changed on the hub. Pair this device again, or paste the new token in Sync.',
         helpCode: 'unauthorized',

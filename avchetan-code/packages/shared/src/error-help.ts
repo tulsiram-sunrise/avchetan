@@ -177,3 +177,9 @@ export function parseLastError(lastError: string): { code: string; message: stri
   const [code = '', ...message] = lastError.split(': ');
   return { code, message: message.join(': ') };
 }
+
+/** The plain message for a known code, for text that names a problem before any error exists. */
+export function errorMessage(code: KnownErrorCode): string {
+  const help: ErrorHelp = ERROR_HELP[code];
+  return help.message ?? code;
+}

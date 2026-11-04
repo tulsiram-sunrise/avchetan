@@ -18,10 +18,10 @@ It checks:
 Problems come first, each with its fix and a **Help** link to its section below. Click **Check again** after fixing something.
 
 ## unauthorized
-**"Your device isn't allowed to sync."** The sync token changed or was rotated. Pair the device again ([Pair your phone](pair-your-phone.md)).
+**"Your hub or server refused this device's sync token"** or **"Your hub doesn't know this device. Pair it again."** The sync token changed or was rotated, or the hub lost what it knew about this device. Pair the device again ([Pair your phone](pair-your-phone.md)).
 
 ## server_unreachable
-**"Can't reach your hub/server."**
+**"Can't reach your hub or server."**
 - Home Hub: is the PC on and is Avchetan's tray icon green? Is the phone on the same Wi-Fi (or Tailscale connected)? Is the Windows Wi-Fi network set as *Private*?
 - Cloud: open `https://<your-domain>/v1/health` in a browser.
 
@@ -53,13 +53,13 @@ Problems come first, each with its fix and a **Help** link to its section below.
 **"This server's token is set in its SYNC_TOKEN setting."** A server you run yourself (cloud, or `start:hub` from the source code) takes its token from the `SYNC_TOKEN` setting, so **Change token** can't replace it. Put a new token into `SYNC_TOKEN` where the server is set up, restart the server, then pair every device again.
 
 ## protocol_unsupported
-**"This app and your hub or server are different versions."** Install the latest Avchetan on every device, and update the server if you run one yourself. Your entries wait on each device until they can sync.
+**"This app and your hub or server are different versions. Update the older one."** Install the latest Avchetan on every device, and update the server if you run one yourself. Your entries wait on each device until they can sync.
 
 ## rate_limited
 **"Your hub got too many requests from this device."** The hub accepts 60 requests a minute from one device. Avchetan waits and tries again by itself; nothing is lost. If it keeps happening, quit and restart Avchetan on that device.
 
 ## server_error
-**"Your hub or server answered with an error"**, **"sent something unexpected"**, **"didn't accept the request"** or **"can't reach its database."**
+**"Your hub or server answered with an error"**, **"Your hub or server sent something unexpected"**, **"Your hub or server didn't accept the request"** or **"Your hub or server can't reach its database."**
 - Check that every device and the server run the same version of Avchetan.
 - Home Hub: open **Settings → Home Hub on this PC → Recent hub log** on the PC for the reason.
 - Cloud: open the server's log, and `https://<your-domain>/v1/health` in a browser.
@@ -99,20 +99,20 @@ Problems come first, each with its fix and a **Help** link to its section below.
 **"The shortcut is used by another app."** Choose another shortcut in **Settings → Shortcut**.
 
 ## database_unavailable
-**"Avchetan couldn't open its database."** Avchetan keeps your entries in a file in your user folder, and it couldn't open that file.
+**"Avchetan couldn't open its database"**, **"Avchetan couldn't update its database"** or **"The database is busy. Try again in a moment."** Avchetan keeps your entries in a file in your user folder, and it couldn't open that file.
 - Right-click the tray icon → **Quit Avchetan**, then start it again from the Start menu.
 - Check that your disk isn't full.
 - If you use a backup or sync tool (OneDrive, Dropbox) on `%APPDATA%\app.avchetan`, exclude that folder. Those tools can lock the file while Avchetan is using it.
 - On Android: close the app fully and open it again, and check that your phone has free storage.
 
 ## db_query_failed
-**"Couldn't save this entry."** Your text stays in the box, so nothing is lost. Press Enter to try again. If it keeps failing, quit and restart Avchetan, then see [database_unavailable](#database_unavailable).
+**"Couldn't save this entry"** or **"Couldn't save this change."** Your text stays in the box, so nothing is lost. Press Enter to try again. If it keeps failing, quit and restart Avchetan, then see [database_unavailable](#database_unavailable).
 
 ## db_newer_than_app
-**"Your data was saved by a newer Avchetan."** A newer version of Avchetan updated this device's database, and this older version can't read it safely, so it doesn't touch it. Install the latest version of Avchetan; your entries are all there. If you restored an older app on purpose, keep the newer one instead.
+**"Your data was saved by a newer Avchetan. Install the latest version."** A newer version of Avchetan updated this device's database, and this older version can't read it safely, so it doesn't touch it. Install the latest version of Avchetan; your entries are all there. If you restored an older app on purpose, keep the newer one instead.
 
 ## secret_store_failed
-**"Couldn't reach this device's password store."** Avchetan keeps API keys and the sync token in Windows Credential Manager (on Android, the phone's keystore), never in its own files. Restart Avchetan. On Windows, if it keeps failing, restart the PC: the Credential Manager service may have stopped. Nothing is lost, but sync and cloud models wait until the key or token can be read.
+**"Couldn't reach this device's password store, where Avchetan keeps keys and tokens."** Avchetan keeps API keys and the sync token in Windows Credential Manager (on Android, the phone's keystore), never in its own files. Restart Avchetan. On Windows, if it keeps failing, restart the PC: the Credential Manager service may have stopped. Nothing is lost, but sync and cloud models wait until the key or token can be read.
 
 ## dock_unavailable
 **"The capture box isn't responding."** Your change wasn't saved. Right-click the tray icon → **Quit Avchetan**, start it again, and repeat the change.
@@ -124,7 +124,7 @@ Problems come first, each with its fix and a **Help** link to its section below.
 **"Invalid backup name."** This is a bug in Avchetan, not something you did. Please report it; your data is not affected.
 
 ## export_failed
-**"Could not save the export."** Check that the disk has free space. On Android, pick a folder you can write to, such as *Downloads*, and try again.
+**"Couldn't save the export."** Check that the disk has free space. On Android, pick a folder you can write to, such as *Downloads*, and try again.
 
 ## export_invalid
 **"Invalid export file name."** This is a bug in Avchetan, not something you did. Please report it; your data is not affected.
@@ -165,7 +165,7 @@ Problems come first, each with its fix and a **Help** link to its section below.
 **"The backup couldn't be restored; the hub kept its data."** Nothing changed: the hub is back on the data it had. Open **Recent hub log** for the reason. Try an older backup, or check that the disk isn't full.
 
 ## hub_backup_invalid
-**"Not a hub backup"** or **"That backup is gone."** The file was renamed or deleted. Close and reopen **Hub backups** to see the backups that are there.
+**"Not a hub backup, or that backup is gone."** The file was renamed or deleted. Close and reopen **Hub backups** to see the backups that are there.
 
 ## hub_backup_failed
 **"Couldn't read the hub's backups."** Avchetan couldn't open `%APPDATA%\app.avchetan\hub\backups`. Check that a backup or sync tool isn't locking it, then close and reopen **Hub backups**. The hub keeps making its daily backups regardless.
@@ -209,7 +209,7 @@ Problems come first, each with its fix and a **Help** link to its section below.
 **Cloud server log: "The database rejected the password."** Reset the database password in Supabase (**Project Settings → Database**), and put the new one into `DATABASE_URL` in place of the old one.
 
 ## other_errors
-**"Something inside Avchetan went wrong"**, or an error whose **Help** link brought you here. This is a bug in Avchetan, not something you did.
+**"Something inside Avchetan went wrong. Restart it; if it happens again, please report it"**, **"The app needs a restart"**, or an error whose **Help** link brought you here. This is a bug in Avchetan, not something you did.
 1. Quit Avchetan (on Windows: right-click the tray icon → **Quit Avchetan**; on Android: close it from recent apps) and open it again.
 2. Run the [Setup check](#setup-check).
 3. If it happens again, report it on the project's GitHub page, with the error text and what you were doing. Don't include your entries or tokens.
