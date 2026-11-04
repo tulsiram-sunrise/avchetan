@@ -1,0 +1,11 @@
+# HTTPS for your domain, with a certificate from Let's Encrypt that Caddy renews by itself.
+# Only the API is passed to the server.
+{$DOMAIN} {
+	encode zstd gzip
+	handle /v1/* {
+		reverse_proxy server:8787
+	}
+	handle {
+		respond "Avchetan server. Point the app at this address." 200
+	}
+}

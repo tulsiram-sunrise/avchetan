@@ -1,0 +1,103 @@
+# Avchetan on your own server (a VPS), with HTTPS from Let's Encrypt through Caddy.
+# Guide: docs/user-guide/setup-cloud.md#your-own-server. From avchetan-code/:
+#   cp deploy/cloud/.env.example deploy/cloud/.env     (then fill it in)
+#   docker compose -f deploy/cloud/compose.yml --env-file deploy/cloud/.env up -d --build
+# Only Caddy is reachable from outside (ports 80 and 443). The sync token is printed once:
+#   docker compose -f deploy/cloud/compose.yml --env-file deploy/cloud/.env logs server
+name: avchetan-cloud
+
+services:
+  postgres:
+    image: pgvector/pgvector:0.8.6-pg18
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: avchetan
+      POSTGRES_DB: avchetan
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in deploy/cloud/.env}
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "avchetan"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  server:
+    build:
+      context: ../..
+      dockerfile: apps/server/Dockerfile
+    restart: unless-stopped
+    environment:
+      DB_DRIVER: postgres
+      DATABASE_URL: postgres://avchetan:${POSTGRES_PASSWORD}@postgres:5432/avchetan
+      SERVER_PROFILE: cloud
+      # The address phones scan in the pairing code.
+      PAIRING_URLS: https://${DOMAIN:?Set DOMAIN in deploy/cloud/.env}
+      SYNC_TOKEN: ${SYNC_TOKEN:-}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      # The PGlite snapshots don't apply on Postgres; the backup service below makes dumps.
+      BACKUPS_ENABLED: "false"
+      EXTRACTION_PROVIDER: ${EXTRACTION_PROVIDER:-}
+      EXTRACTION_MODEL: ${EXTRACTION_MODEL:-}
+      ANALYSIS_PROVIDER: ${ANALYSIS_PROVIDER:-}
+      ANALYSIS_MODEL: ${ANALYSIS_MODEL:-}
+      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  caddy:
+    image: caddy:2.11.7-alpine
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - server
+
+  # A compressed dump of the database each day; the newest 7 are kept in the backups volume.
+  backup:
+    image: pgvector/pgvector:0.8.6-pg18
+    restart: unless-stopped
+    environment:
+      PGHOST: postgres
+      PGUSER: avchetan
+      PGDATABASE: avchetan
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - backups:/backups
+    entrypoint:
+      - sh
+      - -c
+      - |
+        while true; do
+          name=/backups/avchetan-$$(date -u +%Y-%m-%dT%H%M%SZ).sql.gz
+          if pg_dump --no-owner | gzip > "$$name.part"; then
+            mv "$$name.part" "$$name"
+            ls -1t /backups/avchetan-*.sql.gz | tail -n +8 | xargs -r rm --
+          else
+            rm -f "$$name.part"
+            echo "backup failed" >&2
+          fi
+          sleep 86400
+        done
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres-data:
+  caddy-data:
+  caddy-config:
+  backups:

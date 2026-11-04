@@ -104,6 +104,40 @@ jobs:
           docker logs hub 2>&1 | grep '^\[' || true
           exit 1
 
+  cloud-compose:
+    name: Own-server setup (deploy/cloud)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: avchetan-code
+    steps:
+      - uses: actions/checkout@v7
+
+      # localhost: Caddy serves HTTPS with its own local certificate instead of Let's Encrypt.
+      - name: Start Postgres, the server, Caddy and the backups
+        run: |
+          printf 'DOMAIN=localhost\nPOSTGRES_PASSWORD=%s\n' "$(openssl rand -hex 16)" > deploy/cloud/.env
+          docker compose -f deploy/cloud/compose.yml --env-file deploy/cloud/.env up -d --build
+
+      - name: Health through Caddy over HTTPS, and a first backup
+        run: |
+          compose="docker compose -f deploy/cloud/compose.yml --env-file deploy/cloud/.env"
+          for i in $(seq 1 60); do
+            if curl -fsSk https://localhost/v1/health; then
+              $compose exec -T backup sh -c 'ls /backups/avchetan-*.sql.gz' && exit 0
+            fi
+            sleep 3
+          done
+          $compose ps
+          $compose logs caddy postgres backup
+          # Logger lines only: the token the server printed on its first start stays out of CI logs.
+          $compose logs --no-log-prefix server 2>&1 | grep '^\[' || true
+          exit 1
+
+      - name: Stop
+        if: always()
+        run: docker compose -f deploy/cloud/compose.yml --env-file deploy/cloud/.env down -v
+
   secrets:
     name: Secret scan (full history)
     runs-on: ubuntu-latest

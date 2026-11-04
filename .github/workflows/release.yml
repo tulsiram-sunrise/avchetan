@@ -1,0 +1,175 @@
+# Builds the Windows installer (with the hub inside) and the signed Android APK.
+# - Run by hand (Actions → Release → Run workflow): both files as downloadable artifacts.
+# - On a tag `v*`: also a *draft* GitHub release with both files and their SHA-256 sums, which
+#   the maintainer reads and publishes.
+# The APK is signed with the release key from repository secrets (ADR-0018); without them the
+# job fails rather than publish a debug-signed APK.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  LEFTHOOK: 0
+
+jobs:
+  windows:
+    name: Windows installer
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: avchetan-code
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: avchetan-code/package.json
+          cache: true
+          cache_dependency_path: avchetan-code/pnpm-lock.yaml
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: avchetan-code/apps/desktop/src-tauri
+
+      - run: pnpm install --frozen-lockfile
+
+      # The server as one executable, with PGlite beside it (ADR-0024).
+      - run: pnpm --filter @avchetan/server build:sidecar
+
+      - run: pnpm --filter @avchetan/desktop build:release
+
+      - name: Name the installer
+        shell: bash
+        run: |
+          mkdir -p ../out
+          cp apps/desktop/src-tauri/target/release/bundle/nsis/*-setup.exe \
+            "../out/avchetan-${GITHUB_REF_NAME//\//-}-windows-x64-setup.exe"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: avchetan-windows
+          path: out/*.exe
+          if-no-files-found: error
+
+  android:
+    name: Android APK
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: avchetan-code
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: avchetan-code/package.json
+          cache: true
+          cache_dependency_path: avchetan-code/pnpm-lock.yaml
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Generate the Android project
+        working-directory: avchetan-code/apps/mobile
+        run: npx expo prebuild --platform android --no-install
+        env:
+          EXPO_NO_TELEMETRY: 1
+
+      - name: Release key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::The ANDROID_KEYSTORE_* secrets are missing (docs/conventions/releasing.md)"
+            exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.jks"
+
+      - name: Build the APK
+        working-directory: avchetan-code/apps/mobile
+        env:
+          NODE_ENV: production
+          EXPO_NO_TELEMETRY: 1
+          AVCHETAN_KEYSTORE_PATH: ${{ runner.temp }}/release.jks
+          AVCHETAN_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          AVCHETAN_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          AVCHETAN_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          # Each build updates the previous one.
+          AVCHETAN_VERSION_CODE: ${{ github.run_number }}
+        run: |
+          export NODE_PATH="$GITHUB_WORKSPACE/avchetan-code/node_modules/.pnpm/node_modules"
+          ./android/gradlew -p android assembleRelease
+
+      - name: Check the signature, and name the APK
+        working-directory: avchetan-code/apps/mobile
+        run: |
+          apk=android/app/build/outputs/apk/release/app-release.apk
+          apksigner=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)apksigner
+          "$apksigner" verify --print-certs "$apk" > "$RUNNER_TEMP/certs.txt"
+          if grep -q "CN=Android Debug" "$RUNNER_TEMP/certs.txt"; then
+            echo "::error::The APK is signed with the debug key"
+            exit 1
+          fi
+          grep "certificate SHA-256 digest" "$RUNNER_TEMP/certs.txt"
+          rm -f "$RUNNER_TEMP/release.jks"
+          mkdir -p "$GITHUB_WORKSPACE/out"
+          cp "$apk" "$GITHUB_WORKSPACE/out/avchetan-${GITHUB_REF_NAME//\//-}-android.apk"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: avchetan-android
+          path: out/*.apk
+          if-no-files-found: error
+
+  draft-release:
+    name: Draft GitHub release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [windows, android]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: out
+          merge-multiple: true
+
+      - name: Checksums
+        working-directory: out
+        run: sha256sum * > SHA256SUMS.txt && cat SHA256SUMS.txt
+
+      - name: Create the draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" out/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --draft \
+            --title "Avchetan $GITHUB_REF_NAME" \
+            --generate-notes

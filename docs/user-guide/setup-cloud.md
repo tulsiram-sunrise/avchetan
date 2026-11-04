@@ -75,7 +75,56 @@ Without your PC, the server can't use Ollama. To organize entries and answer que
 The server is one Docker image that runs on any container host with any Postgres 16 or newer that has the `pgvector` extension. To move, set the same environment variables on the new host, point `DATABASE_URL` at the new database, then connect your devices to the new address.
 
 - **Neon** instead of Supabase: 1 GB free, but only 100 compute hours a month. A device that is left open all month uses more than that, and sync then stops until the next month. Good for light use.
-- **Your own server** (a VPS) with Docker, a domain and HTTPS: a ready-made setup is planned.
+- **Your own server** (a VPS) with Docker, a domain and HTTPS: see [Your own server](#your-own-server).
+
+## Your own server
+
+**Goal:** run Avchetan on a server you rent (a VPS), with its own database and HTTPS, instead of Supabase and Render. It never sleeps and keeps daily database backups.
+**You need:** about 30 minutes, a VPS running Ubuntu 24.04 with at least 1 GB of memory, a domain name whose DNS settings you can change, and an SSH login to the server. This path uses a terminal on the server; every command below is complete, so copy and paste them.
+
+The setup is `deploy/cloud/` in the repository: Postgres with pgvector, the Avchetan server, [Caddy](https://caddyserver.com) for HTTPS with a free Let's Encrypt certificate, and a daily database dump. Only Caddy is reachable from the internet.
+
+1. At your DNS provider, add an **A record** for the name you want, for example `avchetan.example.com`, pointing at your server's IP address. Wait until it works: `ping avchetan.example.com` on your own computer shows that IP.
+2. Log in to the server with SSH, and install Docker:
+   ```sh
+   curl -fsSL https://get.docker.com | sudo sh
+   ```
+3. Open the web ports in the server's firewall:
+   ```sh
+   sudo ufw allow OpenSSH && sudo ufw allow 80/tcp && sudo ufw allow 443 && sudo ufw --force enable
+   ```
+   If your provider also has a firewall in its web dashboard, allow TCP 80 and TCP and UDP 443 there too.
+4. Download Avchetan and make your settings file:
+   ```sh
+   git clone https://github.com/tulsiram-sunrise/avchetan.git
+   cd avchetan/avchetan-code
+   cp deploy/cloud/.env.example deploy/cloud/.env
+   ```
+5. Put your domain into the settings. In this command, replace `avchetan.example.com` with your own name from step 1, then run it:
+   ```sh
+   sed -i "s/^DOMAIN=$/DOMAIN=avchetan.example.com/" deploy/cloud/.env
+   ```
+6. Make a database password (you never need to type it):
+   ```sh
+   sed -i "s/^POSTGRES_PASSWORD=$/POSTGRES_PASSWORD=$(openssl rand -hex 16)/" deploy/cloud/.env
+   ```
+7. Optional: to let the server organize entries and answer questions with a free Groq key, open the file with `nano deploy/cloud/.env`, fill in the lines from the table in [Part 2, step 5](#part-2--the-server-render) (`EXTRACTION_PROVIDER` to `GROQ_API_KEY`), then press **Ctrl+O**, **Enter**, **Ctrl+X**. Leave them empty to have each device use its own AI models.
+8. Start it. The first start builds the server, which takes 5–10 minutes:
+   ```sh
+   sudo docker compose -f deploy/cloud/compose.yml --env-file deploy/cloud/.env up -d --build
+   ```
+9. Show your sync token, which the server makes and prints once on its first start:
+   ```sh
+   sudo docker compose -f deploy/cloud/compose.yml --env-file deploy/cloud/.env logs server | grep -A1 "Your sync token"
+   ```
+   Copy the long line under **Your sync token** and keep it safe, like a password.
+10. Open `https://avchetan.example.com/v1/health` (with your name) in a browser. It should show `"status":"ok"`. Then connect your devices as in [Part 3](#part-3--connect-your-devices), with this address and token.
+
+**Updating:** from `avchetan/avchetan-code`, run `git pull`, then the command from step 8 again. Your data stays in the `postgres-data` volume.
+
+**Backups:** the `backup` service dumps the database once a day and keeps the newest 7. To copy them off the server, run `sudo docker compose -f deploy/cloud/compose.yml --env-file deploy/cloud/.env cp backup:/backups ./avchetan-backups`, then download the `avchetan-backups` folder (for example with `scp`). Every device also keeps a full copy of your entries, so a new, empty server is filled again when your devices connect to it.
+
+**If it doesn't start:** `sudo docker compose -f deploy/cloud/compose.yml --env-file deploy/cloud/.env logs` shows why. `DOMAIN` missing or a certificate error from `caddy` usually means the DNS record from step 1 doesn't point at this server yet, or ports 80 and 443 are closed (step 3).
 
 ## Keep it safe
 
