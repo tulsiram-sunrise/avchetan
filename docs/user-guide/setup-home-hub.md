@@ -85,29 +85,33 @@ To use your phone away from home, set up [Tailscale](remote-access-tailscale.md)
 
 ## With the installer (planned)
 
-> Draft — describes planned behavior.
+> Draft — the screens below are in the app, but the installer that ships the hub with it isn't released yet.
 
 ### Part 1 — Set up the hub on your PC
 
-1. Install and open Ollama once (it runs in the background afterwards).
+1. Install and open [Ollama](https://ollama.com/download) once. It runs in the background afterwards.
 2. Download and run the Avchetan installer.
-3. On the welcome screen choose **Home Hub on this PC**.
-4. **AI models** — Avchetan lists the models installed in Ollama and suggests a good set (one quick model for organizing entries, one stronger model for answering questions, one small model for search). Click **Download suggested models** and wait for it to finish.
-5. **Network** — Avchetan asks Windows for permission so your phone can connect. Click **Allow** when Windows asks. It only applies to private (home) networks.
-6. **Keep running** — leave **Keep the hub running in the background** turned on, so your phone can sync even when the Avchetan window is closed.
-7. Click **Finish**. The tray icon shows a green dot when the hub is running.
+3. Open Avchetan's **Settings** (tray icon → **Preferences**) and find **Home Hub on this PC**.
+4. Under **AI models for the hub**, choose the set that fits your PC, for example **Ollama on your PC (no graphics card)**.
+5. If you ran a hub before (from a terminal or Docker) and want to keep its entries, click **Use data from a hub I ran before…** and choose its `pglite-data` folder. Phones paired with it keep syncing.
+6. Click **Turn on the hub**. The first start takes about 15 seconds while it sets up its database; then it says **Running on port 8787**.
+7. Work down the checklist under it until every line has a ✓:
+   - **Ollama needs models** — click **Download them** and wait. It's a few GB.
+   - **Your network is set as Public** — click **Open network settings** and set your home network to **Private**.
+   - **Windows' firewall blocks phones** — click **Allow phones to connect**, then **Yes** when Windows asks.
+   - **Tailscale** is optional, for syncing away from home ([Tailscale](remote-access-tailscale.md)).
+
+The hub runs whenever Avchetan is open, including when only its tray icon is showing, and starts again with it. If it stops unexpectedly, Avchetan starts it again.
 
 ### Part 2 — Connect your phone
 
-Follow [Pair your phone](pair-your-phone.md). It takes about one minute: you scan a QR code.
+The checklist's last line says **No phone is paired with the hub yet**. Click **Pair a phone** there, and on the phone open **More → Sync → Scan pairing code**. When the phone has synced, the line shows its name.
 
 ### Check it worked
 
 1. On the phone, add an entry: `Slept 7 hours, felt rested`.
-2. Within about 10 seconds it shows a ✓ on the phone, and it appears on the PC too.
+2. It shows on the PC too, organized: within a minute or so on a PC without a graphics card.
 3. On the phone, ask: `? how did I sleep this week`. The answer comes from your PC.
-
-Or open **Settings → Setup check** on either device. All items should be green.
 
 ## Good to know
 

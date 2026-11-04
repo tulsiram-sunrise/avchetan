@@ -17,6 +17,7 @@ export { askServer } from './hub-ask';
 export {
   buildPairingLink,
   loadPairingLink,
+  loadServerStatus,
   type PairingDeps,
   type PairingLink,
   pairWithLink,

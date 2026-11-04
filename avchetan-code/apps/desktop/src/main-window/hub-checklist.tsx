@@ -1,8 +1,10 @@
 import { listOllamaModels, missingOllamaModels, pullOllamaModel } from '@avchetan/core';
+import { loadServerStatus } from '@avchetan/sync';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { type ReactNode, useState } from 'react';
 import { HelpLink } from '../help-link';
 import { useServices } from '../services-context';
+import { PairPhone } from './pair-phone';
 import { ActionError, QuietButton } from './ui';
 
 const OLLAMA_KEY = ['ollama', 'models'] as const;
@@ -185,12 +187,49 @@ function NetworkRows(props: { port: number }) {
   );
 }
 
+/** The phones the hub knows. Asked of the hub itself, so it is only shown while it runs. */
+function PhonesRow() {
+  const { store, platform } = useServices();
+  const server = useQuery({
+    queryKey: ['sync', 'server-status'],
+    queryFn: () => loadServerStatus({ store, fetch: platform.fetch, secrets: platform.secrets }),
+    refetchInterval: 15_000,
+  });
+  if (!server.data) {
+    return server.error ? (
+      <Row state="todo" title="Couldn't ask the hub which phones it knows">
+        <ActionError errors={[server.error]} />
+      </Row>
+    ) : (
+      <Row state="checking" title="Asking the hub about phones…" />
+    );
+  }
+  const phones = server.data.devices.filter(
+    (d) => d.platform === 'android' || d.platform === 'ios',
+  );
+  return phones.length > 0 ? (
+    <Row state="ok" title={`Paired: ${phones.map((p) => p.name).join(', ')}`} />
+  ) : (
+    <Row state="todo" title="No phone is paired with the hub yet">
+      <span className="text-ink-muted">
+        Show the code, then scan it on the phone in More → Sync → Scan pairing code.
+      </span>
+      <PairPhone />
+    </Row>
+  );
+}
+
 /** Everything a Home Hub needs, each with its fix. */
-export function HubChecklist(props: { port: number; ollamaModels: readonly string[] }) {
+export function HubChecklist(props: {
+  port: number;
+  ollamaModels: readonly string[];
+  running: boolean;
+}) {
   return (
     <ul className="flex flex-col gap-2 rounded-lg border border-line p-3">
       <OllamaRow models={props.ollamaModels} />
       <NetworkRows port={props.port} />
+      {props.running ? <PhonesRow /> : null}
     </ul>
   );
 }

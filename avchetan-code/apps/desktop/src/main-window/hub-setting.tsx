@@ -98,7 +98,13 @@ export function HubSetting() {
           {current.phase === 'failed' && current.error ? <HelpLink code={current.error} /> : null}
         </p>
       ) : null}
-      {current ? <HubChecklist port={current.config.port} ollamaModels={ollamaModels} /> : null}
+      {current ? (
+        <HubChecklist
+          port={current.config.port}
+          ollamaModels={ollamaModels}
+          running={current.phase === 'running'}
+        />
+      ) : null}
 
       {current && !on ? (
         <>

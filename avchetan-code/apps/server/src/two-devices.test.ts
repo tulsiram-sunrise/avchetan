@@ -5,6 +5,7 @@ import { FakeNetworkMonitor, ManualScheduler, MemorySecretStore } from '@avcheta
 import {
   createSyncEngine,
   loadPairingLink,
+  loadServerStatus,
   loadSyncStatus,
   pairWithLink,
   rotateServerToken,
@@ -122,6 +123,8 @@ describe('pairing', () => {
     });
     await engine.syncNow();
     expect((await loadSyncStatus(store)).state).toBe('synced');
+    const { devices } = await loadServerStatus(fromDesktop);
+    expect(devices.map((d) => d.name).sort()).toEqual(['Phone', 'Test']);
 
     await rotateServerToken(fromDesktop);
     await desktop.engine.syncNow();
