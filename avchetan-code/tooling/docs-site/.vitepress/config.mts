@@ -50,6 +50,8 @@ export default defineConfig({
   title: 'Avchetan',
   description: 'Offline-first personal logger and planner with your choice of AI.',
   base: '/avchetan/',
+  // docs/public/ comes from assets/brand/ (`pnpm icons`).
+  head: [['link', { rel: 'icon', type: 'image/svg+xml', href: '/avchetan/favicon.svg' }]],
   srcDir: docsDir,
   cleanUrls: true,
   vite: { resolve: { alias: { vue: vueDir } } },
@@ -89,6 +91,7 @@ export default defineConfig({
   },
 
   themeConfig: {
+    logo: '/favicon.svg',
     nav: [
       { text: 'User guide', link: '/user-guide/' },
       { text: 'Developer docs', link: '/' },
