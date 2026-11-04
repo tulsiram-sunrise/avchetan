@@ -1,10 +1,13 @@
+import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Pressable, SectionList, Text, View } from 'react-native';
 import { useExtractionMode, useSlotModel } from '../../src/queries/ai-models';
 import { useExtracted, usePendingCount, useTimeline } from '../../src/queries/entries';
 import { useConnection } from '../../src/queries/sync';
+import { needsSetup } from '../../src/services/first-run';
 import { byRawLog, groupByDay } from '../../src/services/grouping';
+import { useServices } from '../../src/services-context';
 import { CaptureButton } from '../../src/ui/capture-button';
 import { EntryRow } from '../../src/ui/entry-row';
 import { SectionTitle } from '../../src/ui/parts';
@@ -44,7 +47,20 @@ function SetupBanner() {
   );
 }
 
+/** Opens the welcome screen once, on a phone that was never set up. */
+function useFirstRun() {
+  const { store } = useServices();
+  const first = useQuery({
+    queryKey: ['settings', 'setup.completed'],
+    queryFn: () => needsSetup(store),
+  });
+  useEffect(() => {
+    if (first.data) router.push('/setup');
+  }, [first.data]);
+}
+
 export default function TodayScreen() {
+  useFirstRun();
   const timeline = useTimeline();
   const logs = useMemo(() => timeline.data?.pages.flat() ?? [], [timeline.data]);
   const ids = useMemo(() => logs.map((log) => log.id), [logs]);

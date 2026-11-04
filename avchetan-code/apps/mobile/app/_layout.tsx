@@ -57,6 +57,7 @@ function AppRoutes({ startup }: { startup: Startup }) {
           <Stack.Screen name="settings/sync" options={{ title: 'Sync' }} />
           <Stack.Screen name="settings/data" options={{ title: 'Your data' }} />
           <Stack.Screen name="settings/pair" options={{ title: 'Scan pairing code' }} />
+          <Stack.Screen name="setup" options={{ title: 'Welcome', headerBackVisible: false }} />
         </Stack>
       </QueryClientProvider>
     </ServicesProvider>
