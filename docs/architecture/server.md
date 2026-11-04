@@ -47,6 +47,7 @@ EXTRACTION_PROVIDER, EXTRACTION_MODEL, ANALYSIS_PROVIDER (hub answers questions)
 EMBEDDING_PROVIDER, EMBEDDING_MODEL   (no EMBEDDING_DIMS: each row records its length; see retrieval.md)
 <PROVIDER>_API_KEY …, OLLAMA_BASE_URL (optional)
 FALLBACK_EXTRACTION_ENABLED=true, FALLBACK_GRACE_MINUTES=15
+SHUTDOWN_ON_STDIN_CLOSE=false  (true: stop cleanly when stdin closes; set by the desktop app for its hub, ADR-0024)
 ```
 `.env.example` documents every variable; real `.env` is git-ignored.
 

@@ -31,6 +31,7 @@ import {
 import { pairingUrls } from './pairing';
 
 const VERSION = '0.0.0';
+const SHUTDOWN_GRACE_MS = 5_000;
 
 const log = createLogger('server');
 
@@ -189,16 +190,39 @@ async function main(): Promise<void> {
     }),
   );
 
+  let stopping = false;
   const shutDown = () => {
+    if (stopping) return;
+    stopping = true;
+    log.info('shutting down');
     device?.stop();
     embedder?.stop();
     stopSnapshots?.();
-    server.close(() => {
+    let closed = false;
+    const closeDatabase = () => {
+      if (closed) return;
+      closed = true;
       void database.close().finally(() => process.exit(0));
+    };
+    // A request held open, such as an answer still streaming, mustn't keep the database open.
+    const timer = setTimeout(() => {
+      if ('closeAllConnections' in server) server.closeAllConnections();
+      closeDatabase();
+    }, SHUTDOWN_GRACE_MS);
+    server.close(() => {
+      clearTimeout(timer);
+      closeDatabase();
     });
   };
   process.once('SIGINT', shutDown);
   process.once('SIGTERM', shutDown);
+  if (env.SHUTDOWN_ON_STDIN_CLOSE) {
+    // The desktop app runs the hub with a pipe on stdin and closes it to stop the hub. Windows
+    // has no SIGTERM for a child, and the pipe also closes if the app itself crashes.
+    process.stdin.once('end', shutDown);
+    process.stdin.once('close', shutDown);
+    process.stdin.resume();
+  }
 }
 
 main().catch((error: unknown) => {

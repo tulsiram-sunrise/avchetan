@@ -119,6 +119,8 @@ Scope:
 
 ## Phase 5b — Built-in Home Hub (no Docker, no terminal)
 
+**Progress:** started 2026-11-04. Step 1 is done ([ADR-0024](decisions/0024-hub-sidecar-node-single-executable.md)): `build:sidecar` makes the server a Node single executable (97.8 MB, plus 28 MB of PGlite folders beside it; 44 MB zipped). It starts in about 0.5 s, or 14 s the first time while it creates the database, and uses about 290 MB of memory. It stops cleanly within 0.1 s when its stdin closes, which is how the desktop app will stop it, and also when the app that started it is force-killed.
+
 Scope:
 1. Spike: bundle `apps/server` as a single Node executable with PGlite assets; measure size and startup.
 2. Tauri sidecar integration (`hub_start/stop/status`), crash restart, keep-running-in-tray option.

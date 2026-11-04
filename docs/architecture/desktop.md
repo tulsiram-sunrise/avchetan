@@ -81,7 +81,7 @@ Windows installer via Tauri bundler (NSIS). App identifier `app.avchetan`. Code 
 ## Hub mode (Home Hub deployment)
 
 When the user chooses *Home Hub* in the setup wizard ([deployment-modes](deployment-modes.md#2-home-hub)):
-- The desktop app launches `apps/server` as a **Tauri sidecar** (`externalBin`: the server bundled as a single Node executable; PGlite data dir under the app data folder), restarts it if it crashes, and stops it on quit (or keeps it running from the tray if "keep hub running" is on).
+- The desktop app launches `apps/server` as a **Tauri sidecar** (`externalBin`: the server built by `build:sidecar` as a Node single executable, with PGlite's folders beside it as resources; PGlite data dir under the app data folder; [ADR-0024](../decisions/0024-hub-sidecar-node-single-executable.md)), restarts it if it crashes, and stops it on quit by closing its stdin (`SHUTDOWN_ON_STDIN_CLOSE=true`), which also stops it cleanly if the app crashes (or keeps it running from the tray if "keep hub running" is on).
 - First run: generate `SYNC_TOKEN` → keychain; detect Ollama (`http://localhost:11434/api/tags`), list installed models, suggest slot presets; offer to add a Windows firewall rule for port 8787 on *Private* networks; detect Tailscale and show its hostname.
 - Settings → *Hub*: status, port, data folder, logs, backups, embedding backlog (`/v1/status`), *Pair a phone* (QR), *Rotate token*.
 - The desktop app itself syncs to `http://localhost:8787` and extracts locally with Ollama.
