@@ -29,6 +29,7 @@ const log = createLogger('sync');
 const POLL_MS = 30_000;
 const DEBOUNCE_MS = 2_000;
 const REGISTRATION = 'registration';
+const DATA_EPOCH = 'data_epoch';
 
 export type SyncDevice = {
   name: string;
@@ -99,15 +100,27 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
   }
 
   /**
-   * A different server knows nothing of what the last one held: pull from the beginning, and
-   * push every row again (last write wins, so rows it has from other devices settle as usual).
+   * A different server, or the same one with its data restored or moved in (a new
+   * `dataEpoch`), doesn't hold everything this device sent: pull from the beginning, push every
+   * row again (last write wins, so rows it has from other devices settle as usual), and
+   * register again.
    */
-  async function followServer(serverId: string): Promise<void> {
+  async function followServer({ serverId, dataEpoch }: HealthResponse): Promise<void> {
     const previous = await store.sync.getState('server_id');
-    if (previous === serverId) return;
+    const previousEpoch = await store.sync.getState(DATA_EPOCH);
+    const sameServer = previous === serverId;
+    // A device that hasn't seen an epoch yet, or a server too old to send one, carries on.
+    const rewound = sameServer && !!dataEpoch && !!previousEpoch && previousEpoch !== dataEpoch;
+    if (sameServer && !rewound) {
+      if (dataEpoch && dataEpoch !== previousEpoch)
+        await store.sync.setState(DATA_EPOCH, dataEpoch);
+      return;
+    }
     if (previous) await store.sync.enqueueEverything();
     await store.sync.setState('server_id', serverId);
+    await store.sync.setState(DATA_EPOCH, dataEpoch ?? '');
     await store.sync.setState('pull_cursor', '0');
+    await store.sync.setState(REGISTRATION, '');
   }
 
   async function push(api: ReturnType<typeof createApiClient>): Promise<void> {
@@ -191,7 +204,7 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
       throw new SyncError('server_unreachable', 'No address of the server answered');
     }
     const { serverId } = server.health;
-    await followServer(serverId);
+    await followServer(server.health);
 
     try {
       await cycle(server.baseUrl, serverId, token);

@@ -33,6 +33,8 @@ export const healthResponseSchema = z.object({
   status: z.literal('ok'),
   version: z.string(),
   serverId: z.uuid(),
+  /** Changes when the server's data is restored or moved in. Older servers don't send it. */
+  dataEpoch: z.uuid().optional(),
   protocol: z.int(),
 });
 export type HealthResponse = z.infer<typeof healthResponseSchema>;

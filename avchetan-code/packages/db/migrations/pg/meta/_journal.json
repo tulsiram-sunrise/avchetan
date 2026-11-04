@@ -29,6 +29,13 @@
       "when": 1793783461265,
       "tag": "0003_row_level_security",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793792261265,
+      "tag": "0004_server_data_epoch",
+      "breakpoints": true
     }
   ]
 }

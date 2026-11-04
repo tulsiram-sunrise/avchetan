@@ -82,5 +82,11 @@ export const pgMigrations: readonly Migration[] = [
       "ALTER TABLE \"tasks\" ENABLE ROW LEVEL SECURITY;",
       "-- The migration runner creates this table itself, outside the schema.\nALTER TABLE \"avchetan_migrations\" ENABLE ROW LEVEL SECURITY;"
     ]
+  },
+  {
+    "tag": "0004_server_data_epoch",
+    "statements": [
+      "ALTER TABLE \"server_meta\" ADD COLUMN \"data_epoch\" uuid;"
+    ]
   }
 ];

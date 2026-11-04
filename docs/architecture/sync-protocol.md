@@ -112,6 +112,7 @@ Failures: exponential backoff 2 s → 5 min with jitter; reset on success or net
 - New device: `POST /v1/devices/register` (name, platform) → returns `deviceId` (or device generates UUIDv7 and registers it). Pull from cursor 0.
 - "Reset local data": wipe DB, keep device ID, pull from 0. Unpushed outbox items are exported to a JSON file first.
 - **Moving to another server:** the engine remembers the `serverId` from `/v1/health`. When a device that has synced before sees a different one (a cloud server, a rebuilt hub), it re-points the outbox at every row of every synced table, tombstones included (`store.sync.enqueueEverything()`), then pulls from 0. The new server gets the device's whole history. Rows it already has from other devices settle by LWW.
+- **A server whose data went back in time** ([ADR-0025](../decisions/0025-server-data-epoch.md)): `/v1/health` also returns a `dataEpoch`, kept in `server_meta.data_epoch`. It changes when the server's data is restored from a snapshot (`restoreSnapshot` clears it, and the next start makes a new one) or moved in from elsewhere (the server starts once with `RESET_DATA_EPOCH=true`; the desktop app does this after **Use data from a hub I ran before**). A device that sees the same `serverId` with a different `dataEpoch` than it saved does the same as for a new server, and registers again. A device with no saved epoch (from before epochs existed), or a server that sends none, just saves it and carries on.
 
 ## Schema evolution
 

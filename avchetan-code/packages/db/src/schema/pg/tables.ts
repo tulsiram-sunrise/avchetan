@@ -284,6 +284,8 @@ export const devices = pgTable(
 export const serverMeta = pgTable('server_meta', {
   serverId: uuid('server_id').primaryKey(),
   syncTokenHash: text('sync_token_hash'),
+  /** Replaced when the data is restored or moved in, so devices sync everything again. */
+  dataEpoch: uuid('data_epoch'),
   createdAt: instant('created_at').notNull().defaultNow(),
 }).enableRLS();
 

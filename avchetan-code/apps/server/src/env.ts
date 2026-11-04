@@ -39,6 +39,11 @@ const envSchema = z
       .enum(['true', 'false'])
       .default('false')
       .transform((value) => value === 'true'),
+    /** Set after data was moved in from elsewhere, so devices sync everything again. */
+    RESET_DATA_EPOCH: z
+      .enum(['true', 'false'])
+      .default('false')
+      .transform((value) => value === 'true'),
     // The server organizes entries other devices left waiting (extraction-pipeline §5).
     FALLBACK_EXTRACTION_ENABLED: flag,
     FALLBACK_GRACE_MINUTES: z.coerce.number().int().min(0).default(15),

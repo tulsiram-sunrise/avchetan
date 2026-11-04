@@ -19,6 +19,7 @@ export function healthRoutes({ db, identity, version }: AppDeps) {
       status: 'ok',
       version,
       serverId: identity.serverId,
+      dataEpoch: identity.dataEpoch,
       protocol: PROTOCOL_VERSION,
     });
   });

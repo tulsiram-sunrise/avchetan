@@ -22,6 +22,8 @@ pub const TOKEN_SECRET: &str = "hub:server:token";
 const CONFIG_FILE: &str = "hub.json";
 const DATA_FOLDER: &str = "pglite-data";
 const BACKUP_FOLDER: &str = "backups";
+/// Left by an import until the hub has started with a new data epoch (sync-protocol.md).
+const RESET_EPOCH_MARKER: &str = "reset-data-epoch";
 const LOG_LINES: usize = 200;
 const STOP_WAIT: Duration = Duration::from_secs(10);
 const WATCH_EVERY: Duration = Duration::from_millis(300);
@@ -251,6 +253,11 @@ impl HubState {
             }
             if line.starts_with("[server] listening") && inner.phase == Phase::Starting {
                 inner.phase = Phase::Running;
+                // The hub has its new data epoch by now (it's set before it listens).
+                crate::error::warn_on_err(
+                    "clear epoch marker",
+                    remove_if_present(&self.dir.join(RESET_EPOCH_MARKER)),
+                );
             }
             push_log(&mut inner.logs, line);
         }
@@ -341,7 +348,16 @@ impl HubState {
                 "Turn the hub off before using other hub data",
             ));
         }
-        import_data(source, &self.data_dir())
+        import_data(source, &self.data_dir())?;
+        // Moved-in data may be older than what devices sent: they must send everything again.
+        fs::write(self.dir.join(RESET_EPOCH_MARKER), "").map_err(io_failed("hub_import_failed"))
+    }
+}
+
+fn remove_if_present(path: &Path) -> std::io::Result<()> {
+    match fs::remove_file(path) {
+        Err(error) if error.kind() != std::io::ErrorKind::NotFound => Err(error),
+        _ => Ok(()),
     }
 }
 
@@ -432,6 +448,9 @@ fn spawn(dir: &Path, config: &HubConfig) -> CommandResult<Child> {
         .env("PGLITE_DATA_DIR", &data)
         .env("BACKUP_DIR", &backups)
         .env("SYNC_TOKEN", token);
+    if dir.join(RESET_EPOCH_MARKER).is_file() {
+        command.env("RESET_DATA_EPOCH", "true");
+    }
     let slots = [
         ("EXTRACTION", &config.extraction),
         ("ANALYSIS", &config.analysis),
@@ -565,6 +584,17 @@ mod tests {
         fake_hub_data(&dir.join("target"));
         let error = import_data(&dir.join("old"), &dir.join("target")).unwrap_err();
         assert_eq!(error.code, "hub_import_target_not_empty");
+    }
+
+    #[test]
+    fn asks_for_a_new_data_epoch_after_moving_data_in() {
+        let dir = temp_dir("epoch");
+        fake_hub_data(&dir.join("old"));
+        let state = HubState::load(dir.join("hub"));
+        state.import(&dir.join("old")).unwrap();
+        assert!(dir.join("hub").join(RESET_EPOCH_MARKER).is_file());
+        remove_if_present(&dir.join("hub").join(RESET_EPOCH_MARKER)).unwrap();
+        remove_if_present(&dir.join("hub").join(RESET_EPOCH_MARKER)).unwrap();
     }
 
     #[test]

@@ -29,7 +29,7 @@ const log = createLogger('http');
 export type AppDeps = {
   db: ServerDb;
   /** `tokenHash` changes in place when the token is rotated. */
-  identity: Pick<ServerIdentity, 'serverId' | 'tokenHash'>;
+  identity: Pick<ServerIdentity, 'serverId' | 'dataEpoch' | 'tokenHash'>;
   clock: Clock;
   version: string;
   profile: ServerProfile;

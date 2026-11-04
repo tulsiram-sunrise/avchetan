@@ -1,4 +1,5 @@
-import { type ClientStore, SYNCED_TABLES } from '@avchetan/db/sqlite';
+import { tasks as serverTasks } from '@avchetan/db/pg';
+import { type ClientStore, SYNCED_TABLES, setSyncState } from '@avchetan/db/sqlite';
 import { openTestStore } from '@avchetan/db/testing';
 import { createMonotonicClock, type HttpFetch } from '@avchetan/shared';
 import { FakeNetworkMonitor, ManualScheduler, MemorySecretStore } from '@avchetan/shared/testing';
@@ -12,6 +13,7 @@ import {
   type SyncEngine,
   saveConnection,
 } from '@avchetan/sync';
+import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from './app';
 import { loadServerIdentity } from './auth';
@@ -132,6 +134,73 @@ describe('pairing', () => {
 
     expect((await loadSyncStatus(desktop.store)).state).toBe('synced');
     expect((await loadSyncStatus(store)).state).toBe('unauthorized');
+  });
+});
+
+/** The server starting again on the same database, as after a restore or a move. */
+async function restartServer(options: { resetDataEpoch: boolean }) {
+  const clock = createMonotonicClock({ source: () => serverMs });
+  const identity = await loadServerIdentity(database.db, TOKEN, options);
+  const app = createApp({
+    db: database.db,
+    identity,
+    clock,
+    version: 'test',
+    profile: 'hub',
+    nowMs: () => serverMs,
+    pairing: { urls: () => [URL], tokenFromEnv: false },
+  });
+  serverFetch = (input, init) => Promise.resolve(app.fetch(new Request(input, init)));
+}
+
+describe('a server whose data went back in time', () => {
+  it('gets everything again from its devices when its data epoch changes', async () => {
+    const desktop = await device();
+    const phone = await device();
+    await addTask(desktop, 'Before the snapshot');
+    await converge(desktop, phone);
+    await addTask(desktop, 'After the snapshot');
+    await desktop.engine.syncNow();
+
+    // Restoring a snapshot from before the second task: the server no longer has it.
+    await database.db.delete(serverTasks).where(eq(serverTasks.title, 'After the snapshot'));
+    await restartServer({ resetDataEpoch: true });
+    await converge(desktop, phone);
+
+    expect((await titles(phone)).sort()).toEqual(['After the snapshot', 'Before the snapshot']);
+    const onServer = await database.db.select({ title: serverTasks.title }).from(serverTasks);
+    expect(onServer.map((t) => t.title).sort()).toEqual([
+      'After the snapshot',
+      'Before the snapshot',
+    ]);
+  });
+
+  it('carries on as before when only the server restarted', async () => {
+    const desktop = await device();
+    await addTask(desktop, 'Kept');
+    await desktop.engine.syncNow();
+    const before = await desktop.store.sync.getState('pull_cursor');
+    const resend = vi.spyOn(desktop.store.sync, 'enqueueEverything');
+
+    await restartServer({ resetDataEpoch: false });
+    await desktop.engine.syncNow();
+
+    expect(await desktop.store.sync.getState('pull_cursor')).toBe(before);
+    expect(resend).not.toHaveBeenCalled();
+  });
+
+  it("doesn't send everything again from a device that never saw an epoch", async () => {
+    const desktop = await device();
+    await desktop.engine.syncNow();
+    // A device from before data epochs existed.
+    await desktop.store.write((tx) => setSyncState(tx, 'data_epoch', ''));
+    const resend = vi.spyOn(desktop.store.sync, 'enqueueEverything');
+
+    await restartServer({ resetDataEpoch: true });
+    await desktop.engine.syncNow();
+
+    expect(resend).not.toHaveBeenCalled();
+    expect(await desktop.store.sync.getState('data_epoch')).toMatch(/^[0-9a-f-]{36}$/);
   });
 });
 

@@ -28,6 +28,7 @@ Short records of significant decisions: context, decision, consequences. Accepte
 | [0022](0022-hub-answers-on-its-device.md) | The hub answers questions on its own device | Accepted |
 | [0023](0023-free-cloud-supabase-render.md) | Recommended free cloud: Supabase Postgres + Render web service | Accepted |
 | [0024](0024-hub-sidecar-node-single-executable.md) | The built-in hub is a Node single executable, stopped by closing its stdin | Accepted |
+| [0025](0025-server-data-epoch.md) | A data epoch tells devices when a server's data went back in time | Accepted |
 
 ## Template
 

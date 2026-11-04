@@ -60,7 +60,10 @@ async function main(): Promise<void> {
   const clock = createMonotonicClock();
   const database = await openDatabase(env, () => clock.now());
 
-  const identity = await loadServerIdentity(database.db, env.SYNC_TOKEN);
+  const identity = await loadServerIdentity(database.db, env.SYNC_TOKEN, {
+    resetDataEpoch: env.RESET_DATA_EPOCH,
+  });
+  if (env.RESET_DATA_EPOCH) log.info('data epoch replaced', { reason: 'requested' });
   if (identity.generatedToken) {
     // Not through the logger: this is the one time the token is shown, and log sinks keep lines.
     process.stdout.write(

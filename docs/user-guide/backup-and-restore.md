@@ -30,5 +30,5 @@ Deleted entries, settings and API keys are never included.
   1. Stop the hub.
   2. Rename the `pglite-data` folder, for example to `pglite-data-old`.
   3. In the `avchetan-code` folder, run `pnpm --filter @avchetan/server restore:hub apps/server/pglite-backups/hub-2026-11-03.tar.gz`, using the name of the snapshot you want.
-  4. Start the hub. Devices keep their pairing, since the token comes back with the snapshot.
+  4. Start the hub. Devices keep their pairing, since the token comes back with the snapshot. Each device notices the hub was restored and sends it everything it holds once, so entries made after the snapshot come back too.
 - **Put one device back to an earlier day:** not built in yet. A backup file is a normal SQLite database, so any SQLite viewer (such as *DB Browser for SQLite*) can open it to look something up.
