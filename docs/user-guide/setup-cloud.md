@@ -10,18 +10,20 @@ Without your PC, the server can't use Ollama. To organize entries and answer que
 ## Part 1 — The database (Supabase)
 
 1. Go to [supabase.com](https://supabase.com), sign up, and click **New project**.
-2. Give it a name (for example `avchetan`), choose a **database password** (Supabase can generate one; copy it somewhere safe), pick the region closest to you, and click **Create new project**. Wait a minute or two until it's ready.
-3. Click **Connect** at the top of the project page. Under **Session pooler**, copy the connection string. It looks like `postgresql://postgres.abcdefghijkl:[YOUR-PASSWORD]@aws-0-ap-south-1.pooler.supabase.com:5432/postgres`. Use the *session pooler*, not the *direct connection*: Render can't reach the direct one.
-4. Replace `[YOUR-PASSWORD]` with the password from step 2, and add this to the end:
+2. Give it a name (for example `avchetan`), type a **database password** of **only letters and numbers**, at least 16 long (copy it somewhere safe; don't use **Generate a password**, which can add characters that break the address), pick the region closest to you, and click **Create new project**. Wait a minute or two until it's ready.
+3. Click **Connect** at the top of the project page. Change **Method** from **Direct connection** to **Session pooler**, and copy the connection string. It looks like `postgresql://postgres.abcdefghijkl:[YOUR-PASSWORD]@aws-0-ap-south-1.pooler.supabase.com:5432/postgres`. The user is `postgres.` plus your project id, and the host ends in `pooler.supabase.com`. Don't use the *direct connection* (`db.….supabase.co`): it only has an IPv6 address, which Render can't reach.
+4. Replace `[YOUR-PASSWORD]`, including the square brackets, with the password from step 2, and add this to the end:
    `?sslmode=verify-full&sslrootcert=/etc/secrets/supabase-ca.crt`
    Keep the whole line for Part 2. It contains your password, so don't share it.
 5. Open **Project Settings → Database**, find **SSL Configuration**, and click **Download certificate**. Keep the file for Part 2.
+6. Turn off Supabase's own web API, which the server doesn't use: open **Integrations → Data API**, turn off **Enable Data API**, and click **Save**. Otherwise Supabase publishes a second way into your tables. (The server also locks them with row level security, so this is a second lock.)
 
 ## Part 2 — The server (Render)
 
 1. Go to [render.com](https://render.com) and sign up.
 2. Click **New → Web Service**, choose **Public Git Repository**, paste `https://github.com/tulsiram-sunrise/avchetan`, and click **Connect**.
 3. Fill in:
+   - **Branch:** `master`.
    - **Name:** for example `avchetan-yourname`. Your server's address becomes `https://avchetan-yourname.onrender.com`.
    - **Language:** Docker.
    - **Region:** the one closest to your Supabase region.
@@ -47,7 +49,7 @@ Without your PC, the server can't use Ollama. To organize entries and answer que
    | `GROQ_API_KEY` | your key from [console.groq.com/keys](https://console.groq.com/keys) |
 
    Leave out the last five if you'd rather your devices organize and answer for themselves ([AI models](ai-models.md)).
-6. Click **Deploy Web Service**. The first build takes 5–10 minutes. It's ready when the log shows `listening`.
+6. Click **Deploy Web Service**. The first build takes 5–10 minutes. It's ready when the log shows `listening`. If the log shows `database setup problem` instead, it names the fix; see [Troubleshooting](troubleshooting.md#database_url_invalid).
 7. Open `https://<your server's address>/v1/health` in a browser. It should show `"status":"ok"`.
 
 ## Part 3 — Connect your devices

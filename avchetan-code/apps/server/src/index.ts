@@ -14,11 +14,12 @@ import { createApp } from './app';
 import { createHubAsk, type HubAsk } from './ask/hub-ask';
 import { loadServerIdentity } from './auth';
 import { startHubSnapshots } from './backups/snapshots';
-import { openPglite, openPostgres } from './db/client';
+import { openPglite, openPostgres, type ServerDatabase } from './db/client';
+import { databaseStartupHint } from './db/startup-hint';
 import { createEmbedder, type Embedder, embeddingModelId } from './embeddings/embedder';
 import { enqueueEmbedJobs, rawLogsTouchedBy } from './embeddings/jobs';
 import { searchLogs } from './embeddings/search';
-import { loadEnv } from './env';
+import { loadEnv, type ServerEnv } from './env';
 import { openServerDevice, type ServerDevice } from './fallback/server-device';
 import {
   analysisModelFromEnv,
@@ -33,16 +34,30 @@ const VERSION = '0.0.0';
 
 const log = createLogger('server');
 
+/** Opens and migrates the database, explaining the setup mistakes we know how to fix. */
+async function openDatabase(env: ServerEnv, now: () => string): Promise<ServerDatabase> {
+  if (env.DB_DRIVER === 'pglite') {
+    const database = await openPglite(env.PGLITE_DATA_DIR);
+    await database.migrate(now);
+    return database;
+  }
+  try {
+    const database = await openPostgres(env.DATABASE_URL as string);
+    await database.migrate(now);
+    return database;
+  } catch (error) {
+    const hint = databaseStartupHint(error);
+    if (hint) log.error('database setup problem', hint);
+    throw error;
+  }
+}
+
 async function main(): Promise<void> {
   const env = loadEnv(process.env);
   configureLogging({ level: env.LOG_LEVEL });
 
-  const database =
-    env.DB_DRIVER === 'pglite'
-      ? await openPglite(env.PGLITE_DATA_DIR)
-      : await openPostgres(env.DATABASE_URL as string);
   const clock = createMonotonicClock();
-  await database.migrate(() => clock.now());
+  const database = await openDatabase(env, () => clock.now());
 
   const identity = await loadServerIdentity(database.db, env.SYNC_TOKEN);
   if (identity.generatedToken) {

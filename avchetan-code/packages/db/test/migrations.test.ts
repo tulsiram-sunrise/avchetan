@@ -110,4 +110,26 @@ describe('Postgres (PGlite) migrations', { timeout: 30_000 }, () => {
     ).rejects.toThrow(/raw_logs_status_check/);
     await pg.close();
   });
+
+  it('turn on row level security, so only the owner sees rows (e.g. not a Supabase Data API)', async () => {
+    const { pg, driver } = await createTestPglite();
+    await runMigrations(driver, pgMigrations, { now });
+
+    const open = await pg.query<{ relname: string }>(
+      `SELECT c.relname FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+       WHERE n.nspname = 'public' AND c.relkind = 'r' AND NOT c.relrowsecurity`,
+    );
+    expect(open.rows).toEqual([]);
+
+    await pg.query(
+      `INSERT INTO tags (id, created_at, updated_at, updated_by_device, name, path)
+       VALUES ('00000000-0000-7000-8000-000000000001', now(), now(), 'dev-1', 'running', 'running')`,
+    );
+    await pg.exec(`CREATE ROLE outsider; GRANT SELECT ON ALL TABLES IN SCHEMA public TO outsider`);
+    await pg.exec('SET ROLE outsider');
+    expect((await pg.query('SELECT id FROM tags')).rows).toEqual([]);
+    await pg.exec('RESET ROLE');
+    expect((await pg.query('SELECT id FROM tags')).rows).toHaveLength(1);
+    await pg.close();
+  });
 });

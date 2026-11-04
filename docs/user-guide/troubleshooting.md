@@ -79,5 +79,17 @@ Start with **Settings → Setup check**. It tests everything and tells you what 
 ## restore_target_not_empty
 **"The data folder is not empty."** A hub restore never overwrites data. Stop the hub, rename the `pglite-data` folder, and run the restore again ([Back up and restore](backup-and-restore.md#restore)).
 
+## database_url_invalid
+**Cloud server log: "DATABASE_URL is not a valid address."** Usually the database password contains `#`, `/`, `?` or `%`, which break the address. Reset the database password to one with only letters and numbers, build the line again ([Setup: Cloud server](setup-cloud.md#part-1--the-database-supabase), Part 1, step 4), and paste it into `DATABASE_URL`. Also check that it starts with `postgresql://`, has no spaces, and that `[YOUR-PASSWORD]` was replaced including the square brackets.
+
+## database_ipv6_unreachable
+**Cloud server log: "The database address is IPv6 only."** You copied Supabase's **Direct connection** string. In Supabase, click **Connect**, change **Method** to **Session pooler**, and use that string. Its host ends in `pooler.supabase.com` and the user is `postgres.` followed by your project id.
+
+## database_certificate_missing
+**Cloud server log: "The database certificate file … is missing."** In Render, open your service → **Environment → Secret Files**, and check that there's a file named exactly `supabase-ca.crt` holding the certificate you downloaded from Supabase.
+
+## database_password_wrong
+**Cloud server log: "The database rejected the password."** Reset the database password in Supabase (**Project Settings → Database**), and put the new one into `DATABASE_URL` in place of the old one.
+
 ## Entries stay "pending"
 Normal when offline or when the hub is unreachable. They are processed automatically later. If they stay pending while everything is connected, open **Review** in the main window: it shows the reason for each entry.

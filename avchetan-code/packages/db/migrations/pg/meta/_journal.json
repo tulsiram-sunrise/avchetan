@@ -22,6 +22,13 @@
       "when": 1793642878964,
       "tag": "0002_log_embeddings",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793783461265,
+      "tag": "0003_row_level_security",
+      "breakpoints": true
     }
   ]
 }
