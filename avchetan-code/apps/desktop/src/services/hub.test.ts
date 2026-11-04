@@ -4,7 +4,7 @@ import { MemorySecretStore } from '@avchetan/shared/testing';
 import { loadServerUrls, SYNC_TOKEN_SECRET } from '@avchetan/sync';
 import { describe, expect, it, vi } from 'vitest';
 import type { Hub, HubConfig, HubStatus } from '../native/hub';
-import { HUB_TOKEN_SECRET, turnOffHub, turnOnHub } from './hub';
+import { changeOwnHubToken, HUB_TOKEN_SECRET, syncsWithOwnHub, turnOffHub, turnOnHub } from './hub';
 
 const preset: ModelPreset = {
   id: 'ollama-small',
@@ -100,6 +100,37 @@ describe('turnOnHub', () => {
     expect(await secrets.get(HUB_TOKEN_SECRET)).toBeNull();
     expect(hub.configure).not.toHaveBeenCalled();
     expect(await loadServerUrls(store)).toEqual([]);
+  });
+});
+
+describe('changeOwnHubToken', () => {
+  it('gives the hub and this PC the same new token, and restarts the hub with it', async () => {
+    const { store } = await openTestStore();
+    const secrets = new MemorySecretStore();
+    const hub = fakeHub();
+    await turnOnHub({ hub, secrets, store }, { preset });
+    const before = await secrets.get(HUB_TOKEN_SECRET);
+    hub.configure.mockClear();
+
+    const status = await changeOwnHubToken({ hub, secrets });
+
+    const after = await secrets.get(HUB_TOKEN_SECRET);
+    expect(after).not.toBe(before);
+    expect(await secrets.get(SYNC_TOKEN_SECRET)).toBe(after);
+    expect(hub.configure).toHaveBeenCalledTimes(1);
+    expect(status.config.enabled).toBe(true);
+  });
+});
+
+describe('syncsWithOwnHub', () => {
+  it('is true only when the hub is on and is the one server this PC syncs with', async () => {
+    const hub = fakeHub();
+    const off = await hub.status();
+    expect(syncsWithOwnHub(off, ['http://127.0.0.1:8787'])).toBe(false);
+    const on = await hub.configure({ ...off.config, enabled: true });
+    expect(syncsWithOwnHub(on, ['http://127.0.0.1:8787'])).toBe(true);
+    expect(syncsWithOwnHub(on, ['https://avchetan.example.org'])).toBe(false);
+    expect(syncsWithOwnHub(on, ['http://127.0.0.1:8787', 'http://100.64.0.1:8787'])).toBe(false);
   });
 });
 

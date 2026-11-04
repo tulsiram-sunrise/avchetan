@@ -11,6 +11,7 @@ import {
 } from '@avchetan/sync';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { emitAppEvent } from '../native/events';
+import { changeOwnHubToken, syncsWithOwnHub } from '../services/hub';
 import { useServices } from '../services-context';
 
 const log = createLogger('queries');
@@ -84,9 +85,19 @@ export function usePairingCode() {
 
 export function useRotateToken() {
   const { store, platform } = useServices();
+  const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: () =>
-      rotateServerToken({ store, fetch: platform.fetch, secrets: platform.secrets }),
-    onSuccess: () => void askDockToSync(),
+    mutationFn: async () => {
+      const [hub, urls] = await Promise.all([platform.hub.status(), loadServerUrls(store)]);
+      if (syncsWithOwnHub(hub, urls)) {
+        await changeOwnHubToken(platform);
+        return;
+      }
+      await rotateServerToken({ store, fetch: platform.fetch, secrets: platform.secrets });
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['native', 'hub'] });
+      void askDockToSync();
+    },
   });
 }

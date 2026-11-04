@@ -50,6 +50,26 @@ export async function turnOnHub(
   return status;
 }
 
+/** This PC syncs with the hub it runs itself, and with nothing else. */
+export function syncsWithOwnHub(status: HubStatus, urls: readonly string[]): boolean {
+  return status.phase !== 'off' && urls.length === 1 && urls[0] === hubUrl(status.config.port);
+}
+
+/**
+ * A new token for the hub this app runs. The hub gets its token at start, so it can't change
+ * it itself (`token_from_env`): the app saves a new one and restarts it.
+ */
+export async function changeOwnHubToken({
+  hub,
+  secrets,
+}: Omit<HubDeps, 'store'>): Promise<HubStatus> {
+  const token = newToken();
+  await secrets.set(HUB_TOKEN_SECRET, token);
+  await secrets.set(SYNC_TOKEN_SECRET, token);
+  const { config } = await hub.status();
+  return hub.configure(config);
+}
+
 /** Stops the hub and keeps it off. This PC's sync still points at it, so sync waits. */
 export async function turnOffHub(hub: Hub): Promise<HubStatus> {
   const { config } = await hub.status();
