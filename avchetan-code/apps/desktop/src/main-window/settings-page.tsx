@@ -22,19 +22,18 @@ import { UsageSetting } from './usage-setting';
 
 const log = createLogger('settings');
 
+function openView(view: 'setup' | 'check') {
+  void emitAppEvent('main:navigate', { view }).catch(() =>
+    log.warn('could not open view', { view }),
+  );
+}
+
 export function SettingsPage() {
   return (
     <div className="flex max-w-xl flex-col gap-6">
-      <div>
-        <QuietButton
-          onClick={() =>
-            void emitAppEvent('main:navigate', { view: 'setup' }).catch(() =>
-              log.warn('could not open setup'),
-            )
-          }
-        >
-          Run setup again
-        </QuietButton>
+      <div className="flex gap-2">
+        <QuietButton onClick={() => openView('check')}>Setup check</QuietButton>
+        <QuietButton onClick={() => openView('setup')}>Run setup again</QuietButton>
       </div>
       <AiModelsSetting />
       <HubSetting />

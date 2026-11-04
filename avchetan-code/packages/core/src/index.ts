@@ -49,6 +49,11 @@ export {
   type StructuredResult,
 } from './llm/generate-structured';
 export { testModel } from './llm/test-model';
+export {
+  checkDeviceModels,
+  type DeviceModelUse,
+  deviceModelRows,
+} from './models/device-check';
 export { MODEL_PRESETS, type ModelPreset, modelPresetSchema } from './models/presets';
 export {
   hasApiKey,
@@ -81,6 +86,7 @@ export {
   modelSlotsSchema,
 } from './providers/config';
 export { LLM_ERROR_CODES, type LlmErrorCode, toLlmError } from './providers/errors';
+export { checkModels, type ModelCheckDeps } from './providers/model-check';
 export {
   listOllamaModels,
   missingOllamaModels,

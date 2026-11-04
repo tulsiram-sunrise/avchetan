@@ -1,6 +1,7 @@
 import { toAppError } from '@avchetan/shared';
+import { isConnectionError } from '@avchetan/sync';
 import { type ReactNode, useState } from 'react';
-import { HelpLink } from '../help-link';
+import { HelpLink, SetupCheckLink } from '../help-link';
 
 export const panelClass =
   'flex flex-col divide-y divide-line rounded-[var(--radius-panel)] border border-line bg-surface-raised';
@@ -31,6 +32,12 @@ export function ActionError(props: { errors: readonly unknown[] }) {
   return (
     <p role="alert" className="text-sm text-danger">
       {appError.message}. <HelpLink code={appError.code} />
+      {isConnectionError(appError.code) ? (
+        <>
+          {' · '}
+          <SetupCheckLink />
+        </>
+      ) : null}
     </p>
   );
 }

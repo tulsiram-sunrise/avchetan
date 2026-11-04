@@ -4,7 +4,7 @@ import { open } from '@tauri-apps/plugin-dialog';
 import { useState } from 'react';
 import { HelpLink } from '../help-link';
 import type { HubStatus } from '../native/hub';
-import { hubModels, turnOffHub, turnOnHub } from '../services/hub';
+import { hubModels, hubOllamaModels, turnOffHub, turnOnHub } from '../services/hub';
 import { useServices } from '../services-context';
 import { HubBackups } from './hub-backups';
 import { HubChecklist } from './hub-checklist';
@@ -75,13 +75,12 @@ export function HubSetting() {
   const current = status.data;
   const on = current ? current.phase !== 'off' : false;
   const chosen = MODEL_PRESETS.find((p) => p.id === presetId);
-  const slots =
+  const ollamaModels =
     on && current
-      ? [current.config.extraction, current.config.analysis, current.config.embedding]
+      ? hubOllamaModels(current.config)
       : chosen
-        ? Object.values(hubModels(chosen))
+        ? hubOllamaModels(hubModels(chosen))
         : [];
-  const ollamaModels = slots.flatMap((slot) => (slot?.provider === 'ollama' ? [slot.model] : []));
 
   return (
     <section className="flex flex-col gap-2">

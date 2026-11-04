@@ -75,3 +75,10 @@ export async function turnOffHub(hub: Hub): Promise<HubStatus> {
   const { config } = await hub.status();
   return hub.configure({ ...config, enabled: false });
 }
+
+/** The models the hub needs Ollama to have. */
+export function hubOllamaModels(config: Omit<HubConfig, 'enabled' | 'port'>): string[] {
+  return [config.extraction, config.analysis, config.embedding].flatMap((slot) =>
+    slot?.provider === 'ollama' ? [slot.model] : [],
+  );
+}

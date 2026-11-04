@@ -1,4 +1,6 @@
 import { createLogger, toAppError } from '@avchetan/shared';
+import { isConnectionError } from '@avchetan/sync';
+import { router } from 'expo-router';
 import { Pressable, Text, TextInput, type TextInputProps, View } from 'react-native';
 import { openHelp } from '../help';
 import { usePalette } from '../theme/theme';
@@ -57,6 +59,19 @@ export function HelpLink({ code }: { code: string }) {
   );
 }
 
+/** Opens the Setup check, which every connection error links to. */
+export function SetupCheckLink() {
+  return (
+    <Text
+      accessibilityRole="link"
+      className="text-accent underline"
+      onPress={() => router.push('/settings/check')}
+    >
+      Setup check
+    </Text>
+  );
+}
+
 /** Any failed action: what went wrong, and where the fix is. */
 export function Failure({ error }: { error: unknown }) {
   if (!error) return null;
@@ -64,6 +79,12 @@ export function Failure({ error }: { error: unknown }) {
   return (
     <Text accessibilityRole="alert" className="text-sm text-danger">
       {message}. <HelpLink code={code} />
+      {isConnectionError(code) ? (
+        <>
+          {' · '}
+          <SetupCheckLink />
+        </>
+      ) : null}
     </Text>
   );
 }

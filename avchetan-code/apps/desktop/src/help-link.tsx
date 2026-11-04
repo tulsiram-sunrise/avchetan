@@ -1,5 +1,6 @@
 import { createLogger } from '@avchetan/shared';
 import { openHelp, troubleshootingUrl } from './help';
+import { emitAppEvent } from './native/events';
 
 const log = createLogger('help');
 
@@ -16,5 +17,22 @@ export function HelpLink(props: { code: string }) {
     >
       Help
     </a>
+  );
+}
+
+/** Opens the Setup check, which every connection error links to. */
+export function SetupCheckLink() {
+  return (
+    <button
+      type="button"
+      className="text-accent underline"
+      onClick={() =>
+        void emitAppEvent('main:navigate', { view: 'check' }).catch(() =>
+          log.warn('could not open the setup check'),
+        )
+      }
+    >
+      Setup check
+    </button>
   );
 }

@@ -40,5 +40,16 @@ export { createLoop } from './jobs/single-flight-loop';
 export { TimerScheduler } from './jobs/timer-scheduler';
 export type { LogFields, Logger, LogLevel, LogRecord, LogSink } from './logger';
 export { configureLogging, consoleSink, createLogger } from './logger';
-export { localDateSchema, timeZoneSchema, utcInstantSchema, uuidSchema } from './schemas';
+export type { ModelCheck, ModelJob, ModelReadiness } from './schemas';
+export {
+  localDateSchema,
+  MODEL_JOBS,
+  MODEL_READINESS,
+  modelCheckSchema,
+  timeZoneSchema,
+  utcInstantSchema,
+  uuidSchema,
+} from './schemas';
+export type { CheckAction, CheckRow, CheckState } from './setup-check';
+export { sortCheckRows } from './setup-check';
 export { slugify, slugifyPath } from './slug';

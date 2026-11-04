@@ -14,6 +14,7 @@ const mainViewSchema = z.enum([
   'projects',
   'settings',
   'setup',
+  'check',
 ]);
 export type MainView = z.infer<typeof mainViewSchema>;
 

@@ -9,11 +9,17 @@ import { ActionError, QuietButton } from './ui';
 
 const OLLAMA_KEY = ['ollama', 'models'] as const;
 
-type RowState = 'ok' | 'todo' | 'checking' | 'optional';
+export type RowState = 'ok' | 'todo' | 'checking' | 'optional' | 'info';
 
-const MARK: Record<RowState, string> = { ok: '✓', todo: '!', checking: '…', optional: '–' };
+const MARK: Record<RowState, string> = {
+  ok: '✓',
+  todo: '!',
+  checking: '…',
+  optional: '–',
+  info: 'i',
+};
 
-function Row(props: { state: RowState; title: string; children?: ReactNode }) {
+export function Row(props: { state: RowState; title: string; children?: ReactNode }) {
   const color =
     props.state === 'ok'
       ? 'text-accent'
@@ -224,9 +230,12 @@ export function HubChecklist(props: {
   port: number;
   ollamaModels: readonly string[];
   running: boolean;
+  /** Rows shown first, such as the hub's own state on the Setup check. */
+  children?: ReactNode;
 }) {
   return (
     <ul className="flex flex-col gap-2 rounded-lg border border-line p-3">
+      {props.children}
       <OllamaRow models={props.ollamaModels} />
       <NetworkRows port={props.port} />
       {props.running ? <PhonesRow /> : null}

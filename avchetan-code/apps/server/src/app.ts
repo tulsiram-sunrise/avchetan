@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { devices } from '@avchetan/db/pg';
-import { type Clock, createLogger } from '@avchetan/shared';
+import { type Clock, createLogger, type ModelCheck } from '@avchetan/shared';
 import {
   type ErrorResponse,
   HEADERS,
@@ -48,6 +48,8 @@ export type AppDeps = {
   pairing?: { urls: () => string[]; tokenFromEnv: boolean };
   /** Answers questions with the hub's model; absent when it has none. */
   ask?: HubAsk;
+  /** Whether the server's own models can be used, for the Setup check. */
+  checkAi?: () => Promise<ModelCheck[]>;
 };
 
 export type AppEnv = { Variables: { requestId: string; deviceId: string; internal: boolean } };

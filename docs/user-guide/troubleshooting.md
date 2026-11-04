@@ -2,7 +2,20 @@
 
 > Draft — describes planned behavior. Each section heading matches an error code shown in the app, so the app's "Help" links land here.
 
-Start with **Settings → Setup check**. It tests everything and tells you what to fix.
+## Setup check
+
+Start with the **Setup check**. It tests everything and tells you what to fix.
+
+- **Windows:** **Settings → Setup check**, or the **Setup check** link next to a sync error.
+- **Android:** **More → Setup check**, or the **Setup check** link next to a sync error.
+
+It checks:
+
+- **Sync:** whether each saved address of your hub or server answers, whether it accepts this device's token, and whether this device's clock matches the server's.
+- **AI:** whether the models this device uses can work: Ollama running, the model downloaded, or the API key saved. A phone that lets the hub organize or answer also sees the hub's own models, so it can tell you when Ollama has stopped on the PC.
+- **Home Hub on this PC** (Windows, when the hub is on): the hub running, its models in Ollama, the network Private, the firewall rules, Tailscale, and the paired phones.
+
+Problems come first, each with its fix and a **Help** link to its section below. Click **Check again** after fixing something.
 
 ## unauthorized
 **"Your device isn't allowed to sync."** The sync token changed or was rotated. Pair the device again ([Pair your phone](pair-your-phone.md)).
@@ -13,7 +26,7 @@ Start with **Settings → Setup check**. It tests everything and tells you what 
 - Cloud: open `https://<your-domain>/v1/health` in a browser.
 
 ## clock_skew
-**"This device's clock is wrong."** Turn on automatic date & time in the device settings.
+**"This device's clock is wrong"** or **"This device's clock is … minutes behind (or ahead of) the server's."** The server refuses changes stamped more than 5 minutes in its future. Turn on automatic date & time in the device settings: on Android, the Setup check's **Open date & time settings** goes there; on Windows, **Settings → Time & language → Date & time → Set time automatically**. If the device's clock is right, the server's is wrong: fix it on the hub's PC or server the same way.
 
 ## untrusted_local_network
 **"Turn on Trust this home network to use this address."** The address is on your home network and uses plain `http://`, so your sync token travels unencrypted on that Wi-Fi. Turn on **Trust this home network** if you trust everyone on it, or connect through [Tailscale](remote-access-tailscale.md), which encrypts it.
@@ -35,7 +48,7 @@ Start with **Settings → Setup check**. It tests everything and tells you what 
 - A note in brackets, such as *HTTP 503*, is what the provider answered. With no note, the request got no answer at all, so check your connection.
 - Interrupted: the phone stopped the app while it was working. Open the entry and tap **Organize now**. If this keeps happening, let Avchetan run in the background in your phone's battery settings.
 - Ollama: is the Ollama app running in the tray?
-- Model not downloaded: open a terminal, run `ollama pull` followed by the model name, then click **Test** again.
+- Model not downloaded: see [model_missing](#model_missing), then click **Test** again.
 - Took too long: a large model on a PC without a graphics card can be slow. Try a smaller model.
 - Cloud provider: possibly a temporary outage. Entries are retried automatically.
 
@@ -110,6 +123,11 @@ Start with **Settings → Setup check**. It tests everything and tells you what 
 
 ## ollama_not_running
 **"Ollama isn't running on this PC."** Install Ollama from [ollama.com/download](https://ollama.com/download) and open it once; it then runs in the background and starts with Windows. Click **Check again**. If it is installed, look for its llama icon in the taskbar tray, or open it from the Start menu.
+
+## model_missing
+**"Ollama hasn't downloaded"** a model. Ollama runs, but the model Avchetan is set to use isn't on that PC yet, so entries wait to be organized.
+- On this PC: click **Download it** in the Setup check. For the hub's models, use **Download them** in **Settings → Home Hub on this PC**. Models are a few GB, so this takes a while.
+- On a phone, the message is about the hub's PC: open Avchetan on that PC and download the models there.
 
 ## network_public
 **"Your network is set as Public."** Windows blocks phones from reaching a PC on a Public network. For your home network only, open **Settings → Network & internet → Wi-Fi** (or **Ethernet**), click the network, and set **Network profile type** to **Private**. Keep café, office and hotel networks Public.

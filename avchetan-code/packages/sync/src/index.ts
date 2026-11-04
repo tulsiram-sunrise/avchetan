@@ -26,6 +26,15 @@ export {
 } from './pairing';
 export { type SearchDeps, searchServer } from './search';
 export {
+  CLOCK_WARNING_MS,
+  type ConnectionCheck,
+  type ConnectionCheckDeps,
+  checkConnection,
+  connectionRows,
+  hubModelRows,
+  isConnectionError,
+} from './setup-check';
+export {
   describeSync,
   loadSyncStatus,
   type SyncState,

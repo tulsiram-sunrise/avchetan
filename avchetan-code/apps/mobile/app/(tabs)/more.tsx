@@ -32,6 +32,14 @@ export default function MoreScreen() {
       <Pressable
         accessibilityRole="button"
         className="border-b border-line bg-surfaceRaised p-4"
+        onPress={() => router.push('/settings/check')}
+      >
+        <Text className="text-base text-ink">Setup check</Text>
+        <Text className="text-sm text-inkMuted">Find out why something doesn't work.</Text>
+      </Pressable>
+      <Pressable
+        accessibilityRole="button"
+        className="border-b border-line bg-surfaceRaised p-4"
         onPress={() => router.push('/setup')}
       >
         <Text className="text-base text-ink">Run setup again</Text>

@@ -1,4 +1,5 @@
 import { DEVICE_PLATFORMS, EXTRACTION_MODES } from '@avchetan/db';
+import { modelCheckSchema } from '@avchetan/shared';
 import { z } from 'zod';
 
 export { isSyncedTable, SYNCED_ROW_SCHEMAS } from './rows';
@@ -62,6 +63,8 @@ export const statusResponseSchema = z.object({
   ),
   /** Raw logs not deleted, by the status that needs attention. */
   logs: z.object({ waiting: z.int(), failed: z.int() }),
+  /** The server's own models and whether each can be used. Older servers don't send it. */
+  ai: z.array(modelCheckSchema).optional(),
 });
 export type StatusResponse = z.infer<typeof statusResponseSchema>;
 

@@ -327,6 +327,27 @@ describe('status', () => {
         lastSeenAt: expect.stringMatching(/^2026-10-26T10:00:00\.\d{3}Z$/),
       },
     ]);
+    // This server has no models of its own.
+    expect(body.ai).toBeUndefined();
+  });
+
+  it("reports whether the server's own models can be used", async () => {
+    const ai = [
+      { job: 'organizing', provider: 'ollama', model: 'm', readiness: 'ollama_not_running' },
+    ] as const;
+    const withAi = createApp({
+      db: database.db,
+      identity: await loadServerIdentity(database.db, TOKEN),
+      clock: createMonotonicClock({ source: () => wallMs }),
+      version: 'test',
+      profile: 'hub',
+      checkAi: async () => [...ai],
+    });
+    await register();
+
+    const response = await withAi.request('/v1/status', { headers: headers() });
+
+    expect(statusResponseSchema.parse(await response.json()).ai).toEqual(ai);
   });
 });
 

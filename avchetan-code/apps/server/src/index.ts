@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { createEmbeddingModel, embedTexts } from '@avchetan/core';
+import { checkModels, createEmbeddingModel, embedTexts } from '@avchetan/core';
 import {
   configureLogging,
   createLogger,
@@ -100,6 +100,12 @@ async function main(): Promise<void> {
         }
       : null;
   const analysis = analysisModelFromEnv(env);
+  const organizing = env.FALLBACK_EXTRACTION_ENABLED ? extractionModelsFromEnv(env) : [];
+  const serverModels = [
+    ...organizing.slice(0, 1).map((config) => ({ job: 'organizing' as const, config })),
+    ...(analysis ? [{ job: 'answers' as const, config: analysis }] : []),
+    ...(embedding ? [{ job: 'search' as const, config: embedding }] : []),
+  ];
   // Set once the server's device is open, which needs the app's own fetch.
   let hubAsk: HubAsk | null = null;
 
@@ -125,6 +131,12 @@ async function main(): Promise<void> {
         .catch((error) => log.warn('could not queue embeddings', { code: toAppError(error).code }));
     },
     ...(search ? { search } : {}),
+    ...(serverModels.length > 0
+      ? {
+          checkAi: () =>
+            checkModels(serverModels, { fetch: globalThis.fetch, secrets: secretsFromEnv(env) }),
+        }
+      : {}),
     ...(analysis
       ? {
           ask: (request, onText, abortSignal) => {
@@ -135,7 +147,6 @@ async function main(): Promise<void> {
       : {}),
   });
 
-  const organizing = env.FALLBACK_EXTRACTION_ENABLED ? extractionModelsFromEnv(env) : [];
   if (organizing.length === 0) {
     log.info('not organizing entries', {
       reason: env.FALLBACK_EXTRACTION_ENABLED ? 'no_extraction_provider' : 'disabled',

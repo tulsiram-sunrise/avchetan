@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { MainView } from '../native/events';
 import { useAppEvent, useTableInvalidation } from '../use-app-event';
 import { CategoriesPage } from './categories-page';
+import { CheckPage } from './check-page';
 import { ProjectsPage } from './projects-page';
 import { ReviewPage } from './review-page';
 import { SettingsPage } from './settings-page';
@@ -38,6 +39,8 @@ function CurrentView({ view, onDone }: { view: MainView; onDone: () => void }) {
       return <SettingsPage />;
     case 'setup':
       return <SetupPage onDone={onDone} />;
+    case 'check':
+      return <CheckPage />;
   }
 }
 
