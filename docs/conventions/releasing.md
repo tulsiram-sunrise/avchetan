@@ -35,7 +35,7 @@ A phone that has a debug-signed build (any APK built on a PC) can't install a re
 ## Making a release
 
 1. Make sure `master` is green in CI.
-2. Try the files first: **Actions → Release → Run workflow** on `master`. Download both artifacts from the run, install them on a test PC and phone.
+2. Try the files first: **Actions → Release → Run workflow** on `master` (or push a branch to `release/<name>` to try it before merging). Download both artifacts from the run, install them on a test PC and phone.
 3. Tag and push: `git tag -s v0.1.0 -m "Avchetan 0.1.0"` then `git push origin v0.1.0`.
 4. The workflow makes a **draft** release with both files and `SHA256SUMS.txt`. Read the generated notes, add what users need to know (for example "uninstall the old app first"), and click **Publish release**.
 

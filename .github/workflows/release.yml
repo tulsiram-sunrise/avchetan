@@ -1,5 +1,6 @@
 # Builds the Windows installer (with the hub inside) and the signed Android APK.
-# - Run by hand (Actions → Release → Run workflow): both files as downloadable artifacts.
+# - Run by hand (Actions → Release → Run workflow), or by pushing to a `release/**` branch (to try
+#   a branch before it is merged): both files as downloadable artifacts.
 # - On a tag `v*`: also a *draft* GitHub release with both files and their SHA-256 sums, which
 #   the maintainer reads and publishes.
 # The APK is signed with the release key from repository secrets (ADR-0018); without them the
@@ -9,6 +10,7 @@ name: Release
 on:
   push:
     tags: ["v*"]
+    branches: ["release/**"]
   workflow_dispatch:
 
 permissions:
