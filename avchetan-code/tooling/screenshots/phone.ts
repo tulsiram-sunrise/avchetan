@@ -2,6 +2,7 @@
 // Emulator only (-s emulator-5554), never a phone plugged into this PC.
 import { execFileSync } from 'node:child_process';
 
+// biome-ignore lint/suspicious/noUndeclaredEnvVars: a developer tool, not a Turbo task.
 const adb = `${process.env.LOCALAPPDATA}\\Android\\Sdk\\platform-tools\\adb.exe`;
 const run = (...args) => execFileSync(adb, ['-s', 'emulator-5554', ...args], { encoding: 'utf8' });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
