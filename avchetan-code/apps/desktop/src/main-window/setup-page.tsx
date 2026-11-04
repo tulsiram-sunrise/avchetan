@@ -29,7 +29,7 @@ const CHOICES: { mode: SetupMode; title: string; consequence: string }[] = [
 
 function Step(props: { title: string; intro: string; children: ReactNode }) {
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex max-w-xl flex-col gap-4">
       <div className="flex flex-col gap-1">
         <h1 className="text-lg font-semibold">{props.title}</h1>
         <p className="text-sm text-ink-muted">{props.intro}</p>
