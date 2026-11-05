@@ -15,7 +15,7 @@ export default function TabsLayout() {
     <Tabs>
       <Tabs.Screen
         name="index"
-        options={{ title: 'Today', tabBarIcon: tabIcon('today-outline') }}
+        options={{ title: 'Days', tabBarIcon: tabIcon('calendar-outline') }}
       />
       <Tabs.Screen
         name="tasks"

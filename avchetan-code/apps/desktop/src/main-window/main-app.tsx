@@ -3,16 +3,17 @@ import type { MainView } from '../native/events';
 import { useAppEvent, useTableInvalidation } from '../use-app-event';
 import { CategoriesPage } from './categories-page';
 import { CheckPage } from './check-page';
+import { DaysPage } from './days-page';
 import { ProjectsPage } from './projects-page';
 import { ReviewPage } from './review-page';
 import { SettingsPage } from './settings-page';
 import { SetupPage } from './setup-page';
 import { TagsPage } from './tags-page';
 import { TasksPage } from './tasks-page';
-import { Timeline } from './timeline';
 
 const VIEWS: { id: MainView; label: string }[] = [
-  { id: 'timeline', label: 'Timeline' },
+  // The view id stays 'timeline': the tray and the Rust window code open it by that name.
+  { id: 'timeline', label: 'Days' },
   { id: 'tasks', label: 'Tasks' },
   { id: 'review', label: 'Review' },
   { id: 'categories', label: 'Categories' },
@@ -24,7 +25,7 @@ const VIEWS: { id: MainView; label: string }[] = [
 function CurrentView({ view, onDone }: { view: MainView; onDone: () => void }) {
   switch (view) {
     case 'timeline':
-      return <Timeline />;
+      return <DaysPage />;
     case 'tasks':
       return <TasksPage />;
     case 'review':

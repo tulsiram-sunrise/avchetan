@@ -5,8 +5,16 @@ import { Pressable, Text, View } from 'react-native';
 import { StatusBadge } from './status-badge';
 import { TaskCheck } from './task-row';
 
-/** One timeline entry with what was extracted from it. Tap for details. */
-export function EntryRow(props: { rawLog: RawLog; activities: Activity[]; tasks: Task[] }) {
+/**
+ * One entry with what was extracted from it. Tap for details. `addedOn` is set when it shows
+ * on a day other than the one it was typed (docs/product/days-view.md).
+ */
+export function EntryRow(props: {
+  rawLog: RawLog;
+  activities: Activity[];
+  tasks: Task[];
+  addedOn?: string | null;
+}) {
   const { rawLog, activities, tasks } = props;
   return (
     <Pressable
@@ -15,7 +23,10 @@ export function EntryRow(props: { rawLog: RawLog; activities: Activity[]; tasks:
       onPress={() => router.push(`/log/${rawLog.id}`)}
     >
       <View className="flex-row items-center justify-between">
-        <Text className="text-xs text-inkMuted">{formatTime(rawLog.capturedAt)}</Text>
+        <Text className="text-xs text-inkMuted">
+          {formatTime(rawLog.capturedAt)}
+          {props.addedOn ? ` · added on ${props.addedOn}` : ''}
+        </Text>
         <StatusBadge status={rawLog.status} />
       </View>
       <Text className="text-sm text-ink">{rawLog.content}</Text>

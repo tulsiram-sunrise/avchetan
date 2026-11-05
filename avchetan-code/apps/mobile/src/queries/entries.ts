@@ -1,28 +1,7 @@
-import type { ClientStore, RawLog, RawLogCursor } from '@avchetan/db/sqlite';
-import { useInfiniteQuery, useMutation, useQuery } from '@tanstack/react-query';
+import type { ClientStore } from '@avchetan/db/sqlite';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { refreshAll } from '../query-client';
 import { useServices } from '../services-context';
-
-const TIMELINE_PAGE = 50;
-
-export function useTimeline() {
-  const { store } = useServices();
-  return useInfiniteQuery({
-    queryKey: ['raw_logs', 'timeline'],
-    initialPageParam: undefined as RawLogCursor | undefined,
-    queryFn: ({ pageParam }) =>
-      store.queries.recentRawLogs(store.db, {
-        limit: TIMELINE_PAGE,
-        ...(pageParam ? { before: pageParam } : {}),
-      }),
-    getNextPageParam: (page: RawLog[]) => {
-      const last = page.at(-1);
-      return page.length === TIMELINE_PAGE && last
-        ? { capturedAt: last.capturedAt, id: last.id }
-        : undefined;
-    },
-  });
-}
 
 export function useExtracted(rawLogIds: readonly string[]) {
   const { store } = useServices();

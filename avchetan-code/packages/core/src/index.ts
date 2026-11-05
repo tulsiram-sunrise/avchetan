@@ -64,6 +64,13 @@ export {
   testDraftModel,
 } from './models/slots';
 export { type ParsedCapture, parseCaptureText } from './normalize/capture-text';
+export type { DayCategory } from './normalize/day-summary';
+export {
+  calendarDots,
+  dayCategories,
+  dayCategoryText,
+  durationText,
+} from './normalize/day-summary';
 export { METRIC_ALIASES, METRICS, type MetricSpec } from './normalize/metric-keys';
 export {
   type Exercise,
