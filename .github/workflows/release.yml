@@ -224,8 +224,10 @@ jobs:
           sparse-checkout: .github/release-notes.md
           sparse-checkout-cone-mode: false
 
+      # Only the two builds: the image job also leaves a Docker build record as an artifact.
       - uses: actions/download-artifact@v8
         with:
+          pattern: avchetan-*
           path: out
           merge-multiple: true
 
