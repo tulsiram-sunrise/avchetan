@@ -9,7 +9,7 @@ Avchetan is an offline-first personal logger and planner. Type (or say) anything
 - **Free to run** — use one device on its own, turn your PC into a *Home Hub* that your phone syncs with, or host a server in the cloud.
 - **Ask your history** — "when did my knee last hurt?", "how many workouts this month?"
 
-> **Status:** early development (Phase 5b of the [roadmap](docs/roadmap.md)). Nothing is ready to install yet.
+> **Status:** early development. Phase 5b of the [roadmap](docs/roadmap.md) is done: the Windows installer sets up a Home Hub without a terminal, but no release is published yet.
 
 ## Documentation
 
