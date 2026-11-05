@@ -18,7 +18,7 @@ Single user, but the data is intimate (health, moods, relationships) and API key
 
 - Cloud servers: HTTPS only.
 - Clients refuse `http://` sync URLs except: `localhost`/`127.0.0.1`; Tailscale addresses (`100.64.0.0/10`, `*.ts.net`) — already WireGuard-encrypted; private LAN ranges (`10/8`, `172.16/12`, `192.168/16`) **only** after the explicit "trust this home network" opt-in in the Home Hub wizard (the user is warned the token travels unencrypted on that Wi-Fi). A network security config can't name a home network's address in advance, so Android allows cleartext app-wide and the app enforces these rules itself (`assertSafeServerUrl` in `@avchetan/sync`), as the desktop's HTTP scope does for any host on port 8787.
-- Ollama is never exposed beyond localhost by default (it has no authentication). Phones use it through the hub (`delegate` / `hub` slots). Direct phone → Ollama is an opt-in only over Tailscale.
+- Ollama is never exposed beyond localhost by default (it has no authentication). Phones use it through the hub (`delegate` / `hub` slots). Direct phone → Ollama is an opt-in only over Tailscale. A model address the user types (an Ollama `baseUrl`) gets their entries, so plain `http://` is accepted only on this device, a private LAN range or Tailscale; anything else needs `https://` (`assertSafeModelUrl` in `@avchetan/core`, error `insecure_model_url`). Unlike sync there is no token to protect, so a private LAN needs no extra opt-in.
 - The pairing QR contains the sync token: shown only on demand, never saved as an image, token rotatable.
 - Tauri HTTP plugin scope restricted to configured provider domains, localhost, and the sync server's `/v1/` path (any host, because the server's address isn't known at build time).
 

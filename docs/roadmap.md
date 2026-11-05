@@ -1,6 +1,6 @@
 # Roadmap
 
-**Current phase: none started.** Next is either the [Public release milestone](#milestone--public-release-after-5b-when-shipping-to-the-outside-world) or [Phase 6](#phase-6--advancements-a-ambient-intelligence), to be chosen. Phase 1 completed 2026-10-26 (PR #1). Phase 2 completed 2026-10-30 (PR #2). Phase 3 completed 2026-10-31. Phase 4 completed 2026-11-02. Phase 5 completed 2026-11-04 (PR #8). Phase 5b completed 2026-11-05 (PR #10).
+**Current phase: [Public release milestone](#milestone--public-release-after-5b-when-shipping-to-the-outside-world)** (started 2026-11-05). [Phase 6](#phase-6--advancements-a-ambient-intelligence) comes next. Phase 1 completed 2026-10-26 (PR #1). Phase 2 completed 2026-10-30 (PR #2). Phase 3 completed 2026-10-31. Phase 4 completed 2026-11-02. Phase 5 completed 2026-11-04 (PR #8). Phase 5b completed 2026-11-05 (PR #10).
 
 Each phase lists scope, deliverables and **done when** criteria (testable). Phases are sequential; a coding agent should finish a phase's criteria before starting the next. Advanced capabilities are specified in [product/advancements.md](product/advancements.md).
 
@@ -139,13 +139,14 @@ Scope:
 
 ## Milestone — Public release (after 5b, when shipping to the outside world)
 
-1. Signing: Windows installer signed with a code-signing certificate; Android release keystore (backed up in two places + CI secret); Play Store decision (Q20).
-2. Release workflow: tag → build signed Windows installer + signed APK + server Docker image → GitHub Releases (+ container registry), with release notes.
-3. Community files: `CONTRIBUTING.md` (setup, DCO sign-off, conventions), `CODE_OF_CONDUCT.md`, `SECURITY.md` (private vulnerability reporting), issue/PR templates.
-4. User guide: remove all *Draft* banners for shipped features, add screenshots, explain installer verification.
-5. Final checks: dependency license audit, secret scan of the full git history, fresh-machine walkthrough.
+1. Signing: Android release keystore (backed up in two places + CI secret) ✅. Distribution is GitHub Releases only; the Play Store and desktop stores come later (R22). The Windows installer ships unsigned at first, and the project applies to SignPath Foundation after the first release ([ADR-0026](decisions/0026-github-releases-unsigned-windows-first.md)).
+2. Release workflow: tag → version check → Windows installer + signed APK + `SHA256SUMS.txt` → draft GitHub release with install notes, plus the server image on ghcr.io. One version for every app (`pnpm version:set`), shown in Settings → About and on More.
+3. Community files: `CONTRIBUTING.md` (setup, DCO sign-off, conventions), `CODE_OF_CONDUCT.md` (Contributor Covenant 3.0), `SECURITY.md` (private vulnerability reporting), issue and PR templates.
+4. User guide: *Draft* banners removed and screenshots added ✅; [install, update and uninstall](user-guide/install-and-update.md) (checksums, SmartScreen, APK fingerprint) and [privacy](user-guide/privacy.md).
+5. Final checks: dependency license audit and full-history secret scan (in CI) ✅; fresh-machine walkthrough ✅ (2026-11-05, in a VM); a real browser download of the published installer (SmartScreen with Mark of the Web).
+6. Open questions: Q20 → R22, Q23 → R23 (a typed Ollama address needs `https://` unless it is on this device, a private LAN or Tailscale).
 
-**Done when:** a stranger can find the GitHub Pages site, download signed builds from GitHub Releases, and reach a working Home Hub + phone setup by following the guide.
+**Done when:** a stranger can find the GitHub Pages site, download the builds from GitHub Releases (the APK signed, the installer checkable against `SHA256SUMS.txt`), and reach a working Home Hub + phone setup by following the guide.
 
 ## Phase 6 — Advancements A (ambient intelligence)
 

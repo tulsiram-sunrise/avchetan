@@ -46,6 +46,7 @@ jobs:
       - run: pnpm licenses:check
       - run: pnpm docs:check-links
       - run: pnpm errors:check
+      - run: pnpm version:check
 
   server-postgres:
     name: Server on Postgres, server image

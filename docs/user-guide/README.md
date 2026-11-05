@@ -16,11 +16,13 @@ Avchetan is a personal logger and planner. Type (or say) anything — a workout,
 
 ## Downloads & source
 
-- Installers (Windows) and the Android app (APK) are published on the project's **GitHub Releases** page.
+- The Windows installer and the Android app (APK) are on the [GitHub Releases page](https://github.com/tulsiram-sunrise/avchetan/releases/latest). [Install, update and uninstall](install-and-update.md) explains each file, how to check a download, and how to update.
 - Avchetan is free and open source under the **AGPL-3.0** license. The source code is on GitHub.
 
 ## More
 
 - [Use your phone away from home (Tailscale)](remote-access-tailscale.md)
 - [Back up and restore](backup-and-restore.md)
+- [Install, update and uninstall](install-and-update.md)
+- [Privacy](privacy.md): what leaves your devices
 - [Troubleshooting](troubleshooting.md)

@@ -1,5 +1,6 @@
 /**
- * Checks every relative Markdown link in docs/, CLAUDE.md and README.md: the target file
+ * Checks every relative Markdown link in docs/ and the repository's top-level Markdown files
+ * (README, CLAUDE, CONTRIBUTING, SECURITY, …) and .github/: the target file
  * must exist and `#anchors` must match a heading (GitHub's slug rules, which the docs site
  * also uses). Run from avchetan-code/: `pnpm docs:check-links`.
  */
@@ -50,8 +51,11 @@ function anchorsOf(file: string): Set<string> {
 
 const files = [
   ...markdownFiles(join(repoRoot, 'docs')),
-  join(repoRoot, 'CLAUDE.md'),
-  join(repoRoot, 'README.md'),
+  ...readdirSync(repoRoot)
+    .filter((name) => name.endsWith('.md'))
+    .map((name) => join(repoRoot, name)),
+  join(repoRoot, '.github/pull_request_template.md'),
+  join(repoRoot, '.github/release-notes.md'),
 ];
 
 const LINK = /\[[^\]]*\]\(([^)\s]+)\)/g;

@@ -12,7 +12,7 @@ No terminal is needed: Avchetan runs the hub itself and walks you through the re
 ## Part 1 — Set up the hub on your PC
 
 1. Install [Ollama](https://ollama.com/download) and open it once. It runs in the background afterwards.
-2. Download the Avchetan installer (the file ending in `windows-x64-setup.exe`) from the project's GitHub Releases page, and run it. If Windows says **Windows protected your PC**, click **More info**, then **Run anyway**: the installer isn't signed with a certificate yet.
+2. Download the Avchetan installer (the file ending in `windows-x64-setup.exe`) from the [GitHub Releases page](https://github.com/tulsiram-sunrise/avchetan/releases/latest), and run it. If Windows says **Windows protected your PC**, click **More info**, then **Run anyway**: the installer isn't signed with a certificate yet ([why, and how to check the file](install-and-update.md#windows)).
 3. Avchetan opens on **Welcome to Avchetan**. Choose **Home Hub on this PC**. If you set Avchetan up before, open **Settings** (tray icon → **Preferences**) and find **Home Hub on this PC** instead.
 4. Under **AI models for the hub**, choose the set that fits your PC, for example **Ollama on your PC (no graphics card)**.
 

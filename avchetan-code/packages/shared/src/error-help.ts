@@ -113,6 +113,7 @@ export const ERROR_HELP = {
   not_configured: at('not_configured', 'Set up Sync on this device first'),
   untrusted_local_network: at('untrusted_local_network'),
   insecure_server_url: at('insecure_server_url'),
+  insecure_model_url: at('insecure_model_url'),
   invalid_pairing_code: at('invalid_pairing_code'),
   wrong_server: at('wrong_server'),
   no_pairing_address: at('no_pairing_address'),

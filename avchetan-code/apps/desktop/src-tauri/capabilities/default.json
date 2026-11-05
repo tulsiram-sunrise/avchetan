@@ -22,7 +22,10 @@
     },
     {
       "identifier": "opener:allow-open-url",
-      "allow": [{ "url": "https://tulsiram-sunrise.github.io/avchetan/*" }]
+      "allow": [
+        { "url": "https://tulsiram-sunrise.github.io/avchetan/*" },
+        { "url": "https://github.com/tulsiram-sunrise/avchetan/issues/*" }
+      ]
     }
   ]
 }

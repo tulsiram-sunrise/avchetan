@@ -11,3 +11,12 @@ export function troubleshootingUrl(code: string): string {
 export function openHelp(code: string): Promise<void> {
   return openUrl(troubleshootingUrl(code));
 }
+
+/** New GitHub issue with the bug-report form. */
+export const REPORT_PROBLEM_URL =
+  'https://github.com/tulsiram-sunrise/avchetan/issues/new?template=bug-report.yml';
+
+/** Opens a URL in the system browser; it must be allowed in capabilities/default.json. */
+export function openExternal(url: string): Promise<void> {
+  return openUrl(url);
+}
