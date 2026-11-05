@@ -1,6 +1,11 @@
+import { createLogger } from '@avchetan/shared';
+import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
+import { openGuide, openReportProblem } from '../../src/help';
 import { CaptureButton } from '../../src/ui/capture-button';
+
+const log = createLogger('more');
 
 export default function MoreScreen() {
   return (
@@ -45,6 +50,25 @@ export default function MoreScreen() {
         <Text className="text-base text-ink">Run setup again</Text>
         <Text className="text-sm text-inkMuted">Choose how this phone syncs and organizes.</Text>
       </Pressable>
+      <Pressable
+        accessibilityRole="link"
+        className="border-b border-line bg-surfaceRaised p-4"
+        onPress={() => void openGuide().catch(() => log.warn('could not open the guide'))}
+      >
+        <Text className="text-base text-ink">User guide</Text>
+        <Text className="text-sm text-inkMuted">How to set up and use Avchetan.</Text>
+      </Pressable>
+      <Pressable
+        accessibilityRole="link"
+        className="border-b border-line bg-surfaceRaised p-4"
+        onPress={() =>
+          void openReportProblem().catch(() => log.warn('could not open the issue form'))
+        }
+      >
+        <Text className="text-base text-ink">Report a problem</Text>
+        <Text className="text-sm text-inkMuted">Opens a form on GitHub.</Text>
+      </Pressable>
+      <Text className="p-4 text-sm text-inkMuted">Avchetan {Constants.expoConfig?.version}</Text>
       <CaptureButton />
     </View>
   );

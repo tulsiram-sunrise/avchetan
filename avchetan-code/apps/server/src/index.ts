@@ -9,6 +9,7 @@ import {
 } from '@avchetan/shared';
 import { MAX_SEARCH_RESULTS } from '@avchetan/sync/protocol';
 import { serve } from '@hono/node-server';
+import serverPackage from '../package.json' with { type: 'json' };
 import { ApiError } from './api-error';
 import { createApp } from './app';
 import { createHubAsk, type HubAsk } from './ask/hub-ask';
@@ -31,7 +32,8 @@ import {
 } from './from-env';
 import { pairingUrls } from './pairing';
 
-const VERSION = '0.0.0';
+/** The release version (`pnpm version:set`), bundled in at build time. */
+const VERSION = serverPackage.version;
 const SHUTDOWN_GRACE_MS = 5_000;
 
 const log = createLogger('server');

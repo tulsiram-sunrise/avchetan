@@ -24,7 +24,9 @@
     "errors:check": "node tooling/scripts/check-error-codes.ts",
     "icons": "node tooling/scripts/build-icons.ts",
     "docs:dev": "pnpm --filter @avchetan/docs-site dev",
-    "docs:build": "pnpm --filter @avchetan/docs-site build"
+    "docs:build": "pnpm --filter @avchetan/docs-site build",
+    "version:set": "node tooling/scripts/version.ts set",
+    "version:check": "node tooling/scripts/version.ts check"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.3",

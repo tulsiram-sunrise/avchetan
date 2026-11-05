@@ -1,7 +1,9 @@
 import { createLogger, systemTimeZone, toAppError } from '@avchetan/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { getVersion } from '@tauri-apps/api/app';
 import { disable, enable, isEnabled } from '@tauri-apps/plugin-autostart';
 import { useMemo, useState } from 'react';
+import { GUIDE_URL, openExternal, REPORT_PROBLEM_URL } from '../help';
 import { HelpLink } from '../help-link';
 import { emitAppEvent } from '../native/events';
 import {
@@ -44,7 +46,25 @@ export function SettingsPage() {
       <SubmitKeySetting />
       <TimeZoneSetting />
       <AutostartSetting />
+      <AboutSetting />
     </div>
+  );
+}
+
+function AboutSetting() {
+  const version = useQuery({ queryKey: ['native', 'version'], queryFn: getVersion });
+  const open = (url: string) => () =>
+    void openExternal(url).catch(() => log.warn('could not open a link'));
+
+  return (
+    <section className="flex flex-col gap-2">
+      <h2 className="font-medium">About</h2>
+      <p className="text-sm text-ink-muted">Avchetan {version.data ?? ''}</p>
+      <div className="flex gap-2">
+        <QuietButton onClick={open(`${GUIDE_URL}/`)}>User guide</QuietButton>
+        <QuietButton onClick={open(REPORT_PROBLEM_URL)}>Report a problem</QuietButton>
+      </div>
+    </section>
   );
 }
 
