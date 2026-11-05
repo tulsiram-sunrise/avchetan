@@ -125,6 +125,7 @@ function CalendarDay(props: {
   onPress: () => void;
 }) {
   const { selected, isToday } = props;
+  const palette = usePalette();
   return (
     <Pressable
       accessibilityRole="button"
@@ -137,10 +138,18 @@ function CalendarDay(props: {
       className={`flex-1 items-center gap-1 py-1.5 ${props.dimmed ? 'opacity-40' : ''}`}
       onPress={props.onPress}
     >
+      {/* Plain styles: with classes, the filled circle came out square on Android. */}
       <View
-        className={`h-9 w-9 items-center justify-center rounded-full ${
-          selected ? 'bg-accent' : isToday ? 'border border-accent' : ''
-        }`}
+        style={{
+          width: 36,
+          height: 36,
+          borderRadius: 18,
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: selected ? palette.accent : 'transparent',
+          borderWidth: isToday && !selected ? 1 : 0,
+          borderColor: palette.accent,
+        }}
       >
         <Text
           className={`text-base ${

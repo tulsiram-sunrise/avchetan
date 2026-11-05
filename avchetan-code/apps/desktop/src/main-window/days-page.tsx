@@ -44,8 +44,14 @@ export function DaysPage() {
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement | null;
-      if (target?.closest('input, textarea, select, [contenteditable="true"]')) return;
+      // Typing in a field must not move the day.
+      const target = event.target;
+      if (
+        target instanceof Element &&
+        target.closest('input, textarea, select, [contenteditable="true"]')
+      ) {
+        return;
+      }
       if (event.ctrlKey || event.altKey || event.metaKey) return;
       const next = dayForKey(event.key, day, today);
       if (!next) return;
@@ -57,7 +63,7 @@ export function DaysPage() {
   });
 
   return (
-    <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+    <div className="flex flex-col gap-6 md:flex-row md:items-start">
       <MonthCalendar month={month} day={day} today={today} onMonth={setMonth} onDay={select} />
       <DayPanel day={day} today={today} onToday={() => select(today)} />
     </div>
@@ -96,7 +102,7 @@ function MonthCalendar(props: {
   const weekdays = weekOf(weeks[0]?.[0] ?? `${props.month}-01`);
 
   return (
-    <section aria-label="Calendar" className="w-full shrink-0 lg:w-72">
+    <section aria-label="Calendar" className="w-full max-w-sm shrink-0 md:w-64">
       <div className="mb-2 flex items-center justify-between">
         <button
           type="button"
@@ -171,14 +177,23 @@ function CalendarDay(props: {
       aria-label={label}
       aria-pressed={props.selected}
       aria-current={props.isToday ? 'date' : undefined}
-      className={`flex h-11 w-full flex-col items-center justify-center gap-0.5 rounded-lg ${
-        props.selected ? 'bg-accent text-white' : 'hover:bg-surface-raised'
-      } ${props.inMonth || props.selected ? '' : 'text-ink-muted opacity-60'} ${
-        props.isToday && !props.selected ? 'font-semibold text-accent' : ''
+      className={`group flex h-12 w-full flex-col items-center justify-center gap-1 rounded-lg ${
+        props.inMonth || props.selected ? '' : 'text-ink-muted opacity-60'
       }`}
       onClick={props.onSelect}
     >
-      <span className="tabular-nums leading-none">{Number(props.date.slice(8, 10))}</span>
+      {/* Only the number is highlighted, so the dots below keep their colours readable. */}
+      <span
+        className={`flex h-8 w-8 items-center justify-center rounded-full tabular-nums leading-none ${
+          props.selected
+            ? 'bg-accent font-semibold text-white'
+            : props.isToday
+              ? 'font-semibold text-accent ring-1 ring-accent'
+              : 'group-hover:bg-surface-raised'
+        }`}
+      >
+        {Number(props.date.slice(8, 10))}
+      </span>
       <span className="flex h-1.5 gap-0.5" aria-hidden="true">
         {colors.map((dot) => (
           <span

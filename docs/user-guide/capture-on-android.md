@@ -15,15 +15,26 @@ Until you choose one, your entries are saved and wait.
 
 1. Tap the **+** button.
 2. Type what happened or what you need to do, for example `Walked 30 minutes, call the plumber tomorrow`.
-3. Tap **Save**. The entry appears on **Today** with a *Pending* badge, then changes to *✓ Organized*.
+3. Tap **Save**. The entry appears on **Days**, under today, with a *Pending* badge, then changes to *✓ Organized*.
 
-![Today on the phone: the day's entries, each marked Organized, with their activities and tasks](images/capture-on-android-today.png)
+![Days on the phone: the week with coloured dots, today's summary, tasks and entries](images/capture-on-android-days.png)
 
 This works without a connection too. The entry waits, and it's organized when you're back online. Opening the app does this right away. With the app closed, Android organizes a few entries at a time every so often, and it decides when.
 
 If you close the box without saving, your text is still there the next time you open it, unless the app has fully closed.
 
 ![Typing an entry on the phone, with the Save button above it](images/capture-on-android-capture.png)
+
+## Look back by day
+
+**Days** shows one day at a time: how many entries, totals such as *Workout 45 min*, the tasks due or done that day, and the entries.
+
+- **Another day:** tap it in the week at the top. Swipe the week left or right for the next or previous week.
+- **The whole month:** tap the month name, or swipe down on the week. Swipe up to go back to one week.
+- **Back to today:** tap **Today**.
+- **Dots** under a date show what that day had: one colour per category (up to three), grey for entries that aren't organized yet.
+- An entry that talks about another day ("yesterday I ran 5 km") shows on that day too, marked *added on* the day you wrote it.
+- Days ahead show the tasks due then. Tasks that are past their due date show under **Overdue** on today.
 
 ## Add tags and keep entries private
 
@@ -32,7 +43,7 @@ If you close the box without saving, your text is still there the next time you 
 
 ## Change or fix an entry
 
-Tap an entry on **Today** to see what was found in it.
+Tap an entry on **Days** to see what was found in it.
 
 - **Organize again:** try again, for example after you choose a better model.
 - **Edit text:** change what you wrote. The entry keeps its original time and is organized again.

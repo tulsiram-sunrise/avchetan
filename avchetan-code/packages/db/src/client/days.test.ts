@@ -17,7 +17,9 @@ async function captureAt(store: Store, content: string, capturedAt: string) {
   return log;
 }
 
-function addActivity(store: Store, rawLogId: string, slug: string, loggedDate: string) {
+type Seed = Parameters<typeof seedCategoryId>[0];
+
+function addActivity(store: Store, rawLogId: string, slug: Seed, loggedDate: string) {
   return store.write((tx) =>
     store.repos.activities.create(tx, {
       rawLogId,
