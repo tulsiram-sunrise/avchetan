@@ -2,7 +2,7 @@ import type { ClientStore, RawLog } from '@avchetan/db/sqlite';
 import { LlmError, localDate, weekdayOf } from '@avchetan/shared';
 import { type LanguageModelUsage, stepCountIs, streamText } from 'ai';
 import type { LlmDeps } from '../llm/generate-structured';
-import { buildSystem } from '../prompts/analysis.v1';
+import { buildSystem, FINAL_STEP_NOTE } from '../prompts/analysis.v1';
 import type { ModelConfig } from '../providers/config';
 import { modelTimeoutError, toLlmError } from '../providers/errors';
 import { PROVIDER_ADAPTERS } from '../providers/registry';
@@ -76,6 +76,15 @@ export async function ask(
         searchHistory: request.searchHistory,
       }),
       stopWhen: stepCountIs(MAX_STEPS),
+      // The last step must answer: no tools, and told so.
+      prepareStep: ({ stepNumber, messages }) =>
+        stepNumber === MAX_STEPS - 1
+          ? {
+              activeTools: [],
+              toolChoice: 'none',
+              messages: [...messages, { role: 'user', content: FINAL_STEP_NOTE }],
+            }
+          : undefined,
       temperature: model.temperature ?? 0,
       maxRetries: 0,
       timeout: model.timeoutMs ?? (adapter.local ? LOCAL_TIMEOUT_MS : CLOUD_TIMEOUT_MS),

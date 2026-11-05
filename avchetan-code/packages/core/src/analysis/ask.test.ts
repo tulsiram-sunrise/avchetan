@@ -214,6 +214,22 @@ describe('ask', () => {
     expect(sent[1]).toBeUndefined();
   });
 
+  it('makes the last step answer, with no tools, when the model keeps searching', async () => {
+    for (let step = 0; step < 5; step++) {
+      doStream.mockResolvedValueOnce(toolStream('list_categories', {}));
+    }
+    doStream.mockResolvedValueOnce(textStream('I found nothing about that.'));
+
+    const result = await ask(store, question(ollama), llm);
+
+    expect(result.answer).toBe('I found nothing about that.');
+    expect(doStream).toHaveBeenCalledTimes(6);
+    const last = doStream.mock.calls.at(-1)?.[0];
+    expect(last?.tools ?? []).toEqual([]);
+    expect(sentToModel()).toContain("You can't call any more tools.");
+    expect(doStream.mock.calls[0]?.[0].tools?.length).toBeGreaterThan(0);
+  });
+
   it('treats an empty answer as a refusal', async () => {
     doStream.mockResolvedValue(textStream(''));
 
