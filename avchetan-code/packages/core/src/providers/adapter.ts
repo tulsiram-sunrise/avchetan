@@ -17,6 +17,15 @@ export type ProviderAdapter = {
   readonly id: LlmProvider;
   readonly label: string;
   readonly requiresApiKey: boolean;
+  /** No key is required, but a saved one is sent (an OpenAI-compatible service may want one). */
+  readonly optionalApiKey?: boolean;
+  /** The user types the service's address (`baseUrl`); there is no default. */
+  readonly needsBaseUrl?: boolean;
+  /**
+   * Not yet tried against the real service with a real key: the apps label it *Preview*
+   * (docs/roadmap.md, v0.2.0). Remove once a live run passes.
+   */
+  readonly preview?: boolean;
   /** Runs on the user's own hardware, so it keeps working with no internet. */
   readonly local: boolean;
   /** The free tier may use submitted content to improve the provider's products. */

@@ -1,16 +1,28 @@
+import { dayCategories, dayCategoryText } from '@avchetan/core';
+import type { Task } from '@avchetan/db/sqlite';
+import { formatLocalDate, localDate, systemTimeZone } from '@avchetan/shared';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { useEffect, useMemo } from 'react';
-import { Pressable, SectionList, Text, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useExtractionMode, useSlotModel } from '../../src/queries/ai-models';
-import { useExtracted, usePendingCount, useTimeline } from '../../src/queries/entries';
+import {
+  useDayActivities,
+  useDayEntries,
+  useDayTasks,
+  useResolvedCategories,
+  useToday,
+} from '../../src/queries/days';
+import { useExtracted, usePendingCount } from '../../src/queries/entries';
 import { useConnection } from '../../src/queries/sync';
 import { needsSetup } from '../../src/services/first-run';
-import { byRawLog, groupByDay } from '../../src/services/grouping';
+import { byRawLog } from '../../src/services/grouping';
 import { useServices } from '../../src/services-context';
 import { CaptureButton } from '../../src/ui/capture-button';
+import { DayCalendar } from '../../src/ui/day-calendar';
 import { EntryRow } from '../../src/ui/entry-row';
 import { SectionTitle } from '../../src/ui/parts';
+import { TaskRow } from '../../src/ui/task-row';
 
 /**
  * Shown until the phone can organize entries: with no hub and no model, entries only wait. The
@@ -59,42 +71,99 @@ function useFirstRun() {
   }, [first.data]);
 }
 
-export default function TodayScreen() {
+/** One day at a time, with a week strip that opens into the month (docs/product/days-view.md). */
+export default function DaysScreen() {
   useFirstRun();
-  const timeline = useTimeline();
-  const logs = useMemo(() => timeline.data?.pages.flat() ?? [], [timeline.data]);
-  const ids = useMemo(() => logs.map((log) => log.id), [logs]);
-  const extracted = useExtracted(ids);
-  const activitiesOf = useMemo(() => byRawLog(extracted.data?.activities), [extracted.data]);
-  const tasksOf = useMemo(() => byRawLog(extracted.data?.tasks), [extracted.data]);
+  const today = useToday();
+  const [day, setDay] = useState(today);
+  const [expanded, setExpanded] = useState(false);
 
   return (
     <View className="flex-1 bg-surface">
       <SetupBanner />
-      <SectionList
-        sections={groupByDay(logs)}
-        keyExtractor={(rawLog) => rawLog.id}
-        renderSectionHeader={({ section }) => <SectionTitle title={section.title} />}
-        renderItem={({ item }) => (
-          <EntryRow
-            rawLog={item}
-            activities={activitiesOf.get(item.id) ?? []}
-            tasks={tasksOf.get(item.id) ?? []}
-          />
-        )}
-        ListEmptyComponent={
-          timeline.isSuccess ? (
-            <Text className="p-6 text-center text-sm text-inkMuted">
-              No entries yet. Tap + to add your first one.
-            </Text>
-          ) : undefined
-        }
-        onEndReached={() => {
-          if (timeline.hasNextPage) void timeline.fetchNextPage();
-        }}
-        contentContainerClassName="pb-24"
+      <DayCalendar
+        day={day}
+        today={today}
+        expanded={expanded}
+        onDay={setDay}
+        onExpanded={setExpanded}
       />
+      <DayContent day={day} today={today} />
       <CaptureButton />
     </View>
+  );
+}
+
+function DayContent({ day, today }: { day: string; today: string }) {
+  const entries = useDayEntries(day);
+  const dayActivities = useDayActivities(day);
+  const tasks = useDayTasks(day, today);
+  const categories = useResolvedCategories();
+  const ids = useMemo(() => (entries.data ?? []).map((log) => log.id), [entries.data]);
+  const extracted = useExtracted(ids);
+  const activitiesOf = useMemo(() => byRawLog(extracted.data?.activities), [extracted.data]);
+  const tasksOf = useMemo(() => byRawLog(extracted.data?.tasks), [extracted.data]);
+
+  const summary: string[] = [];
+  const count = entries.data?.length ?? 0;
+  if (count > 0) summary.push(count === 1 ? '1 entry' : `${count} entries`);
+  const resolve = (id: string) => categories.data?.get(id)?.id ?? id;
+  for (const category of dayCategories(dayActivities.data ?? [], resolve)) {
+    summary.push(dayCategoryText(category, categories.data?.get(category.categoryId)?.name ?? '…'));
+  }
+  const doneCount =
+    (tasks.data?.done.length ?? 0) + (tasks.data?.due.filter((t) => t.completedAt).length ?? 0);
+  if (doneCount > 0) summary.push(doneCount === 1 ? '1 task done' : `${doneCount} tasks done`);
+
+  const groups: { title: string; alert?: boolean; rows: Task[] }[] = [
+    { title: 'Overdue', alert: true, rows: tasks.data?.overdue ?? [] },
+    { title: 'Due', rows: tasks.data?.due ?? [] },
+    { title: 'Done', rows: tasks.data?.done ?? [] },
+  ].filter((group) => group.rows.length > 0);
+  const empty = entries.isSuccess && tasks.isSuccess && count === 0 && groups.length === 0;
+
+  return (
+    <ScrollView contentContainerClassName="pb-24">
+      <View className="gap-1 px-4 pt-3">
+        <Text className="text-base font-semibold text-ink">
+          {formatLocalDate(day, { weekday: 'long', day: 'numeric', month: 'long' })}
+        </Text>
+        {summary.length > 0 ? (
+          <Text className="text-sm text-inkMuted">{summary.join(' · ')}</Text>
+        ) : null}
+      </View>
+      {empty ? (
+        <Text className="p-6 text-center text-sm text-inkMuted">
+          {day > today
+            ? 'Nothing due this day.'
+            : day === today
+              ? 'Nothing yet today. Tap + to add an entry.'
+              : 'Nothing was logged this day.'}
+        </Text>
+      ) : null}
+      {groups.map((group) => (
+        <View key={group.title}>
+          <SectionTitle title={group.title} alert={group.alert} />
+          {group.rows.map((task) => (
+            <TaskRow key={task.id} task={task} />
+          ))}
+        </View>
+      ))}
+      {count > 0 ? <SectionTitle title="Entries" /> : null}
+      {(entries.data ?? []).map((rawLog) => {
+        const typedOn = localDate(rawLog.capturedAt, systemTimeZone());
+        return (
+          <EntryRow
+            key={rawLog.id}
+            rawLog={rawLog}
+            activities={activitiesOf.get(rawLog.id) ?? []}
+            tasks={tasksOf.get(rawLog.id) ?? []}
+            addedOn={
+              typedOn === day ? null : formatLocalDate(typedOn, { day: 'numeric', month: 'short' })
+            }
+          />
+        );
+      })}
+    </ScrollView>
   );
 }

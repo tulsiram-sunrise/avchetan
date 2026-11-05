@@ -53,20 +53,20 @@ When you're offline with a cloud model, Avchetan shows a short count from your P
 
 Open Avchetan (tray icon → **Open Avchetan**):
 
-- **Timeline:** every entry, with the activities and tasks found in it. Click a title to change it, or change the category next to it. Avchetan never overwrites what you changed. **Options** under an entry lets you organize it again, edit its text, or delete it.
+- **Days:** one day at a time, with a month calendar beside it. Each date has dots in its categories' colours (grey: not organized yet). The day shows a summary such as *3 entries · Workout 45 min*, its tasks (due, done, and on today the overdue ones), and its entries with the activities and tasks found in them. Use ← and → for the day before or after, Page Up and Page Down for a month, and T for today. An entry about another day ("yesterday I ran") shows on that day too, marked *added on*. Click a title to change it, or change the category next to it. Avchetan never overwrites what you changed. **Options** under an entry lets you organize it again, edit its text, or delete it.
 - **Tasks:** tick things off and set due dates.
 - **Review:** entries that couldn't be organized, and why. Press **Organize now** to try again.
 - **Categories:** rename, merge or archive them. The AI adds a category, marked **New**, only when nothing fits; press **Keep** or merge it into another.
 - **Tags:** rename, nest (`health/knee`), merge or recolor them.
 - **Projects:** list what you're working on. Entries are linked to a project only if it's listed here.
 
-![The main window's Timeline: each entry with its category, activity, measurements and tasks](images/capture-on-windows-timeline.png)
+![The main window's Days page: the month calendar with coloured dots, and one day's summary, tasks and entries](images/capture-on-windows-days.png)
 
 ![The Tasks page listing two tasks with their due dates](images/capture-on-windows-tasks.png)
 
 ## Check it worked
 
-Press your shortcut, type `Test entry #test` and press your save key. The entry appears at the top of the list, and *Open Avchetan* shows it in the timeline.
+Press your shortcut, type `Test entry #test` and press your save key. The entry appears at the top of the list, and *Open Avchetan* shows it under today in **Days**.
 
 ## Common problems
 

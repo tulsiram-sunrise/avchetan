@@ -24,6 +24,7 @@ export function decideFailure(error: AppError): FailureDecision {
   const details = error.details ?? {};
   switch (error.code) {
     case 'llm_auth':
+    case 'llm_no_credit':
       return { kind: 'wait', delayMs: NEEDS_USER_WAIT_MS };
     case 'llm_rate_limit':
       return {

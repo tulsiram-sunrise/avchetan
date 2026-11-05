@@ -1,6 +1,5 @@
-import type { RawLog, RawLogCursor } from '@avchetan/db/sqlite';
 import { createLogger } from '@avchetan/shared';
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { AppServices } from '../app-services';
 import { emitAppEvent } from '../native/events';
 import { useServices } from '../services-context';
@@ -11,7 +10,6 @@ const log = createLogger('queries');
 export const rawLogKeys = {
   all: ['raw_logs'] as const,
   recent: (limit: number) => ['raw_logs', 'recent', limit] as const,
-  timeline: ['raw_logs', 'timeline'] as const,
   pendingCount: ['raw_logs', 'pending_count'] as const,
 };
 
@@ -20,27 +18,6 @@ export function useRecentCaptures(limit = 5) {
   return useQuery({
     queryKey: rawLogKeys.recent(limit),
     queryFn: () => store.queries.recentRawLogs(store.db, { limit }),
-  });
-}
-
-const TIMELINE_PAGE = 50;
-
-export function useTimeline() {
-  const { store } = useServices();
-  return useInfiniteQuery({
-    queryKey: rawLogKeys.timeline,
-    initialPageParam: undefined as RawLogCursor | undefined,
-    queryFn: ({ pageParam }) =>
-      store.queries.recentRawLogs(store.db, {
-        limit: TIMELINE_PAGE,
-        ...(pageParam ? { before: pageParam } : {}),
-      }),
-    getNextPageParam: (page: RawLog[]) => {
-      const last = page.at(-1);
-      return page.length === TIMELINE_PAGE && last
-        ? { capturedAt: last.capturedAt, id: last.id }
-        : undefined;
-    },
   });
 }
 

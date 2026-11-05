@@ -2,6 +2,7 @@ import { createLogger } from '@avchetan/shared';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
 import { type AppEventName, type AppEvents, onAppEvent } from './native/events';
+import { DAY_TABLES } from './queries/days';
 
 const log = createLogger('events');
 
@@ -27,5 +28,9 @@ export function useTableInvalidation() {
   const queryClient = useQueryClient();
   useAppEvent('logs:changed', ({ tables }) => {
     for (const table of tables) void queryClient.invalidateQueries({ queryKey: [table] });
+    // The Days view reads several tables at once (queries/days.ts).
+    if (tables.some((table) => (DAY_TABLES as readonly string[]).includes(table))) {
+      void queryClient.invalidateQueries({ queryKey: ['days'] });
+    }
   });
 }

@@ -18,7 +18,14 @@ import {
 import { useMayCreate, useSetMayCreate } from '../queries/settings';
 
 /** Offered in this order: free and private-friendly first. */
-const PROVIDERS: readonly LlmProvider[] = ['groq', 'ollama', 'google'];
+const PROVIDERS: readonly LlmProvider[] = [
+  'groq',
+  'ollama',
+  'google',
+  'openai',
+  'anthropic',
+  'openai_compatible',
+];
 
 const SLOTS = {
   extraction: {
@@ -60,6 +67,7 @@ function SlotSetting({ slot }: { slot: ModelSlot }) {
       slot={slot}
       savedProvider={saved.data?.provider}
       savedModel={saved.data?.model}
+      savedBaseUrl={saved.data?.baseUrl}
     />
   ) : null;
 }
@@ -104,10 +112,12 @@ function AiModelsForm(props: {
   slot: ModelSlot;
   savedProvider: LlmProvider | undefined;
   savedModel: string | undefined;
+  savedBaseUrl: string | undefined;
 }) {
   const [provider, setProvider] = useState<LlmProvider>(props.savedProvider ?? 'groq');
   const [model, setModel] = useState(props.savedModel ?? suggestedModel(provider, props.slot));
   const [apiKey, setApiKey] = useState('');
+  const [baseUrl, setBaseUrl] = useState(props.savedBaseUrl ?? '');
   const adapter = PROVIDER_ADAPTERS[provider];
   const details = SLOTS[props.slot];
 
@@ -116,12 +126,24 @@ function AiModelsForm(props: {
   const test = useTestModel();
   const save = useSaveModel(props.slot);
 
-  const draft = { config: { provider, model: model.trim() }, apiKey };
+  const address = baseUrl.trim().replace(/\/+$/, '');
+  const draft = {
+    config: {
+      provider,
+      model: model.trim(),
+      ...(adapter.needsBaseUrl ? { baseUrl: address } : {}),
+    },
+    apiKey,
+  };
   const needsKey = adapter.requiresApiKey && !hasKey.data && !apiKey.trim();
-  const ready = model.trim().length > 0 && !needsKey;
+  const ready = model.trim().length > 0 && !needsKey && (!adapter.needsBaseUrl || address !== '');
+  const takesKey = adapter.requiresApiKey || adapter.optionalApiKey === true;
   const busy = test.isPending || save.isPending;
   const unchanged =
-    provider === props.savedProvider && model.trim() === props.savedModel && !apiKey.trim();
+    provider === props.savedProvider &&
+    model.trim() === props.savedModel &&
+    (!adapter.needsBaseUrl || address === (props.savedBaseUrl ?? '')) &&
+    !apiKey.trim();
 
   function reset() {
     test.reset();
@@ -135,6 +157,7 @@ function AiModelsForm(props: {
       next === props.savedProvider ? (props.savedModel ?? '') : suggestedModel(next, props.slot),
     );
     setApiKey('');
+    setBaseUrl(next === props.savedProvider ? (props.savedBaseUrl ?? '') : '');
   }
 
   const failure = test.error ?? save.error ?? removeKey.error;
@@ -157,6 +180,7 @@ function AiModelsForm(props: {
           {PROVIDERS.map((id) => (
             <option key={id} value={id}>
               {PROVIDER_ADAPTERS[id].label}
+              {PROVIDER_ADAPTERS[id].preview ? ' (Preview)' : ''}
             </option>
           ))}
         </select>
@@ -183,9 +207,29 @@ function AiModelsForm(props: {
         </datalist>
       </label>
 
-      {adapter.requiresApiKey ? (
+      {adapter.needsBaseUrl ? (
         <label className="flex flex-col gap-1 text-sm">
-          API key
+          Address
+          <input
+            className={fieldClass}
+            value={baseUrl}
+            onChange={(event) => {
+              reset();
+              setBaseUrl(event.target.value);
+            }}
+            placeholder="https://openrouter.ai/api/v1"
+            spellCheck={false}
+          />
+          <span className="text-ink-muted">
+            The service's OpenAI-compatible address, usually ending in /v1. On this PC,
+            http://localhost works too.
+          </span>
+        </label>
+      ) : null}
+
+      {takesKey ? (
+        <label className="flex flex-col gap-1 text-sm">
+          {adapter.requiresApiKey ? 'API key' : 'API key (if the service needs one)'}
           <input
             className={fieldClass}
             type="password"
@@ -204,8 +248,17 @@ function AiModelsForm(props: {
       <p className="text-sm text-ink-muted">
         {adapter.local
           ? 'Your entries stay on this PC. On a PC without a graphics card, an entry can take up to a minute.'
-          : `Your entries are sent to ${adapter.label} to be organized.`}
+          : adapter.needsBaseUrl
+            ? 'Your entries are sent to the service at this address to be organized.'
+            : `Your entries are sent to ${adapter.label} to be organized.`}
       </p>
+
+      {adapter.preview ? (
+        <p role="note" className="text-sm text-ink-muted">
+          Preview: Avchetan hasn't been tried with this provider using a real key yet. Click
+          <strong> Test</strong> first, and report a problem if it doesn't work.
+        </p>
+      ) : null}
 
       {adapter.freeTierUsesContent ? (
         <p role="note" className="text-sm text-danger">
@@ -238,7 +291,7 @@ function AiModelsForm(props: {
         >
           {save.isPending ? 'Saving…' : 'Save'}
         </button>
-        {adapter.requiresApiKey && hasKey.data ? (
+        {takesKey && hasKey.data ? (
           <button
             type="button"
             className="px-2 py-1.5 text-sm text-ink-muted underline disabled:opacity-50"

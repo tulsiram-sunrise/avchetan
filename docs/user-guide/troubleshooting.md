@@ -83,12 +83,14 @@ Problems come first, each with its fix and a **Help** link to its section below.
 **"The provider is rate limiting requests."** Normal on a free plan. Your entries wait and are organized automatically; nothing is lost. If you often reach the limit, check your provider's usage page.
 
 ## llm_unavailable
-**"The model could not be reached"**, **"took too long to answer"**, **"was interrupted too many times"** or **"is not downloaded in Ollama."**
+**"The model could not be reached"**, **"took too long to answer"**, **"was interrupted too many times"**, **"is not downloaded in Ollama"**, **"The provider doesn't offer this model"** or **"The provider is overloaded right now."**
 - A note in brackets, such as *HTTP 503*, is what the provider answered. With no note, the request got no answer at all, so check your connection.
 - Interrupted: the phone stopped the app while it was working. Open the entry and tap **Organize now**. If this keeps happening, let Avchetan run in the background in your phone's battery settings.
 - Ollama: is the Ollama app running in the tray?
 - Model not downloaded: see [model_missing](#model_missing), then click **Test** again.
 - Took too long: a large model on a PC without a graphics card can be slow. Try a smaller model.
+- Doesn't offer this model: the model name is mistyped, retired, or not available on your account. Copy the exact name from the provider's model list into **Model**, then click **Test**.
+- Overloaded: the provider is busy. Avchetan tries again by itself later.
 - Cloud provider: possibly a temporary outage. Entries are retried automatically.
 
 ## llm_invalid_output
@@ -99,6 +101,9 @@ Problems come first, each with its fix and a **Help** link to its section below.
 
 ## llm_context_overflow
 **"The request is too long for this model."** The entry and the instructions Avchetan sends with it don't fit in what the model can read at once. Avchetan first tries again with shorter instructions by itself. If an entry still fails, split it into shorter entries, or choose a model that reads longer text in **Settings → AI models**.
+
+## llm_no_credit
+**"The provider account has no credit left."** OpenAI and Anthropic charge per use, and your account's balance or monthly limit has run out. Add credit or raise the limit on the billing page of the provider's website, then click **Test** in **Settings → AI models**. Until then your entries wait safely. To keep going for free, choose Groq or Ollama instead.
 
 ## hotkey_unavailable
 **"The shortcut is used by another app."** Choose another shortcut in **Settings → Shortcut**.

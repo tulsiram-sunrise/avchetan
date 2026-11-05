@@ -35,7 +35,7 @@ export {
 export { compareVersions, type RowVersion } from './client/lww';
 export { ackOutbox, listOutbox, type OutboxEntry } from './client/outbox';
 export type { DataScope } from './client/privacy';
-export type { RawLogCursor, RawLogDetail } from './client/queries';
+export type { DayTasks, MonthDay, RawLogCursor, RawLogDetail } from './client/queries';
 export * as queries from './client/queries';
 export type { Activity, ActivityEdit, NewActivity } from './client/repos/activities';
 export {

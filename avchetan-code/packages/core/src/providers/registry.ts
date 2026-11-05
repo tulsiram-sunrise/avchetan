@@ -1,15 +1,21 @@
 import { type HttpFetch, LlmError, type SecretName, type SecretStore } from '@avchetan/shared';
 import type { EmbeddingModel, LanguageModel } from 'ai';
 import type { ProviderAdapter } from './adapter';
+import { anthropicAdapter } from './adapters/anthropic';
 import { googleAdapter } from './adapters/google';
 import { groqAdapter } from './adapters/groq';
 import { ollamaAdapter } from './adapters/ollama';
+import { openAiAdapter } from './adapters/openai';
+import { openAiCompatibleAdapter } from './adapters/openai-compatible';
 import type { LlmProvider, ModelConfig } from './config';
 
 export const PROVIDER_ADAPTERS: Record<LlmProvider, ProviderAdapter> = {
   google: googleAdapter,
   groq: groqAdapter,
   ollama: ollamaAdapter,
+  openai: openAiAdapter,
+  anthropic: anthropicAdapter,
+  openai_compatible: openAiCompatibleAdapter,
 };
 
 export type ProviderDeps = {
@@ -31,7 +37,12 @@ export async function createModel(
   { fetch, secrets }: ProviderDeps,
 ): Promise<LanguageModel> {
   const adapter = PROVIDER_ADAPTERS[config.provider];
-  if (!adapter.requiresApiKey) return adapter.createModel(config, { apiKey: '', fetch });
+  if (!adapter.requiresApiKey) {
+    const apiKey = adapter.optionalApiKey
+      ? ((await secrets.get(apiKeySecretName(config.provider))) ?? '')
+      : '';
+    return adapter.createModel(config, { apiKey, fetch });
+  }
 
   const apiKey = await secrets.get(apiKeySecretName(config.provider));
   if (!apiKey) {
@@ -53,7 +64,13 @@ export async function createEmbeddingModel(
       details: { provider: config.provider, reason: 'no_embeddings' },
     });
   }
-  const apiKey = adapter.requiresApiKey ? await secrets.get(apiKeySecretName(config.provider)) : '';
+  const apiKey =
+    adapter.requiresApiKey || adapter.optionalApiKey
+      ? await secrets.get(apiKeySecretName(config.provider))
+      : '';
+  if (apiKey === null && adapter.optionalApiKey) {
+    return adapter.createEmbeddingModel(config, { apiKey: '', fetch });
+  }
   if (apiKey === null) {
     throw new LlmError('llm_auth', 'No API key is set for this provider', {
       details: { provider: config.provider },

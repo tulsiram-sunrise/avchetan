@@ -29,6 +29,21 @@
       "provider": "google",
       "extractionModel": "gemini-3.5-flash-lite",
       "analysisModel": "gemini-3.8-flash"
+    },
+    {
+      "id": "openai-paid",
+      "label": "OpenAI (paid, Preview)",
+      "provider": "openai",
+      "extractionModel": "gpt-5-mini",
+      "analysisModel": "gpt-5",
+      "embeddingModel": "text-embedding-3-small"
+    },
+    {
+      "id": "anthropic-paid",
+      "label": "Anthropic Claude (paid, Preview)",
+      "provider": "anthropic",
+      "extractionModel": "claude-haiku-5-5",
+      "analysisModel": "claude-sonnet-5-5"
     }
   ]
 }

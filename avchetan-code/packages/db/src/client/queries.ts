@@ -1,3 +1,4 @@
+import { dayRange, type LocalDate, localDate, type TimeZone } from '@avchetan/shared';
 import {
   and,
   asc,
@@ -318,6 +319,120 @@ export function abandonedPendingLogs(
     )
     .orderBy(asc(rawLogs.capturedAt))
     .limit(options.limit);
+}
+
+/**
+ * The entries of a local day (docs/product/days-view.md): typed that day, or with an activity
+ * dated that day ("yesterday I ran" shows on both). Oldest first.
+ */
+export function dayEntries(
+  db: ClientDb,
+  options: { day: LocalDate; timeZone: TimeZone },
+): Promise<RawLog[]> {
+  const { from, to } = dayRange(options.day, options.timeZone);
+  const datedThatDay = db
+    .select({ id: activities.rawLogId })
+    .from(activities)
+    .where(and(live(activities), eq(activities.loggedDate, options.day)));
+  return db
+    .select()
+    .from(rawLogs)
+    .where(
+      and(
+        live(rawLogs),
+        or(
+          and(gte(rawLogs.capturedAt, from), lt(rawLogs.capturedAt, to)),
+          inArray(rawLogs.id, datedThatDay),
+        ),
+      ),
+    )
+    .orderBy(asc(rawLogs.capturedAt), asc(rawLogs.id));
+}
+
+export type DayTasks = { due: Task[]; done: Task[]; overdue: Task[] };
+
+/**
+ * A day's tasks: due that day (open first), finished that day, and, on today only, open tasks
+ * that were due before it.
+ */
+export async function dayTasks(
+  db: ClientDb,
+  options: { day: LocalDate; today: LocalDate; timeZone: TimeZone },
+): Promise<DayTasks> {
+  const { from, to } = dayRange(options.day, options.timeZone);
+  const [due, done, overdue] = await Promise.all([
+    db
+      .select()
+      .from(tasks)
+      .where(and(live(tasks), eq(tasks.dueDate, options.day)))
+      .orderBy(sql`${tasks.completedAt} is not null`, asc(tasks.createdAt)),
+    db
+      .select()
+      .from(tasks)
+      .where(and(live(tasks), gte(tasks.completedAt, from), lt(tasks.completedAt, to)))
+      .orderBy(asc(tasks.completedAt)),
+    options.day === options.today
+      ? db
+          .select()
+          .from(tasks)
+          .where(and(live(tasks), isNull(tasks.completedAt), lt(tasks.dueDate, options.today)))
+          .orderBy(asc(tasks.dueDate), asc(tasks.createdAt))
+      : Promise.resolve([]),
+  ]);
+  // A task due and finished the same day is listed once, under due.
+  const dueIds = new Set(due.map((task) => task.id));
+  return { due, done: done.filter((task) => !dueIds.has(task.id)), overdue };
+}
+
+export type MonthDay = { categoryIds: string[]; unorganized: boolean };
+
+/**
+ * What each day of a range had, for the calendar's dots: the categories of its activities, most
+ * used first, and whether an entry typed that day has nothing organized from it (yet). Days
+ * without anything are left out. Dates are inclusive.
+ */
+export async function monthDots(
+  db: ClientDb,
+  options: { from: LocalDate; to: LocalDate; timeZone: TimeZone },
+): Promise<Map<LocalDate, MonthDay>> {
+  const start = dayRange(options.from, options.timeZone).from;
+  const end = dayRange(options.to, options.timeZone).to;
+  const [byCategory, typed] = await Promise.all([
+    db
+      .select({ day: activities.loggedDate, categoryId: activities.categoryId, value: count() })
+      .from(activities)
+      .where(
+        and(
+          live(activities),
+          gte(activities.loggedDate, options.from),
+          lte(activities.loggedDate, options.to),
+        ),
+      )
+      .groupBy(activities.loggedDate, activities.categoryId)
+      .orderBy(asc(activities.loggedDate), desc(count()), asc(activities.categoryId)),
+    db
+      .select({
+        capturedAt: rawLogs.capturedAt,
+        // Spelled out: Drizzle prints unqualified column names inside a raw subquery.
+        organized: sql<number>`exists (select 1 from activities a where a.raw_log_id = raw_logs.id and a.deleted_at is null)`,
+      })
+      .from(rawLogs)
+      .where(and(live(rawLogs), gte(rawLogs.capturedAt, start), lt(rawLogs.capturedAt, end))),
+  ]);
+  const days = new Map<LocalDate, MonthDay>();
+  const dayOf = (day: LocalDate) => {
+    let entry = days.get(day);
+    if (!entry) {
+      entry = { categoryIds: [], unorganized: false };
+      days.set(day, entry);
+    }
+    return entry;
+  };
+  for (const row of byCategory) dayOf(row.day).categoryIds.push(row.categoryId);
+  for (const row of typed) {
+    if (!row.organized) dayOf(localDate(row.capturedAt, options.timeZone)).unorganized = true;
+  }
+  return days;
 }
 
 /** Count of raw logs awaiting extraction (for the pending badge). */

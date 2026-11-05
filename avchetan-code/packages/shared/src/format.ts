@@ -14,6 +14,22 @@ export function formatDay(instant: string): string {
   return dayFormat.format(Date.parse(instant));
 }
 
+const localDateFormats = new Map<string, Intl.DateTimeFormat>();
+
+/**
+ * A calendar date (`YYYY-MM-DD`) in the user's locale. It is formatted as UTC midnight in UTC,
+ * so no zone can move it to the day before.
+ */
+export function formatLocalDate(date: string, options: Intl.DateTimeFormatOptions): string {
+  const key = JSON.stringify(options);
+  let format = localDateFormats.get(key);
+  if (!format) {
+    format = new Intl.DateTimeFormat(undefined, { ...options, timeZone: 'UTC' });
+    localDateFormats.set(key, format);
+  }
+  return format.format(Date.parse(`${date}T00:00:00.000Z`));
+}
+
 function minutesText(ms: number): string {
   const count = Math.max(1, Math.round(Math.abs(ms) / 60_000));
   return count === 1 ? '1 minute' : `${count} minutes`;

@@ -114,6 +114,7 @@ export const ERROR_HELP = {
   untrusted_local_network: at('untrusted_local_network'),
   insecure_server_url: at('insecure_server_url'),
   insecure_model_url: at('insecure_model_url'),
+  model_url_required: own(),
   invalid_pairing_code: at('invalid_pairing_code'),
   wrong_server: at('wrong_server'),
   no_pairing_address: at('no_pairing_address'),
@@ -138,6 +139,7 @@ export const ERROR_HELP = {
   llm_invalid_output: at('llm_invalid_output'),
   llm_refused: at('llm_refused'),
   llm_context_overflow: at('llm_context_overflow'),
+  llm_no_credit: at('llm_no_credit'),
 
   // Written to the cloud server's log at startup (apps/server/src/db/startup-hint.ts).
   database_url_invalid: at('database_url_invalid'),

@@ -1,19 +1,4 @@
-import type { RawLog, Task } from '@avchetan/db/sqlite';
-import { formatDay } from '@avchetan/shared';
-
-export type DaySection = { title: string; data: RawLog[] };
-
-/** Consecutive entries by local day, keeping the newest-first order they arrive in. */
-export function groupByDay(logs: readonly RawLog[], dayOf = formatDay): DaySection[] {
-  const sections: DaySection[] = [];
-  for (const rawLog of logs) {
-    const title = dayOf(rawLog.capturedAt);
-    const last = sections.at(-1);
-    if (last?.title === title) last.data.push(rawLog);
-    else sections.push({ title, data: [rawLog] });
-  }
-  return sections;
-}
+import type { Task } from '@avchetan/db/sqlite';
 
 /** Rows extracted from each raw log. */
 export function byRawLog<T extends { rawLogId: string | null }>(
