@@ -25,7 +25,27 @@ const PROVIDERS: { provider: LlmProvider; ready: boolean; apiKey?: string | unde
     apiKey: process.env.GOOGLE_API_KEY,
   },
   { provider: 'ollama', ready: Boolean(process.env.LLM_CHECK_OLLAMA) },
+  // Preview providers (docs/roadmap.md, v0.2.0): passing here is what removes the label.
+  {
+    provider: 'openai',
+    ready: Boolean(process.env.OPENAI_API_KEY),
+    apiKey: process.env.OPENAI_API_KEY,
+  },
+  {
+    provider: 'anthropic',
+    ready: Boolean(process.env.ANTHROPIC_API_KEY),
+    apiKey: process.env.ANTHROPIC_API_KEY,
+  },
+  {
+    // Needs LLM_CHECK_OPENAI_COMPATIBLE_MODEL too: there is no preset for an unknown service.
+    provider: 'openai_compatible',
+    ready: Boolean(process.env.OPENAI_COMPATIBLE_BASE_URL),
+    apiKey: process.env.OPENAI_COMPATIBLE_API_KEY,
+  },
 ];
+
+const baseUrlFor = (provider: LlmProvider) =>
+  provider === 'openai_compatible' ? process.env.OPENAI_COMPATIBLE_BASE_URL : undefined;
 
 describe.each(PROVIDERS)('live check: $provider', ({ provider, ready, apiKey }) => {
   it.runIf(ready)(
@@ -43,7 +63,14 @@ describe.each(PROVIDERS)('live check: $provider', ({ provider, ready, apiKey }) 
         {
           purpose: 'extraction',
           // Generous: a local model may have to load into memory first.
-          models: [{ provider, model, timeoutMs: 170_000 }],
+          models: [
+            {
+              provider,
+              model,
+              timeoutMs: 170_000,
+              ...(baseUrlFor(provider) ? { baseUrl: baseUrlFor(provider) as string } : {}),
+            },
+          ],
           schema: entrySchema,
           system: 'Turn the entry into the requested JSON. Today is 2026-10-30.',
           prompt: 'Book a dentist appointment for Sam by Friday #health',

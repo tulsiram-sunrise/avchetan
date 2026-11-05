@@ -17,7 +17,14 @@ import {
 import { Button, Failure, Field } from './parts';
 
 /** Offered in this order: free first. */
-const PROVIDERS: readonly LlmProvider[] = ['groq', 'ollama', 'google'];
+const PROVIDERS: readonly LlmProvider[] = [
+  'groq',
+  'ollama',
+  'google',
+  'openai',
+  'anthropic',
+  'openai_compatible',
+];
 
 const SLOTS = {
   extraction: {
@@ -35,10 +42,17 @@ const SLOTS = {
 const suggestedModel = (provider: LlmProvider, slot: ModelSlot) =>
   MODEL_PRESETS.find((preset) => preset.provider === provider)?.[SLOTS[slot].presetField] ?? '';
 
-/** Builds what gets saved. On a phone, Ollama is another machine, so it needs an address. */
+/**
+ * Builds what gets saved. On a phone, Ollama is another machine, so it needs an address, like an
+ * OpenAI-compatible service does everywhere.
+ */
 export function modelConfig(provider: LlmProvider, model: string, address: string): ModelConfig {
-  const baseUrl = address.trim();
-  return { provider, model: model.trim(), ...(provider === 'ollama' ? { baseUrl } : {}) };
+  const baseUrl = address.trim().replace(/\/+$/, '');
+  return { provider, model: model.trim(), ...(takesAddress(provider) ? { baseUrl } : {}) };
+}
+
+function takesAddress(provider: LlmProvider): boolean {
+  return provider === 'ollama' || PROVIDER_ADAPTERS[provider].needsBaseUrl === true;
 }
 
 export function ModelSlotForm({ slot }: { slot: ModelSlot }) {
@@ -62,7 +76,8 @@ function ModelForm({ slot, saved }: { slot: ModelSlot; saved: ModelConfig | null
 
   const draft = { config: modelConfig(provider, model, address), apiKey };
   const needsKey = adapter.requiresApiKey && !hasKey.data && !apiKey.trim();
-  const needsAddress = provider === 'ollama' && !address.trim();
+  const needsAddress = takesAddress(provider) && !address.trim();
+  const takesKey = adapter.requiresApiKey || adapter.optionalApiKey === true;
   const ready = model.trim().length > 0 && !needsKey && !needsAddress;
   const busy = test.isPending || save.isPending;
 
@@ -75,6 +90,7 @@ function ModelForm({ slot, saved }: { slot: ModelSlot; saved: ModelConfig | null
     reset();
     setProvider(next);
     setModel(next === saved?.provider ? saved.model : suggestedModel(next, slot));
+    setAddress(next === saved?.provider ? (saved.baseUrl ?? '') : '');
     setApiKey('');
   }
 
@@ -98,6 +114,7 @@ function ModelForm({ slot, saved }: { slot: ModelSlot; saved: ModelConfig | null
           >
             <Text className={`text-sm ${id === provider ? 'text-white' : 'text-ink'}`}>
               {PROVIDER_ADAPTERS[id].label}
+              {PROVIDER_ADAPTERS[id].preview ? ' (Preview)' : ''}
             </Text>
           </Pressable>
         ))}
@@ -130,10 +147,28 @@ function ModelForm({ slot, saved }: { slot: ModelSlot; saved: ModelConfig | null
         </>
       ) : null}
 
-      {adapter.requiresApiKey ? (
+      {adapter.needsBaseUrl ? (
         <>
           <Field
-            label="API key"
+            label="Address"
+            value={address}
+            onChangeText={(text) => {
+              reset();
+              setAddress(text);
+            }}
+            placeholder="https://openrouter.ai/api/v1"
+            keyboardType="url"
+          />
+          <Text className="text-sm text-inkMuted">
+            The service's OpenAI-compatible address, usually ending in /v1.
+          </Text>
+        </>
+      ) : null}
+
+      {takesKey ? (
+        <>
+          <Field
+            label={adapter.requiresApiKey ? 'API key' : 'API key (if the service needs one)'}
             secureTextEntry
             value={apiKey}
             onChangeText={(text) => {
@@ -149,8 +184,17 @@ function ModelForm({ slot, saved }: { slot: ModelSlot; saved: ModelConfig | null
       <Text className="text-sm text-inkMuted">
         {adapter.local
           ? 'Your entries go only to your own PC.'
-          : `Your entries are sent to ${adapter.label}.`}
+          : adapter.needsBaseUrl
+            ? 'Your entries are sent to the service at this address.'
+            : `Your entries are sent to ${adapter.label}.`}
       </Text>
+
+      {adapter.preview ? (
+        <Text className="text-sm text-inkMuted">
+          Preview: Avchetan hasn't been tried with this provider using a real key yet. Tap Test
+          first, and report a problem if it doesn't work.
+        </Text>
+      ) : null}
 
       {adapter.freeTierUsesContent ? (
         <Text accessibilityRole="alert" className="text-sm text-danger">
@@ -178,7 +222,7 @@ function ModelForm({ slot, saved }: { slot: ModelSlot; saved: ModelConfig | null
             save.mutate(draft, { onSuccess: () => setApiKey('') });
           }}
         />
-        {adapter.requiresApiKey && hasKey.data ? (
+        {takesKey && hasKey.data ? (
           <Button
             label="Remove key"
             disabled={busy || removeKey.isPending}

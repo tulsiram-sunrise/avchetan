@@ -9,6 +9,7 @@ export const LLM_ERROR_CODES = [
   'llm_invalid_output',
   'llm_refused',
   'llm_context_overflow',
+  'llm_no_credit',
 ] as const;
 export type LlmErrorCode = (typeof LLM_ERROR_CODES)[number];
 

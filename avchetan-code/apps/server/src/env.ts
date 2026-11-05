@@ -61,6 +61,11 @@ const envSchema = z
     OLLAMA_BASE_URL: z.url().optional(),
     GROQ_API_KEY: z.string().min(1).optional(),
     GOOGLE_API_KEY: z.string().min(1).optional(),
+    OPENAI_API_KEY: z.string().min(1).optional(),
+    ANTHROPIC_API_KEY: z.string().min(1).optional(),
+    /** Any service that speaks OpenAI's API; its key is optional. */
+    OPENAI_COMPATIBLE_BASE_URL: z.url().optional(),
+    OPENAI_COMPATIBLE_API_KEY: z.string().min(1).optional(),
   })
   .refine((env) => env.DB_DRIVER === 'pglite' || env.DATABASE_URL, {
     path: ['DATABASE_URL'],
@@ -77,7 +82,18 @@ const envSchema = z
   .refine((env) => !env.EMBEDDING_PROVIDER || env.EMBEDDING_MODEL, {
     path: ['EMBEDDING_MODEL'],
     message: 'EMBEDDING_MODEL is required when EMBEDDING_PROVIDER is set',
-  });
+  })
+  .refine(
+    (env) =>
+      env.OPENAI_COMPATIBLE_BASE_URL ||
+      ![env.EXTRACTION_PROVIDER, env.ANALYSIS_PROVIDER, env.EMBEDDING_PROVIDER].includes(
+        'openai_compatible',
+      ),
+    {
+      path: ['OPENAI_COMPATIBLE_BASE_URL'],
+      message: 'OPENAI_COMPATIBLE_BASE_URL is required for the openai_compatible provider',
+    },
+  );
 
 export type ServerEnv = z.infer<typeof envSchema>;
 

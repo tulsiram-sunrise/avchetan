@@ -4,15 +4,18 @@ Provider-agnostic layer for extraction, analysis, embeddings and transcription. 
 
 ## Providers
 
-Free options come first ([ADR-0020](../decisions/0020-free-first-provider-adapters.md)). Paid providers are on the roadmap under *Later*.
+Free options come first ([ADR-0020](../decisions/0020-free-first-provider-adapters.md)). The paid providers and the OpenAI-compatible one arrived in v0.2.0 as **Preview** (`preview: true`): tested with recorded answers only, labelled in both apps, until a live run with a real key passes (`test:live`, `eval:extraction`).
 
 | Provider id | Package | Auth | Notes |
 |---|---|---|---|
 | `groq` | `@ai-sdk/groq` | API key | Very low latency; free tier; good extraction slot |
 | `ollama` | `@ai-sdk/openai-compatible`, `baseUrl` default `http://localhost:11434/v1` | none | Local/offline. On Android: LAN URL of the desktop |
 | `google` | `@ai-sdk/google` | API key | Gemini. The free tier may use content to improve Google's products, so use it with made-up data only |
+| `openai` | `@ai-sdk/openai` (Responses API) | API key | Paid. Embeddings too. Preview |
+| `anthropic` | `@ai-sdk/anthropic` | API key | Paid. Claude. No embedding models. Native JSON-schema output for the models the SDK knows; others fall back to a tool call. Preview |
+| `openai_compatible` | `@ai-sdk/openai-compatible`, `supportsStructuredOutputs` | optional key | Any service speaking OpenAI's API (OpenRouter, LM Studio, vLLM, …). `baseUrl` required (`model_url_required`), checked like Ollama's ([R23](../open-questions.md#resolved)). Preview |
 
-Each provider is a `ProviderAdapter` (`packages/core/src/providers/adapters/`) registered in `PROVIDER_ADAPTERS`. An adapter holds only what differs between providers: `requiresApiKey`, `local`, `freeTierUsesContent`, `createModel`, and optional `structuredOptions`, `analysisOptions` and `classifyError`. Ollama uses both option sets to turn thinking off, which is far too slow on a CPU. To add a provider: add its id to `LLM_PROVIDERS`, write one adapter, register it.
+Each provider is a `ProviderAdapter` (`packages/core/src/providers/adapters/`) registered in `PROVIDER_ADAPTERS`. An adapter holds only what differs between providers: `requiresApiKey`, `local`, `freeTierUsesContent`, `createModel`, and optional `optionalApiKey`, `needsBaseUrl`, `preview`, `structuredOptions`, `analysisOptions` and `classifyError`. OpenAI-style services report an empty balance as 429 `insufficient_quota` and Anthropic as a 400 "credit balance" message; both become `llm_no_credit`, which waits for the user like `llm_auth` instead of being retried as a rate limit. Ollama uses both option sets to turn thinking off, which is far too slow on a CPU. To add a provider: add its id to `LLM_PROVIDERS`, write one adapter, register it.
 
 Besides real providers, a slot can be set to a **routing mode** for devices that can't or shouldn't call a model themselves ([deployment-modes](deployment-modes.md#llm-work-for-the-phone-delegate-to-hub)):
 - extraction `delegate` — this device never extracts; the server does it immediately after sync;

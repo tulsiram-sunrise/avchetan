@@ -30,7 +30,12 @@ async function loadSlots(store: ClientStore) {
  * (docs/conventions/security-and-privacy.md#transport).
  */
 export function assertSafeModelUrl(config: ModelConfig): void {
-  if (!config.baseUrl) return;
+  if (!config.baseUrl) {
+    if (PROVIDER_ADAPTERS[config.provider].needsBaseUrl) {
+      throw new ValidationError('model_url_required', "Enter the service's address");
+    }
+    return;
+  }
   const { protocol, hostname } = new URL(config.baseUrl);
   if (protocol === 'https:') return;
   if (
@@ -72,7 +77,8 @@ export async function saveSlotModel(
 }
 
 export async function hasApiKey(secrets: SecretStore, provider: LlmProvider): Promise<boolean> {
-  if (!PROVIDER_ADAPTERS[provider].requiresApiKey) return false;
+  const adapter = PROVIDER_ADAPTERS[provider];
+  if (!adapter.requiresApiKey && !adapter.optionalApiKey) return false;
   return (await secrets.get(apiKeySecretName(provider))) !== null;
 }
 

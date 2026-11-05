@@ -115,7 +115,7 @@ ORDER BY captured_at LIMIT 50
 
 (`created_on_server_at` is a server-only column set on first insert.) The device's copy then checks each candidate is still claimable there, and the processor takes the lease, extracts and applies the result exactly as on a client. A push from another device wakes it, so a `delegate` device's entries are organized within seconds; otherwise it looks every 60 s.
 
-Configuration (env): `FALLBACK_EXTRACTION_ENABLED` (default `true`), `FALLBACK_GRACE_MINUTES` (default 15), `EXTRACTION_PROVIDER` and `EXTRACTION_MODEL` (no provider: the server organizes nothing), `OLLAMA_BASE_URL`, `GROQ_API_KEY`, `GOOGLE_API_KEY`. Settings don't sync, so the server uses the default `llmMayCreate` (`auto`).
+Configuration (env): `FALLBACK_EXTRACTION_ENABLED` (default `true`), `FALLBACK_GRACE_MINUTES` (default 15), `EXTRACTION_PROVIDER` and `EXTRACTION_MODEL` (no provider: the server organizes nothing), `OLLAMA_BASE_URL`, `GROQ_API_KEY`, `GOOGLE_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `OPENAI_COMPATIBLE_BASE_URL`, `OPENAI_COMPATIBLE_API_KEY`. Settings don't sync, so the server uses the default `llmMayCreate` (`auto`).
 
 ## 6. Status lifecycle
 

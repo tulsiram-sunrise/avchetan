@@ -1,6 +1,13 @@
 import { z } from 'zod';
 
-export const LLM_PROVIDERS = ['google', 'groq', 'ollama'] as const;
+export const LLM_PROVIDERS = [
+  'google',
+  'groq',
+  'ollama',
+  'openai',
+  'anthropic',
+  'openai_compatible',
+] as const;
 export type LlmProvider = (typeof LLM_PROVIDERS)[number];
 
 /** One concrete model. Non-secret: stored in `settings`; keys live in the SecretStore. */

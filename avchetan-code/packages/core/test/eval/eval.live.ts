@@ -19,15 +19,21 @@ import { matchFixture } from './match';
  *
  *   $env:GROQ_API_KEY = '...'; pnpm eval:extraction
  *
- * Choose with LLM_EVAL_PROVIDER (groq, google, ollama) and LLM_EVAL_MODEL. LLM_EVAL_RECORD=1 saves
+ * Choose with LLM_EVAL_PROVIDER (groq, google, ollama, openai, anthropic, openai_compatible with
+ * OPENAI_COMPATIBLE_BASE_URL) and LLM_EVAL_MODEL. LLM_EVAL_RECORD=1 saves
  * the answers that passed for the CI replay test. LLM_EVAL_ONLY limits it to IDs containing a word, LLM_EVAL_VERBOSE shows the metrics of a miss.
  */
 const provider = (process.env.LLM_EVAL_PROVIDER ?? 'groq') as LlmProvider;
 const KEYS: Partial<Record<LlmProvider, string | undefined>> = {
   groq: process.env.GROQ_API_KEY,
   google: process.env.GOOGLE_API_KEY,
+  openai: process.env.OPENAI_API_KEY,
+  anthropic: process.env.ANTHROPIC_API_KEY,
+  openai_compatible: process.env.OPENAI_COMPATIBLE_API_KEY,
 };
-const needsKey = provider !== 'ollama';
+const needsKey = provider !== 'ollama' && provider !== 'openai_compatible';
+const baseUrl =
+  provider === 'openai_compatible' ? process.env.OPENAI_COMPATIBLE_BASE_URL : undefined;
 const apiKey = KEYS[provider];
 const PAUSES_MS: Partial<Record<LlmProvider, number>> = { groq: 20_000, google: 7_000 };
 const MAX_RATE_LIMIT_WAITS = 5;
@@ -44,6 +50,7 @@ describe('extraction eval', () => {
       if (apiKey) await secrets.set(apiKeySecretName(provider), apiKey);
       const config = modelConfigSchema.parse({
         provider,
+        ...(baseUrl ? { baseUrl } : {}),
         model:
           process.env.LLM_EVAL_MODEL ??
           MODEL_PRESETS.find((preset) => preset.provider === provider)?.extractionModel,

@@ -17,7 +17,12 @@ function modelFromEnv(
   model: string | undefined,
 ): ModelConfig | null {
   if (!provider || !model) return null;
-  const baseUrl = provider === 'ollama' ? env.OLLAMA_BASE_URL : undefined;
+  const baseUrl =
+    provider === 'ollama'
+      ? env.OLLAMA_BASE_URL
+      : provider === 'openai_compatible'
+        ? env.OPENAI_COMPATIBLE_BASE_URL
+        : undefined;
   return { provider, model, ...(baseUrl ? { baseUrl } : {}) };
 }
 
@@ -43,6 +48,9 @@ export function secretsFromEnv(env: ServerEnv): ProviderDeps['secrets'] {
   const keyFor: Record<Exclude<LlmProvider, 'ollama'>, string | undefined> = {
     groq: env.GROQ_API_KEY,
     google: env.GOOGLE_API_KEY,
+    openai: env.OPENAI_API_KEY,
+    anthropic: env.ANTHROPIC_API_KEY,
+    openai_compatible: env.OPENAI_COMPATIBLE_API_KEY,
   };
   for (const [provider, key] of Object.entries(keyFor)) {
     if (key) keys.set(apiKeySecretName(provider as LlmProvider), key);
