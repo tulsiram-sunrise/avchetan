@@ -13,7 +13,7 @@ export {
   type SyncEngine,
   type SyncEngineDeps,
 } from './engine';
-export { askServer } from './hub-ask';
+export { askHub, askServer, type HubAnswer } from './hub-ask';
 export {
   buildPairingLink,
   loadPairingLink,

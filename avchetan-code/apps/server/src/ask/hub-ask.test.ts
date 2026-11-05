@@ -1,9 +1,15 @@
 import type { ModelConfig } from '@avchetan/core';
-import type { ClientStore } from '@avchetan/db/sqlite';
+import { askHistory, type ClientStore } from '@avchetan/db/sqlite';
 import { openTestStore } from '@avchetan/db/testing';
 import { createMonotonicClock, type HttpFetch } from '@avchetan/shared';
 import { FakeNetworkMonitor, ManualScheduler, MemorySecretStore } from '@avchetan/shared/testing';
-import { askServer, createSyncEngine, type SyncEngine, saveConnection } from '@avchetan/sync';
+import {
+  askHub,
+  askServer,
+  createSyncEngine,
+  type SyncEngine,
+  saveConnection,
+} from '@avchetan/sync';
 import { APICallError, type LanguageModel, simulateReadableStream } from 'ai';
 import { MockLanguageModelV4 } from 'ai/test';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -126,7 +132,7 @@ afterEach(async () => {
   await database.close();
 });
 
-const askHub = (question: string, onText: (text: string) => void = () => {}) =>
+const askPhoneHub = (question: string, onText: (text: string) => void = () => {}) =>
   askServer(
     { store: phone.store, fetch: serverFetch, secrets: phone.secrets },
     { question, timeZone: 'UTC' },
@@ -149,7 +155,7 @@ describe('the hub answers questions', () => {
       .mockResolvedValueOnce(textStream('Your knee ', 'hurt after a run [1].'));
     const seen: string[] = [];
 
-    const result = await askHub('when did my knee hurt?', (text) => seen.push(text));
+    const result = await askPhoneHub('when did my knee hurt?', (text) => seen.push(text));
 
     expect(result).toEqual({
       answer: 'Your knee hurt after a run [1].',
@@ -157,6 +163,33 @@ describe('the hub answers questions', () => {
     });
     expect(seen.at(-1)).toBe('Your knee hurt after a run [1].');
     expect(seen.length).toBeGreaterThan(1);
+  });
+
+  it('links the cited entries found on the device and records the Ask there', async () => {
+    await setUp(true);
+    const log = await phone.store.write((tx) =>
+      phone.store.repos.rawLogs.capture(tx, {
+        content: 'Knee hurt after the run',
+        source: 'mobile_text',
+        capturedTz: 'UTC',
+      }),
+    );
+    await phone.engine.syncNow();
+    doStream
+      .mockResolvedValueOnce(toolStream('search_entries', { text: 'knee' }))
+      .mockResolvedValueOnce(textStream('Your knee hurt after a run [1].'));
+
+    const result = await askHub(
+      { store: phone.store, fetch: serverFetch, secrets: phone.secrets },
+      { question: 'when did my knee hurt?', timeZone: 'UTC' },
+      () => {},
+    );
+
+    expect(result.answer).toBe('Your knee hurt after a run [1].');
+    expect(result.sources).toMatchObject([{ number: 1, rawLog: { id: log.id } }]);
+    expect(await phone.store.db.select().from(askHistory)).toMatchObject([
+      { question: 'when did my knee hurt?', citedIds: [log.id] },
+    ]);
   });
 
   it('passes the model’s failure on with its code', async () => {
@@ -171,13 +204,13 @@ describe('the hub answers questions', () => {
       }),
     );
 
-    await expect(askHub('anything?')).rejects.toMatchObject({ code: 'llm_auth' });
+    await expect(askPhoneHub('anything?')).rejects.toMatchObject({ code: 'llm_auth' });
   });
 
   it('says so when the hub has no model for questions', async () => {
     await setUp(false);
     await phone.engine.syncNow();
 
-    await expect(askHub('anything?')).rejects.toMatchObject({ code: 'ask_unavailable' });
+    await expect(askPhoneHub('anything?')).rejects.toMatchObject({ code: 'ask_unavailable' });
   });
 });

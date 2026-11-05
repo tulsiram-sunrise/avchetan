@@ -1,3 +1,4 @@
+import type { RawLog } from '@avchetan/db/sqlite';
 import { SyncError, toAppError } from '@avchetan/shared';
 import { createApiClient, fetchHealth } from './api-client';
 import { loadServerUrls, SYNC_TOKEN_SECRET } from './config';
@@ -30,4 +31,37 @@ export async function askServer(
     return api.ask(request, onText);
   }
   throw new SyncError('server_unreachable', 'Your hub could not be reached');
+}
+
+/** An answer from the hub with its sources found on this device, as Ask shows them. */
+export type HubAnswer = { answer: string; sources: { number: number; rawLog: RawLog }[] };
+
+/**
+ * Asks the hub (ADR-0022) and links the entries it cites, which are already on this device
+ * once synced. The Ask is recorded here, as an answer from this device's own model would be.
+ */
+export async function askHub(
+  deps: SearchDeps,
+  request: HubAskRequest,
+  onText: (text: string) => void,
+): Promise<HubAnswer> {
+  const { store } = deps;
+  const { answer, sources } = await askServer(deps, request, onText);
+  const logs = await store.queries.logsById(
+    store.db,
+    sources.map((source) => source.rawLogId),
+    { includePrivate: true },
+  );
+  const byId = new Map(logs.map((log) => [log.id, log]));
+  const found = sources.flatMap(({ number, rawLogId }) => {
+    const rawLog = byId.get(rawLogId);
+    // Not synced here yet: the number stays in the answer, without a link.
+    return rawLog ? [{ number, rawLog }] : [];
+  });
+  await store.recordAsk({
+    question: request.question,
+    answer,
+    citedIds: found.map((s) => s.rawLog.id),
+  });
+  return { answer, sources: found };
 }

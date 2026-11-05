@@ -1,4 +1,4 @@
-import { MODEL_SLOTS_SETTING } from '@avchetan/core';
+import { MODEL_SLOTS_SETTING, saveAnalysisMode } from '@avchetan/core';
 import { setSetting } from '@avchetan/db/sqlite';
 import { openTestStore } from '@avchetan/db/testing';
 import { FakeNetworkMonitor, MemorySecretStore } from '@avchetan/shared/testing';
@@ -46,6 +46,17 @@ describe('askQuestion', () => {
     await expect(askQuestion(app, 'anything', () => {})).rejects.toMatchObject({
       code: 'llm_auth',
     });
+  });
+
+  it('asks the hub when this PC lets its hub answer, needing no model of its own', async () => {
+    const { app, fetch } = await services(null, true);
+    await saveAnalysisMode(app.store, 'hub');
+
+    // It reaches the hub stage: sync isn't set up in this test, not a missing model.
+    await expect(askQuestion(app, 'anything', () => {})).rejects.toMatchObject({
+      code: 'not_configured',
+    });
+    expect(fetch).not.toHaveBeenCalled();
   });
 
   it('falls back to the organizing model', async () => {
