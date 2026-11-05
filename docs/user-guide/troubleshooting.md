@@ -1,6 +1,6 @@
 # Troubleshooting
 
-> Draft — describes planned behavior. Each section heading matches an error code shown in the app, so the app's "Help" links land here.
+Each section heading matches an error code shown in the app, so the app's **Help** links land here.
 
 ## Setup check
 
@@ -190,10 +190,10 @@ Problems come first, each with its fix and a **Help** link to its section below.
 **"Windows wasn't allowed to add the firewall rule."** You clicked **No** when Windows asked. Click **Allow phones to connect** again and choose **Yes**. Your Windows account needs to be an administrator; if it isn't, ask whoever manages the PC to approve it.
 
 ## firewall_failed
-**"Adding the firewall rule failed."** Add the rules by hand instead: [Setup: Home Hub, step 5](setup-home-hub.md#5-let-your-phone-reach-the-pc) and the rule in [Tailscale](remote-access-tailscale.md). Some antivirus programs replace the Windows firewall; then allow port 8787 in that program instead.
+**"Adding the firewall rule failed."** Add the rules by hand instead: [Setup: Home Hub, Let your phone reach the PC](setup-home-hub.md#let-your-phone-reach-the-pc) and the rule in [Tailscale](remote-access-tailscale.md). Some antivirus programs replace the Windows firewall; then allow port 8787 in that program instead.
 
 ## network_check_failed
-**"Couldn't check this PC's network."** Avchetan asks Windows PowerShell about the network and firewall, and it didn't answer. Restart Avchetan. Phones can still connect if the network is Private and the firewall rule exists ([Setup: Home Hub, step 5](setup-home-hub.md#5-let-your-phone-reach-the-pc)).
+**"Couldn't check this PC's network."** Avchetan asks Windows PowerShell about the network and firewall, and it didn't answer. Restart Avchetan. Phones can still connect if the network is Private and the firewall rule exists ([Setup: Home Hub, Let your phone reach the PC](setup-home-hub.md#let-your-phone-reach-the-pc)).
 
 ## tailscale
 **"Tailscale isn't running."** This is optional. To sync with your phone away from home, follow [Use your phone away from home](remote-access-tailscale.md).

@@ -1,7 +1,5 @@
 # Choose AI models
 
-> Draft — describes planned behavior. The suggested models are listed in the app and updated with each release.
-
 Avchetan uses AI for three jobs. Each can use a different model:
 
 | Job | What it does | What matters |

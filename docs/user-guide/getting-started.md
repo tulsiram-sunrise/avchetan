@@ -1,7 +1,5 @@
 # Choose your setup
 
-> Draft — describes planned behavior.
-
 Answer two questions:
 
 **1. Do you want your entries on more than one device (for example your PC and your phone)?**

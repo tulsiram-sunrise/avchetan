@@ -1,7 +1,5 @@
 # Capture on Windows
 
-> Draft — describes planned behavior.
-
 **Goal:** write something down in two seconds, from any app.
 **You need:** Avchetan running (its icon is in the system tray, near the clock).
 

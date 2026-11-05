@@ -1,7 +1,5 @@
 # Avchetan User Guide
 
-> Draft — describes planned behavior. Pages are completed as each feature ships.
-
 Avchetan is a personal logger and planner. Type (or say) anything — a workout, a meal, a thought, a to-do — and Avchetan's AI organizes it for you. It works on your Windows PC and your Android phone, and **you can run it entirely for free on your own computer.**
 
 ## Start here

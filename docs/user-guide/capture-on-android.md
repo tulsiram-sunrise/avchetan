@@ -1,7 +1,5 @@
 # Use Avchetan on Android
 
-> Draft — describes planned behavior.
-
 **Goal:** write something down in two seconds, and find it again later.
 **You need:** the Avchetan app on your phone. Entries save without a connection, but organizing them needs an AI model.
 
