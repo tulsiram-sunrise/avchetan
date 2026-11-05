@@ -22,7 +22,7 @@ If the phone says it couldn't reach the hub, check that both are on the same Wi-
 
 If you can't scan the code, for example on a second PC, type the details in instead:
 
-1. Find your server's address, such as `http://192.168.1.20:8787`, and its sync token. The server prints the token once, the first time it starts.
+1. Find your server's address, such as `http://192.168.1.20:8787`, and its sync token. For a hub on your PC: in **Settings → Sync**, click **Pair a phone**, then **Can't scan? Show the details**. A hub you started from a terminal or Docker prints the token once, the first time it starts.
 2. On the phone, open **More → Sync**. On the PC, open **Settings → Sync**.
 3. Enter the address and paste the token. For an address on your home network, turn on **Trust this home network**.
 4. Tap **Save**. The screen should say **Up to date.** within a few seconds.

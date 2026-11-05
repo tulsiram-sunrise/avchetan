@@ -11,8 +11,7 @@ import { HubBackups } from './hub-backups';
 import { HubChecklist } from './hub-checklist';
 import { ActionError, fieldClass, QuietButton } from './ui';
 
-const STATUS_KEY = ['native', 'hub'] as const;
-const DEFAULT_PRESET = 'ollama-small';
+export const HUB_STATUS_KEY = ['native', 'hub'] as const;
 
 function statusText(status: HubStatus): string {
   switch (status.phase) {
@@ -39,16 +38,16 @@ export function HubSetting() {
   const { hub, secrets } = services.platform;
   const queryClient = useQueryClient();
   const status = useQuery({
-    queryKey: STATUS_KEY,
+    queryKey: HUB_STATUS_KEY,
     queryFn: () => hub.status(),
     refetchInterval: (query) =>
       query.state.data?.phase === 'starting' || query.state.data?.phase === 'restarting'
         ? 1_000
         : 5_000,
   });
-  const [presetId, setPresetId] = useState(DEFAULT_PRESET);
+  const [presetId, setPresetId] = useState('');
   const [importFrom, setImportFrom] = useState<string | null>(null);
-  const onChanged = (next: HubStatus) => queryClient.setQueryData(STATUS_KEY, next);
+  const onChanged = (next: HubStatus) => queryClient.setQueryData(HUB_STATUS_KEY, next);
 
   const turnOn = useMutation({
     mutationFn: () => {
@@ -121,6 +120,10 @@ export function HubSetting() {
               value={presetId}
               onChange={(event) => setPresetId(event.target.value)}
             >
+              {/* No default: a set for a graphics card is slow on a PC without one. */}
+              <option value="" disabled>
+                Choose the set that fits this PC
+              </option>
               {MODEL_PRESETS.map((preset) => (
                 <option key={preset.id} value={preset.id}>
                   {preset.label}
@@ -146,7 +149,7 @@ export function HubSetting() {
             </div>
           )}
           <div>
-            <QuietButton disabled={turnOn.isPending} onClick={() => turnOn.mutate()}>
+            <QuietButton disabled={!chosen || turnOn.isPending} onClick={() => turnOn.mutate()}>
               {turnOn.isPending ? 'Turning on…' : 'Turn on the hub'}
             </QuietButton>
           </div>

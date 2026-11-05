@@ -1,7 +1,31 @@
+import { parsePairingLink } from '@avchetan/sync';
 import { useState } from 'react';
 import { encode } from 'uqr';
 import { usePairingCode, useRotateToken } from '../queries/sync';
 import { ActionError, QuietButton } from './ui';
+
+/** For a device that can't scan: a second PC, or a phone whose camera won't read the code. */
+function TypedDetails({ link }: { link: string }) {
+  const { urls, token } = parsePairingLink(link);
+  return (
+    <div className="flex flex-col gap-1 text-sm">
+      <p className="text-ink-muted">
+        In Sync settings on the other device, enter one address and the token, and turn on Trust
+        this home network for an address on your Wi-Fi.
+      </p>
+      <p>Addresses:</p>
+      <ul className="font-mono">
+        {urls.map((url) => (
+          <li key={url} className="select-all">
+            {url}
+          </li>
+        ))}
+      </ul>
+      <p>Sync token:</p>
+      <p className="select-all break-all font-mono">{token}</p>
+    </div>
+  );
+}
 
 /** Drawn from the code's squares, so nothing is stored as an image (deployment-modes.md). */
 function QrCode({ text }: { text: string }) {
@@ -26,12 +50,20 @@ export function PairPhone() {
   const code = usePairingCode();
   const rotate = useRotateToken();
   const [confirming, setConfirming] = useState(false);
+  const [typed, setTyped] = useState(false);
 
   return (
     <div className="flex flex-col gap-2">
       <div className="flex gap-2">
         {code.data ? (
-          <QuietButton onClick={() => code.reset()}>Hide the code</QuietButton>
+          <QuietButton
+            onClick={() => {
+              code.reset();
+              setTyped(false);
+            }}
+          >
+            Hide the code
+          </QuietButton>
         ) : (
           <QuietButton disabled={code.isPending} onClick={() => code.mutate()}>
             Pair a phone
@@ -49,6 +81,13 @@ export function PairPhone() {
             On the phone, open Avchetan, then More → Sync → Scan pairing code. The code contains
             your sync token: don't share a photo or screenshot of it.
           </p>
+          {typed ? (
+            <TypedDetails link={code.data} />
+          ) : (
+            <div>
+              <QuietButton onClick={() => setTyped(true)}>Can't scan? Show the details</QuietButton>
+            </div>
+          )}
         </div>
       ) : null}
 

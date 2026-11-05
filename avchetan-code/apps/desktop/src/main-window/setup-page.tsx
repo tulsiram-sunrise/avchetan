@@ -4,7 +4,7 @@ import { type ReactNode, useState } from 'react';
 import { finishSetup, type SetupMode } from '../services/first-run';
 import { useServices } from '../services-context';
 import { AiModelsSetting } from './ai-models-setting';
-import { HubSetting } from './hub-setting';
+import { HUB_STATUS_KEY, HubSetting } from './hub-setting';
 import { SyncSetting } from './sync-setting';
 import { ActionError, QuietButton } from './ui';
 
@@ -47,17 +47,32 @@ export function SetupPage(props: { onDone: () => void }) {
     queryKey: ['ollama', 'models'],
     queryFn: () => listOllamaModels(platform.fetch),
   });
+  // Shares the hub setting's query, which keeps it fresh.
+  const hub = useQuery({
+    queryKey: HUB_STATUS_KEY,
+    queryFn: () => platform.hub.status(),
+    enabled: mode === 'hub',
+  });
+  const hubOff = mode === 'hub' && hub.data?.phase === 'off';
   const finish = useMutation({
     mutationFn: (chosen: SetupMode | null) => finishSetup(store, chosen),
     onSuccess: props.onDone,
   });
 
   const footer = (
-    <div className="flex gap-2 border-t border-line pt-4">
-      <QuietButton onClick={() => setMode(null)}>Back</QuietButton>
-      <QuietButton disabled={finish.isPending} onClick={() => finish.mutate(mode)}>
-        Finish
-      </QuietButton>
+    <div className="flex flex-col gap-2 border-t border-line pt-4">
+      {hubOff ? (
+        <p className="text-sm text-ink-muted">
+          The hub is off, so your phone can't sync yet. Turn it on above, or finish now and turn it
+          on later in Settings → Home Hub on this PC.
+        </p>
+      ) : null}
+      <div className="flex gap-2">
+        <QuietButton onClick={() => setMode(null)}>Back</QuietButton>
+        <QuietButton disabled={finish.isPending} onClick={() => finish.mutate(mode)}>
+          {hubOff ? 'Finish without the hub' : 'Finish'}
+        </QuietButton>
+      </div>
       <ActionError errors={[finish.error]} />
     </div>
   );
