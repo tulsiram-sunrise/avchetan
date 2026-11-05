@@ -13,10 +13,11 @@ export {
   type SyncEngine,
   type SyncEngineDeps,
 } from './engine';
-export { askServer } from './hub-ask';
+export { askHub, askServer, type HubAnswer } from './hub-ask';
 export {
   buildPairingLink,
   loadPairingLink,
+  loadServerStatus,
   type PairingDeps,
   type PairingLink,
   pairWithLink,
@@ -24,6 +25,15 @@ export {
   rotateServerToken,
 } from './pairing';
 export { type SearchDeps, searchServer } from './search';
+export {
+  CLOCK_WARNING_MS,
+  type ConnectionCheck,
+  type ConnectionCheckDeps,
+  checkConnection,
+  connectionRows,
+  hubModelRows,
+  isConnectionError,
+} from './setup-check';
 export {
   describeSync,
   loadSyncStatus,

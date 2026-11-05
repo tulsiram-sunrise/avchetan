@@ -67,9 +67,9 @@ fn center_on_cursor_monitor<R: Runtime>(
     ))
 }
 
-/// Shows the main window, creating it on first use. `view` is `timeline` or `settings`.
+/// Shows the main window, creating it on first use. `view` is `timeline`, `settings` or `setup`.
 pub fn open_main<R: Runtime>(app: &AppHandle<R>, view: &str) -> CommandResult<()> {
-    if !matches!(view, "timeline" | "settings") {
+    if !matches!(view, "timeline" | "settings" | "setup") {
         return Err(CommandError::new("invalid_view", "Unknown view"));
     }
     if let Some(main) = app.get_webview_window(MAIN) {
@@ -82,7 +82,7 @@ pub fn open_main<R: Runtime>(app: &AppHandle<R>, view: &str) -> CommandResult<()
         );
         return Ok(());
     }
-    // `view` is one of two literals (checked above), so it is safe to inline.
+    // `view` is one of three literals (checked above), so it is safe to inline.
     let script = format!("window.__AVCHETAN_INITIAL_VIEW__ = '{view}';");
     WebviewWindowBuilder::new(app, MAIN, WebviewUrl::App("main.html".into()))
         .title("Avchetan")

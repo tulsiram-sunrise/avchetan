@@ -47,6 +47,9 @@ EXTRACTION_PROVIDER, EXTRACTION_MODEL, ANALYSIS_PROVIDER (hub answers questions)
 EMBEDDING_PROVIDER, EMBEDDING_MODEL   (no EMBEDDING_DIMS: each row records its length; see retrieval.md)
 <PROVIDER>_API_KEY …, OLLAMA_BASE_URL (optional)
 FALLBACK_EXTRACTION_ENABLED=true, FALLBACK_GRACE_MINUTES=15
+SHUTDOWN_ON_STDIN_CLOSE=false  (true: stop cleanly when stdin closes; set by the desktop app for its hub, ADR-0024)
+RESET_DATA_EPOCH=false  (true: a new data epoch on this start, after data was moved in; ADR-0025)
+RESTORE_SNAPSHOT  (a hub snapshot file: restore it into the empty PGLITE_DATA_DIR and exit; how the desktop app restores its hub)
 ```
 `.env.example` documents every variable; real `.env` is git-ignored.
 
@@ -72,5 +75,5 @@ apps/server/src/
   - Multi-stage `apps/server/Dockerfile`, built from `avchetan-code/`: `pnpm build` bundles the server with esbuild into one `server.mjs`, and the slim Node image holds only that file and PGlite (which loads its WebAssembly from disk). A bundle, not `pnpm deploy`: the workspace lockfile links `drizzle-orm` to `expo-sqlite`, which made a deploy folder 649 MB of Expo and React Native. Migrations run at startup. Postgres is `pgvector/pgvector` on Postgres 18, the same major version as PGlite.
   - `apps/server/compose.yml` for local dev: `postgres` (pgvector image, reachable only from the server, so no password) + `server`. `deploy/home-hub/compose.yml` runs a hub on PGlite with its data in a volume.
   - CI runs the server tests on PGlite and again on Postgres (`TEST_DATABASE_URL`: one new database per test), then builds the image and checks it answers health.
-  - Recommended free host ([ADR-0023](../decisions/0023-free-cloud-supabase-render.md)): Supabase Postgres through its session pooler, with TLS verified against Supabase's CA (`sslmode=verify-full&sslrootcert=` in `DATABASE_URL`, the CA as a Render Secret File), plus a Render free web service built from the Dockerfile. Every table has row level security on with no policies, so only the owner (the server) sees rows, never a host's auto-generated API. Guide: [setup-cloud](../user-guide/setup-cloud.md). An own server with Compose + Caddy is `deploy/cloud/` in Phase 5b.
+  - Recommended free host ([ADR-0023](../decisions/0023-free-cloud-supabase-render.md)): Supabase Postgres through its session pooler, with TLS verified against Supabase's CA (`sslmode=verify-full&sslrootcert=` in `DATABASE_URL`, the CA as a Render Secret File), plus a Render free web service built from the Dockerfile. Every table has row level security on with no policies, so only the owner (the server) sees rows, never a host's auto-generated API. Guide: [setup-cloud](../user-guide/setup-cloud.md). An own server (a VPS) uses `deploy/cloud/`: Compose with Postgres + pgvector, the server, Caddy for HTTPS, and a daily `pg_dump`; guide: [Your own server](../user-guide/setup-cloud.md#your-own-server). Release builds: [Releasing](../conventions/releasing.md).
   - Backups: on hosts that provide none (Supabase Free), the devices' full copies are the recovery path; `pg_dump` (cron on the host, or a provider feature) where available.

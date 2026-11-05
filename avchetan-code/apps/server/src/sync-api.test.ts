@@ -1,3 +1,4 @@
+import { serverMeta } from '@avchetan/db/pg';
 import { openTestStore } from '@avchetan/db/testing';
 import { createMonotonicClock } from '@avchetan/shared';
 import {
@@ -326,6 +327,27 @@ describe('status', () => {
         lastSeenAt: expect.stringMatching(/^2026-10-26T10:00:00\.\d{3}Z$/),
       },
     ]);
+    // This server has no models of its own.
+    expect(body.ai).toBeUndefined();
+  });
+
+  it("reports whether the server's own models can be used", async () => {
+    const ai = [
+      { job: 'organizing', provider: 'ollama', model: 'm', readiness: 'ollama_not_running' },
+    ] as const;
+    const withAi = createApp({
+      db: database.db,
+      identity: await loadServerIdentity(database.db, TOKEN),
+      clock: createMonotonicClock({ source: () => wallMs }),
+      version: 'test',
+      profile: 'hub',
+      checkAi: async () => [...ai],
+    });
+    await register();
+
+    const response = await withAi.request('/v1/status', { headers: headers() });
+
+    expect(statusResponseSchema.parse(await response.json()).ai).toEqual(ai);
   });
 });
 
@@ -405,6 +427,24 @@ describe('server identity', () => {
 
     expect(first.generatedToken).toHaveLength(43);
     expect(second).toEqual({ ...first, generatedToken: null });
+    await fresh.close();
+  });
+
+  it('keeps its data epoch until asked for a new one, and gives an empty one a value', async () => {
+    const fresh = await openTestDatabase();
+    await fresh.migrate(() => NOW);
+    const first = await loadServerIdentity(fresh.db, undefined);
+
+    const reset = await loadServerIdentity(fresh.db, undefined, { resetDataEpoch: true });
+    expect(reset.serverId).toBe(first.serverId);
+    expect(reset.dataEpoch).not.toBe(first.dataEpoch);
+    expect((await loadServerIdentity(fresh.db, undefined)).dataEpoch).toBe(reset.dataEpoch);
+
+    // What a snapshot restore leaves behind.
+    await fresh.db.update(serverMeta).set({ dataEpoch: null });
+    const after = await loadServerIdentity(fresh.db, undefined);
+    expect(after.dataEpoch).toMatch(/^[0-9a-f-]{36}$/);
+    expect(after.dataEpoch).not.toBe(reset.dataEpoch);
     await fresh.close();
   });
 });

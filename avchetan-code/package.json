@@ -21,6 +21,8 @@
     "prepare": "lefthook install",
     "licenses:check": "node tooling/scripts/check-licenses.ts",
     "docs:check-links": "node tooling/scripts/check-doc-links.ts",
+    "errors:check": "node tooling/scripts/check-error-codes.ts",
+    "icons": "node tooling/scripts/build-icons.ts",
     "docs:dev": "pnpm --filter @avchetan/docs-site dev",
     "docs:build": "pnpm --filter @avchetan/docs-site build"
   },

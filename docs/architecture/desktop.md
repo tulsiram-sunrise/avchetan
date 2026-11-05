@@ -54,6 +54,10 @@ commands/
 
 Phase 2: `global-shortcut`, `autostart` (start at login, on by default the first time only), `single-instance` (second launch shows the dock), `window-state` (main window), `opener` (help links open in the browser, scoped to the guide site). Later: `http` (Phase 3), `notification`, `positioner` (anchor options), `process`, `updater`. SQLite goes through our own commands, not the `sql` plugin ([ADR-0019](../decisions/0019-desktop-sqlite-own-commands.md)). Secrets use the `keyring` crate (3.x), not `stronghold`.
 
+## HTTP
+
+Every request from the app (models, Ollama, the hub or server) goes through the `http` plugin, so it is made by Rust rather than the webview, and only to the hosts in the capability's scope. The app sends **no `Origin` header** (`src/platform/native-fetch.ts`, with the plugin's `unsafe-headers` feature): the plugin would otherwise send the window's origin, which is `http://localhost:1420` in a development build but `http://tauri.localhost` once installed, and Ollama refuses the latter with 403. Only the app's own bundled code runs in its windows (CSP), so the feature's extra freedom over headers is not exposed to web content.
+
 ## Data layer
 
 - SQLite file in the app data dir (`avchetan.db`), WAL mode.
@@ -76,13 +80,13 @@ Vite + React + TypeScript + Tailwind. State: Zustand (UI state), TanStack Query 
 
 ## Packaging
 
-Windows installer via Tauri bundler (NSIS). App identifier `app.avchetan`. Code signing deferred.
+Windows installer via Tauri bundler (NSIS), per-user, in `%LOCALAPPDATA%Avchetan`. App identifier `app.avchetan`. `build:release` adds the hub program and PGlite's folders beside the app ([Releasing](../conventions/releasing.md)). Code signing deferred. Anything that differs between a development and an installed build (the window origin, paths beside the exe) is tried on the installed app before a step is called done.
 
 ## Hub mode (Home Hub deployment)
 
 When the user chooses *Home Hub* in the setup wizard ([deployment-modes](deployment-modes.md#2-home-hub)):
-- The desktop app launches `apps/server` as a **Tauri sidecar** (`externalBin`: the server bundled as a single Node executable; PGlite data dir under the app data folder), restarts it if it crashes, and stops it on quit (or keeps it running from the tray if "keep hub running" is on).
+- The desktop app launches `apps/server` as a **Tauri sidecar** (`externalBin`: the server built by `build:sidecar` as a Node single executable, with PGlite's folders beside it as resources; PGlite data dir under the app data folder; [ADR-0024](../decisions/0024-hub-sidecar-node-single-executable.md)), restarts it if it crashes, and stops it on quit by closing its stdin (`SHUTDOWN_ON_STDIN_CLOSE=true`), which also stops it cleanly if the app crashes (or keeps it running from the tray if "keep hub running" is on).
 - First run: generate `SYNC_TOKEN` → keychain; detect Ollama (`http://localhost:11434/api/tags`), list installed models, suggest slot presets; offer to add a Windows firewall rule for port 8787 on *Private* networks; detect Tailscale and show its hostname.
 - Settings → *Hub*: status, port, data folder, logs, backups, embedding backlog (`/v1/status`), *Pair a phone* (QR), *Rotate token*.
 - The desktop app itself syncs to `http://localhost:8787` and extracts locally with Ollama.
-- Rust surface: `hub_start`, `hub_stop`, `hub_status` commands (`commands/hub.rs`) wrapping the sidecar process; logs piped to the app log.
+- Rust surface (`commands/hub.rs`): `hub_status`, `hub_configure` (saves `<app data>/hub/hub.json`: on/off, port, model slots, no secrets, and starts, restarts or stops the process to match) and `hub_import_data` (copies another hub's `pglite-data` into an empty `<app data>/hub/pglite-data`). Rust reads the token (`hub:server:token`) and any provider keys from the keychain and passes them to the process as env vars, with nothing else from the app's environment but what Node needs. It keeps the last 200 log lines for the settings screen. The program is found beside the app's own executable, or in a development build where `build:sidecar` puts it.

@@ -2,11 +2,12 @@ import {
   type AskResult,
   ask,
   createModel,
+  loadAnalysisMode,
   loadAnalysisModel,
   PROVIDER_ADAPTERS,
 } from '@avchetan/core';
 import { LlmError, localDate } from '@avchetan/shared';
-import { loadServerUrls, searchServer } from '@avchetan/sync';
+import { askHub, loadServerUrls, searchServer } from '@avchetan/sync';
 import { MAX_SEARCH_RESULTS } from '@avchetan/sync/protocol';
 import type { AppServices } from '../app-services';
 
@@ -37,6 +38,15 @@ export async function askQuestion(
   onText: (text: string) => void,
 ): Promise<AskResult> {
   const { store, platform, timeZone } = services;
+  if ((await loadAnalysisMode(store)) === 'hub') {
+    if (!platform.network.isOnline()) return offlineSummary(services);
+    // The hub answers with its own model (ADR-0022): the one this PC runs, or another.
+    return askHub(
+      { store, fetch: platform.fetch, secrets: platform.secrets },
+      { question, timeZone: timeZone.current() },
+      onText,
+    );
+  }
   const model = await loadAnalysisModel(store);
   if (!model) throw new LlmError('llm_auth', 'Choose a model in Settings → AI models first');
   if (!platform.network.isOnline() && !PROVIDER_ADAPTERS[model.provider].local) {

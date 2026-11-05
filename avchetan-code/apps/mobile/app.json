@@ -13,7 +13,12 @@
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.RECORD_AUDIO"
-      ]
+      ],
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-foreground.png",
+        "backgroundImage": "./assets/adaptive-background.png",
+        "monochromeImage": "./assets/adaptive-monochrome.png"
+      }
     },
     "plugins": [
       "expo-router",
@@ -29,6 +34,7 @@
         }
       ],
       "./plugins/long-native-paths.js",
+      "./plugins/release-signing.js",
       [
         "expo-build-properties",
         {
@@ -38,6 +44,7 @@
           }
         }
       ]
-    ]
+    ],
+    "icon": "./assets/icon.png"
   }
 }

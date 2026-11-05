@@ -5,9 +5,13 @@
 The PC must already be connected to the hub (in Home Hub mode, the hub runs on that PC).
 
 1. On the PC: open Avchetan → **Settings → Sync → Pair a phone**. A code appears.
-2. On the phone: install Avchetan from the project's GitHub Releases page (download the `.apk` file, open it, and allow installing from your browser when Android asks). Open it and tap **Pair with the hub on my PC** on the first screen, or go to **More → Sync → Scan pairing code**. Allow the camera when Android asks.
+
+![Settings → Sync on the PC showing a pairing code (blurred here, because it holds the sync token)](images/pair-your-phone-code.png)
+2. On the phone: install Avchetan from the project's GitHub Releases page (download the `.apk` file, open it, and allow installing from your browser when Android asks). Open it, tap **Connect to my hub or server**, then **Scan the pairing code**. On a phone already set up, go to **More → Sync → Scan pairing code**. Allow the camera when Android asks.
 3. Point the camera at the code. The phone checks which of the hub's addresses it can reach, saves them with the token, and starts syncing. It says **Paired with your hub** when it's done.
-4. Choose how the phone uses AI, in **More → AI models**:
+4. Choose how the phone uses AI. The welcome screen offers **Use the hub's AI (recommended)** right after pairing; later, it's in **More → AI models**:
+
+![The phone's Your phone is paired screen offering Use the hub's AI (recommended)](images/pair-your-phone-hub-ai.png)
    - **My hub** (recommended for Home Hub), for organizing entries and for answering questions: your PC does the work. The phone needs no AI keys.
    - **This phone**: choose a provider and paste an API key.
 5. On the PC, click **Hide the code**.
@@ -18,7 +22,7 @@ If the phone says it couldn't reach the hub, check that both are on the same Wi-
 
 If you can't scan the code, for example on a second PC, type the details in instead:
 
-1. Find your server's address, such as `http://192.168.1.20:8787`, and its sync token. The server prints the token once, the first time it starts.
+1. Find your server's address, such as `http://192.168.1.20:8787`, and its sync token. For a hub on your PC: in **Settings → Sync**, click **Pair a phone**, then **Can't scan? Show the details**. A hub you started from a terminal or Docker prints the token once, the first time it starts.
 2. On the phone, open **More → Sync**. On the PC, open **Settings → Sync**.
 3. Enter the address and paste the token. For an address on your home network, turn on **Trust this home network**.
 4. Tap **Save**. The screen should say **Up to date.** within a few seconds.

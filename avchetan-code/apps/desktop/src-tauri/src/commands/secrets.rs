@@ -1,9 +1,23 @@
 //! Secrets in the OS keychain (Windows Credential Manager). Values never reach logs,
 //! error messages or disk in plaintext (CLAUDE.md rule 7).
 
+use std::sync::OnceLock;
+
 use crate::error::{CommandError, CommandResult};
 
-const SERVICE: &str = "app.avchetan";
+/// The app's identifier, so a copy run under another identifier (the screenshot demo,
+/// tooling/scripts/screenshots) never reads this app's keys and tokens.
+static SERVICE: OnceLock<String> = OnceLock::new();
+const DEFAULT_SERVICE: &str = "app.avchetan";
+
+/// Called once at startup with the app's identifier.
+pub fn use_service(identifier: &str) {
+    let _ = SERVICE.set(identifier.to_string());
+}
+
+fn service() -> &'static str {
+    SERVICE.get().map_or(DEFAULT_SERVICE, String::as_str)
+}
 
 fn store_failed(error: keyring::Error) -> CommandError {
     // keyring errors describe the platform failure, never the secret value.
@@ -18,7 +32,12 @@ fn entry(name: &str) -> CommandResult<keyring::Entry> {
             "Invalid secret name",
         ));
     }
-    keyring::Entry::new(SERVICE, name).map_err(store_failed)
+    keyring::Entry::new(service(), name).map_err(store_failed)
+}
+
+/// For Rust code that hands a secret straight to a child process, never back to a webview.
+pub fn read(name: &str) -> CommandResult<Option<String>> {
+    secret_get(name.to_string())
 }
 
 #[tauri::command(async)]

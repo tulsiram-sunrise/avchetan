@@ -9,7 +9,7 @@ import {
   useSyncNow,
   useSyncStatus,
 } from '../../src/queries/sync';
-import { Button, Failure, Field, HelpLink } from '../../src/ui/parts';
+import { Button, Failure, Field, HelpLink, SetupCheckLink } from '../../src/ui/parts';
 
 function SyncStatusLine() {
   const status = useSyncStatus();
@@ -20,7 +20,12 @@ function SyncStatusLine() {
       accessibilityLiveRegion="polite"
       className={`text-sm ${helpCode ? 'text-danger' : 'text-inkMuted'}`}
     >
-      {text} {helpCode ? <HelpLink code={helpCode} /> : null}
+      {text}{' '}
+      {helpCode ? (
+        <>
+          <HelpLink code={helpCode} /> · <SetupCheckLink />
+        </>
+      ) : null}
     </Text>
   );
 }

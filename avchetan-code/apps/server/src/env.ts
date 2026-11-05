@@ -34,6 +34,18 @@ const envSchema = z
       )
       .pipe(z.array(z.url()))
       .optional(),
+    /** Stop cleanly when stdin closes: how the desktop app stops the hub it runs (ADR-0024). */
+    SHUTDOWN_ON_STDIN_CLOSE: z
+      .enum(['true', 'false'])
+      .default('false')
+      .transform((value) => value === 'true'),
+    /** A hub snapshot to put into PGLITE_DATA_DIR, which must be empty; then the server exits. */
+    RESTORE_SNAPSHOT: z.string().min(1).optional(),
+    /** Set after data was moved in from elsewhere, so devices sync everything again. */
+    RESET_DATA_EPOCH: z
+      .enum(['true', 'false'])
+      .default('false')
+      .transform((value) => value === 'true'),
     // The server organizes entries other devices left waiting (extraction-pipeline §5).
     FALLBACK_EXTRACTION_ENABLED: flag,
     FALLBACK_GRACE_MINUTES: z.coerce.number().int().min(0).default(15),

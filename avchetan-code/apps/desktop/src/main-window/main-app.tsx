@@ -2,9 +2,11 @@ import { useState } from 'react';
 import type { MainView } from '../native/events';
 import { useAppEvent, useTableInvalidation } from '../use-app-event';
 import { CategoriesPage } from './categories-page';
+import { CheckPage } from './check-page';
 import { ProjectsPage } from './projects-page';
 import { ReviewPage } from './review-page';
 import { SettingsPage } from './settings-page';
+import { SetupPage } from './setup-page';
 import { TagsPage } from './tags-page';
 import { TasksPage } from './tasks-page';
 import { Timeline } from './timeline';
@@ -19,7 +21,7 @@ const VIEWS: { id: MainView; label: string }[] = [
   { id: 'settings', label: 'Settings' },
 ];
 
-function CurrentView({ view }: { view: MainView }) {
+function CurrentView({ view, onDone }: { view: MainView; onDone: () => void }) {
   switch (view) {
     case 'timeline':
       return <Timeline />;
@@ -35,6 +37,10 @@ function CurrentView({ view }: { view: MainView }) {
       return <ProjectsPage />;
     case 'settings':
       return <SettingsPage />;
+    case 'setup':
+      return <SetupPage onDone={onDone} />;
+    case 'check':
+      return <CheckPage />;
   }
 }
 
@@ -63,7 +69,7 @@ export function MainApp(props: { initialView: MainView }) {
         ))}
       </nav>
       <main className="min-w-0 flex-1 overflow-y-auto p-6">
-        <CurrentView view={view} />
+        <CurrentView view={view} onDone={() => setView('timeline')} />
       </main>
     </div>
   );

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-74 -102 1192 1192" width="1024" height="1024">
+  <title>Avchetan icon foreground</title>
+  <!-- Android adaptive icon foreground: icon.svg's mark alone, inside the safe zone. -->
+  <path d="M256 600 C 352 600, 384 424, 480 424 S 608 600, 704 600 S 768 520, 768 520"
+        fill="none" stroke="#ffffff" stroke-width="64" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="768" cy="408" r="52" fill="#ffffff"/>
+</svg>

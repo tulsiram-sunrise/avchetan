@@ -1,0 +1,1 @@
+ALTER TABLE "server_meta" ADD COLUMN "data_epoch" uuid;

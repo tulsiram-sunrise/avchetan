@@ -1,8 +1,9 @@
-import { systemTimeZone, toAppError } from '@avchetan/shared';
+import { createLogger, systemTimeZone, toAppError } from '@avchetan/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { disable, enable, isEnabled } from '@tauri-apps/plugin-autostart';
 import { useMemo, useState } from 'react';
 import { HelpLink } from '../help-link';
+import { emitAppEvent } from '../native/events';
 import {
   useSetSubmitKey,
   useSetTimeZone,
@@ -14,13 +15,28 @@ import type { SubmitKey } from '../services/submit-key';
 import { useServices } from '../services-context';
 import { AiModelsSetting } from './ai-models-setting';
 import { DataSetting } from './data-setting';
+import { HubSetting } from './hub-setting';
 import { SyncSetting } from './sync-setting';
+import { QuietButton } from './ui';
 import { UsageSetting } from './usage-setting';
+
+const log = createLogger('settings');
+
+function openView(view: 'setup' | 'check') {
+  void emitAppEvent('main:navigate', { view }).catch(() =>
+    log.warn('could not open view', { view }),
+  );
+}
 
 export function SettingsPage() {
   return (
     <div className="flex max-w-xl flex-col gap-6">
+      <div className="flex gap-2">
+        <QuietButton onClick={() => openView('check')}>Setup check</QuietButton>
+        <QuietButton onClick={() => openView('setup')}>Run setup again</QuietButton>
+      </div>
       <AiModelsSetting />
+      <HubSetting />
       <SyncSetting />
       <DataSetting />
       <UsageSetting />

@@ -9,7 +9,7 @@
 - **Capture path:** may only fail if the local DB write fails. That failure is shown loudly (toast + tray icon state) and the draft is kept.
 - No empty `catch {}`. If an error is intentionally ignored, log it at `debug` with the reason.
 - Never put user content, prompts, or secrets into error messages (they end up in logs and `last_error`).
-- User-facing messages are mapped from codes in the UI layer (`errorMessages[code]`), not taken from `error.message`.
+- **Every code a user can see is in `ERROR_HELP`** (`packages/shared/src/error-help.ts`): its guide section in [troubleshooting](../user-guide/troubleshooting.md) (`null` when the message is the whole fix, such as an empty name), and a plain message when the thrown one is written for developers. The apps show errors through `describeError()` and `HelpLink`, which resolve a code through it; an unknown code links to `other_errors`. A new code needs its entry and, if it has a section, the section, or `pnpm errors:check` fails in CI. The check finds codes in TS error constructors, `helpCode:` rows, fixed `HelpLink` codes, Rust strings, LLM codes and the server's startup hints.
 
 ## Logging
 

@@ -1,4 +1,5 @@
 import type { ClientStore } from '@avchetan/db/sqlite';
+import { errorMessage } from '@avchetan/shared';
 import { z } from 'zod';
 
 const SYNC_STATES = [
@@ -42,8 +43,11 @@ const STATE_TEXT: Record<SyncState, SyncSummary> = {
   offline: { text: 'Offline. Changes will sync when you reconnect.', helpCode: null },
   syncing: { text: 'Syncing…', helpCode: null },
   synced: { text: 'Up to date.', helpCode: null },
-  unauthorized: { text: 'The server refused this sync token.', helpCode: 'unauthorized' },
-  server_unreachable: { text: "Can't reach the server.", helpCode: 'server_unreachable' },
+  unauthorized: { text: `${errorMessage('unauthorized')}.`, helpCode: 'unauthorized' },
+  server_unreachable: {
+    text: `${errorMessage('server_unreachable')}.`,
+    helpCode: 'server_unreachable',
+  },
   failed: { text: "Sync didn't finish. It will try again.", helpCode: 'server_unreachable' },
 };
 

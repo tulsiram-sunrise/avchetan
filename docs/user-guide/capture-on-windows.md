@@ -1,7 +1,5 @@
 # Capture on Windows
 
-> Draft — describes planned behavior.
-
 **Goal:** write something down in two seconds, from any app.
 **You need:** Avchetan running (its icon is in the system tray, near the clock).
 
@@ -11,6 +9,8 @@
 2. Type what happened or what you need to do, for example `Walked 30 minutes, remind me to buy milk tomorrow`.
 3. Press **Enter** to save it. The box empties, and the entry appears underneath with a *Pending* badge.
 4. Press **Esc** (or click anywhere else) to close the box.
+
+![The capture box with a new entry typed in, and the latest entries underneath marked Organized](images/capture-on-windows-dock.png)
 
 Need more than one line? Press **Shift+Enter** to start a new line.
 
@@ -59,6 +59,10 @@ Open Avchetan (tray icon → **Open Avchetan**):
 - **Categories:** rename, merge or archive them. The AI adds a category, marked **New**, only when nothing fits; press **Keep** or merge it into another.
 - **Tags:** rename, nest (`health/knee`), merge or recolor them.
 - **Projects:** list what you're working on. Entries are linked to a project only if it's listed here.
+
+![The main window's Timeline: each entry with its category, activity, measurements and tasks](images/capture-on-windows-timeline.png)
+
+![The Tasks page listing two tasks with their due dates](images/capture-on-windows-tasks.png)
 
 ## Check it worked
 

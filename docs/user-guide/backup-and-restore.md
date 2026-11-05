@@ -26,9 +26,10 @@ Deleted entries, settings and API keys are never included.
 ## Restore
 
 - **A device broke or was replaced:** install Avchetan on the new device and pair it ([Pair your phone](pair-your-phone.md)). Everything downloads from the hub or server.
+- **The hub inside Avchetan:** open **Settings → Home Hub on this PC → Hub backups**, choose a day and click **Restore…**, then confirm. The hub stops, its current data is kept beside it (renamed `pglite-data-before-restore-…`), the backup goes back in, and the hub starts again. Your devices notice and send it everything they hold, so entries made since that day come back too. **Open backups folder** shows the files.
 - **The hub's data was lost:** start an empty hub and pair your devices again. They upload everything they hold. To get the hub's own state back too (its token, its device list, its search index), restore a snapshot:
   1. Stop the hub.
   2. Rename the `pglite-data` folder, for example to `pglite-data-old`.
   3. In the `avchetan-code` folder, run `pnpm --filter @avchetan/server restore:hub apps/server/pglite-backups/hub-2026-11-03.tar.gz`, using the name of the snapshot you want.
-  4. Start the hub. Devices keep their pairing, since the token comes back with the snapshot.
+  4. Start the hub. Devices keep their pairing, since the token comes back with the snapshot. Each device notices the hub was restored and sends it everything it holds once, so entries made after the snapshot come back too.
 - **Put one device back to an earlier day:** not built in yet. A backup file is a normal SQLite database, so any SQLite viewer (such as *DB Browser for SQLite*) can open it to look something up.

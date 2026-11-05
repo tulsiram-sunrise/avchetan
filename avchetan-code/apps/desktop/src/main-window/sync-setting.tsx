@@ -1,6 +1,6 @@
 import { describeSync } from '@avchetan/sync';
 import { useEffect, useState } from 'react';
-import { HelpLink } from '../help-link';
+import { HelpLink, SetupCheckLink } from '../help-link';
 import {
   useConnection,
   useRemoveConnection,
@@ -17,7 +17,12 @@ function SyncStatusLine() {
   const { text, helpCode } = describeSync(status.data);
   return (
     <p role="status" className={`text-sm ${helpCode ? 'text-danger' : 'text-ink-muted'}`}>
-      {text} {helpCode ? <HelpLink code={helpCode} /> : null}
+      {text}{' '}
+      {helpCode ? (
+        <>
+          <HelpLink code={helpCode} /> · <SetupCheckLink />
+        </>
+      ) : null}
     </p>
   );
 }

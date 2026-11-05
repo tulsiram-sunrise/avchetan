@@ -9,6 +9,7 @@ import {
 import { z } from 'zod';
 import { createApiClient, fetchHealth } from './api-client';
 import { isTailscale, loadServerUrls, SYNC_TOKEN_SECRET, saveConnection } from './config';
+import type { StatusResponse } from './protocol';
 
 const PREFIX = 'avchetan://pair?';
 /** The phone's Sync screen shows a home and an away address, plus one spare. */
@@ -126,4 +127,10 @@ export async function loadPairingLink(deps: ServerDeps): Promise<string> {
 export async function rotateServerToken(deps: ServerDeps): Promise<void> {
   const { api } = await reachServer(deps);
   await deps.secrets.set(SYNC_TOKEN_SECRET, await api.rotateToken());
+}
+
+/** The server's devices and waiting entries, for a settings screen. */
+export async function loadServerStatus(deps: ServerDeps): Promise<StatusResponse> {
+  const { api } = await reachServer(deps);
+  return api.status();
 }

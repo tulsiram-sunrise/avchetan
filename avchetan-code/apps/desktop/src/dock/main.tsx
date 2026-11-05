@@ -9,6 +9,7 @@ import { ensureAutostartDefault } from '../services/autostart';
 import { startBackups } from '../services/data';
 import { loadDraft } from '../services/draft';
 import { announce } from '../services/extraction';
+import { needsSetup } from '../services/first-run';
 import { DEFAULT_HOTKEY, savedHotkey } from '../services/hotkey';
 import { useDockStore } from '../stores/dock-store';
 import { DockApp } from './dock-app';
@@ -25,6 +26,12 @@ async function settleNativeState({ store, platform }: AppServices): Promise<void
       async () => {
         const shortcut = await savedHotkey(store);
         if (shortcut && shortcut !== DEFAULT_HOTKEY) await platform.shell.setHotkey(shortcut);
+      },
+    ],
+    [
+      'first-run setup',
+      async () => {
+        if (await needsSetup(store, platform.hub)) await platform.shell.openMain('setup');
       },
     ],
     [

@@ -4,7 +4,7 @@ Anyone should be able to install and self-host Avchetan ([ADR-0017](../decisions
 
 ## Onboarding rules
 
-1. **Guided first run.** First launch on any device opens the setup wizard: choose mode (*Just this device* / *Home Hub on this PC* / *Connect to my hub or server*) → AI models → (hub) pair phone → done. Every step has "Skip, I'll do it later" except where data safety needs it.
+1. **Guided first run.** First launch on any device opens the setup wizard: choose mode (*Just this PC* or *Just this phone* / *Home Hub on this PC*, desktop only / *Connect to my hub or server*) → AI models → (hub) pair phone → done. Every step has "Skip, I'll do it later" except where data safety needs it.
 2. **No terminal** for Standalone or Home Hub. If a feature would need one, design a UI for it or move it to the Cloud guide.
 3. **Detect, don't ask.** Auto-detect Ollama and its installed models, the timezone, the LAN IP and the Tailscale hostname. Ask only when detection fails.
 4. **Explain consequences in one sentence** at each choice ("Your entries will be sent to Google to be organized").
@@ -19,7 +19,7 @@ Anyone should be able to install and self-host Avchetan ([ADR-0017](../decisions
 - Write links and headings so they work both on GitHub and on the site. CI checks for dead links and anchors. VitePress is configured with GitHub-style heading slugs so existing anchors such as `#5-server-fallback` keep working; for new headings, prefer starting with a word, not a number.
 - Screenshots and examples use **made-up data only** (the repo and site are public).
 - Each page: goal → what you need → numbered steps (one action per step) → "check it worked" → common problems.
-- Screenshots in `docs/user-guide/images/`, named `<page>-<step>.png`, refreshed whenever the UI they show changes.
+- Screenshots in `docs/user-guide/images/`, named `<page>-<what>.png`, taken from the demo copy of the app (`dev:demo`, its own data and keychain) with made-up entries, and retaken whenever the UI they show changes: [tooling/screenshots](../../avchetan-code/tooling/screenshots/README.md).
 - Commands (Cloud guide only) are copy-paste ready and complete; never "edit as appropriate" without saying exactly what to edit.
 - Pages describing unshipped features carry the banner `> Draft — describes planned behavior.` Remove it when the feature ships and the steps have been followed on a fresh machine.
 - A feature is not done until its user-guide page is updated (part of each roadmap phase's "done when").

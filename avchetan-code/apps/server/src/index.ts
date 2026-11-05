@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { createEmbeddingModel, embedTexts } from '@avchetan/core';
+import { checkModels, createEmbeddingModel, embedTexts } from '@avchetan/core';
 import {
   configureLogging,
   createLogger,
@@ -13,6 +13,7 @@ import { ApiError } from './api-error';
 import { createApp } from './app';
 import { createHubAsk, type HubAsk } from './ask/hub-ask';
 import { loadServerIdentity } from './auth';
+import { restoreSnapshot } from './backups/restore';
 import { startHubSnapshots } from './backups/snapshots';
 import { openPglite, openPostgres, type ServerDatabase } from './db/client';
 import { databaseStartupHint } from './db/startup-hint';
@@ -31,6 +32,7 @@ import {
 import { pairingUrls } from './pairing';
 
 const VERSION = '0.0.0';
+const SHUTDOWN_GRACE_MS = 5_000;
 
 const log = createLogger('server');
 
@@ -56,10 +58,20 @@ async function main(): Promise<void> {
   const env = loadEnv(process.env);
   configureLogging({ level: env.LOG_LEVEL });
 
+  if (env.RESTORE_SNAPSHOT) {
+    // The desktop app's hub restores this way: its program is this one file (ADR-0024).
+    await restoreSnapshot(env.RESTORE_SNAPSHOT, env.PGLITE_DATA_DIR);
+    log.info('snapshot restored');
+    return;
+  }
+
   const clock = createMonotonicClock();
   const database = await openDatabase(env, () => clock.now());
 
-  const identity = await loadServerIdentity(database.db, env.SYNC_TOKEN);
+  const identity = await loadServerIdentity(database.db, env.SYNC_TOKEN, {
+    resetDataEpoch: env.RESET_DATA_EPOCH,
+  });
+  if (env.RESET_DATA_EPOCH) log.info('data epoch replaced', { reason: 'requested' });
   if (identity.generatedToken) {
     // Not through the logger: this is the one time the token is shown, and log sinks keep lines.
     process.stdout.write(
@@ -88,6 +100,12 @@ async function main(): Promise<void> {
         }
       : null;
   const analysis = analysisModelFromEnv(env);
+  const organizing = env.FALLBACK_EXTRACTION_ENABLED ? extractionModelsFromEnv(env) : [];
+  const serverModels = [
+    ...organizing.slice(0, 1).map((config) => ({ job: 'organizing' as const, config })),
+    ...(analysis ? [{ job: 'answers' as const, config: analysis }] : []),
+    ...(embedding ? [{ job: 'search' as const, config: embedding }] : []),
+  ];
   // Set once the server's device is open, which needs the app's own fetch.
   let hubAsk: HubAsk | null = null;
 
@@ -113,6 +131,12 @@ async function main(): Promise<void> {
         .catch((error) => log.warn('could not queue embeddings', { code: toAppError(error).code }));
     },
     ...(search ? { search } : {}),
+    ...(serverModels.length > 0
+      ? {
+          checkAi: () =>
+            checkModels(serverModels, { fetch: globalThis.fetch, secrets: secretsFromEnv(env) }),
+        }
+      : {}),
     ...(analysis
       ? {
           ask: (request, onText, abortSignal) => {
@@ -123,7 +147,6 @@ async function main(): Promise<void> {
       : {}),
   });
 
-  const organizing = env.FALLBACK_EXTRACTION_ENABLED ? extractionModelsFromEnv(env) : [];
   if (organizing.length === 0) {
     log.info('not organizing entries', {
       reason: env.FALLBACK_EXTRACTION_ENABLED ? 'no_extraction_provider' : 'disabled',
@@ -189,16 +212,39 @@ async function main(): Promise<void> {
     }),
   );
 
+  let stopping = false;
   const shutDown = () => {
+    if (stopping) return;
+    stopping = true;
+    log.info('shutting down');
     device?.stop();
     embedder?.stop();
     stopSnapshots?.();
-    server.close(() => {
+    let closed = false;
+    const closeDatabase = () => {
+      if (closed) return;
+      closed = true;
       void database.close().finally(() => process.exit(0));
+    };
+    // A request held open, such as an answer still streaming, mustn't keep the database open.
+    const timer = setTimeout(() => {
+      if ('closeAllConnections' in server) server.closeAllConnections();
+      closeDatabase();
+    }, SHUTDOWN_GRACE_MS);
+    server.close(() => {
+      clearTimeout(timer);
+      closeDatabase();
     });
   };
   process.once('SIGINT', shutDown);
   process.once('SIGTERM', shutDown);
+  if (env.SHUTDOWN_ON_STDIN_CLOSE) {
+    // The desktop app runs the hub with a pipe on stdin and closes it to stop the hub. Windows
+    // has no SIGTERM for a child, and the pipe also closes if the app itself crashes.
+    process.stdin.once('end', shutDown);
+    process.stdin.once('close', shutDown);
+    process.stdin.resume();
+  }
 }
 
 main().catch((error: unknown) => {

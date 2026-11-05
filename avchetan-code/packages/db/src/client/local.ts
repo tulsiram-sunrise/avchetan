@@ -8,6 +8,8 @@ export type SyncStateKey =
   | 'clock_last'
   | 'pull_cursor'
   | 'server_id'
+  /** The server's data epoch when this device last synced (sync-protocol.md). */
+  | 'data_epoch'
   /** The server and device details last registered there, as JSON. */
   | 'registration'
   | 'status'

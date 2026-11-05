@@ -1,4 +1,4 @@
-import { createLogger, formatDay } from '@avchetan/shared';
+import { createLogger, describeError, formatDay } from '@avchetan/shared';
 import { HelpLink } from '../help-link';
 import { useServices } from '../services-context';
 import { useDockStore } from '../stores/dock-store';
@@ -32,7 +32,7 @@ export function AskPanel() {
       ) : null}
       {ask.error ? (
         <p role="alert" className="text-danger">
-          {ask.error.message}. <HelpLink code={ask.error.code} />
+          {describeError(ask.error).message}. <HelpLink code={ask.error.code} />
         </p>
       ) : null}
 

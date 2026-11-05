@@ -10,6 +10,7 @@
     "start:hub": "cross-env DB_DRIVER=pglite SERVER_PROFILE=hub tsx --env-file-if-exists=.env src/index.ts",
     "restore:hub": "cross-env DB_DRIVER=pglite tsx --env-file-if-exists=.env src/restore-hub.ts",
     "build": "node scripts/build.ts",
+    "build:sidecar": "node scripts/build-sidecar.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run --passWithNoTests"
   },
@@ -31,6 +32,7 @@
   "devDependencies": {
     "@types/pg": "8.23.1",
     "ai": "7.0.156",
-    "esbuild": "0.28.2"
+    "esbuild": "0.28.2",
+    "postject": "1.0.0-alpha.6"
   }
 }

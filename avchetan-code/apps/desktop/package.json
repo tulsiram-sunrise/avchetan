@@ -7,6 +7,8 @@
   "scripts": {
     "dev": "tauri dev",
     "build": "tauri build",
+    "build:release": "tauri build --config src-tauri/tauri.release.conf.json",
+    "dev:demo": "tauri dev --config src-tauri/tauri.demo.conf.json",
     "tauri": "tauri",
     "vite:dev": "vite",
     "vite:build": "vite build",
@@ -21,6 +23,7 @@
     "@tanstack/react-query": "5.105.0",
     "@tauri-apps/api": "2.12.4",
     "@tauri-apps/plugin-autostart": "2.7.0",
+    "@tauri-apps/plugin-dialog": "2.8.4",
     "@tauri-apps/plugin-http": "2.8.3",
     "@tauri-apps/plugin-opener": "2.7.2",
     "react": "19.3.1",

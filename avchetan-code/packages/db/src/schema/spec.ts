@@ -227,6 +227,7 @@ export const TABLES = {
     columns: {
       server_id: req('uuid'),
       sync_token_hash: opt('text'),
+      data_epoch: opt('uuid'),
       created_at: req('instant'),
     },
   },

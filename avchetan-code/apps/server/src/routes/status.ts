@@ -5,7 +5,7 @@ import { Hono } from 'hono';
 import type { AppDeps, AppEnv } from '../app';
 import { toInstant } from '../sync/read-pull';
 
-export function statusRoutes({ db, clock, identity, version, profile }: AppDeps) {
+export function statusRoutes({ db, clock, identity, version, profile, checkAi }: AppDeps) {
   return new Hono<AppEnv>().get('/status', async (c) => {
     const deviceRows = await db
       .select({
@@ -34,6 +34,7 @@ export function statusRoutes({ db, clock, identity, version, profile }: AppDeps)
         lastSeenAt: row.lastSeenAt === null ? null : toInstant(row.lastSeenAt),
       })),
       logs: { waiting: totalFor('pending_llm'), failed: totalFor('error') },
+      ...(checkAi ? { ai: await checkAi() } : {}),
     };
     return c.json(body);
   });

@@ -13,6 +13,8 @@ const mainViewSchema = z.enum([
   'tags',
   'projects',
   'settings',
+  'setup',
+  'check',
 ]);
 export type MainView = z.infer<typeof mainViewSchema>;
 
