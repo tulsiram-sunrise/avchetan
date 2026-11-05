@@ -1,6 +1,7 @@
 import type { ClientStore } from '@avchetan/db/sqlite';
 import {
   type HttpFetch,
+  isTailscale,
   type SecretStore,
   SyncError,
   toAppError,
@@ -8,7 +9,7 @@ import {
 } from '@avchetan/shared';
 import { z } from 'zod';
 import { createApiClient, fetchHealth } from './api-client';
-import { isTailscale, loadServerUrls, SYNC_TOKEN_SECRET, saveConnection } from './config';
+import { loadServerUrls, SYNC_TOKEN_SECRET, saveConnection } from './config';
 import type { StatusResponse } from './protocol';
 
 const PREFIX = 'avchetan://pair?';

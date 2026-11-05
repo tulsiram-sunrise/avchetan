@@ -36,6 +36,9 @@ Problems come first, each with its fix and a **Help** link to its section below.
 ## insecure_server_url
 **"This address needs https://."** Plain `http://` only works on this device, on a home network or through Tailscale. Anywhere else your token would cross the internet unprotected, so use the server's `https://` address.
 
+## insecure_model_url
+**"This address needs https://."**, when you save an Ollama address in **AI models**. Avchetan sends your entries to that address, so plain `http://` only works on this device, on a home network or through Tailscale. For an Ollama elsewhere on the internet, put it behind `https://`, or reach it through [Tailscale](remote-access-tailscale.md).
+
 ## sync_issue
 **"Changes keep failing to sync."** The server refused these changes ten times, so they're waiting and nothing is lost. Check that both devices run the same version of Avchetan, then report it if it doesn't clear.
 
@@ -214,7 +217,7 @@ Problems come first, each with its fix and a **Help** link to its section below.
 **"Something inside Avchetan went wrong. Restart it; if it happens again, please report it"**, **"The app needs a restart"**, or an error whose **Help** link brought you here. This is a bug in Avchetan, not something you did.
 1. Quit Avchetan (on Windows: right-click the tray icon → **Quit Avchetan**; on Android: close it from recent apps) and open it again.
 2. Run the [Setup check](#setup-check).
-3. If it happens again, report it on the project's GitHub page, with the error text and what you were doing. Don't include your entries or tokens.
+3. If it happens again, [report it on GitHub](https://github.com/tulsiram-sunrise/avchetan/issues/new?template=bug-report.yml) (Windows: **Settings → About → Report a problem**; Android: **More → Report a problem**), with the error text and what you were doing. Don't include your entries or tokens.
 
 ## Entries stay "pending"
 Normal when offline or when the hub is unreachable. They are processed automatically later. If they stay pending while everything is connected, open **Review** in the main window: it shows the reason for each entry.

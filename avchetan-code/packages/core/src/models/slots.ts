@@ -1,5 +1,12 @@
 import { type ClientStore, getSetting, setSetting } from '@avchetan/db/sqlite';
-import type { HttpFetch, SecretStore } from '@avchetan/shared';
+import {
+  type HttpFetch,
+  isOnThisDevice,
+  isPrivateNetwork,
+  isTailscale,
+  type SecretStore,
+  ValidationError,
+} from '@avchetan/shared';
 import { MODEL_SLOTS_SETTING } from '../extraction/settings';
 import { testModel } from '../llm/test-model';
 import {
@@ -15,6 +22,24 @@ async function loadSlots(store: ClientStore) {
     (await getSetting(store.db, MODEL_SLOTS_SETTING)) ?? {},
   );
   return parsed.success ? parsed.data : modelSlotsSchema.parse({});
+}
+
+/**
+ * A model's own address (Ollama) gets the user's entries, so plain `http://` is only accepted where
+ * the traffic stays on this device, the home network or Tailscale
+ * (docs/conventions/security-and-privacy.md#transport).
+ */
+export function assertSafeModelUrl(config: ModelConfig): void {
+  if (!config.baseUrl) return;
+  const { protocol, hostname } = new URL(config.baseUrl);
+  if (protocol === 'https:') return;
+  if (
+    protocol === 'http:' &&
+    (isOnThisDevice(hostname) || isPrivateNetwork(hostname) || isTailscale(hostname))
+  ) {
+    return;
+  }
+  throw new ValidationError('insecure_model_url', 'This address needs https://');
 }
 
 /** The two jobs a user picks a model for. */
@@ -39,6 +64,7 @@ export async function saveSlotModel(
   draft: { config: ModelConfig; apiKey: string },
 ): Promise<void> {
   const config = modelConfigSchema.parse(draft.config);
+  assertSafeModelUrl(config);
   const apiKey = draft.apiKey.trim();
   if (apiKey) await secrets.set(apiKeySecretName(config.provider), apiKey);
   const slots = { ...(await loadSlots(store)), [slot]: config };
@@ -55,11 +81,12 @@ export function removeApiKey(secrets: SecretStore, provider: LlmProvider): Promi
 }
 
 /** Tries a model before it is saved, using a typed key that isn't stored yet. */
-export function testDraftModel(
+export async function testDraftModel(
   draft: { config: ModelConfig; apiKey: string },
   platform: { fetch: HttpFetch; secrets: SecretStore },
 ): Promise<{ latencyMs: number }> {
   const config = modelConfigSchema.parse(draft.config);
+  assertSafeModelUrl(config);
   const apiKey = draft.apiKey.trim();
   const secrets: Pick<SecretStore, 'get'> = apiKey ? { get: async () => apiKey } : platform.secrets;
   return testModel(config, {

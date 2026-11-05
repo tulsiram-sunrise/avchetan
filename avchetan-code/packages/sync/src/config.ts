@@ -1,5 +1,13 @@
 import { type ClientStore, getSetting, setSetting } from '@avchetan/db/sqlite';
-import { createLogger, type SecretName, type SecretStore, ValidationError } from '@avchetan/shared';
+import {
+  createLogger,
+  isOnThisDevice,
+  isPrivateNetwork,
+  isTailscale,
+  type SecretName,
+  type SecretStore,
+  ValidationError,
+} from '@avchetan/shared';
 import { z } from 'zod';
 
 const log = createLogger('sync');
@@ -14,23 +22,6 @@ export async function loadServerUrls(store: ClientStore): Promise<string[]> {
   const urls = serverUrlsSchema.safeParse((await getSetting(store.db, SERVER_URLS_SETTING)) ?? []);
   if (!urls.success) log.warn('invalid server urls setting', { issues: urls.error.issues.length });
   return urls.success ? urls.data : [];
-}
-
-function isOnThisDevice(host: string): boolean {
-  return host === 'localhost' || host === '127.0.0.1';
-}
-
-/** Tailscale traffic is already encrypted, so the token is safe on plain HTTP there. */
-export function isTailscale(host: string): boolean {
-  if (host.endsWith('.ts.net')) return true;
-  const [first, second] = host.split('.').map(Number);
-  return first === 100 && second !== undefined && second >= 64 && second <= 127;
-}
-
-function isPrivateNetwork(host: string): boolean {
-  const [first, second] = host.split('.').map(Number);
-  if (first === 10 || (first === 192 && second === 168)) return true;
-  return first === 172 && second !== undefined && second >= 16 && second <= 31;
 }
 
 /**

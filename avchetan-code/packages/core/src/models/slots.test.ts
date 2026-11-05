@@ -36,6 +36,36 @@ describe('AI model settings', () => {
     expect((await loadExtractionSettings(store)).models).toEqual([config]);
   });
 
+  it('sends entries over plain http only where the traffic stays private', async () => {
+    const { store } = await openTestStore();
+    const secrets = new MemorySecretStore();
+    const ollama = (baseUrl: string) => ({
+      config: { provider: 'ollama', model: 'test-model', baseUrl } as const,
+      apiKey: '',
+    });
+
+    for (const url of [
+      'http://localhost:11434/v1',
+      'http://192.168.1.20:11434/v1',
+      'http://100.100.1.2:11434/v1',
+      'https://ollama.example.com/v1',
+    ]) {
+      await saveSlotModel(store, secrets, 'extraction', ollama(url));
+    }
+    await expect(
+      saveSlotModel(store, secrets, 'extraction', ollama('http://ollama.example.com/v1')),
+    ).rejects.toMatchObject({ code: 'insecure_model_url' });
+    await expect(
+      testDraftModel(ollama('http://203.0.113.5:11434/v1'), {
+        fetch: vi.fn(),
+        secrets,
+      }),
+    ).rejects.toMatchObject({ code: 'insecure_model_url' });
+    expect((await loadSlotModel(store, 'extraction'))?.baseUrl).toBe(
+      'https://ollama.example.com/v1',
+    );
+  });
+
   it('keeps a stored key when the key field is left blank', async () => {
     const { store } = await openTestStore();
     const secrets = new MemorySecretStore();
