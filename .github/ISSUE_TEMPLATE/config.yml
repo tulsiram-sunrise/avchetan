@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: User guide and troubleshooting
+    url: https://tulsiram-sunrise.github.io/avchetan/user-guide/
+    about: Setting up, pairing, AI models, and fixes for every error message.
+  - name: Report a security problem
+    url: https://github.com/tulsiram-sunrise/avchetan/security/advisories/new
+    about: Privately, so it can be fixed before it is public.

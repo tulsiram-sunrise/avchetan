@@ -6,9 +6,20 @@ How the Windows installer and the Android APK are built and published. The build
 
 | File | How |
 |---|---|
-| `avchetan-<tag>-windows-x64-setup.exe` | NSIS installer from `pnpm --filter @avchetan/desktop build:release`. The release config (`src-tauri/tauri.release.conf.json`) adds the hub program (`build:sidecar`, [ADR-0024](../decisions/0024-hub-sidecar-node-single-executable.md)) as `avchetan-hub.exe` beside the app, and PGlite's folders as `node_modules\`. Not code-signed yet, so Windows SmartScreen warns on first run (signing is in the public-release milestone). |
-| `avchetan-<tag>-android.apk` | `expo prebuild`, then Gradle `assembleRelease`, signed with the **release key** from repository secrets. The job fails rather than publish an APK signed with the debug key. Its `versionCode` is the workflow's run number, so each APK updates the one before it. |
+| `avchetan-<tag>-windows-x64-setup.exe` | NSIS installer from `pnpm --filter @avchetan/desktop build:release`. The release config (`src-tauri/tauri.release.conf.json`) adds the hub program (`build:sidecar`, [ADR-0024](../decisions/0024-hub-sidecar-node-single-executable.md)) as `avchetan-hub.exe` beside the app, and PGlite's folders as `node_modules\`. Not code-signed yet, so Windows SmartScreen warns on first run ([ADR-0026](../decisions/0026-github-releases-unsigned-windows-first.md), [below](#windows-code-signing)). |
+| `avchetan-<tag>-android.apk` | `expo prebuild`, then Gradle `assembleRelease`, signed with the **release key** from repository secrets. The job fails rather than publish an APK signed with the debug key. Its `versionCode` is the workflow's run number, so each APK updates the one before it; its `versionName` is the version in `app.json`. |
 | `SHA256SUMS.txt` | Checksums of both, on tagged releases. |
+| `ghcr.io/tulsiram-sunrise/avchetan-server:<version>` | The server's Docker image (`apps/server/Dockerfile`), on tagged releases, also tagged `<major>.<minor>` and `latest`. |
+
+The release notes start with [`.github/release-notes.md`](../../.github/release-notes.md) (which file is which, the SmartScreen warning, checksums, the APK certificate fingerprint), followed by GitHub's list of merged pull requests.
+
+## Versions
+
+Every app has the same version: the desktop app (`package.json`, `Cargo.toml`, `Cargo.lock`), the phone app (`package.json`, `app.json`) and the server (`package.json`, shown in `/v1/health`). Users see it in **Settings → About** and at the bottom of **More**.
+
+- `pnpm version:set 0.2.0` writes it everywhere. `pnpm version:check` fails if the files disagree.
+- The release workflow runs `version:check v0.2.0` on a tag and fails if the tag doesn't match the files.
+- Until 1.0, raise the minor version (0.**2**.0) for new features or anything users must act on, and the patch version (0.2.**1**) for fixes only.
 
 The plain `tauri build` and `tauri dev` don't include the hub program, so they work without building it first; a development build finds it in `apps/server/dist/sidecar`.
 
@@ -34,10 +45,22 @@ A phone that has a debug-signed build (any APK built on a PC) can't install a re
 
 ## Making a release
 
-1. Make sure `master` is green in CI.
+1. On a branch: `pnpm version:set 0.2.0`, commit (`chore: version 0.2.0`), and merge it. Make sure `master` is green in CI.
 2. Try the files first: **Actions → Release → Run workflow** on `master` (or push a branch to `release/<name>` to try it before merging). Download both artifacts from the run, install them on a test PC and phone.
-3. Tag and push: `git tag -s v0.1.0 -m "Avchetan 0.1.0"` then `git push origin v0.1.0`.
-4. The workflow makes a **draft** release with both files and `SHA256SUMS.txt`. Read the generated notes, add what users need to know (for example "uninstall the old app first"), and click **Publish release**.
+3. Tag `master` and push: `git tag -a v0.2.0 -m "Avchetan 0.2.0"` (or `-s` with a signing key) then `git push origin v0.2.0`.
+4. The workflow checks the version, publishes the server image, and makes a **draft** release with both files, `SHA256SUMS.txt` and the notes. Read them, add what users need to know (for example "uninstall the old app first"), and click **Publish release**.
+5. Download the installer from the published release in a browser, on a PC that hasn't run it, and run it once. That checks the file people actually get, including how SmartScreen treats it.
+
+The first time an image is pushed, GitHub makes the container package **private**. Make it public once: on GitHub, **your profile → Packages → avchetan-server → Package settings → Change visibility → Public**.
+
+## Windows code signing
+
+The installer is unsigned until the project is accepted by [SignPath Foundation](https://signpath.org), which signs open-source projects for free ([ADR-0026](../decisions/0026-github-releases-unsigned-windows-first.md)). To apply, after the first release:
+
+1. Read SignPath Foundation's terms and apply on their website. They accept only OSI-licensed projects that have already released in the form to be signed, are built automatically from source (this workflow), and require multi-factor authentication for the repository.
+2. When accepted, add a page titled **Code signing policy** to the docs site and link it from the README and the install page. It must say that free code signing is provided by SignPath.io with a certificate by SignPath Foundation, name the people in each role (authors, reviewers, approvers: for now the maintainer, `tulsiram-sunrise`), and link the [privacy page](../user-guide/privacy.md).
+3. In the release workflow, sign `avchetan-desktop.exe` and `avchetan-hub.exe` before the installer is packed (Tauri's `bundle.windows.signCommand`), then the installer itself, using SignPath's GitHub action. Each release is then approved by hand in SignPath before it is signed.
+4. Remove the SmartScreen warning from the guide pages and the release notes.
 
 ## Own-server setup
 

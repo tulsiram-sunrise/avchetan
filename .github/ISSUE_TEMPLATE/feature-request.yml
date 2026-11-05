@@ -1,0 +1,27 @@
+name: Feature request
+description: Suggest something Avchetan should do.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Check the [roadmap](https://tulsiram-sunrise.github.io/avchetan/roadmap) first: it may be planned already. Use made-up examples, not your own entries.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What you'd like to do
+      description: The problem or situation, in your own words. What do you do now instead?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: How it could work
+      description: Optional. Your idea of how it could look or behave.
+  - type: checkboxes
+    id: free
+    attributes:
+      label: Free to run
+      description: Avchetan must keep working with no paid services (Home Hub with Ollama only).
+      options:
+        - label: My idea works without a paid service, or the paid service is only an option.
