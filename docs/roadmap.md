@@ -6,7 +6,7 @@ Each phase lists scope, deliverables and **done when** criteria (testable). Phas
 
 **Applies to every phase:** a phase that adds or changes user-visible behavior is done only when the matching [user-guide](user-guide/README.md) pages are updated ([onboarding & user docs conventions](conventions/onboarding-and-user-docs.md)).
 
-**Order:** 1 → 2 → 3 → 4 → 5 → **5b (built-in Home Hub, directly after 5)** → *Public release milestone (when shipping to others)* → 6 → 7.
+**Order:** 1 → 2 → 3 → 4 → 5 → **5b (built-in Home Hub, directly after 5)** → *Public release milestone (when shipping to others)* → **v0.2.0 (Days view, more AI providers)** → 6 → 7.
 
 ---
 
@@ -148,6 +148,16 @@ Scope:
 
 **Done when:** a stranger can find the GitHub Pages site, download the builds from GitHub Releases (the APK signed, the installer checkable against `SHA256SUMS.txt`), and reach a working Home Hub + phone setup by following the guide.
 
+## v0.2.0 — Days view and more AI providers
+
+Planned 2026-11-05, before the rest of Phase 6: the daily brief (Phase 6) will sit at the top of a day in this view.
+
+1. **Days view** ([product/days-view.md](product/days-view.md)) replaces the desktop Timeline page and the phone's Today tab. It has a week strip and a month calendar with category-coloured dots, **Today**, and one day's summary line, tasks (due, done, overdue on today) and entries. An entry also shows on the days its activities are dated. Future days show due tasks. Includes the category colour palette in `@avchetan/shared`, and the `dayEntries` / `monthDots` queries in `@avchetan/db`.
+2. **OpenAI, Anthropic and OpenAI-compatible adapters** ([ADR-0020](decisions/0020-free-first-provider-adapters.md)): one adapter each in `packages/core/src/providers/adapters/`, on the AI SDK's official packages. Models in `presets.json`, keys in the keychain, `classifyError` for each provider's bad-key, no-credit, rate-limit and unknown-model answers, each with an `ERROR_HELP` entry and a guide section. OpenAI also offers embeddings, Anthropic doesn't. OpenAI-compatible takes a base address (checked like Ollama's, R23) and an optional key. The desktop HTTP scope adds the two providers' hosts.
+3. **Testing without keys:** unit tests send recorded responses (success, 401, 402/insufficient credit, 429, unknown model) through a fake `fetch`. Live tests in `*.live.ts` skip themselves without a key. Until a live run passes, the providers are labelled *Preview* in both apps and in [AI models](user-guide/ai-models.md).
+
+**Done when:** a month with entries on most days can be browsed on both apps without scrolling a list, and `dayEntries` puts "yesterday I ran" on both days (test). `monthDots` takes under 50 ms for a month of 300 entries on the desktop (measured). Each new adapter passes its recorded-response tests, and the extraction eval runs against it given a key.
+
 ## Phase 6 — Advancements A (ambient intelligence)
 
 1. Active window context + context rules + deny-list + tray pause ([advancements §1](product/advancements.md#1-context-awareness-desktop-metadata-capture)).
@@ -178,4 +188,4 @@ Scope:
 3. Add new fixtures before changing any prompt, so the prompts aren't fitted to these 37.
 4. Score Groq over three runs on separate days. Results move by about three entries between runs, so one run can't show a real change.
 
-Capture: in-memory tag lookup so tagged captures meet p95 < 10 ms (Phase 2 exception) · Paid and other providers: Anthropic, OpenAI, any OpenAI-compatible service, one adapter each ([ADR-0020](decisions/0020-free-first-provider-adapters.md)) · iOS build · local semantic search (`sqlite-vec`) · SQLCipher encryption · calendar integration · desktop updater + code signing · macOS/Linux polish.
+Capture: in-memory tag lookup so tagged captures meet p95 < 10 ms (Phase 2 exception) · iOS build · local semantic search (`sqlite-vec`) · SQLCipher encryption · calendar integration · desktop updater + code signing · macOS/Linux polish.

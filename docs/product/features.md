@@ -16,7 +16,7 @@ Feature catalogue grouped by roadmap phase. "Done when" criteria live in [roadma
 Floating capture button → bottom sheet with text field (and mic button, Phase 7) → Save. Same pipeline. Home-screen widget opens the sheet directly.
 
 ### 3. Review
-- **Today / timeline**: chronological list of raw logs with their extracted children, grouped by `logged_date`.
+- **Days** (from v0.2.0; was *Today / timeline*): one day at a time with a week strip and a month calendar, category-coloured dots, the day's summary, tasks and entries ([days view](days-view.md)).
 - **Tasks**: open tasks grouped by due (overdue, today, upcoming, someday); tap to complete.
 - **Pending & errors**: entries awaiting extraction or failed, with "retry" and "edit & re-extract".
 - **Edit**: any extracted item can be edited; edits mark it `is_user_edited` so re-extraction won't overwrite it.
