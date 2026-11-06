@@ -9,6 +9,7 @@ import { createLogger, toAppError } from '@avchetan/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { GUIDE_URL, openExternal } from '../help';
 import { HelpLink } from '../help-link';
+import { emitAppEvent } from '../native/events';
 import { useServices } from '../services-context';
 import { panelClass, QuietButton } from './ui';
 
@@ -23,7 +24,13 @@ export function CommandsSetting() {
   const learning = useQuery({ queryKey: commandsKey, queryFn: () => loadCommandLearning(store) });
   const change = useMutation({
     mutationFn: (apply: () => Promise<void>) => apply(),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: commandsKey }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: commandsKey });
+      // The capture box stops using a forgotten alias at once.
+      emitAppEvent('logs:changed', { tables: ['settings'] }).catch(() =>
+        log.warn('could not announce a commands change'),
+      );
+    },
   });
   const aliases = Object.entries(learning.data?.aliases ?? {});
   const examples = learning.data?.examples ?? [];

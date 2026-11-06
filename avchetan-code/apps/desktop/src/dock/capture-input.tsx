@@ -65,7 +65,9 @@ export function CaptureInput(props: {
         <span className="rounded-full bg-accent/15 px-2 py-0.5 font-medium text-accent">
           {askMode ? 'Ask' : command.active ? 'Command' : 'Capture'}
         </span>
-        <span>{submitHint(submitKey)} · Esc to close</span>
+        <span>
+          {submitHint(submitKey, askMode ? 'ask' : command.active ? 'run' : 'save')} · Esc to close
+        </span>
       </div>
       <textarea
         ref={props.inputRef}

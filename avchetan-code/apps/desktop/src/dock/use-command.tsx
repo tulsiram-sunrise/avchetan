@@ -6,10 +6,11 @@ import {
   parseCommand,
   suggestCommands,
 } from '@avchetan/core';
-import { toAppError } from '@avchetan/shared';
+import { createLogger, toAppError } from '@avchetan/shared';
 import { useQuery } from '@tanstack/react-query';
 import { type KeyboardEvent, type ReactNode, useEffect, useMemo, useState } from 'react';
 import { HelpLink } from '../help-link';
+import { emitAppEvent } from '../native/events';
 import { useOpenTasks } from '../queries/organize';
 import {
   type CommandOutcome,
@@ -22,6 +23,8 @@ import {
   readCommand,
 } from '../services/commands';
 import { useServices } from '../services-context';
+
+const log = createLogger('commands');
 
 /** One stack for the dock's whole life: its webview is never reloaded. */
 const undoStack = createUndoStack();
@@ -94,7 +97,13 @@ export function useCommand(draft: string, setDraft: (text: string) => void) {
       setResult(outcome);
       setDraft('');
       setReading(null);
-      if (fromReading) void learning.refetch();
+      if (fromReading) {
+        // Settings → Commands in the main window shows what was learned.
+        emitAppEvent('logs:changed', { tables: ['settings'] }).catch(() =>
+          log.warn('could not announce what was learned'),
+        );
+        void learning.refetch();
+      }
     } catch (thrown) {
       const { code, message } = toAppError(thrown);
       setError({ code, message });

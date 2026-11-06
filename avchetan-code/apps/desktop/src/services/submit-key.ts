@@ -45,8 +45,9 @@ export function isSubmitPress(press: KeyPress, submitKey: SubmitKey): boolean {
 }
 
 /** The hint shown under the box, e.g. "Enter to save · Shift+Enter for a new line". */
-export function submitHint(submitKey: SubmitKey): string {
+/** `run` for a command, `ask` for a question; entries are saved. */
+export function submitHint(submitKey: SubmitKey, verb: 'save' | 'ask' | 'run' = 'save'): string {
   return submitKey === 'enter'
-    ? 'Enter to save · Shift+Enter for a new line'
-    : 'Shift+Enter to save · Enter for a new line';
+    ? `Enter to ${verb} · Shift+Enter for a new line`
+    : `Shift+Enter to ${verb} · Enter for a new line`;
 }
