@@ -13,9 +13,10 @@ A correction is an **entry where you changed what the model made from it**:
 | You did | It teaches |
 |---|---|
 | Changed an activity's title or category | "for this entry, the right activity is …" |
-| Changed a task's title or due date | "for this entry, the right task is …" |
+| Changed a task's title | "for this entry, the right task is …" |
 | Deleted an activity or task the model made | "this is **not** an activity/task" (a negative example) |
 
+- **Due dates never teach.** Changing one is usually moving the task to another day (the brief's **Move to tomorrow**, for one), not fixing what the model read, so examples show tasks without due dates. The edit still marks the task user-edited, so its entry is listed as an example, and **Organize again** keeps the new date. (Decided 2026-11-06 while trying the build.)
 - Only items the model made (`origin = 'extraction'`) count. Your own items and system rows (the daily brief) never do.
 - Deleting the **whole entry**, or editing its text (which replaces the entry), removes it as an example.
 - The phone gets **activity editing** (title and category), so both apps can make the same corrections. Editing tags and metrics comes later.
@@ -34,7 +35,7 @@ In `@avchetan/core` (`extraction/corrections.ts`), on a `ClientStore`, so the ap
 
 1. **Candidates:** live, processed entries with at least one corrected item, not forgotten, not the entry being extracted, from the 200 most recently corrected.
 2. **Relevance:** words shared with the new entry (lowercased, 3 letters or more, common words left out), most recent correction first on a tie. No embeddings, so it works with Ollama alone.
-3. **Up to 10 examples**, each cut to about 600 characters: the entry's text (to 280 characters), its capture date (so "tomorrow" in the example makes sense), then its activities (category slug, title, main metrics) and tasks (title, due date), then `not:` lines for deleted items.
+3. **Up to 10 examples**, each cut to about 600 characters: the entry's text (to 280 characters), its capture date (so "tomorrow" in the example makes sense), then its activities (category slug, title, main metrics) and tasks (title only), then `not:` lines for deleted items.
 4. **Prompt:** a new prompt version (`extraction.v2`) adds an "Examples from this user's corrections" section only when there are examples. Entries already organized are not extracted again.
 5. **Too long for the model** (`llm_context_overflow`): the one retry leaves the examples out first, then tags and names as today.
 

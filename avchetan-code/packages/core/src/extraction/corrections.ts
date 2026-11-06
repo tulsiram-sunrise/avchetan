@@ -89,8 +89,8 @@ function metricText(metrics: Record<string, unknown>): string {
 }
 
 /**
- * One example as compact text: the entry and its capture date, the items as the user left them,
- * then `not:` lines for items the user deleted.
+ * One example as compact text: the entry and its capture date, the items as the user left them
+ * (tasks without due dates), then `not:` lines for items the user deleted.
  */
 export function renderExample(entry: CorrectedEntry): string {
   const date = localDate(entry.rawLog.capturedAt, entry.rawLog.capturedTz);
@@ -103,9 +103,9 @@ export function renderExample(entry: CorrectedEntry): string {
       `activity: ${[activity.categorySlug ?? 'other', activity.title, metrics].filter(Boolean).join(' | ')}`,
     );
   }
-  for (const task of kept(entry.tasks)) {
-    lines.push(`task: ${task.title}${task.dueDate ? ` | due ${task.dueDate}` : ''}`);
-  }
+  // No due dates: changing one is usually moving the task to another day, not fixing what the
+  // model read, and would teach it wrong dates.
+  for (const task of kept(entry.tasks)) lines.push(`task: ${task.title}`);
   if (kept(entry.activities).length + kept(entry.tasks).length === 0)
     lines.push('(nothing to record)');
   for (const activity of entry.activities.filter((item) => item.deleted)) {

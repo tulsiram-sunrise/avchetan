@@ -247,7 +247,7 @@ describe('chooseExamples', () => {
 });
 
 describe('renderExample', () => {
-  it('shows the entry, its items as corrected, and what was wrong', () => {
+  it('shows the entry, its items as corrected (tasks without due dates), and what was wrong', () => {
     const text = renderExample(
       entry('a', 'ran 5k, should\nstretch more', '2026-10-30T10:00:00.000Z', {
         activities: [
@@ -276,7 +276,7 @@ describe('renderExample', () => {
       [
         'Entry (2026-10-30): ran 5k, should stretch more',
         'activity: workout | Run | distance_km 5',
-        'task: Stretch | due 2026-10-31',
+        'task: Stretch',
         'not task: Think about stretching',
       ].join('\n'),
     );

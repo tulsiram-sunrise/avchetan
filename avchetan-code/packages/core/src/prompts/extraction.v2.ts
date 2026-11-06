@@ -77,7 +77,7 @@ export function buildUser(input: ExtractionInput): string {
   }
   if (input.corrections.length > 0) {
     sections.push(
-      `How this person corrected similar entries before. Organize alike entries the same way (category, title style, task or not, dates relative to the entry's own date). "not" lines were wrong: don't make such items again.\n\n${input.corrections.join('\n\n')}`,
+      `How this person corrected similar entries before. Organize alike entries the same way (category, title style, task or not). "not" lines were wrong: don't make such items again.\n\n${input.corrections.join('\n\n')}`,
     );
   }
   sections.push(`Entry: ${input.content}`);
