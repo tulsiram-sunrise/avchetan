@@ -21,7 +21,7 @@ Primary target: **Windows 11**. macOS/Linux should work where Tauri does, but ar
 
 - **Global hotkey** (`tauri-plugin-global-shortcut`): default **`Ctrl+Shift+Space`** — configurable. (`Alt+Space` from the original spec conflicts with the Windows window menu and PowerToys Run; allowed as an opt-in.) Registration failure → notification + settings prompt.
 - Hotkey handler (Rust): (1) capture previous foreground window context (Phase 6), (2) show + focus dock, (3) emit `dock:shown` with context to the webview. If already visible and focused → hide.
-- **Tray** (`tauri` tray API): left-click toggles dock; right-click menu: *Open Avchetan* (main window), *Sync now*, *Pending: N* (disabled label), *Preferences*, *Pause capture context*, *Quit*. Tooltip shows pending count and last sync time.
+- **Tray** (`tauri` tray API): left-click toggles dock; right-click menu: *Open Avchetan* (main window), *Sync now*, *Pending: N* (disabled label), *Preferences*, *Pause window context for 1 hour* / *Resume now* ([window context](../product/window-context.md)), *Quit*. Tooltip shows pending count and last sync time.
 - **Auto-hide on blur**: on `blur` event → hide after 100 ms unless a native dialog is open or "pin dock" is toggled. The draft (input text, mode) is kept in the webview state and persisted to `settings` every 500 ms so it survives restarts.
 - `Esc` → hide. `Enter` → submit. `Shift+Enter` → newline. `Ctrl+Enter` in Ask answer → open in main window.
 
