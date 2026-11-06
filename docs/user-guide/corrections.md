@@ -10,7 +10,7 @@ When Avchetan organizes an entry wrongly and you fix it, it remembers. Next time
 | Change a task's title | "Entries like this one make this task" |
 | Delete an activity or task that Avchetan made | "This isn't an activity" or "This isn't a task" |
 
-Due dates don't teach. Changing one usually means you moved the task to another day, for example with **Move to tomorrow** in the [daily brief](daily-brief.md), so the AI never sees your tasks' due dates as examples. The entry still shows in the list.
+Moving a task to another day isn't a fix. Changing only its due date, for example with **Move to tomorrow** in the [daily brief](daily-brief.md), teaches nothing and doesn't put the entry in the list. If you later press **Organize again** on that entry, the AI sets the date again from what you wrote.
 
 Only fixes to things Avchetan organized count. Activities and tasks you added yourself don't. If you delete a whole entry, or edit its text (which organizes it again from scratch), it stops being an example.
 

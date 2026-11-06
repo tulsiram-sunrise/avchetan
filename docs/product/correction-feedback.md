@@ -16,7 +16,7 @@ A correction is an **entry where you changed what the model made from it**:
 | Changed a task's title | "for this entry, the right task is …" |
 | Deleted an activity or task the model made | "this is **not** an activity/task" (a negative example) |
 
-- **Due dates never teach.** Changing one is usually moving the task to another day (the brief's **Move to tomorrow**, for one), not fixing what the model read, so examples show tasks without due dates. The edit still marks the task user-edited, so its entry is listed as an example, and **Organize again** keeps the new date. (Decided 2026-11-06 while trying the build.)
+- **Moving a task is not a correction.** Changing only a due date (the brief's **Move to tomorrow**, or a new date in the editor) doesn't mark the task user-edited or record a correction, so its entry is never an example and isn't listed. The cost: **Organize again** on that entry sets the date again from what the entry says. Examples also show tasks without due dates. (Decided 2026-11-06/07 while trying the build: moved tasks filled the list and taught nothing.)
 - Only items the model made (`origin = 'extraction'`) count. Your own items and system rows (the daily brief) never do.
 - Deleting the **whole entry**, or editing its text (which replaces the entry), removes it as an example.
 - The phone gets **activity editing** (title and category), so both apps can make the same corrections. Editing tags and metrics comes later.

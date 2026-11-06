@@ -104,6 +104,34 @@ describe('correction examples', () => {
     ]);
   });
 
+  it('moving a task to another day is not a correction', async () => {
+    const { store } = await openTestStore();
+    const { task } = await extracted(store);
+    // As the phone's editor and Move to tomorrow send it: the same title, a new date.
+    const moved = await store.write((tx) =>
+      store.repos.tasks.editByUser(tx, task.id, { title: task.title, dueDate: '2026-11-08' }),
+    );
+
+    expect(moved).toMatchObject({ dueDate: '2026-11-08', isUserEdited: false });
+    expect(await examples(store)).toEqual([]);
+    expect(await store.db.select().from(extractionCorrections)).toEqual([]);
+  });
+
+  it('a new title with a new date is a correction, but only the title is recorded', async () => {
+    const { store } = await openTestStore();
+    const { task } = await extracted(store);
+    const fixed = await store.write((tx) =>
+      store.repos.tasks.editByUser(tx, task.id, {
+        title: 'Plan the garden',
+        dueDate: '2026-11-08',
+      }),
+    );
+
+    expect(fixed).toMatchObject({ title: 'Plan the garden', isUserEdited: true });
+    const rows = await store.db.select().from(extractionCorrections);
+    expect(rows.map((row) => row.field)).toEqual(['title']);
+  });
+
   it('records each changed field, and nothing for unchanged ones', async () => {
     const { store } = await openTestStore();
     const { activity } = await extracted(store);

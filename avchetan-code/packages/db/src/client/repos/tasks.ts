@@ -56,17 +56,31 @@ export function tasksRepo(deps: RepoDeps) {
       });
     },
 
+    /**
+     * A hand edit. Changing only the due date is moving the task (Move to tomorrow, a new date),
+     * not fixing what the model read: it doesn't mark the task user-edited or record a correction,
+     * so the entry is no example (product/correction-feedback.md). Organize again may then set
+     * the date again from the entry.
+     */
     async editByUser(tx: Tx, id: string, edit: TaskEdit): Promise<Task> {
       validate(edit.title, edit.dueDate);
       const current = await getById(tx, tasks, id);
-      const changes = {
+      const { dueDate, ...rest } = {
         ...edit,
         ...(edit.title !== undefined ? { title: edit.title.trim() } : {}),
       };
-      await recordCorrection(tx, deps, 'task', current, changes);
+      const fixed = current
+        ? Object.entries(rest).some(
+            ([field, value]) =>
+              value !== undefined && value !== (current as Record<string, unknown>)[field],
+          )
+        : false;
+      await recordCorrection(tx, deps, 'task', current, rest);
       return updateSynced(tx, deps, tasks, id, {
-        ...changes,
-        isUserEdited: current?.origin === 'extraction' ? true : (current?.isUserEdited ?? false),
+        ...rest,
+        ...(dueDate !== undefined ? { dueDate } : {}),
+        isUserEdited:
+          current?.origin === 'extraction' && fixed ? true : (current?.isUserEdited ?? false),
       });
     },
 
