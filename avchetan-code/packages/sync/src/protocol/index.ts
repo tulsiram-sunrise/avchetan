@@ -1,5 +1,10 @@
 import { DEVICE_PLATFORMS, EXTRACTION_MODES } from '@avchetan/db';
-import { modelCheckSchema } from '@avchetan/shared';
+import {
+  isValidLocalDate,
+  isValidLocalTime,
+  isValidTimeZone,
+  modelCheckSchema,
+} from '@avchetan/shared';
 import { z } from 'zod';
 
 export { isSyncedTable, SYNCED_ROW_SCHEMAS } from './rows';
@@ -19,6 +24,9 @@ export const HEADERS = {
 } as const;
 
 const instant = z.string();
+const timeZone = z.string().min(1).max(64).refine(isValidTimeZone, 'Unknown time zone');
+const localDate = z.string().refine(isValidLocalDate, 'Expected YYYY-MM-DD');
+const localTime = z.string().refine(isValidLocalTime, 'Expected HH:MM');
 
 export const errorResponseSchema = z.object({
   error: z.object({
@@ -73,6 +81,10 @@ export const registerDeviceRequestSchema = z.object({
   name: z.string().trim().min(1).max(100),
   platform: z.enum(DEVICE_PLATFORMS),
   extractionMode: z.enum(EXTRACTION_MODES).default('self'),
+  /** When this device's days end, for the daily brief fallback (Phase 6). */
+  timeZone: timeZone.optional(),
+  /** Its daily brief time; null when it has the brief turned off. */
+  briefTime: localTime.nullable().optional(),
 });
 export type RegisterDeviceRequest = z.input<typeof registerDeviceRequestSchema>;
 
@@ -151,6 +163,20 @@ export const askRequestSchema = z.object({
   timeZone: z.string().min(1).max(64),
 });
 export type HubAskRequest = z.input<typeof askRequestSchema>;
+
+/** `POST /v1/brief`: the hub makes a day's daily brief, unless it exists; the device then syncs it. */
+export const briefRequestSchema = z.object({
+  date: localDate,
+  timeZone,
+  /** Make it again even if one exists (Make it again). */
+  replace: z.boolean().default(false),
+});
+export type HubBriefRequest = z.input<typeof briefRequestSchema>;
+
+export const briefResponseSchema = z.object({
+  status: z.enum(['made', 'exists', 'empty']),
+});
+export type HubBriefResponse = z.infer<typeof briefResponseSchema>;
 
 /** Sent as server-sent events, one JSON object per `data:` line. */
 export const askEventSchema = z.discriminatedUnion('type', [

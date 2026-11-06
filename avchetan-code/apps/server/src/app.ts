@@ -14,9 +14,11 @@ import { ApiError } from './api-error';
 import type { HubAsk } from './ask/hub-ask';
 import type { ServerIdentity } from './auth';
 import { hashToken, tokenMatches } from './auth';
+import type { HubBrief } from './brief/hub-brief';
 import type { ServerDb } from './db/client';
 import { createRateLimiter } from './rate-limit';
 import { askRoutes } from './routes/ask';
+import { briefRoutes } from './routes/brief';
 import { deviceRoutes } from './routes/devices';
 import { healthRoutes } from './routes/health';
 import { pairingRoutes } from './routes/pairing';
@@ -48,6 +50,8 @@ export type AppDeps = {
   pairing?: { urls: () => string[]; tokenFromEnv: boolean };
   /** Answers questions with the hub's model; absent when it has none. */
   ask?: HubAsk;
+  /** Makes a day's daily brief with the hub's model; absent when it has none. */
+  brief?: HubBrief;
   /** Whether the server's own models can be used, for the Setup check. */
   checkAi?: () => Promise<ModelCheck[]>;
 };
@@ -133,6 +137,7 @@ export function createApp(deps: AppDeps) {
   app.route('/v1', statusRoutes(deps));
   app.route('/v1', searchRoutes(deps));
   app.route('/v1', askRoutes(deps));
+  app.route('/v1', briefRoutes(deps));
   app.route('/v1', pairingRoutes(deps));
 
   app.notFound((c) => c.json(errorBody(c, 'not_found', 'No such endpoint'), 404));

@@ -14,6 +14,7 @@ export {
   type SyncEngineDeps,
 } from './engine';
 export { askHub, askServer, type HubAnswer } from './hub-ask';
+export { requestHubBrief } from './hub-brief';
 export {
   buildPairingLink,
   loadPairingLink,

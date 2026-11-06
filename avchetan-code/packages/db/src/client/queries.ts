@@ -12,6 +12,7 @@ import {
   like,
   lt,
   lte,
+  ne,
   or,
   sql,
 } from 'drizzle-orm';
@@ -25,6 +26,12 @@ import type { Task } from './repos/tasks';
 import { live } from './synced';
 
 /** Read helpers shared by UI hooks and (later) analysis tools. Keyset pagination only. */
+
+/**
+ * Activities that come from entries or the user. System rows (the daily brief, later the weekly
+ * review) are about the day, not part of it, so they never count as one of its activities.
+ */
+const notSystem = () => ne(activities.origin, 'system');
 
 export type RawLogCursor = { capturedAt: string; id: string };
 
@@ -82,7 +89,7 @@ export function activitiesOn(db: ClientDb, loggedDate: string): Promise<Activity
   return db
     .select()
     .from(activities)
-    .where(and(live(activities), eq(activities.loggedDate, loggedDate)))
+    .where(and(live(activities), notSystem(), eq(activities.loggedDate, loggedDate)))
     .orderBy(asc(activities.occurredAt), asc(activities.createdAt));
 }
 
@@ -118,6 +125,7 @@ export function activitiesForAnalysis(
     .where(
       and(
         live(activities),
+        notSystem(),
         options.from ? gte(activities.loggedDate, options.from) : undefined,
         options.to ? lte(activities.loggedDate, options.to) : undefined,
         options.includePrivate ? undefined : notFromPrivateLog(db, activities),
@@ -231,7 +239,7 @@ export async function categoryUsage(db: ClientDb): Promise<Map<string, number>> 
   const rows = await db
     .select({ categoryId: activities.categoryId, value: count() })
     .from(activities)
-    .where(live(activities))
+    .where(and(live(activities), notSystem()))
     .groupBy(activities.categoryId);
   return new Map(rows.map((row) => [row.categoryId, row.value]));
 }
@@ -404,6 +412,7 @@ export async function monthDots(
       .where(
         and(
           live(activities),
+          notSystem(),
           gte(activities.loggedDate, options.from),
           lte(activities.loggedDate, options.to),
         ),
@@ -433,6 +442,63 @@ export async function monthDots(
     if (!row.organized) dayOf(localDate(row.capturedAt, options.timeZone)).unorganized = true;
   }
   return days;
+}
+
+/**
+ * Open tasks that were due on `day` or before: the daily brief's rolled-over tasks
+ * (docs/product/daily-brief.md). Read live, so a task done or moved since leaves the list.
+ */
+export function rolledOverTasks(
+  db: ClientDb,
+  options: DataScope & { day: LocalDate },
+): Promise<Task[]> {
+  return db
+    .select()
+    .from(tasks)
+    .where(
+      and(
+        live(tasks),
+        isNull(tasks.completedAt),
+        lte(tasks.dueDate, options.day),
+        options.includePrivate ? undefined : notFromPrivateLog(db, tasks),
+      ),
+    )
+    .orderBy(asc(tasks.dueDate), asc(tasks.createdAt));
+}
+
+/** How often each tag is on these entries and activities, most used first. */
+export async function tagCounts(
+  db: ClientDb,
+  targets: { rawLogIds: readonly string[]; activityIds: readonly string[] },
+): Promise<{ path: string; count: number }[]> {
+  const onTargets = or(
+    targets.rawLogIds.length > 0
+      ? and(
+          eq(entityTags.targetType, 'raw_log'),
+          inArray(entityTags.targetId, [...targets.rawLogIds]),
+        )
+      : undefined,
+    targets.activityIds.length > 0
+      ? and(
+          eq(entityTags.targetType, 'activity'),
+          inArray(entityTags.targetId, [...targets.activityIds]),
+        )
+      : undefined,
+  );
+  if (!onTargets) return [];
+  const rows = await db
+    .select({ path: tags.path, value: count() })
+    .from(entityTags)
+    .innerJoin(tags, eq(tags.id, entityTags.tagId))
+    .where(and(live(entityTags), live(tags), onTargets))
+    .groupBy(tags.path)
+    .orderBy(desc(count()), asc(tags.path));
+  return rows.map((row) => ({ path: row.path, count: row.value }));
+}
+
+/** One activity by ID, deleted or not: a derived row's history decides whether to make it again. */
+export function activityById(db: ClientDb, id: string): Promise<Activity | undefined> {
+  return db.select().from(activities).where(eq(activities.id, id)).get();
 }
 
 /** Count of raw logs awaiting extraction (for the pending badge). */

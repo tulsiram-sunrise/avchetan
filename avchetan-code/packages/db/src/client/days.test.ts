@@ -148,3 +148,97 @@ describe('monthDots', () => {
     expect(took).toBeLessThan(50);
   });
 });
+
+describe('system rows', () => {
+  it('leave the day’s activities, dots and category counts alone', async () => {
+    const { store } = await openTestStore();
+    const brief = await store.write((tx) =>
+      store.repos.activities.saveSystem(tx, {
+        id: 'brief-id',
+        categoryId: seedCategoryId('reflection'),
+        title: 'Daily brief',
+        loggedDate: '2026-11-05',
+        metrics: { kind: 'daily_brief' },
+      }),
+    );
+
+    expect(brief.origin).toBe('system');
+    expect(await store.queries.activitiesOn(store.db, '2026-11-05')).toEqual([]);
+    const dots = await store.queries.monthDots(store.db, {
+      from: '2026-11-01',
+      to: '2026-11-30',
+      timeZone: TZ,
+    });
+    expect(dots.size).toBe(0);
+    expect((await store.queries.categoryUsage(store.db)).size).toBe(0);
+  });
+
+  it('come back with the same ID when saved again after a delete', async () => {
+    const { store } = await openTestStore();
+    const save = (notes: string) =>
+      store.write((tx) =>
+        store.repos.activities.saveSystem(tx, {
+          id: 'brief-id',
+          categoryId: seedCategoryId('reflection'),
+          title: 'Daily brief',
+          loggedDate: '2026-11-05',
+          notes,
+        }),
+      );
+    await save('first');
+    await store.write((tx) => store.repos.activities.softDelete(tx, 'brief-id'));
+    expect((await store.queries.activityById(store.db, 'brief-id'))?.deletedAt).not.toBeNull();
+
+    await save('second');
+    const row = await store.queries.activityById(store.db, 'brief-id');
+    expect(row?.deletedAt).toBeNull();
+    expect(row?.notes).toBe('second');
+  });
+});
+
+describe('rolledOverTasks', () => {
+  it('lists open tasks due on the day or before, oldest due date first', async () => {
+    const { store } = await openTestStore();
+    const { older, onDay, done } = await store.write(async (tx) => ({
+      older: await store.repos.tasks.create(tx, { title: 'older', dueDate: '2026-11-01' }),
+      onDay: await store.repos.tasks.create(tx, { title: 'on the day', dueDate: '2026-11-05' }),
+      done: await store.repos.tasks.create(tx, { title: 'done', dueDate: '2026-11-04' }),
+      later: await store.repos.tasks.create(tx, { title: 'later', dueDate: '2026-11-06' }),
+      undated: await store.repos.tasks.create(tx, { title: 'undated' }),
+    }));
+    await store.write((tx) => store.repos.tasks.complete(tx, done.id));
+
+    const rolled = await store.queries.rolledOverTasks(store.db, {
+      day: '2026-11-05',
+      includePrivate: true,
+    });
+    expect(rolled.map((task) => task.id)).toEqual([older.id, onDay.id]);
+  });
+});
+
+describe('tagCounts', () => {
+  it('counts tags on the given entries and activities', async () => {
+    const { store } = await openTestStore();
+    const log = await captureAt(store, 'shoulder hurts', '2026-11-05T06:00:00.000Z');
+    const activity = await addActivity(store, log.id, 'workout', '2026-11-05');
+    await store.write(async (tx) => {
+      const pain = await store.repos.tags.ensurePath(tx, 'shoulder-pain');
+      const gym = await store.repos.tags.ensurePath(tx, 'gym');
+      for (const [tagId, targetType, targetId] of [
+        [pain.id, 'raw_log', log.id],
+        [pain.id, 'activity', activity.id],
+        [gym.id, 'activity', activity.id],
+      ] as const) {
+        await store.repos.tags.link(tx, { tagId, targetType, targetId, isInferred: true });
+      }
+    });
+
+    expect(
+      await store.queries.tagCounts(store.db, { rawLogIds: [log.id], activityIds: [activity.id] }),
+    ).toEqual([
+      { path: 'shoulder-pain', count: 2 },
+      { path: 'gym', count: 1 },
+    ]);
+    expect(await store.queries.tagCounts(store.db, { rawLogIds: [], activityIds: [] })).toEqual([]);
+  });
+});

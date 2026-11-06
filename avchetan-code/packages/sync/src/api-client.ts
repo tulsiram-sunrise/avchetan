@@ -2,11 +2,14 @@ import { type HttpFetch, SyncError } from '@avchetan/shared';
 import type { z } from 'zod';
 import { readAnswer } from './ask-stream';
 import {
+  briefResponseSchema,
   errorResponseSchema,
   HEADERS,
   type HealthResponse,
   type HubAskRequest,
   type HubAskResult,
+  type HubBriefRequest,
+  type HubBriefResponse,
   healthResponseSchema,
   type PairingResponse,
   PROTOCOL_VERSION,
@@ -133,6 +136,14 @@ export function createApiClient({ fetch, baseUrl, token, deviceId }: ApiClientOp
         throw new SyncError('server_unreachable', 'The hub did not answer', { cause: error });
       }
       return readAnswer(response, onText);
+    },
+    brief(request: HubBriefRequest): Promise<HubBriefResponse> {
+      return send(
+        fetch,
+        `${baseUrl}/v1/brief`,
+        { ...post(request), signal: AbortSignal.timeout(ASK_TIMEOUT_MS) },
+        briefResponseSchema,
+      );
     },
     pairing(): Promise<PairingResponse> {
       return send(fetch, `${baseUrl}/v1/pairing`, options(), pairingResponseSchema);

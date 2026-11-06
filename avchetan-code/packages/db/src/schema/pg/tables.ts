@@ -274,6 +274,9 @@ export const devices = pgTable(
     createdAt: instant('created_at').notNull().defaultNow(),
     lastSeenAt: instant('last_seen_at'),
     lastPullCursor: bigint('last_pull_cursor', { mode: 'number' }).notNull().default(0),
+    /** The device's IANA zone and daily brief time (`HH:MM`, null = off), for the brief fallback. */
+    timeZone: text('time_zone'),
+    briefTime: text('brief_time'),
   },
   (t) => [
     check('devices_platform_check', enumCheck(t.platform, E.DEVICE_PLATFORMS)),

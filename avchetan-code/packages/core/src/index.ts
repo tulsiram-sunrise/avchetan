@@ -1,4 +1,35 @@
 export { type AskRequest, type AskResult, type AskSource, ask } from './analysis/ask';
+export {
+  BRIEF_ENABLED_SETTING,
+  BRIEF_TIME_SETTING,
+  type BriefMaker,
+  type BriefRunner,
+  type BriefRunnerDeps,
+  type BriefSettings,
+  createBriefRunner,
+  DEFAULT_BRIEF_TIME,
+  dueBriefDays,
+  loadBriefSettings,
+  localTimeSchema,
+  saveBriefSettings,
+} from './analysis/brief-schedule';
+export {
+  type BriefText,
+  briefNotes,
+  briefTextSchema,
+  collectBriefFacts,
+  DAILY_BRIEF_KIND,
+  DAILY_BRIEF_TITLE,
+  dailyBriefId,
+  findDailyBrief,
+  isDailyBrief,
+  isFrictionTag,
+  type MakeBriefRequest,
+  type MakeBriefResult,
+  makeDailyBrief,
+  mayReadPrivate,
+  parseBriefNotes,
+} from './analysis/daily-brief';
 export type { SearchHistory } from './analysis/tools';
 export { buildCaptureInput } from './capture';
 export { type EmbeddingSource, embeddingText, embedTexts } from './embeddings/embed';

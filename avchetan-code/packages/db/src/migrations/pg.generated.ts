@@ -88,5 +88,12 @@ export const pgMigrations: readonly Migration[] = [
     "statements": [
       "ALTER TABLE \"server_meta\" ADD COLUMN \"data_epoch\" uuid;"
     ]
+  },
+  {
+    "tag": "0005_device_brief_time",
+    "statements": [
+      "ALTER TABLE \"devices\" ADD COLUMN \"time_zone\" text;",
+      "ALTER TABLE \"devices\" ADD COLUMN \"brief_time\" text;"
+    ]
   }
 ];
