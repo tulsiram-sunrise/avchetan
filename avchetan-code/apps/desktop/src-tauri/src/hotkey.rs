@@ -46,7 +46,7 @@ pub fn plugin<R: Runtime>() -> TauriPlugin<R> {
     tauri_plugin_global_shortcut::Builder::new()
         .with_handler(|app, _shortcut, event| {
             if event.state() == ShortcutState::Pressed {
-                windows::toggle_dock(app);
+                windows::toggle_dock_from_hotkey(app);
             }
         })
         .build()

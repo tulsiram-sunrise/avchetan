@@ -1,3 +1,4 @@
+import { windowContextSchema } from '@avchetan/core';
 import { createLogger } from '@avchetan/shared';
 import { emit, listen } from '@tauri-apps/api/event';
 import { z } from 'zod';
@@ -21,8 +22,13 @@ export type MainView = z.infer<typeof mainViewSchema>;
 
 /** App-wide events, local to this app. Only action requests carry user text; none are logged. */
 const eventSchemas = {
-  /** Rust → dock: the dock was just shown. */
-  'dock:shown': z.null(),
+  /**
+   * Rust → dock: the dock was just shown. `context` is the window that was in front when the
+   * hotkey fired (null from the tray), before any setting is applied (window-context.md).
+   */
+  'dock:shown': z.object({ context: windowContextSchema.nullable() }),
+  /** Rust (tray) → dock: pause window context for an hour, or resume it. */
+  'context:toggle-pause': z.null(),
   /** Any window → all: these tables changed; refetch queries keyed by them. */
   'logs:changed': z.object({ tables: z.array(z.string()) }),
   /**

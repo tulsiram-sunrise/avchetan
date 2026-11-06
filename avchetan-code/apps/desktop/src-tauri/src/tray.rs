@@ -1,8 +1,9 @@
-//! Tray icon: left-click toggles the dock; the menu opens the main window or quits.
+//! Tray icon: left-click toggles the dock; the menu opens the main window, pauses window
+//! context (docs/product/window-context.md) or quits.
 
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
-use tauri::{App, AppHandle, Manager, State, Wry};
+use tauri::{App, AppHandle, Emitter, Manager, State, Wry};
 
 use crate::error::{warn_on_err, CommandError, CommandResult};
 use crate::windows;
@@ -11,12 +12,16 @@ const TRAY_ID: &str = "avchetan";
 
 pub struct TrayState {
     pending: MenuItem<Wry>,
+    context: MenuItem<Wry>,
 }
+
+const PAUSE_CONTEXT: &str = "Pause window context for 1 hour";
 
 pub fn create(app: &App) -> tauri::Result<()> {
     let open = MenuItem::with_id(app, "open", "Open Avchetan", true, None::<&str>)?;
     let preferences = MenuItem::with_id(app, "preferences", "Preferences", true, None::<&str>)?;
     let pending = MenuItem::with_id(app, "pending", "Pending: 0", false, None::<&str>)?;
+    let context = MenuItem::with_id(app, "context", PAUSE_CONTEXT, true, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", "Quit Avchetan", true, None::<&str>)?;
     let menu = Menu::with_items(
         app,
@@ -25,6 +30,7 @@ pub fn create(app: &App) -> tauri::Result<()> {
             &preferences,
             &PredefinedMenuItem::separator(app)?,
             &pending,
+            &context,
             &PredefinedMenuItem::separator(app)?,
             &quit,
         ],
@@ -45,6 +51,11 @@ pub fn create(app: &App) -> tauri::Result<()> {
                     windows::open_main(app, "settings", None).map_err(|e| e.message),
                 );
             }
+            // The dock owns the setting: it pauses or resumes, then calls tray_set_context.
+            "context" => warn_on_err(
+                "emit context:toggle-pause",
+                app.emit_to(windows::DOCK, "context:toggle-pause", ()),
+            ),
             "quit" => app.exit(0),
             _ => {}
         })
@@ -62,7 +73,7 @@ pub fn create(app: &App) -> tauri::Result<()> {
         builder = builder.icon(icon.clone());
     }
     builder.build(app)?;
-    app.manage(TrayState { pending });
+    app.manage(TrayState { pending, context });
     Ok(())
 }
 
@@ -87,4 +98,21 @@ pub fn tray_set_pending(
         tray.set_tooltip(Some(tooltip)).map_err(failed)?;
     }
     Ok(())
+}
+
+/// Called by the dock whenever window context is turned on or off, paused or resumed.
+/// `paused_until` is the local time to show, e.g. "14:30".
+#[tauri::command]
+pub fn tray_set_context(
+    state: State<'_, TrayState>,
+    enabled: bool,
+    paused_until: Option<String>,
+) -> CommandResult<()> {
+    let failed = |error: tauri::Error| CommandError::new("tray_failed", error.to_string());
+    let text = match paused_until {
+        Some(time) => format!("Resume window context (paused until {time})"),
+        None => PAUSE_CONTEXT.to_owned(),
+    };
+    state.context.set_text(text).map_err(failed)?;
+    state.context.set_enabled(enabled).map_err(failed)
 }

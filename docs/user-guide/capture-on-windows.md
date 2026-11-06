@@ -21,6 +21,27 @@ Half-written text is kept, even if you close the box or restart your PC.
 - Type `#` before a word to tag the entry: `#health`, or `#health/knee` for a tag inside another tag.
 - Type `!private` anywhere in the entry to keep it on your own devices. Private entries are never sent to an online AI service.
 
+## Window context and rules
+
+When you press the shortcut, Avchetan notes which app you were in and its window title, for example *Visual Studio Code · api.ts — my-project*. It shows under the box, and the entry keeps it: **Days** shows *from Visual Studio Code* under the entry, and the AI uses it as a hint.
+
+- **Don't keep it for one entry:** click **×** at the end of that line before you save.
+- **Pause it for an hour:** right-click the tray icon → **Pause window context for 1 hour**. While paused, the same item says until when and resumes it early. It turns back on by itself.
+- **Turn it off:** **Settings → Capture box → Window context → Note the window I was in**.
+- **Browsers:** only the browser's name is kept, never the page you're on, unless you turn on **Keep page titles in browsers**.
+- **Apps never noted:** password managers (1Password, Bitwarden, KeePass, KeePassXC, Dashlane, LastPass) are on the list under **Never note these apps**. Nothing at all is kept for them. Add any app by its file name, or from **Recent apps**, which lists the apps you used the shortcut over lately.
+- Opening the box from the tray icon notes nothing: the window in front then is the taskbar.
+
+**Rules** file entries for you. A rule says: in this app, with a title like this, the entry belongs to this project and gets these tags. For example *App* `Code.exe`, *Title contains* `my-project`, *Project* Engineering, *Tags* `my-project`.
+
+1. Open an entry's **Options** on **Days** and click **Make a rule from this**. The app and the whole title are filled in.
+2. Shorten the title to the part that matters, choose a project and add tags. The form says whether the rule still matches that entry.
+3. Click **Add rule**.
+
+From then on, an entry typed over a matching window gets the tags as if you had typed them, and everything found in it goes to that project, whatever the AI thinks. The line under the box says what a rule adds (*rule: Engineering · #my-project*). Rules are listed under **Settings → Capture box → Window context → Rules**, where you can turn one off, change it or delete it. Changing a rule doesn't change entries you've already saved.
+
+For one rule that covers all your projects, tick **Pattern** and name a part of the title: `— (?<project>[^—]+) — Visual Studio Code` with the tag `{project}` tags every entry with the folder you have open.
+
 ## Change the keys
 
 Open Avchetan (tray icon → **Open Avchetan**) → **Settings**. Settings has tabs across the top: **AI**, **Capture box**, **Daily brief**, **Hub & sync**, **Your data** and **General**. It opens on the tab you used last.

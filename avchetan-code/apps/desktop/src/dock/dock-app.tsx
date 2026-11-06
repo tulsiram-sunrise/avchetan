@@ -2,13 +2,14 @@ import { createLogger } from '@avchetan/shared';
 import { useEffect, useRef } from 'react';
 import { useServices } from '../services-context';
 import { useDockStore } from '../stores/dock-store';
-import { useAppEvent, useTableInvalidation } from '../use-app-event';
+import { useTableInvalidation } from '../use-app-event';
 import { AskPanel } from './ask-panel';
 import { CaptureInput } from './capture-input';
 import { DockFooter } from './dock-footer';
 import { HotkeyBanner } from './hotkey-banner';
 import { RecentCaptures } from './recent-captures';
 import { useDraftPersistence } from './use-draft-persistence';
+import { useWindowContext } from './use-window-context';
 
 const log = createLogger('dock');
 
@@ -20,7 +21,7 @@ export function DockApp() {
   const asking = useDockStore((state) => state.ask !== null);
   useTableInvalidation();
 
-  useAppEvent('dock:shown', () => inputRef.current?.focus());
+  useWindowContext(() => inputRef.current?.focus());
 
   useEffect(() => {
     const focusInput = () => inputRef.current?.focus();

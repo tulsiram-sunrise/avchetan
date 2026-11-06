@@ -2,6 +2,7 @@
 //! SQLite access. All app logic lives in TypeScript in the webviews.
 
 mod commands;
+mod context;
 mod error;
 mod hotkey;
 mod notify;
@@ -72,6 +73,8 @@ pub fn run() {
             hotkey::hotkey_status,
             hotkey::hotkey_set,
             tray::tray_set_pending,
+            tray::tray_set_context,
+            context::context_recent_apps,
             notify::brief_notify,
         ])
         .build(tauri::generate_context!())

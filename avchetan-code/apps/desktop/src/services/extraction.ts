@@ -6,7 +6,15 @@ import type { Platform } from '../platform';
 
 const log = createLogger('extraction');
 
-const DATA_TABLES = ['raw_logs', 'activities', 'tasks', 'categories', 'tags', 'projects'];
+const DATA_TABLES = [
+  'raw_logs',
+  'activities',
+  'tasks',
+  'categories',
+  'tags',
+  'projects',
+  'context_rules',
+];
 
 /** Other windows refetch; the tray shows the new pending count. */
 export async function announce(store: ClientStore, platform: Platform): Promise<void> {

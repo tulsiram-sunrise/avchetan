@@ -9,6 +9,7 @@ import {
 } from '@avchetan/db/sqlite';
 import { daysBetween, isValidLocalDate, type LocalDate, localDate } from '@avchetan/shared';
 import { z } from 'zod';
+import { ruleMatchesOf, ruleOutcome } from '../context/window-context';
 import { normalizeMetrics, parseQuantity } from '../normalize/metrics';
 import { normalizeTagPath, normalizeTagSegment } from '../normalize/tags';
 import type { ExtractionVocabulary } from './input';
@@ -28,7 +29,8 @@ const DAYS_FORWARD = 731;
 const NOT_A_NAME = /^\(?(none|null|n\/?a|unknown)\)?$/i;
 
 export type NormalizeContext = {
-  rawLog: Pick<RawLog, 'id' | 'capturedAt' | 'capturedTz'>;
+  /** `context.rule_matches` (window context rules) sets the project of every item. */
+  rawLog: Pick<RawLog, 'id' | 'capturedAt' | 'capturedTz'> & { context?: Record<string, unknown> };
   vocabulary: ExtractionVocabulary;
   llmMayCreate: LlmMayCreate;
   model: string;
@@ -75,9 +77,16 @@ function categoryResolver(result: ExtractionResult, context: NormalizeContext) {
   };
 }
 
-function projectResolver(vocabulary: ExtractionVocabulary) {
+/**
+ * A project set by a window context rule wins over the model's, as long as it still exists
+ * (docs/product/window-context.md#rules).
+ */
+function projectResolver(vocabulary: ExtractionVocabulary, context: Record<string, unknown>) {
   const byName = new Map(vocabulary.projects.map(({ name, id }) => [name.toLowerCase(), id]));
-  return (name: string | null) => (name ? (byName.get(name.trim().toLowerCase()) ?? null) : null);
+  const fromRule = ruleOutcome(ruleMatchesOf(context)).projectId;
+  const ruleProject = vocabulary.projects.some(({ id }) => id === fromRule) ? fromRule : null;
+  return (name: string | null) =>
+    ruleProject ?? (name ? (byName.get(name.trim().toLowerCase()) ?? null) : null);
 }
 
 function tagResolver(vocabulary: ExtractionVocabulary) {
@@ -132,7 +141,7 @@ export function normalizeExtraction(
   const { rawLog, vocabulary, model, version } = context;
   const today = localDate(rawLog.capturedAt, rawLog.capturedTz);
   const categories = categoryResolver(result, context);
-  const projectId = projectResolver(vocabulary);
+  const projectId = projectResolver(vocabulary, rawLog.context ?? {});
   const tagPaths = tagResolver(vocabulary);
   const categorySlugs = new Set(vocabulary.categories.map(({ slug }) => slug));
 

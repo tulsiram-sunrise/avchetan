@@ -7,6 +7,9 @@ use tauri::{
     WebviewWindowBuilder, Window, WindowEvent,
 };
 
+use serde::Serialize;
+
+use crate::context::{self, WindowContext};
 use crate::error::{warn_on_err, CommandError, CommandResult};
 
 pub const DOCK: &str = "dock";
@@ -15,8 +18,18 @@ pub const MAIN: &str = "main";
 /// Hide the dock this long after it loses focus, unless it got focus back (tray clicks).
 const BLUR_HIDE_DELAY: Duration = Duration::from_millis(100);
 
-/// Hotkey and tray: show the dock, or hide it if it is already in front.
+/// Tray: show the dock, or hide it if it is already in front. No window context: the window in
+/// front is the taskbar.
 pub fn toggle_dock<R: Runtime>(app: &AppHandle<R>) {
+    toggle(app, false);
+}
+
+/// Hotkey: as the tray, and notes the window that was in front before the dock takes focus.
+pub fn toggle_dock_from_hotkey<R: Runtime>(app: &AppHandle<R>) {
+    toggle(app, true);
+}
+
+fn toggle<R: Runtime>(app: &AppHandle<R>, with_context: bool) {
     let Some(dock) = app.get_webview_window(DOCK) else {
         return;
     };
@@ -25,11 +38,25 @@ pub fn toggle_dock<R: Runtime>(app: &AppHandle<R>) {
     if visible && focused {
         warn_on_err("hide dock", dock.hide());
     } else {
-        show_dock(app);
+        let context = if with_context {
+            context::previous_window_context()
+        } else {
+            None
+        };
+        show(app, context);
     }
 }
 
+#[derive(Clone, Serialize)]
+struct DockShown {
+    context: Option<WindowContext>,
+}
+
 pub fn show_dock<R: Runtime>(app: &AppHandle<R>) {
+    show(app, None);
+}
+
+fn show<R: Runtime>(app: &AppHandle<R>, context: Option<WindowContext>) {
     let Some(dock) = app.get_webview_window(DOCK) else {
         return;
     };
@@ -39,7 +66,10 @@ pub fn show_dock<R: Runtime>(app: &AppHandle<R>) {
     }
     warn_on_err("show dock", dock.show());
     warn_on_err("focus dock", dock.set_focus());
-    warn_on_err("emit dock:shown", app.emit_to(DOCK, "dock:shown", ()));
+    warn_on_err(
+        "emit dock:shown",
+        app.emit_to(DOCK, "dock:shown", DockShown { context }),
+    );
 }
 
 /// Centered horizontally, in the upper third of the work area of the monitor the cursor is on.

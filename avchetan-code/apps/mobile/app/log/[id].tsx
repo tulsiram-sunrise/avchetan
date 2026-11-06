@@ -1,4 +1,4 @@
-import { exerciseLines, metricsText } from '@avchetan/core';
+import { exerciseLines, metricsText, windowContextOf } from '@avchetan/core';
 import type { Activity, RawLog } from '@avchetan/db/sqlite';
 import { describeError, formatDay, formatTime, parseLastError } from '@avchetan/shared';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -201,6 +201,7 @@ export default function LogScreen() {
         <StatusBadge status={rawLog.status} />
       </View>
       <Text className="text-base text-ink">{rawLog.content}</Text>
+      <WindowLine context={rawLog.context} />
       <LastError rawLog={rawLog} />
       <EntryActions rawLog={rawLog} />
       {activities.length > 0 ? (
@@ -221,5 +222,17 @@ export default function LogScreen() {
         </View>
       ) : null}
     </ScrollView>
+  );
+}
+
+/** The PC window the entry was typed over (docs/product/window-context.md). */
+function WindowLine({ context }: { context: Record<string, unknown> }) {
+  const window = windowContextOf(context);
+  if (!window) return null;
+  return (
+    <Text className="text-xs text-inkMuted">
+      Typed on the PC over {window.app_name}
+      {window.window_title ? `: ${window.window_title}` : ''}
+    </Text>
   );
 }

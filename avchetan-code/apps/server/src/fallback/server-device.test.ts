@@ -231,4 +231,35 @@ describe('the server device', () => {
     for (let i = 0; i < 65; i += 1) await first.engine.syncNow();
     expect((await loadSyncStatus(first.store)).state).toBe('synced');
   });
+
+  it("gives a PC entry its window rule's project when the hub organizes it", async () => {
+    const device = await serverDevice();
+    const { store, engine } = await phone('delegate');
+    const project = await store.write((tx) =>
+      store.repos.projects.create(tx, { name: 'Engineering' }),
+    );
+    // As the dock saves it: the rule was matched at capture (window-context.md#rules).
+    const log = await store.write((tx) =>
+      store.repos.rawLogs.capture(tx, {
+        content: 'Ran 5 km this morning',
+        source: 'desktop_text',
+        capturedTz: 'UTC',
+        context: {
+          app: 'Code.exe',
+          app_name: 'Visual Studio Code',
+          rule_matches: [{ rule_id: 'rule-1', project_id: project.id, tag_paths: [] }],
+        },
+      }),
+    );
+    await engine.syncNow();
+
+    await organize(device);
+    await engine.syncNow();
+
+    const activities = await store.db.query.activities.findMany({
+      where: (a, { eq }) => eq(a.rawLogId, log.id),
+    });
+    // The model said no project; the rule decides.
+    expect(activities.map((activity) => activity.projectId)).toEqual([project.id]);
+  });
 });

@@ -53,6 +53,7 @@ export {
   type SeedCategorySlug,
   seedCategoryId,
 } from './client/repos/categories';
+export type { ContextRule, ContextRuleFields } from './client/repos/context-rules';
 export { type Entity, type EntityMention, normalizeEntityName } from './client/repos/entities';
 export {
   CATEGORY_SUGGESTIONS_SETTING,

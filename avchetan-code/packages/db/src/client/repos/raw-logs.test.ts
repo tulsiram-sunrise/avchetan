@@ -57,6 +57,30 @@ describe('rawLogs.capture', () => {
     expect(byTable('entity_tags')).toBe(2);
   });
 
+  it('keeps the window context and its rule tags when the text is edited', async () => {
+    const { store } = await openTestStore();
+    const context = {
+      app: 'Code.exe',
+      window_title: 'api.ts — my-project',
+      rule_matches: [{ rule_id: 'r', project_id: null, tag_paths: ['my-project'] }],
+    };
+    const old = await store.write((tx) =>
+      store.repos.rawLogs.capture(tx, {
+        ...capture('fixed the bug #code', ['code', 'my-project']),
+        context,
+      }),
+    );
+
+    const next = await store.write((tx) =>
+      store.repos.rawLogs.replace(tx, old.id, capture('fixed the login bug', [])),
+    );
+
+    expect(next.context).toEqual({ ...context, supersedes: old.id });
+    const links = await store.repos.tags.forTarget(store.db, 'raw_log', next.id);
+    // The typed #code went with the text; the rule's tag stays.
+    expect(links.map((l) => l.path)).toEqual(['my-project']);
+  });
+
   it('links a tag once when two spellings resolve to it', async () => {
     const { store } = await openTestStore();
     const log = await store.write((tx) =>

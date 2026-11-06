@@ -11,6 +11,13 @@ const idArgs = z.object({ id: z.string().min(1) });
 const nameArgs = z.object({ id: z.string().min(1), name: z.string() });
 const mergeArgs = z.object({ id: z.string().min(1), intoId: z.string().min(1) });
 const optionalDate = z.string().nullable().optional();
+const ruleFields = z.object({
+  appPattern: z.string(),
+  titlePattern: z.string().nullable(),
+  projectId: z.string().nullable(),
+  tagPaths: z.array(z.string()),
+  enabled: z.boolean(),
+});
 
 type Action<S extends z.ZodType> = {
   args: S;
@@ -114,6 +121,22 @@ const ACTIONS = {
   ),
   'project.archive': action(idArgs, (store, { id }) =>
     store.write((tx) => store.repos.projects.archive(tx, id)),
+  ),
+
+  // Window context rules (docs/product/window-context.md#rules).
+  'contextRule.create': action(ruleFields, (store, fields) =>
+    store.write((tx) => store.repos.contextRules.create(tx, fields)),
+  ),
+  'contextRule.update': action(idArgs.extend(ruleFields.shape), (store, { id, ...fields }) =>
+    store.write((tx) => store.repos.contextRules.update(tx, id, fields)),
+  ),
+  'contextRule.setEnabled': action(
+    idArgs.extend({ enabled: z.boolean() }),
+    (store, { id, enabled }) =>
+      store.write((tx) => store.repos.contextRules.setEnabled(tx, id, enabled)),
+  ),
+  'contextRule.delete': action(idArgs, (store, { id }) =>
+    store.write((tx) => store.repos.contextRules.remove(tx, id)),
   ),
 } as const;
 
