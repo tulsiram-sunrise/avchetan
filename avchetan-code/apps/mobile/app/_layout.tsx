@@ -17,6 +17,9 @@ import { HelpLink } from '../src/ui/parts';
 
 const log = createLogger('app');
 
+/** A link straight to a screen (the widget opens `/capture`) still has the tabs beneath it. */
+export const unstable_settings = { initialRouteName: '(tabs)' };
+
 // A reminder that arrives while the app is open still shows.
 Notifications.setNotificationHandler({
   handleNotification: async () => ({

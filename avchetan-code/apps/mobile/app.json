@@ -41,6 +41,7 @@
       ],
       "./plugins/long-native-paths.js",
       "./plugins/release-signing.js",
+      "./plugins/capture-widget.js",
       [
         "expo-build-properties",
         {
