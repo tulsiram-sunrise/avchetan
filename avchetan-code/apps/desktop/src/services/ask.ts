@@ -48,7 +48,7 @@ export async function askQuestion(
     );
   }
   const model = await loadAnalysisModel(store);
-  if (!model) throw new LlmError('llm_auth', 'Choose a model in Settings → AI models first');
+  if (!model) throw new LlmError('llm_auth', 'Choose a model in Settings → AI → AI models first');
   if (!platform.network.isOnline() && !PROVIDER_ADAPTERS[model.provider].local) {
     return offlineSummary(services);
   }

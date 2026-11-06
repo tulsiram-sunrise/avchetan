@@ -73,6 +73,8 @@ Runs in the dock webview (always alive): pending processor, sync engine timers, 
 
 Vite + React + TypeScript + Tailwind. State: Zustand (UI state), TanStack Query (data reads, invalidated by `logs:changed`/`sync:done` events). Router only in `main` window (TanStack Router or React Router), added when it outgrows the two-view switch in Phase 3. Two Vite entry points: `dock.html`, `main.html`.
 
+The Settings page is in tabs (`main-window/settings-tabs.ts`): AI, Capture box, Daily brief, Hub & sync, Your data, General. The last tab is kept in `localStorage` (shared by the windows, a convenience only). To open Settings on a tab, a window saves the tab there, then sends `main:navigate` with `view: 'settings'` and `tab`, since Settings may not be open yet.
+
 ## Backups and export
 
 - The dock (it never closes) runs `startDailyBackups` from `@avchetan/db`: on start and then hourly, it asks Rust for today's copy. `backup_create` (`commands/data.rs`) runs `VACUUM INTO` on a connection of its own into `<app data>/backups/avchetan-YYYY-MM-DD.db.partial`, renames it into place and keeps the newest 7. The webview's executor isn't used, because it queues statements during an open transaction and `VACUUM` can't run inside one.
@@ -87,6 +89,6 @@ Windows installer via Tauri bundler (NSIS), per-user, in `%LOCALAPPDATA%Avchetan
 When the user chooses *Home Hub* in the setup wizard ([deployment-modes](deployment-modes.md#2-home-hub)):
 - The desktop app launches `apps/server` as a **Tauri sidecar** (`externalBin`: the server built by `build:sidecar` as a Node single executable, with PGlite's folders beside it as resources; PGlite data dir under the app data folder; [ADR-0024](../decisions/0024-hub-sidecar-node-single-executable.md)), restarts it if it crashes, and stops it on quit by closing its stdin (`SHUTDOWN_ON_STDIN_CLOSE=true`), which also stops it cleanly if the app crashes (or keeps it running from the tray if "keep hub running" is on).
 - First run: generate `SYNC_TOKEN` → keychain; detect Ollama (`http://localhost:11434/api/tags`), list installed models, suggest slot presets; offer to add a Windows firewall rule for port 8787 on *Private* networks; detect Tailscale and show its hostname.
-- Settings → *Hub*: status, port, data folder, logs, backups, embedding backlog (`/v1/status`), *Pair a phone* (QR), *Rotate token*.
+- Settings → *Hub & sync* → *Home Hub on this PC*: status, port, data folder, logs, backups, embedding backlog (`/v1/status`), *Pair a phone* (QR), *Rotate token*.
 - The desktop app itself syncs to `http://localhost:8787` and extracts locally with Ollama.
 - Rust surface (`commands/hub.rs`): `hub_status`, `hub_configure` (saves `<app data>/hub/hub.json`: on/off, port, model slots, no secrets, and starts, restarts or stops the process to match) and `hub_import_data` (copies another hub's `pglite-data` into an empty `<app data>/hub/pglite-data`). Rust reads the token (`hub:server:token`) and any provider keys from the keychain and passes them to the process as env vars, with nothing else from the app's environment but what Node needs. It keeps the last 200 log lines for the settings screen. The program is found beside the app's own executable, or in a development build where `build:sidecar` puts it.

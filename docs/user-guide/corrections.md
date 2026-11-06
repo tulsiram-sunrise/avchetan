@@ -23,7 +23,7 @@ A fix you make on your phone also teaches your PC and your hub, once they sync.
 
 ## See what it learned, and forget a fix
 
-- **Windows:** **Settings → What Avchetan learned**.
+- **Windows:** **Settings → AI → What Avchetan learned**.
 - **Android:** **More → What Avchetan learned**.
 
 The list shows each entry you fixed, newest first, with how it's organized now. Lines starting with **Not:** are things you deleted. **Forget** stops the AI using that entry as an example, on all your devices. Your entry and your fix stay as they are.

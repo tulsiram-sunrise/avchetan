@@ -47,7 +47,7 @@ function NoBriefYet(props: { day: string; today: string; making: boolean }) {
   if (available.data === false) {
     return (
       <p className="text-sm text-ink-muted">
-        The daily brief needs a model for answers. Choose one in Settings → AI models.
+        The daily brief needs a model for answers. Choose one in Settings → AI → AI models.
       </p>
     );
   }

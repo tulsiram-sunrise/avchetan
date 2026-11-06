@@ -51,7 +51,7 @@ Avchetan doesn't check for updates by itself yet. To hear about new versions, op
 - **Windows:** quit Avchetan (right-click its icon in the taskbar's notification area → **Quit Avchetan**), download the new installer and run it. Your entries and settings stay.
 - **Android:** download the new APK and open it. Android installs it over the old one, and your entries and settings stay.
 
-Update every device that syncs together to the same version. Your version is shown in **Settings → About** on Windows and at the bottom of **More** on Android.
+Update every device that syncs together to the same version. Your version is shown in **Settings → General → About** on Windows and at the bottom of **More** on Android.
 
 ## Uninstall
 

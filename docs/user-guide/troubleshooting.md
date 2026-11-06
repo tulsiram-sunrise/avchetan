@@ -6,7 +6,7 @@ Each section heading matches an error code shown in the app, so the app's **Help
 
 Start with the **Setup check**. It tests everything and tells you what to fix.
 
-- **Windows:** **Settings → Setup check**, or the **Setup check** link next to a sync error.
+- **Windows:** **Settings → General → Setup check**, or the **Setup check** link next to a sync error.
 - **Android:** **More → Setup check**, or the **Setup check** link next to a sync error.
 
 It checks:
@@ -43,10 +43,10 @@ Problems come first, each with its fix and a **Help** link to its section below.
 **"Changes keep failing to sync."** The server refused these changes ten times, so they're waiting and nothing is lost. Check that both devices run the same version of Avchetan, then report it if it doesn't clear.
 
 ## not_configured
-**"Set up Sync on this device first."** Pairing a phone, changing the token and asking your hub all need this device connected to a hub or server. On the PC, fill in **Settings → Sync**; on the phone, use **More → Sync → Scan pairing code** ([Pair your phone](pair-your-phone.md)).
+**"Set up Sync on this device first."** Pairing a phone, changing the token and asking your hub all need this device connected to a hub or server. On the PC, fill in **Settings → Hub & sync → Sync**; on the phone, use **More → Sync → Scan pairing code** ([Pair your phone](pair-your-phone.md)).
 
 ## invalid_pairing_code
-**"This isn't an Avchetan pairing code."** The camera read a different QR code. On the PC, open **Settings → Sync → Pair a phone** (or the checklist in **Home Hub on this PC**) and scan the code shown there.
+**"This isn't an Avchetan pairing code."** The camera read a different QR code. On the PC, open **Settings → Hub & sync → Sync → Pair a phone** (or the checklist in **Home Hub on this PC**) and scan the code shown there.
 
 ## wrong_server
 **"A different Avchetan server answered at that address."** The address in the pairing code now belongs to another Avchetan hub, for example after you set up a new hub on another PC that got the same address. Show the pairing code again on the PC whose hub you want, and scan that one.
@@ -66,7 +66,7 @@ Problems come first, each with its fix and a **Help** link to its section below.
 ## server_error
 **"Your hub or server answered with an error"**, **"Your hub or server sent something unexpected"**, **"Your hub or server didn't accept the request"** or **"Your hub or server can't reach its database."**
 - Check that every device and the server run the same version of Avchetan.
-- Home Hub: open **Settings → Home Hub on this PC → Recent hub log** on the PC for the reason.
+- Home Hub: open **Settings → Hub & sync → Home Hub on this PC → Recent hub log** on the PC for the reason.
 - Cloud: open the server's log, and `https://<your-domain>/v1/health` in a browser.
 - Your changes wait on the device and sync once the server answers normally.
 
@@ -83,7 +83,7 @@ Problems come first, each with its fix and a **Help** link to its section below.
 **"Your hub can't search by meaning right now."** The hub's search model isn't set up or didn't answer, often because Ollama isn't running on the hub's PC. Ask still works, searching by words instead. Open the Setup check to see which model is missing.
 
 ## llm_auth
-**"The provider rejected the API key"** or **"No API key is set for this provider."** Paste the key again in **Settings → AI models** and click **Test**. Your entries wait safely and are organized once the key works.
+**"The provider rejected the API key"** or **"No API key is set for this provider."** Paste the key again in **Settings → AI → AI models** and click **Test**. Your entries wait safely and are organized once the key works.
 
 ## llm_rate_limit
 **"The provider is rate limiting requests."** Normal on a free plan. Your entries wait and are organized automatically; nothing is lost. If you often reach the limit, check your provider's usage page.
@@ -100,19 +100,19 @@ Problems come first, each with its fix and a **Help** link to its section below.
 - Cloud provider: possibly a temporary outage. Entries are retried automatically.
 
 ## llm_invalid_output
-**"The model returned an unusable answer."** Avchetan tries again by itself. If an entry keeps failing, try a larger model in **Settings → AI models**.
+**"The model returned an unusable answer."** Avchetan tries again by itself. If an entry keeps failing, try a larger model in **Settings → AI → AI models**.
 
 ## llm_refused
 **"The model returned no answer."** The provider declined this entry or sent back nothing. Avchetan won't retry it by itself, as the answer would likely be the same. Your entry is still saved.
 
 ## llm_context_overflow
-**"The request is too long for this model."** The entry and the instructions Avchetan sends with it don't fit in what the model can read at once. Avchetan first tries again with shorter instructions by itself. If an entry still fails, split it into shorter entries, or choose a model that reads longer text in **Settings → AI models**.
+**"The request is too long for this model."** The entry and the instructions Avchetan sends with it don't fit in what the model can read at once. Avchetan first tries again with shorter instructions by itself. If an entry still fails, split it into shorter entries, or choose a model that reads longer text in **Settings → AI → AI models**.
 
 ## llm_no_credit
-**"The provider account has no credit left."** OpenAI and Anthropic charge per use, and your account's balance or monthly limit has run out. Add credit or raise the limit on the billing page of the provider's website, then click **Test** in **Settings → AI models**. Until then your entries wait safely. To keep going for free, choose Groq or Ollama instead.
+**"The provider account has no credit left."** OpenAI and Anthropic charge per use, and your account's balance or monthly limit has run out. Add credit or raise the limit on the billing page of the provider's website, then click **Test** in **Settings → AI → AI models**. Until then your entries wait safely. To keep going for free, choose Groq or Ollama instead.
 
 ## hotkey_unavailable
-**"The shortcut is used by another app."** Choose another shortcut in **Settings → Shortcut**.
+**"The shortcut is used by another app."** Choose another shortcut in **Settings → Capture box → Shortcut**.
 
 ## database_unavailable
 **"Avchetan couldn't open its database"**, **"Avchetan couldn't update its database"** or **"The database is busy. Try again in a moment."** Avchetan keeps your entries in a file in your user folder, and it couldn't open that file.
@@ -155,7 +155,7 @@ Problems come first, each with its fix and a **Help** link to its section below.
 **"Couldn't start: another program is using port 8787."** Usually a hub you started by hand in a terminal (`start:hub`) or with Docker is still running. Stop it: press **Ctrl+C** in its window, or run `docker compose -f deploy/home-hub/compose.yml down`. Then click **Turn on the hub** again.
 
 ## hub_crashed
-**"Couldn't start the hub."** The hub stopped five times in a row soon after starting. Open **Settings → Home Hub on this PC → Recent hub log** and look at the last lines:
+**"Couldn't start the hub."** The hub stopped five times in a row soon after starting. Open **Settings → Hub & sync → Home Hub on this PC → Recent hub log** and look at the last lines:
 - `database setup problem` or `startup failed`: the line names the cause.
 - Nothing useful: quit Avchetan from the tray, start it again, and turn on the hub. If it still fails, restore the hub's data from a backup ([Back up and restore](backup-and-restore.md)).
 
@@ -163,7 +163,7 @@ Problems come first, each with its fix and a **Help** link to its section below.
 **"The hub program isn't installed with this copy of Avchetan."** Install Avchetan again from the installer. In a development copy, build it first: `pnpm --filter @avchetan/server build:sidecar`.
 
 ## hub_token_missing
-**"The hub has no sync token yet."** Turn the hub off and on again in **Settings → Home Hub on this PC**. Avchetan makes a token when it turns the hub on.
+**"The hub has no sync token yet."** Turn the hub off and on again in **Settings → Hub & sync → Home Hub on this PC**. Avchetan makes a token when it turns the hub on.
 
 ## hub_config_failed
 **"Couldn't save the hub's settings."** Avchetan writes them to `%APPDATA%\app.avchetan\hub\hub.json`. Check that the disk isn't full, and that a backup or sync tool (OneDrive, Dropbox) isn't locking that folder. Then try again.
@@ -194,7 +194,7 @@ Problems come first, each with its fix and a **Help** link to its section below.
 
 ## model_missing
 **"Ollama hasn't downloaded"** a model. Ollama runs, but the model Avchetan is set to use isn't on that PC yet, so entries wait to be organized.
-- On this PC: click **Download it** in the Setup check. For the hub's models, use **Download them** in **Settings → Home Hub on this PC**. Models are a few GB, so this takes a while.
+- On this PC: click **Download it** in the Setup check. For the hub's models, use **Download them** in **Settings → Hub & sync → Home Hub on this PC**. Models are a few GB, so this takes a while.
 - On a phone, the message is about the hub's PC: open Avchetan on that PC and download the models there.
 
 ## network_public
@@ -228,7 +228,7 @@ Problems come first, each with its fix and a **Help** link to its section below.
 **"Something inside Avchetan went wrong. Restart it; if it happens again, please report it"**, **"The app needs a restart"**, or an error whose **Help** link brought you here. This is a bug in Avchetan, not something you did.
 1. Quit Avchetan (on Windows: right-click the tray icon → **Quit Avchetan**; on Android: close it from recent apps) and open it again.
 2. Run the [Setup check](#setup-check).
-3. If it happens again, [report it on GitHub](https://github.com/tulsiram-sunrise/avchetan/issues/new?template=bug-report.yml) (Windows: **Settings → About → Report a problem**; Android: **More → Report a problem**), with the error text and what you were doing. Don't include your entries or tokens.
+3. If it happens again, [report it on GitHub](https://github.com/tulsiram-sunrise/avchetan/issues/new?template=bug-report.yml) (Windows: **Settings → General → About → Report a problem**; Android: **More → Report a problem**), with the error text and what you were doing. Don't include your entries or tokens.
 
 ## Entries stay "pending"
 Normal when offline or when the hub is unreachable. They are processed automatically later. If they stay pending while everything is connected, open **Review** in the main window: it shows the reason for each entry.

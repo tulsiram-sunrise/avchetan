@@ -29,7 +29,7 @@ No terminal is needed: Avchetan runs the hub itself and walks you through the re
 
 The hub runs whenever Avchetan is open, including when only its tray icon is showing, and starts again with it. If it stops unexpectedly, Avchetan starts it again.
 
-The hub also organizes the entries you type on this PC and answers its questions, unless you chose a model for this PC itself in **Settings → AI models**.
+The hub also organizes the entries you type on this PC and answers its questions, unless you chose a model for this PC itself in **Settings → AI → AI models**.
 
 ## Part 2 — Connect your phone
 
@@ -37,7 +37,7 @@ The checklist's last line says **No phone is paired with the hub yet**. Click **
 
 Can't scan the code? Click **Can't scan? Show the details** under it and type the address and token in instead ([Connect by hand](pair-your-phone.md#connect-by-hand)).
 
-Then click **Finish**. If you finish while the hub is still off, the button says **Finish without the hub**: turn it on later in **Settings → Home Hub on this PC**.
+Then click **Finish**. If you finish while the hub is still off, the button says **Finish without the hub**: turn it on later in **Settings → Hub & sync → Home Hub on this PC**.
 
 ## Check it worked
 
@@ -68,9 +68,9 @@ The first start goes through all your existing entries, about 0.2 seconds each o
 | Problem | Fix |
 |---|---|
 | **Ollama isn't running on this PC** | Open the Ollama app once, then click **Check again**. |
-| Phone can't connect | Both devices must be on the same Wi-Fi. Check that every line of the hub's checklist has a ✓, or run **Settings → Setup check**. For a hub run from a terminal, see [Let your phone reach the PC](#let-your-phone-reach-the-pc). |
+| Phone can't connect | Both devices must be on the same Wi-Fi. Check that every line of the hub's checklist has a ✓, or run **Settings → General → Setup check**. For a hub run from a terminal, see [Let your phone reach the PC](#let-your-phone-reach-the-pc). |
 | Entries stay "pending" on the phone | The phone can't reach the hub. They are processed automatically once it can. |
-| Answers are slow | Choose a smaller model set for the hub, or a model for this device in **Settings → AI models**. |
+| Answers are slow | Choose a smaller model set for the hub, or a model for this device in **Settings → AI → AI models**. |
 
 More: [Troubleshooting](troubleshooting.md).
 
@@ -140,7 +140,7 @@ If you ever clicked **Cancel** when Windows asked about Node.js, Windows added a
 
 ### Connect the PC's app, then your phone
 
-1. In Avchetan on the PC, open **Settings → Sync**. Enter `http://127.0.0.1:8787`, paste the sync token, and click **Save**.
+1. In Avchetan on the PC, open **Settings → Hub & sync → Sync**. Enter `http://127.0.0.1:8787`, paste the sync token, and click **Save**.
 2. Pair your phone: [Pair your phone](pair-your-phone.md).
 3. On the phone, open **More → AI models** and set both **Who organizes your entries?** and **Who answers your questions?** to **My hub** ([AI models](ai-models.md#let-your-hub-answer-a-phones-questions)).
 

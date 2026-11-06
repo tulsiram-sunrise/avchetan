@@ -6,7 +6,7 @@ Tailscale creates a private, encrypted network between your own devices. It's fr
 
 1. On the PC: install [Tailscale](https://tailscale.com/download) and sign in.
 2. On the phone: install **Tailscale** from the Play Store and sign in with the **same account**. Turn it on.
-3. On the PC, let Tailscale devices reach the hub. In Avchetan's **Settings → Home Hub on this PC**, the checklist now says **Away from home: Windows' firewall blocks Tailscale**: click **Allow phones to connect**, then **Yes** when Windows asks. The line then says **Away from home: Tailscale is on**, with the PC's Tailscale address.
+3. On the PC, let Tailscale devices reach the hub. In Avchetan's **Settings → Hub & sync → Home Hub on this PC**, the checklist now says **Away from home: Windows' firewall blocks Tailscale**: click **Allow phones to connect**, then **Yes** when Windows asks. The line then says **Away from home: Tailscale is on**, with the PC's Tailscale address.
 
    For a hub you [run from a terminal](setup-home-hub.md#run-the-hub-from-a-terminal-instead) or with Docker, open PowerShell **as administrator** and run instead:
 

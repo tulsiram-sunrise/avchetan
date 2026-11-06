@@ -1,6 +1,7 @@
 import { createLogger } from '@avchetan/shared';
 import { emit, listen } from '@tauri-apps/api/event';
 import { z } from 'zod';
+import { settingsTabSchema } from '../main-window/settings-tabs';
 import { actionRequestSchema, actionResultSchema } from '../services/actions';
 
 const log = createLogger('events');
@@ -24,13 +25,17 @@ const eventSchemas = {
   'dock:shown': z.null(),
   /** Any window → all: these tables changed; refetch queries keyed by them. */
   'logs:changed': z.object({ tables: z.array(z.string()) }),
-  /** Rust → main: switch to a view; `day` opens that day in Days (a brief notification). */
+  /**
+   * Rust or a window → main: switch to a view; `day` opens that day in Days (a brief
+   * notification), `tab` a tab of Settings.
+   */
   'main:navigate': z.object({
     view: mainViewSchema,
     day: z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/)
       .nullish(),
+    tab: settingsTabSchema.nullish(),
   }),
   /** Main → dock: make this day's daily brief now (Make the brief now, Make it again). */
   'brief:make': z.object({ day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }),

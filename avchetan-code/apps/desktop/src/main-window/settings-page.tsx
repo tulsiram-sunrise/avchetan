@@ -16,11 +16,13 @@ import {
 import { changeHotkey } from '../services/hotkey';
 import type { SubmitKey } from '../services/submit-key';
 import { useServices } from '../services-context';
+import { useAppEvent } from '../use-app-event';
 import { AiModelsSetting } from './ai-models-setting';
 import { CommandsSetting } from './commands-setting';
 import { DataSetting } from './data-setting';
 import { HubSetting } from './hub-setting';
 import { LearnedSetting } from './learned-setting';
+import { loadSettingsTab, SETTINGS_TABS, type SettingsTab, saveSettingsTab } from './settings-tabs';
 import { SyncSetting } from './sync-setting';
 import { QuietButton } from './ui';
 import { UsageSetting } from './usage-setting';
@@ -33,26 +35,103 @@ function openView(view: 'setup' | 'check') {
   );
 }
 
+function TabContent({ tab }: { tab: SettingsTab }) {
+  switch (tab) {
+    case 'ai':
+      return (
+        <>
+          <AiModelsSetting />
+          <LearnedSetting />
+          <UsageSetting />
+        </>
+      );
+    case 'capture':
+      return (
+        <>
+          <ShortcutSetting />
+          <SubmitKeySetting />
+          <CommandsSetting />
+        </>
+      );
+    case 'brief':
+      return <DailyBriefSetting />;
+    case 'hub':
+      return (
+        <>
+          <HubSetting />
+          <SyncSetting />
+        </>
+      );
+    case 'data':
+      return <DataSetting />;
+    case 'general':
+      return (
+        <>
+          <section className="flex flex-col gap-2">
+            <h2 className="font-medium">Setup</h2>
+            <p className="text-sm text-ink-muted">
+              The Setup check tests everything and says what to fix. Run setup again to change how
+              this PC syncs and organizes.
+            </p>
+            <div className="flex gap-2">
+              <QuietButton onClick={() => openView('check')}>Setup check</QuietButton>
+              <QuietButton onClick={() => openView('setup')}>Run setup again</QuietButton>
+            </div>
+          </section>
+          <TimeZoneSetting />
+          <AutostartSetting />
+          <AboutSetting />
+        </>
+      );
+  }
+}
+
+/** Settings in tabs, one group at a time; the last tab used is shown again. */
 export function SettingsPage() {
+  const [tab, setTab] = useState<SettingsTab>(loadSettingsTab);
+  const choose = (next: SettingsTab) => {
+    setTab(next);
+    saveSettingsTab(next);
+  };
+  // Another window or page asked for a tab ("Open Settings" in the Setup check, the dock).
+  useAppEvent('main:navigate', (payload) => {
+    if (payload.view === 'settings' && payload.tab) choose(payload.tab);
+  });
+
   return (
     <div className="flex max-w-xl flex-col gap-6">
-      <div className="flex gap-2">
-        <QuietButton onClick={() => openView('check')}>Setup check</QuietButton>
-        <QuietButton onClick={() => openView('setup')}>Run setup again</QuietButton>
+      <div
+        role="tablist"
+        aria-label="Settings"
+        className="flex flex-wrap gap-1 border-b border-line"
+      >
+        {SETTINGS_TABS.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            role="tab"
+            id={`settings-tab-${item.id}`}
+            aria-selected={tab === item.id}
+            aria-controls="settings-panel"
+            className={`-mb-px border-b-2 px-3 py-1.5 text-sm ${
+              tab === item.id
+                ? 'border-accent font-medium text-accent'
+                : 'border-transparent text-ink-muted hover:text-ink'
+            }`}
+            onClick={() => choose(item.id)}
+          >
+            {item.label}
+          </button>
+        ))}
       </div>
-      <AiModelsSetting />
-      <LearnedSetting />
-      <CommandsSetting />
-      <DailyBriefSetting />
-      <HubSetting />
-      <SyncSetting />
-      <DataSetting />
-      <UsageSetting />
-      <ShortcutSetting />
-      <SubmitKeySetting />
-      <TimeZoneSetting />
-      <AutostartSetting />
-      <AboutSetting />
+      <div
+        role="tabpanel"
+        id="settings-panel"
+        aria-labelledby={`settings-tab-${tab}`}
+        className="flex flex-col gap-6"
+      >
+        <TabContent tab={tab} />
+      </div>
     </div>
   );
 }

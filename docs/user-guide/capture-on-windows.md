@@ -23,12 +23,14 @@ Half-written text is kept, even if you close the box or restart your PC.
 
 ## Change the keys
 
-Open Avchetan (tray icon → **Open Avchetan**) → **Settings**.
+Open Avchetan (tray icon → **Open Avchetan**) → **Settings**. Settings has tabs across the top: **AI**, **Capture box**, **Daily brief**, **Hub & sync**, **Your data** and **General**. It opens on the tab you used last.
 
+On **Capture box**:
 - **Shortcut:** type a new one, for example `Ctrl+Alt+Space`, and click **Save**. If another app already uses it, Avchetan says so and keeps the old one.
 - **Saving an entry:** choose whether **Enter** saves and **Shift+Enter** starts a new line (the default), or the other way round. Swap them if you often write entries longer than one line.
-- **Start with Windows:** leave this on so the shortcut works right after you sign in.
 
+On **General**:
+- **Start with Windows:** leave this on so the shortcut works right after you sign in.
 - **Time zone:** Avchetan follows Windows. Choose a zone here if your entries should use a different one. A day ends at midnight.
 
 ## Ask about your entries
@@ -45,7 +47,7 @@ A question is never saved as an entry. The answer appears in the box with the en
 
 **Search by meaning.** If your hub has a search model (see [Home Hub](setup-home-hub.md#search-by-meaning)), a question like `when did my knee hurt` also finds entries that say "stiff leg" or "physio". Without a hub, or when it can't be reached, Avchetan searches for the words you used.
 
-Your question, and the entries needed to answer it, go to the model chosen under **Settings → AI models**. Private entries are only read by a model on your own PC. They stay out of a cloud model's answers, so those answers can leave them out.
+Your question, and the entries needed to answer it, go to the model chosen under **Settings → AI → AI models**. Private entries are only read by a model on your own PC. They stay out of a cloud model's answers, so those answers can leave them out.
 
 When you're offline with a cloud model, Avchetan shows a short count from your PC instead.
 

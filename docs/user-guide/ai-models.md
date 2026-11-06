@@ -47,11 +47,11 @@ The phone has to reach the hub to ask. Without a connection, Ask shows today's c
 **Google Gemini** also has a free tier, but Google's terms say what you send to it can be used to improve its products and read by human reviewers, and that you shouldn't send personal information. Avchetan entries are personal, so use Groq or Ollama for them unless you have a paid Gemini plan.
 
 1. Create an API key on the provider's website.
-2. Open **Settings → AI models**, choose the provider, and paste the key.
+2. Open **Settings → AI → AI models**, choose the provider, and paste the key.
 3. Click **Test** to check it. Nothing is saved yet, and only a made-up sentence is sent.
 4. Click **Save**. Avchetan then starts organizing the entries that are waiting, so they are sent to that provider.
 
-![Settings → AI models on the PC, with Ollama and a model chosen for organizing entries](images/ai-models-windows.png)
+![Settings → AI → AI models on the PC, with Ollama and a model chosen for organizing entries](images/ai-models-windows.png)
 
 ## Paid providers and other services (Preview)
 
