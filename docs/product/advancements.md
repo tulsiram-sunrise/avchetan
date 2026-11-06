@@ -101,6 +101,8 @@ The dock is a launcher, not just a text box. One input, three modes by prefix:
 
 ## 7. [new] Correction feedback loop
 
+> Planned in detail in [correction-feedback.md](correction-feedback.md) (Phase 6). The outline below is the original idea.
+
 - When the user edits an extracted item (category, title, metrics, tags), store a compact correction record locally.
 - The most recent relevant corrections (max ~10, chosen by tag/category similarity) are included in the extraction prompt as few-shot examples. Cheap personalization without fine-tuning.
 - Corrections also inspire new fixtures for the extraction regression suite. Fixtures are rewritten as synthetic examples, because the repository is public.
