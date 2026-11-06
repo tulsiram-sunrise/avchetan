@@ -11,7 +11,8 @@ Hono (`@hono/node-server`), Drizzle (`node-postgres` or `pglite` driver, same `p
 | Method & path | Purpose |
 |---|---|
 | `GET /v1/health` | Liveness + DB check + version + `serverId` (stable identity for pairing / multi-URL); no auth |
-| `POST /v1/devices/register` | `{ deviceId, name, platform, extractionMode }` → upsert device (`extractionMode`: `self` \| `delegate`) |
+| `POST /v1/devices/register` | `{ deviceId, name, platform, extractionMode, timeZone?, briefTime? }` → upsert device (`extractionMode`: `self` \| `delegate`; `timeZone` and `briefTime` tell the brief fallback when a day ends, Phase 6) |
+| `POST /v1/brief` | `{ date, timeZone }`: makes that day's [daily brief](../product/daily-brief.md) on the server device unless it exists, then the device syncs it back. 503 `ask_unavailable` without `ANALYSIS_PROVIDER`. Used by devices with `analysis.mode = hub` (Phase 6) |
 | `POST /v1/sync/push` | See [sync-protocol](sync-protocol.md#push--post-v1syncpush) |
 | `GET /v1/sync/pull` | See [sync-protocol](sync-protocol.md#pull--get-v1syncpullcursornlimit500) |
 | `POST /v1/search` | Semantic search ([retrieval](retrieval.md#search-api)) |
@@ -32,7 +33,7 @@ Single shared secret (≥ 32 random bytes), compared in constant time. If `SYNC_
 |---|---|---|
 | `embedder` | 10 s | Drain `server_jobs` kind `embed` in batches |
 | server device (`fallback/`) | 60 s, plus a wake after any other device's push | Organize entries devices left waiting, as one more device ([ADR-0021](../decisions/0021-server-organizes-as-a-device.md), [extraction-pipeline §5](extraction-pipeline.md#5-server-fallback)) |
-| `brief-fallback` | 15 min | If past the user's brief time + 2.5 h and no daily brief for that date exists, generate it (Phase 6) |
+| `brief-fallback` | 5 min | On the server device: if past the brief time + `BRIEF_GRACE_MINUTES` (30) in the most recently seen device's time zone, that day has entries and no daily brief exists, make it ([daily brief](../product/daily-brief.md), Phase 6) |
 | `janitor` | daily | Purge tombstones older than 90 days *that all devices have pulled past* (`devices.last_pull_cursor`), prune `server_jobs` |
 
 The server device writes through the sync API like any device. All writes to synced tables go through `withSyncWrite` (advisory lock + `server_seq` assignment).

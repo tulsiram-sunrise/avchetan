@@ -19,6 +19,8 @@ The project started from an original discussion and first specification that are
 | [product/vision.md](product/vision.md) | Vision, principles, non-goals |
 | [product/features.md](product/features.md) | Feature catalogue by phase, user flows |
 | [product/advancements.md](product/advancements.md) | Advanced capabilities (context awareness, daily brief, command dock, voice, knowledge graph, …) |
+| [product/days-view.md](product/days-view.md) | The Days view: week strip, month calendar, one day's entries and tasks |
+| [product/daily-brief.md](product/daily-brief.md) | The daily brief: what it says, who makes it and when, reminders |
 | [product/glossary.md](product/glossary.md) | Shared vocabulary |
 
 ### Architecture

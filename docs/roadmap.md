@@ -1,6 +1,6 @@
 # Roadmap
 
-**Current phase: [v0.2.0](#v020--days-view-and-more-ai-providers)** (started 2026-11-05). [Phase 6](#phase-6--advancements-a-ambient-intelligence) comes next. Phase 1 completed 2026-10-26 (PR #1). Phase 2 completed 2026-10-30 (PR #2). Phase 3 completed 2026-10-31. Phase 4 completed 2026-11-02. Phase 5 completed 2026-11-04 (PR #8). Phase 5b completed 2026-11-05 (PR #10). The Public release milestone completed 2026-11-05 with v0.1.0 (PR #12); applying to SignPath remains.
+**Current phase: [Phase 6](#phase-6--advancements-a-ambient-intelligence)** (started 2026-11-06, daily brief first). v0.2.0 was released 2026-11-06 (PR #15). Phase 1 completed 2026-10-26 (PR #1). Phase 2 completed 2026-10-30 (PR #2). Phase 3 completed 2026-10-31. Phase 4 completed 2026-11-02. Phase 5 completed 2026-11-04 (PR #8). Phase 5b completed 2026-11-05 (PR #10). The Public release milestone completed 2026-11-05 with v0.1.0 (PR #12); applying to SignPath remains.
 
 Each phase lists scope, deliverables and **done when** criteria (testable). Phases are sequential; a coding agent should finish a phase's criteria before starting the next. Advanced capabilities are specified in [product/advancements.md](product/advancements.md).
 
@@ -148,7 +148,7 @@ Scope:
 
 **Done when:** a stranger can find the GitHub Pages site, download the builds from GitHub Releases (the APK signed, the installer checkable against `SHA256SUMS.txt`), and reach a working Home Hub + phone setup by following the guide.
 
-## v0.2.0 — Days view and more AI providers
+## v0.2.0 — Days view and more AI providers ✅
 
 Planned 2026-11-05, before the rest of Phase 6: the daily brief (Phase 6) will sit at the top of a day in this view.
 
@@ -160,14 +160,16 @@ Planned 2026-11-05, before the rest of Phase 6: the daily brief (Phase 6) will s
 
 ## Phase 6 — Advancements A (ambient intelligence)
 
-1. Active window context + context rules + deny-list + tray pause ([advancements §1](product/advancements.md#1-context-awareness-desktop-metadata-capture)).
-2. Clipboard snap hotkey.
-3. Command mode `/` with registry, confirmations, undo ([§3](product/advancements.md#3-unified-command-dock-capture--ask--act)).
-4. Daily brief (client scheduler + server fallback + notification + roll-over actions) ([§2](product/advancements.md#2-shadow-work-aggregator)).
-5. Correction feedback loop ([§7](product/advancements.md#7-new-correction-feedback-loop)).
-6. Android widget: quick-capture deep link.
+Built one item at a time, each on its own branch and PR, tried on real devices before the next. Each item gets its own product spec before it starts (like [daily-brief.md](product/daily-brief.md)).
 
-**Done when:** each feature's behavior in advancements.md is demonstrable; daily brief is generated exactly once per day across devices (deterministic ID test).
+1. **Daily brief** ([product/daily-brief.md](product/daily-brief.md)): the core brief on a `ClientStore`, device scheduler, the hub making it (`POST /v1/brief` + fallback), the brief at the top of a day in Days with **Move to tomorrow**, desktop notification, phone reminder. Planned 2026-11-06.
+2. Correction feedback loop ([§7](product/advancements.md#7-new-correction-feedback-loop)).
+3. Command mode `/` with registry, confirmations, undo ([§3](product/advancements.md#3-unified-command-dock-capture--ask--act)).
+4. Android widget: quick-capture deep link.
+5. Active window context + context rules + deny-list + tray pause ([advancements §1](product/advancements.md#1-context-awareness-desktop-metadata-capture)).
+6. Clipboard snap hotkey.
+
+**Done when:** each feature's behavior in its spec is demonstrable; daily brief is generated exactly once per day across devices (deterministic ID test).
 
 ## Phase 7 — Advancements B (voice, graph, patterns, privacy)
 
