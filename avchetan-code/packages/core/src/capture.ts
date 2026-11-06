@@ -10,7 +10,11 @@ import { parseCaptureText } from './normalize/capture-text';
  */
 export function buildCaptureInput(
   content: string,
-  options: Pick<CaptureInput, 'source' | 'capturedTz'> & { context?: Record<string, unknown> },
+  options: Pick<CaptureInput, 'source' | 'capturedTz'> & {
+    context?: Record<string, unknown>;
+    /** Tags from window context rules: stored like typed `#tags`. Already normalized. */
+    ruleTagPaths?: readonly string[];
+  },
 ): CaptureInput {
   const parsed = parseCaptureText(content);
   return {
@@ -18,7 +22,7 @@ export function buildCaptureInput(
     source: options.source,
     capturedTz: options.capturedTz,
     privacy: parsed.isPrivate ? 'local_only' : 'normal',
-    explicitTagPaths: parsed.tagPaths,
+    explicitTagPaths: [...new Set([...parsed.tagPaths, ...(options.ruleTagPaths ?? [])])],
     ...(options.context ? { context: options.context } : {}),
   };
 }

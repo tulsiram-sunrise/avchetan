@@ -2,6 +2,7 @@ import { createLogger } from '@avchetan/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { AppServices } from '../app-services';
 import { emitAppEvent } from '../native/events';
+import type { DockWindow } from '../services/window-context';
 import { useServices } from '../services-context';
 
 const log = createLogger('queries');
@@ -33,7 +34,8 @@ export function useCaptureMutation() {
   const services = useServices();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (text: string) => services.capture.capture(text),
+    mutationFn: ({ text, window }: { text: string; window: DockWindow | null }) =>
+      services.capture.capture(text, window),
     // The row is committed by now: nothing here may fail the mutation or delay the input.
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: rawLogKeys.all });

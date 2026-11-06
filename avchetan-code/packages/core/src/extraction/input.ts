@@ -1,5 +1,6 @@
 import type { ClientStore, CorrectedEntry, DataScope, RawLog } from '@avchetan/db/sqlite';
 import { addDays, type LocalDate, localDate, type Weekday, weekdayOf } from '@avchetan/shared';
+import { windowContextOf } from '../context/window-context';
 import { parseCaptureText } from '../normalize/capture-text';
 import { chooseExamples, loadCorrectionPool, renderExample } from './corrections';
 
@@ -64,6 +65,19 @@ export type ExtractionInput = {
   corrections: string[];
 };
 
+/**
+ * What the model may see of an entry's context: the window it was typed over, as a hint
+ * (window-context.md). Not the rule matches (rules decide on their own) nor bookkeeping keys.
+ */
+function promptContext(context: Record<string, unknown>): Record<string, unknown> {
+  const window = windowContextOf(context);
+  if (!window) return {};
+  return {
+    app: window.app_name,
+    ...(window.window_title ? { window_title: window.window_title } : {}),
+  };
+}
+
 export function buildExtractionInput(
   rawLog: Pick<RawLog, 'id' | 'content' | 'context' | 'capturedAt' | 'capturedTz'>,
   vocabulary: ExtractionVocabulary,
@@ -76,7 +90,7 @@ export function buildExtractionInput(
   return {
     content: rawLog.content,
     explicitTags: parseCaptureText(rawLog.content).tagPaths,
-    context: rawLog.context,
+    context: promptContext(rawLog.context),
     today,
     weekday: weekdayOf(today),
     upcoming,

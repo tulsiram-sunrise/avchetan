@@ -52,12 +52,14 @@ A rule says: *in this app, with a title like this, the entry belongs to this pro
 - **Stored** in the existing columns: `app_pattern`, `title_pattern` (plain text, or a pattern written between slashes, `/…/`, when **Pattern** is ticked), `project_id`, `tag_paths`, `enabled`.
 - **Matching happens at capture**, on the PC, from the synced `context_rules` table, and the result is written into the entry's `rule_matches`. The entry doesn't change when a rule changes later.
 - **What a match does:** its tags count as if you had typed them as `#tags`; its project is set on every activity and task found in the entry, whatever the model says. When several rules match, all their tags apply and the first rule with a project (oldest first) sets it. This happens in extraction wherever it runs (PC, phone or hub), so it needs no change to delegate mode.
+- **What the model sees:** the app name and the title only (`app`, `window_title`), never the rule matches.
+- **Edit text** keeps the entry's context and its rule tags.
 - **Where:** **Settings → Capture box → Window context → Rules** lists them with on/off, edit and delete. **Make a rule from this** on an entry fills in its app and title. The form shows whether the rule matches that entry's context as you type.
 - Rules are synced, so a second PC uses them too. The phone doesn't capture context and doesn't show rules.
 
 ## How it's built
 
-- **Rust** `commands/context.rs` (`previous_window_context`): `GetForegroundWindow`, `GetWindowTextW`, the process file via `QueryFullProcessImageNameW`, its description from the file's version info. Called by the hotkey handler before the dock is shown; the result goes to the webview with `dock:shown`. It skips Avchetan's own windows, the desktop and the taskbar. Uses the `windows` crate (MIT or Apache-2.0), Windows only; other systems return no context.
+- **Rust** `src/context.rs` (`previous_window_context`): `GetForegroundWindow`, `GetWindowTextW`, the process file via `QueryFullProcessImageNameW`, its description from the file's version info. Called by the hotkey handler before the dock is shown; the result goes to the webview with `dock:shown`. It skips Avchetan's own windows, the desktop and the taskbar. Uses `windows-sys` (MIT or Apache-2.0, already in the dependency tree), Windows only; other systems return no context. It also keeps the last 10 apps in memory for **Recent apps** (`context_recent_apps`). A program without a readable description (Store apps such as Notepad) shows its file name without `.exe`.
 - **Core** `context/` (pure, tested): `filterContext` (switch, pause, deny-list, browsers, title length), `matchRules` (glob, contains or regex, `{project}` tags), and applying `rule_matches` in extraction post-processing.
 - **DB:** a `contextRules` repository (create, update, soft delete, list enabled oldest first) through the usual sync-aware writes. The table already exists in both dialects; no migration.
 - **Desktop UI:** the context line in the dock, the Window context section in Settings, the line on Days and **Make a rule from this**. **Phone:** the *from …* line on Days and the entry page.
@@ -79,7 +81,7 @@ None shown to you. If Windows refuses to tell which window was in front (for exa
 - Over a browser, only the browser's name is kept; with **Keep page titles in browsers** on, the title too.
 - Over an app on the deny-list, and while paused, nothing is kept. Pause ends by itself after an hour and survives a restart.
 - **×** in the dock drops the context from that entry.
-- `matchRules` and `filterContext` have unit tests (wildcards, case, regex with `{project}`, a broken regex is reported in the form and never throws at capture); the Rust function has a test that it returns its own window's title.
+- `matchRules` and `filterContext` have unit tests (wildcards, case, regex with `{project}`, a broken regex is reported in the form and never throws at capture); the Rust side has tests that an unknown window gives no context, that a program's description is read, and that recent apps keep the last 10 without repeats.
 - The [Windows guide](../user-guide/capture-on-windows.md) has *Window context and rules*, and [Privacy](../user-guide/privacy.md) lists window titles.
 
 ## Not in this version

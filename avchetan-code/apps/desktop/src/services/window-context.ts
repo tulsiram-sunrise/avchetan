@@ -1,0 +1,86 @@
+import {
+  type ContextSettings,
+  type EntryWindowContext,
+  filterContext,
+  isPaused,
+  loadContextSettings,
+  matchRules,
+  pauseEnd,
+  type RuleMatch,
+  ruleOutcome,
+  saveContextSettings,
+  type WindowContext,
+} from '@avchetan/core';
+import type { ClientStore } from '@avchetan/db/sqlite';
+import { createLogger } from '@avchetan/shared';
+
+const log = createLogger('window-context');
+
+/** What the dock shows under the box and saves with the next entry (window-context.md). */
+export type DockWindow = { context: EntryWindowContext; matches: RuleMatch[] };
+
+/** Applies the settings to what the shell read, then the enabled rules. Never throws. */
+export async function readDockWindow(
+  store: ClientStore,
+  raw: WindowContext | null,
+  now: string,
+): Promise<DockWindow | null> {
+  if (!raw) return null;
+  try {
+    const context = filterContext(raw, await loadContextSettings(store), now);
+    if (!context) {
+      log.debug('window context not kept');
+      return null;
+    }
+    const rules = await store.repos.contextRules.listEnabled(store.db);
+    const matches = matchRules(context, rules);
+    log.debug('window context kept', { rules: matches.length });
+    return { context, matches };
+  } catch {
+    // Capture must work without context.
+    log.warn('could not read window context settings');
+    return null;
+  }
+}
+
+/** The capture options for an entry typed over `window`. */
+export function captureOptions(window: DockWindow | null): {
+  context?: Record<string, unknown>;
+  ruleTagPaths?: string[];
+} {
+  if (!window) return {};
+  return {
+    context: {
+      ...window.context,
+      ...(window.matches.length > 0 ? { rule_matches: window.matches } : {}),
+    },
+    ruleTagPaths: ruleOutcome(window.matches).tagPaths,
+  };
+}
+
+/** "14:30" in this PC's time zone. */
+export function localTime(iso: string): string {
+  return new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' }).format(
+    new Date(iso),
+  );
+}
+
+/** What the tray item should say: enabled, and the local time a pause ends (or null). */
+export function trayContextState(
+  settings: ContextSettings,
+  now: string,
+): { enabled: boolean; pausedUntil: string | null } {
+  return {
+    enabled: settings.enabled,
+    pausedUntil: isPaused(settings, now) ? localTime(settings.pausedUntil) : null,
+  };
+}
+
+/** The tray's Pause / Resume item: pauses for an hour, or resumes when paused. */
+export async function togglePause(store: ClientStore, now: string): Promise<ContextSettings> {
+  const settings = await loadContextSettings(store);
+  const pausedUntil = isPaused(settings, now) ? '' : pauseEnd(now);
+  await saveContextSettings(store, { pausedUntil });
+  log.info(pausedUntil ? 'window context paused' : 'window context resumed');
+  return { ...settings, pausedUntil };
+}

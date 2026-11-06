@@ -134,6 +134,33 @@ describe('normalizeExtraction', () => {
     expect(activities.map((a) => a.projectId)).toEqual(['project-1', null]);
   });
 
+  it("sets a window rule's project on every item, whatever the model said", () => {
+    const fromRule = (projectId: string) => ({
+      ...context,
+      rawLog: {
+        ...context.rawLog,
+        context: {
+          app: 'Code.exe',
+          rule_matches: [{ rule_id: 'r', project_id: projectId, tag_paths: [] }],
+        },
+      },
+    });
+    const result = {
+      ...empty,
+      activities: [{ ...activity, project: null }],
+      tasks: [{ ...task, project: 'Unknown Project' }],
+    };
+
+    const plan = normalizeExtraction(result, fromRule('project-1'));
+    expect([...plan.activities, ...plan.tasks].map((item) => item.projectId)).toEqual([
+      'project-1',
+      'project-1',
+    ]);
+    // A rule whose project was deleted since falls back to the model's answer.
+    const gone = normalizeExtraction(result, fromRule('deleted-project'));
+    expect(gone.activities[0]?.projectId).toBeNull();
+  });
+
   it('normalizes tags, joins known paths, and drops ones that restate the category', () => {
     const { activities } = normalizeExtraction(
       {

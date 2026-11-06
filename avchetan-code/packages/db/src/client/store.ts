@@ -20,6 +20,7 @@ import { ackOutbox, enqueueEverything, listOutbox, rejectOutbox, stuckOutboxCoun
 import * as queries from './queries';
 import { activitiesRepo } from './repos/activities';
 import { categoriesRepo } from './repos/categories';
+import { contextRulesRepo } from './repos/context-rules';
 import { entitiesRepo } from './repos/entities';
 import { extractionRepo } from './repos/extraction';
 import { projectsRepo } from './repos/projects';
@@ -83,6 +84,7 @@ export async function openClientStore(options: OpenClientStoreOptions) {
     projects: projectsRepo(deps),
     tags,
     entities: entitiesRepo(deps),
+    contextRules: contextRulesRepo(deps),
   };
   const repos = { ...baseRepos, extraction: extractionRepo(deps, baseRepos) };
 

@@ -1,8 +1,9 @@
-import { exerciseLines, metricsText } from '@avchetan/core';
+import { exerciseLines, metricsText, windowContextOf } from '@avchetan/core';
 import type { Activity, RawLog, Task } from '@avchetan/db/sqlite';
 import { useState } from 'react';
 import { useAction, useActiveCategories, useCategoryNames } from '../queries/organize';
 import { ActionError, EditableText, fieldClass, QuietButton } from './ui';
+import { RuleForm } from './window-context-setting';
 
 export function ActivityRow({ activity }: { activity: Activity }) {
   const names = useCategoryNames();
@@ -78,6 +79,8 @@ export function EntryActions({ rawLog }: { rawLog: RawLog }) {
   const editContent = useAction('log.editContent');
   const remove = useAction('log.delete');
   const busy = requeue.isPending || editContent.isPending || remove.isPending;
+  const window = windowContextOf(rawLog.context);
+  const [makingRule, setMakingRule] = useState(false);
 
   return (
     <div className="flex flex-col gap-2">
@@ -117,8 +120,20 @@ export function EntryActions({ rawLog }: { rawLog: RawLog }) {
           <QuietButton disabled={busy} onClick={() => remove.mutate({ id: rawLog.id })}>
             Delete entry
           </QuietButton>
+          {window && !makingRule ? (
+            <QuietButton onClick={() => setMakingRule(true)}>Make a rule from this</QuietButton>
+          ) : null}
         </div>
       )}
+      {window ? (
+        <p className="break-words">
+          Typed over {window.app_name} ({window.app})
+          {window.window_title ? `: ${window.window_title}` : ''}
+        </p>
+      ) : null}
+      {window && makingRule ? (
+        <RuleForm sample={window} onDone={() => setMakingRule(false)} />
+      ) : null}
       <ActionError errors={[requeue.error, editContent.error, remove.error]} />
     </div>
   );

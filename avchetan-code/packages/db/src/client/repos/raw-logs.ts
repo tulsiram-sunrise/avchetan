@@ -30,6 +30,19 @@ export type CaptureInput = {
   capturedAt?: string;
 };
 
+/**
+ * The tags stored in `context.rule_matches` (shape owned by @avchetan/core's ruleMatchSchema;
+ * read loosely here, since the db package can't depend on core).
+ */
+function ruleTagPaths(context: Record<string, unknown>): string[] {
+  const matches = Array.isArray(context.rule_matches) ? context.rule_matches : [];
+  return matches.flatMap((match) =>
+    match && typeof match === 'object' && Array.isArray(match.tag_paths)
+      ? match.tag_paths.filter((path: unknown): path is string => typeof path === 'string')
+      : [],
+  );
+}
+
 export function rawLogsRepo(deps: RepoDeps, tags: ReturnType<typeof tagsRepo>) {
   const repo = {
     /**
@@ -162,6 +175,10 @@ export function rawLogsRepo(deps: RepoDeps, tags: ReturnType<typeof tagsRepo>) {
      * Content is immutable: an edit is a new log that points back at the one it replaces. It
      * keeps the original capture time, so its day and "yesterday" still mean the same thing.
      */
+    /**
+     * Edit text: a new entry replaces the old one. It keeps the old one's time, its context (the
+     * window it was typed over) and the tags its window rules gave (window-context.md).
+     */
     async replace(tx: Tx, id: string, input: CaptureInput): Promise<RawLog> {
       const old = await getById(tx, rawLogs, id);
       if (!old || old.deletedAt) throw new ValidationError('not_found', 'Entry no longer exists');
@@ -169,7 +186,8 @@ export function rawLogsRepo(deps: RepoDeps, tags: ReturnType<typeof tagsRepo>) {
         ...input,
         capturedTz: old.capturedTz,
         capturedAt: old.capturedAt,
-        context: { ...input.context, supersedes: id },
+        explicitTagPaths: [...(input.explicitTagPaths ?? []), ...ruleTagPaths(old.context)],
+        context: { ...old.context, ...input.context, supersedes: id },
       });
       await repo.softDelete(tx, id);
       return next;

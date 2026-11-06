@@ -61,6 +61,38 @@ export {
   suggestCommands,
 } from './commands/parse';
 export { COMMAND_NAMES, COMMANDS, type CommandName, isCommandName } from './commands/registry';
+export {
+  CONTEXT_PAUSE_MINUTES,
+  CONTEXT_SETTING_KEYS,
+  loadContextSettings,
+  pauseEnd,
+  saveContextSettings,
+} from './context/settings';
+export {
+  appMatches,
+  BROWSER_APPS,
+  type ContextRuleInput,
+  type ContextSettings,
+  contextSettingsSchema,
+  DEFAULT_CONTEXT_SETTINGS,
+  DEFAULT_DENY_LIST,
+  type EntryWindowContext,
+  filterContext,
+  isBrowser,
+  isDenied,
+  isPaused,
+  MAX_WINDOW_TITLE,
+  matchRules,
+  parseTitlePattern,
+  type RuleMatch,
+  ruleMatchesOf,
+  ruleMatchSchema,
+  ruleOutcome,
+  type TitlePattern,
+  type WindowContext,
+  windowContextOf,
+  windowContextSchema,
+} from './context/window-context';
 export { type EmbeddingSource, embeddingText, embedTexts } from './embeddings/embed';
 export {
   chooseExamples,

@@ -2,6 +2,7 @@ import { buildCaptureInput } from '@avchetan/core';
 import type { ClientStore, RawLog } from '@avchetan/db/sqlite';
 import { createLogger, systemTimeZone } from '@avchetan/shared';
 import { createCaptureTimings } from './capture-timings';
+import { captureOptions, type DockWindow } from './window-context';
 
 const log = createLogger('capture');
 
@@ -22,9 +23,14 @@ export function createCaptureService(deps: CaptureServiceDeps) {
   const timings = createCaptureTimings();
 
   return {
-    async capture(text: string): Promise<RawLog> {
+    /** `window`: the window it was typed over, with the rules that matched (window-context.md). */
+    async capture(text: string, window: DockWindow | null = null): Promise<RawLog> {
       const started = perfNow();
-      const input = buildCaptureInput(text, { source: 'desktop_text', capturedTz: timeZone() });
+      const input = buildCaptureInput(text, {
+        source: 'desktop_text',
+        capturedTz: timeZone(),
+        ...captureOptions(window),
+      });
       const rawLog = await deps.store.write((tx) => deps.store.repos.rawLogs.capture(tx, input));
       const durationMs = perfNow() - started;
       timings.record(durationMs);

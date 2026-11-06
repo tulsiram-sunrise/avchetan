@@ -9,6 +9,7 @@ import { DEFAULT_SUBMIT_KEY, isSubmitPress, submitHint } from '../services/submi
 import { useServices } from '../services-context';
 import { type AskState, useDockStore } from '../stores/dock-store';
 import { useCommand } from './use-command';
+import { WindowContextLine } from './window-context-line';
 
 /** The dock's text box. One of Enter / Shift+Enter saves (a setting); the other adds a line. */
 export function CaptureInput(props: {
@@ -20,6 +21,7 @@ export function CaptureInput(props: {
   const setDraft = useDockStore((state) => state.setDraft);
   const setAsk = useDockStore((state) => state.setAsk);
   const asking = useDockStore((state) => state.ask?.status === 'asking');
+  const window = useDockStore((state) => state.window);
   const services = useServices();
   const captureMutation = useCaptureMutation();
   const [errorCode, setErrorCode] = useState<string | null>(null);
@@ -50,7 +52,7 @@ export function CaptureInput(props: {
     if (!draft.trim() || captureMutation.isPending) return;
     try {
       // "//note" is saved as "/note" (docs/product/command-mode.md).
-      await captureMutation.mutateAsync(captureText(draft));
+      await captureMutation.mutateAsync({ text: captureText(draft), window });
       setDraft('');
       setErrorCode(null);
       props.onCaptured();
@@ -88,6 +90,7 @@ export function CaptureInput(props: {
         className="w-full resize-none rounded-lg border border-line bg-surface-raised px-3 py-2 text-[15px] outline-none focus:border-accent"
       />
       {command.panel}
+      {!askMode && !command.active ? <WindowContextLine /> : null}
       {errorCode ? (
         <p role="alert" className="px-1 pt-1 text-xs text-danger">
           Couldn't save this entry. Your text is still here; try again.{' '}

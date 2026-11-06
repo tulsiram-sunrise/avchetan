@@ -1,5 +1,6 @@
 import type { AskSource } from '@avchetan/core';
 import { create } from 'zustand';
+import type { DockWindow } from '../services/window-context';
 
 /** The current question's progress. Null while the dock shows recent entries. */
 export type AskState = {
@@ -16,6 +17,9 @@ export type DockState = {
   setDraft(text: string): void;
   ask: AskState | null;
   setAsk(ask: AskState | null): void;
+  /** The window the dock was opened over; saved with each entry until the next hotkey. */
+  window: DockWindow | null;
+  setWindow(window: DockWindow | null): void;
 };
 
 export const useDockStore = create<DockState>()((set) => ({
@@ -23,4 +27,6 @@ export const useDockStore = create<DockState>()((set) => ({
   setDraft: (draft) => set({ draft }),
   ask: null,
   setAsk: (ask) => set({ ask }),
+  window: null,
+  setWindow: (window) => set({ window }),
 }));
