@@ -24,6 +24,7 @@ The project started from an original discussion and first specification that are
 | [product/correction-feedback.md](product/correction-feedback.md) | Correction feedback: how your fixes become examples for the model, and how to forget them |
 | [product/command-mode.md](product/command-mode.md) | Command mode: `/` commands in the desktop capture box, undo, and AI readings that teach aliases |
 | [product/android-widget.md](product/android-widget.md) | Android widget: the home-screen quick-capture bar |
+| [product/window-context.md](product/window-context.md) | Window context: the app and title noted at capture on the PC, rules, deny-list, pause |
 | [product/glossary.md](product/glossary.md) | Shared vocabulary |
 
 ### Architecture
