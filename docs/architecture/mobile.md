@@ -10,7 +10,7 @@
 - `expo-secure-store` for API keys and sync token.
 - `@react-native-community/netinfo` for connectivity.
 - `expo-background-task` for periodic sync/processing (best-effort, ~15 min minimum on Android).
-- `expo-notifications` for daily brief / reminders.
+- `expo-notifications` for the daily brief reminder: a local notification at the brief time, scheduled once the day has an entry (`src/services/brief-reminder.ts`). The brief itself is made when the app is open, not in the background ([daily brief](../product/daily-brief.md)).
 - UI: React Native + NativeWind (Tailwind classes), with colors from `src/theme/tokens.json`, which match desktop's tokens and also feed React Navigation. Capture is a native `formSheet`, so it needs no bottom sheet library. Keep buttons out of the keyboard's way: Save sits at the top of the sheet.
 - State: Zustand + TanStack Query (same pattern as desktop). There's one process, so writes call the repositories directly (`src/queries/writes.ts`) rather than going through desktop's window actions.
 - LLM: `@avchetan/core` with `expo/fetch` injected (streaming support). The AI SDK needs no extra polyfills on Hermes: streaming, tool calls, `AbortSignal.any` and `AbortSignal.timeout` were checked on an emulator.

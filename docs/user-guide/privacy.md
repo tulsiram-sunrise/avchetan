@@ -12,7 +12,7 @@ Avchetan is made to keep your entries yours. This page says what leaves your dev
 
 | What | Where it goes | When |
 |---|---|---|
-| Your entries, to be organized, and your questions in **Ask** | The AI model you chose in **AI models**: Ollama on your own PC, or a cloud provider such as Google Gemini or Groq | Only after you choose a model. With Ollama, nothing leaves your home network. With a cloud provider, that provider's privacy policy applies, and the setting says so when you choose it. |
+| Your entries, to be organized, your questions in **Ask**, and a day's entries for its [daily brief](daily-brief.md) | The AI model you chose in **AI models**: Ollama on your own PC, or a cloud provider such as Google Gemini or Groq | Only after you choose a model. With Ollama, nothing leaves your home network. With a cloud provider, that provider's privacy policy applies, and the setting says so when you choose it. |
 | Everything you have in Avchetan | Your hub or server, to sync your devices | Only after you pair a device. A Home Hub is your own PC. A cloud server is one you set up. |
 | Model downloads | ollama.com, through Ollama | When you click **Download them** in the hub checklist. |
 | Opening this guide or a bug report | Your browser, to GitHub | When you click **Help**, **User guide** or **Report a problem**. |
