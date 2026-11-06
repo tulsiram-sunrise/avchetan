@@ -54,8 +54,8 @@ An edit replaces the raw log with a new one, so the entry screen moves to the ne
 
 ## Android home-screen widget (Phase 6–7)
 
-- Using `react-native-android-widget` (or a small native module via config plugin).
-- Phase 6: "Quick capture" button → deep link `avchetan://capture`.
+- A small native widget added by our own config plugin (`plugins/capture-widget.js`): a Kotlin `AppWidgetProvider`, its layout and XML; no widget library and no JavaScript for the widget ([android-widget](../product/android-widget.md)).
+- Phase 6: a *What's on your mind?* bar → deep link `avchetan://capture?from=widget` (source `mobile_widget`); **Save** sends the app to the background.
 - Phase 7: mic button → record → transcribe → save (source `mobile_widget` / `mobile_voice`), 3 s undo.
 
 ## Ollama on mobile

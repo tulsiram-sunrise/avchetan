@@ -46,7 +46,7 @@ A phone that has a debug-signed build (any APK built on a PC) can't install a re
 ## Making a release
 
 1. On a branch: `pnpm version:set 0.2.0`, commit (`chore: version 0.2.0`), and merge it. Make sure `master` is green in CI.
-2. Try the files first: **Actions → Release → Run workflow** on `master` (or push a branch to `release/<name>` to try it before merging). Download both artifacts from the run, install them on a test PC and phone.
+2. Try the files first: **Actions → Release → Run workflow** on `master` (or push a branch to `release/<name>` to try it before merging). Download both artifacts from the run, install them on a test PC and phone. A `release/<name>` push builds only the Windows installer unless the name contains `android` (for example `release/android-widget`); **Run workflow** has an **Android APK** checkbox, on by default; a tag always builds both.
 3. Tag `master` and push: `git tag -a v0.2.0 -m "Avchetan 0.2.0"` (or `-s` with a signing key) then `git push origin v0.2.0`.
 4. The workflow checks the version, publishes the server image, and makes a **draft** release with both files, `SHA256SUMS.txt` and the notes. Read them, add what users need to know (for example "uninstall the old app first"), and click **Publish release**.
 5. Download the installer from the published release in a browser, on a PC that hasn't run it, and run it once. That checks the file people actually get, including how SmartScreen treats it.
