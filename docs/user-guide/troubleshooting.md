@@ -73,6 +73,12 @@ Problems come first, each with its fix and a **Help** link to its section below.
 ## ask_unavailable
 **"Your hub can't answer questions right now."** The hub has just started, or has no model for answering. Wait a minute and ask again. If it keeps failing, open the Setup check: it shows whether the hub's Ollama runs and has its models. You can also let this device answer with its own model in **AI models**.
 
+## command_unknown
+**"Couldn't read this as a command."** You typed something after `/` that isn't one of the commands (`/done`, `/brief`, `/sync`, `/undo`), and the AI couldn't map it to one either. Type `/` alone to see the list. To save an entry that starts with `/`, begin it with `//` ([Commands](commands.md)).
+
+## command_no_match
+**"No open task matches …"** `/done` looks for an open task containing the words you typed. Check the spelling, use a word from the task's title (the start of a word is enough, like `plumb` for "plumber"), or find the task in **Tasks**. A task that's already done can't match.
+
 ## search_unavailable
 **"Your hub can't search by meaning right now."** The hub's search model isn't set up or didn't answer, often because Ollama isn't running on the hub's PC. Ask still works, searching by words instead. Open the Setup check to see which model is missing.
 

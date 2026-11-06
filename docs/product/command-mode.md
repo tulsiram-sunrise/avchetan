@@ -18,7 +18,7 @@ The capture box is always one shortcut away, but doing anything other than loggi
   Done: Foam roll the calves                         [Undo]
 ```
 
-- Typing `/` switches the label from **Capture** to **Command** and shows the commands with one line of help each. The list narrows as you type.
+- Typing `/` switches the label from **Capture** to **Command** and shows the commands with one line of help each. The list narrows as you type, and Enter on a partly typed name completes it (`/br` → `/brief `).
 - The line under the box always says what Enter will do. Nothing changes until Enter.
 - An entry that should start with `/` is written with `//`; the first `/` is dropped and it is saved as usual.
 - Desktop only in this version. The phone keeps its buttons.

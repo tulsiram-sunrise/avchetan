@@ -17,6 +17,7 @@ import { changeHotkey } from '../services/hotkey';
 import type { SubmitKey } from '../services/submit-key';
 import { useServices } from '../services-context';
 import { AiModelsSetting } from './ai-models-setting';
+import { CommandsSetting } from './commands-setting';
 import { DataSetting } from './data-setting';
 import { HubSetting } from './hub-setting';
 import { LearnedSetting } from './learned-setting';
@@ -41,6 +42,7 @@ export function SettingsPage() {
       </div>
       <AiModelsSetting />
       <LearnedSetting />
+      <CommandsSetting />
       <DailyBriefSetting />
       <HubSetting />
       <SyncSetting />

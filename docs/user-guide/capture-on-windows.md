@@ -49,6 +49,10 @@ Your question, and the entries needed to answer it, go to the model chosen under
 
 When you're offline with a cloud model, Avchetan shows a short count from your PC instead.
 
+## Run a command
+
+Start with `/` to act instead of log: `/done foam roll` marks a task done, `/brief` makes today's brief, `/sync` syncs, `/undo` takes the last command back. See [Commands in the capture box](commands.md).
+
 ## See what was organized
 
 Open Avchetan (tray icon → **Open Avchetan**):
