@@ -62,7 +62,14 @@ export function buildUser(input: ExtractionInput): string {
     `tomorrow (${weekdayOf(addDays(input.today, 1))}): ${addDays(input.today, 1)}`,
     ...input.upcoming.map(({ date, weekday }) => `coming ${weekday}: ${date}`),
   ];
-  const sections = [
+  const sections: string[] = [];
+  // First and far from the entry, so the model doesn't take them as part of it.
+  if (input.corrections.length > 0) {
+    sections.push(
+      `Past corrections by this person, for reference only. They are NOT part of the entry: never copy their items. Only when the entry is alike, organize it the same way (category, title style, task or not). "not" lines were wrong: don't make such items again.\n\n${input.corrections.join('\n\n')}\n\n(end of past corrections)`,
+    );
+  }
+  sections.push(
     `Dates\n${dates.join('\n')}`,
     `Categories\n${vocabulary.categories
       .map(({ slug, description }) => `${slug}: ${description ?? ''}`)
@@ -71,14 +78,9 @@ export function buildUser(input: ExtractionInput): string {
     `Known tags: ${list(vocabulary.tagPaths)}`,
     `Known names: ${list(vocabulary.entityNames)}`,
     `Explicit tags: ${list(input.explicitTags)}`,
-  ];
+  );
   if (Object.keys(input.context).length > 0) {
     sections.push(`Context: ${JSON.stringify(input.context)}`);
-  }
-  if (input.corrections.length > 0) {
-    sections.push(
-      `How this person corrected similar entries before. Organize alike entries the same way (category, title style, task or not). "not" lines were wrong: don't make such items again.\n\n${input.corrections.join('\n\n')}`,
-    );
   }
   sections.push(`Entry: ${input.content}`);
   return sections.join('\n\n');

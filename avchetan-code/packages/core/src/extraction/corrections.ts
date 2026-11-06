@@ -7,6 +7,7 @@ import {
 } from '@avchetan/db/sqlite';
 import { localDate } from '@avchetan/shared';
 import { z } from 'zod';
+import type { ExtractionResult } from './schema';
 
 /**
  * Correction feedback (docs/product/correction-feedback.md, ADR-0027): entries whose extracted
@@ -27,7 +28,8 @@ export async function saveLearnFromCorrections(store: ClientStore, on: boolean):
 
 /** How many recently corrected entries are considered. */
 export const CORRECTION_POOL = 200;
-export const MAX_EXAMPLES = 10;
+/** Few: small models copy from examples more the more they get. */
+export const MAX_EXAMPLES = 5;
 const MAX_ENTRY_CHARS = 280;
 const MAX_EXAMPLE_CHARS = 600;
 const MAX_METRICS = 3;
@@ -52,10 +54,17 @@ function words(text: string): Set<string> {
   );
 }
 
+function sharedCount(a: ReadonlySet<string>, b: ReadonlySet<string>): number {
+  let shared = 0;
+  for (const word of a) if (b.has(word)) shared += 1;
+  return shared;
+}
+
 /**
- * Up to `MAX_EXAMPLES` corrected entries for this entry: most shared words first, most recently
- * corrected first on a tie. No embeddings, so it works with Ollama alone. The entry itself
- * (re-extraction) is never its own example.
+ * Up to `MAX_EXAMPLES` corrected entries for this entry, only ones sharing at least one word with
+ * it: most shared words first, most recently corrected first on a tie. Unrelated examples are
+ * never sent: small models copy their items into the answer. No embeddings, so it works with
+ * Ollama alone. The entry itself (re-extraction) is never its own example.
  */
 export function chooseExamples(
   content: string,
@@ -65,14 +74,82 @@ export function chooseExamples(
   const mine = words(content);
   return pool
     .filter((entry) => entry.rawLog.id !== rawLogId)
-    .map((entry) => {
-      let shared = 0;
-      for (const word of words(entry.rawLog.content)) if (mine.has(word)) shared += 1;
-      return { entry, shared };
-    })
+    .map((entry) => ({ entry, shared: sharedCount(words(entry.rawLog.content), mine) }))
+    .filter(({ shared }) => shared > 0)
     .sort((a, b) => b.shared - a.shared || b.entry.correctedAt.localeCompare(a.entry.correctedAt))
     .slice(0, MAX_EXAMPLES)
     .map(({ entry }) => entry);
+}
+
+const titleKey = (title: string) => title.trim().toLowerCase().replace(/\s+/g, ' ');
+
+/**
+ * Drops items the model copied from an example instead of reading them in the entry: an item
+ * whose title is an example item's title is kept only when its words are all in the entry, or
+ * the entry shares at least half its words with that example's entry. Entity mentions are
+ * renumbered to match, and entities left with none are dropped.
+ */
+export function dropCopiedItems(
+  result: ExtractionResult,
+  content: string,
+  examples: readonly CorrectedEntry[],
+): { result: ExtractionResult; dropped: number } {
+  if (examples.length === 0) return { result, dropped: 0 };
+  const mine = words(content);
+  /** Example item title → that example's entry words. */
+  const sources = new Map<string, Set<string>[]>();
+  for (const example of examples) {
+    const exampleWords = words(example.rawLog.content);
+    for (const item of [...example.activities, ...example.tasks]) {
+      const key = titleKey(item.title);
+      sources.set(key, [...(sources.get(key) ?? []), exampleWords]);
+    }
+  }
+  const copied = (title: string) => {
+    const from = sources.get(titleKey(title));
+    if (!from) return false;
+    const titleWords = words(title);
+    if (titleWords.size > 0 && sharedCount(titleWords, mine) === titleWords.size) return false;
+    return !from.some((exampleWords) => sharedCount(exampleWords, mine) * 2 >= exampleWords.size);
+  };
+
+  const keep = <T extends { title: string }>(items: T[]) => {
+    const newIndex = new Map<number, number>();
+    const kept: T[] = [];
+    items.forEach((item, index) => {
+      if (copied(item.title)) return;
+      newIndex.set(index, kept.length);
+      kept.push(item);
+    });
+    return { kept, newIndex };
+  };
+  const activities = keep(result.activities);
+  const tasks = keep(result.tasks);
+  const dropped =
+    result.activities.length - activities.kept.length + result.tasks.length - tasks.kept.length;
+  if (dropped === 0) return { result, dropped: 0 };
+
+  const retarget = (target: string): string | null => {
+    const match = /^(activity|task):(\d+)$/.exec(target);
+    if (!match) return target;
+    const map = match[1] === 'activity' ? activities.newIndex : tasks.newIndex;
+    const index = map.get(Number(match[2]));
+    return index === undefined ? null : `${match[1]}:${index}`;
+  };
+  const entities = result.entities
+    .map((entity) => ({
+      ...entity,
+      mentions: entity.mentions.flatMap((mention) => {
+        const target = retarget(mention.target);
+        return target === null ? [] : [{ ...mention, target }];
+      }),
+    }))
+    .filter((entity) => entity.mentions.length > 0);
+
+  return {
+    result: { ...result, activities: activities.kept, tasks: tasks.kept, entities },
+    dropped,
+  };
 }
 
 const clip = (text: string, max: number) =>
@@ -94,7 +171,7 @@ function metricText(metrics: Record<string, unknown>): string {
  */
 export function renderExample(entry: CorrectedEntry): string {
   const date = localDate(entry.rawLog.capturedAt, entry.rawLog.capturedTz);
-  const lines = [`Entry (${date}): ${clip(oneLine(entry.rawLog.content), MAX_ENTRY_CHARS)}`];
+  const lines = [`Past entry (${date}): ${clip(oneLine(entry.rawLog.content), MAX_ENTRY_CHARS)}`];
   const kept = <T extends { deleted: boolean }>(items: T[]) =>
     items.filter((item) => !item.deleted);
   for (const activity of kept(entry.activities)) {

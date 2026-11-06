@@ -63,7 +63,7 @@ export function LearnedSetting() {
         <>
           <p className="text-sm text-ink-muted">
             {list.length === 1 ? '1 entry' : `${list.length} entries`}, newest first. The AI sees up
-            to 10 of them, the ones most like the entry it's organizing.
+            to 5 of them, only ones with words in common with the entry it's organizing.
           </p>
           <ul className={panelClass}>
             {list.map((entry) => (

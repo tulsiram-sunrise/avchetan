@@ -90,7 +90,7 @@ export default function LearnedScreen() {
         ) : (
           <Text className="text-sm text-inkMuted">
             {list.length === 1 ? '1 entry' : `${list.length} entries`}, newest first. The AI sees up
-            to 10 of them, the ones most like the entry it's organizing.
+            to 5 of them, only ones with words in common with the entry it's organizing.
           </Text>
         )}
       </View>

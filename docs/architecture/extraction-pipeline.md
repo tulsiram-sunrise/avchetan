@@ -59,7 +59,7 @@ Input assembled by `buildExtractionInput(rawLog, vocabulary)`:
 - System prompt (versioned, `EXTRACTION_PROMPT_VERSION`).
 - Date context: local "today" in `captured_tz` **of the log** (not now) + weekday — so a log captured offline Tuesday and processed Thursday resolves "tomorrow" to Wednesday.
 - Vocabulary: active categories (slug + name + description), active project names + descriptions, top ~150 existing tag paths, known entity names (top ~100 by recency), metric key registry.
-- Correction examples: up to 10 of the user's past fixes that share words with this entry ([correction feedback](../product/correction-feedback.md)), private ones only for a local model. Left out first on `llm_context_overflow`.
+- Correction examples: up to 5 of the user's past fixes that share words with this entry, at the start of the request ([correction feedback](../product/correction-feedback.md)), private ones only for a local model. Left out first on `llm_context_overflow`. Items copied from them are dropped before normalizing.
 - Context hints: `raw_logs.context` (active app, rule matches) when present.
 - The raw content and the already-parsed explicit tags.
 

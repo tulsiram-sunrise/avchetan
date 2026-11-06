@@ -10,7 +10,7 @@ import { APICallError, type LanguageModel } from 'ai';
 import { MockLanguageModelV4 } from 'ai/test';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ModelConfig } from '../providers/config';
-import { chooseExamples, MAX_EXAMPLES, renderExample } from './corrections';
+import { chooseExamples, dropCopiedItems, MAX_EXAMPLES, renderExample } from './corrections';
 import { createPendingProcessor, type PendingProcessor } from './pending-processor';
 import type { ExtractionResult } from './schema';
 import type { ExtractionSettings } from './settings';
@@ -133,7 +133,7 @@ describe('correction examples in the extraction prompt', () => {
     await organize('swam 30 laps at the pool');
 
     const prompt = lastPrompt();
-    expect(prompt).toContain('Entry (2026-');
+    expect(prompt).toContain('Past entry (2026-');
     expect(prompt).toContain('swam 20 laps at the pool');
     expect(prompt).toContain('activity: workout | Swim | duration_min 40');
     expect(prompt).toContain('not task: Think about swimming more');
@@ -152,7 +152,7 @@ describe('correction examples in the extraction prompt', () => {
     await organize('swam 20 laps at the pool', swim);
     await organize('swam 30 laps at the pool');
 
-    expect(lastPrompt()).not.toContain('corrected similar entries');
+    expect(lastPrompt()).not.toContain('Past corrections');
   });
 
   it('never sends an example from a private entry to a cloud model', async () => {
@@ -233,7 +233,15 @@ describe('chooseExamples', () => {
       entry('d', 'read a book', '2026-10-31T10:00:00.000Z'),
     ];
     const chosen = chooseExamples('swim at the pool, then sauna', 'new', pool);
-    expect(chosen.map((e) => e.rawLog.id)).toEqual(['c', 'b', 'd', 'a']);
+    expect(chosen.map((e) => e.rawLog.id)).toEqual(['c', 'b']);
+  });
+
+  it('sends nothing unrelated: small models copy example items into the answer', () => {
+    const pool = [
+      entry('a', 'paid the electricity bill', '2026-10-30T10:00:00.000Z'),
+      entry('b', 'need a laptop bag', '2026-10-29T10:00:00.000Z'),
+    ];
+    expect(chooseExamples('movie with friends tomorrow', 'new', pool)).toEqual([]);
   });
 
   it('never picks the entry being extracted, and stops at the maximum', () => {
@@ -243,6 +251,77 @@ describe('chooseExamples', () => {
     const chosen = chooseExamples('entry', 'log-14', pool);
     expect(chosen).toHaveLength(MAX_EXAMPLES);
     expect(chosen.map((e) => e.rawLog.id)).not.toContain('log-14');
+  });
+});
+
+describe('dropCopiedItems', () => {
+  const activity = (title: string): ExtractionResult['activities'][number] => ({
+    category: 'other',
+    title,
+    notes: null,
+    metrics: [],
+    exercises: [],
+    loggedDate: '2026-11-06',
+    project: null,
+    inferredTags: [],
+  });
+  const coffee = entry(
+    'coffee',
+    'Last evening had coffee with Rajeev',
+    '2026-11-06T18:58:00.000Z',
+    {
+      activities: [
+        {
+          id: '1',
+          title: 'Coffee with Rajeev',
+          deleted: false,
+          userEdited: true,
+          categorySlug: 'other',
+          metrics: {},
+        },
+      ],
+    },
+  );
+
+  it('drops an item copied from a merely related example, and renumbers mentions', () => {
+    const answer: ExtractionResult = {
+      ...EMPTY,
+      activities: [activity('Coffee with Rajeev'), activity('Movie with Ajay and Rajeev')],
+      entities: [
+        {
+          kind: 'person',
+          name: 'Rajeev',
+          mentions: [
+            { target: 'activity:0', role: 'with' },
+            { target: 'activity:1', role: 'with' },
+          ],
+        },
+        { kind: 'place', name: 'Cafe', mentions: [{ target: 'activity:0', role: 'at' }] },
+      ],
+    };
+
+    const { result, dropped } = dropCopiedItems(
+      answer,
+      'Tomorrow want to enjoy movie with Ajay and Rajeev',
+      [coffee],
+    );
+
+    expect(dropped).toBe(1);
+    expect(result.activities.map((a) => a.title)).toEqual(['Movie with Ajay and Rajeev']);
+    expect(result.entities).toEqual([
+      { kind: 'person', name: 'Rajeev', mentions: [{ target: 'activity:0', role: 'with' }] },
+    ]);
+  });
+
+  it('keeps an example title the entry itself supports', () => {
+    const answer = { ...EMPTY, activities: [activity('Coffee with Rajeev')] };
+    expect(dropCopiedItems(answer, 'coffee with Rajeev again', [coffee]).dropped).toBe(0);
+  });
+
+  it('keeps an example title learned for a closely alike entry', () => {
+    const answer = { ...EMPTY, activities: [activity('Coffee with Rajeev')] };
+    // Shares "last" and "rajeev" with the example: the title is what the user taught.
+    expect(dropCopiedItems(answer, 'last night met Rajeev', [coffee]).dropped).toBe(0);
   });
 });
 
@@ -274,7 +353,7 @@ describe('renderExample', () => {
     );
     expect(text).toBe(
       [
-        'Entry (2026-10-30): ran 5k, should stretch more',
+        'Past entry (2026-10-30): ran 5k, should stretch more',
         'activity: workout | Run | distance_km 5',
         'task: Stretch',
         'not task: Think about stretching',

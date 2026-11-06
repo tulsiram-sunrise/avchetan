@@ -568,7 +568,7 @@ describe('corrections across devices (ADR-0027)', () => {
     await converge(phone, desktop);
 
     expect(await examplesFor(desktop, 'swam 30 laps at the pool')).toEqual([
-      'Entry (2026-10-26): swam 20 laps at the pool\nactivity: workout | Swim\nnot task: Think about swimming',
+      'Past entry (2026-10-26): swam 20 laps at the pool\nactivity: workout | Swim\nnot task: Think about swimming',
     ]);
   });
 

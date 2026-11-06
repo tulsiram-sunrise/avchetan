@@ -34,10 +34,13 @@ Examples are built when an entry is extracted, from what is already synced ([ADR
 In `@avchetan/core` (`extraction/corrections.ts`), on a `ClientStore`, so the apps and the server's device share it:
 
 1. **Candidates:** live, processed entries with at least one corrected item, not forgotten, not the entry being extracted, from the 200 most recently corrected.
-2. **Relevance:** words shared with the new entry (lowercased, 3 letters or more, common words left out), most recent correction first on a tie. No embeddings, so it works with Ollama alone.
-3. **Up to 10 examples**, each cut to about 600 characters: the entry's text (to 280 characters), its capture date (so "tomorrow" in the example makes sense), then its activities (category slug, title, main metrics) and tasks (title only), then `not:` lines for deleted items.
-4. **Prompt:** a new prompt version (`extraction.v2`) adds an "Examples from this user's corrections" section only when there are examples. Entries already organized are not extracted again.
-5. **Too long for the model** (`llm_context_overflow`): the one retry leaves the examples out first, then tags and names as today.
+2. **Relevance:** words shared with the new entry (lowercased, 3 letters or more, common words left out), most recent correction first on a tie. An entry sharing no word is never sent. No embeddings, so it works with Ollama alone.
+3. **Up to 5 examples**, each cut to about 600 characters: "Past entry", its text (to 280 characters) and capture date, then its activities (category slug, title, main metrics) and tasks (title only), then `not:` lines for deleted items.
+4. **Prompt:** a new prompt version (`extraction.v2`) puts a "Past corrections … never copy their items" section at the start of the request, far from the entry, only when there are examples. Entries already organized are not extracted again.
+5. **Copy guard:** an item in the answer whose title is an example item's title is dropped, unless all its words are in the entry or the entry shares at least half its words with that example's entry. Mentions are renumbered.
+6. **Too long for the model** (`llm_context_overflow`): the one retry leaves the examples out first, then tags and names as today.
+
+The first test build sent up to 10 examples, related or not, at the end of the request. A real entry ("Tomorrow want to enjoy movie with Ajay and Rajeev") came back with items copied from other corrected entries ("Coffee with Rajeev", "Buy laptop bag"). Points 2 to 5 are the fix (2026-11-07).
 
 ## Privacy
 
@@ -64,7 +67,8 @@ Examples follow the same line as the vocabulary: an example from a `!private` en
 - A deleted item shows as a `not:` line, and re-extracting its entry does not bring it back (test).
 - An example from a private entry never reaches a cloud model (fetch spy test, as for Ask).
 - **Forget** on one device removes the example on the other after sync (two-store test).
-- The prompt with 10 examples stays under the size the smallest preset's context can take (test on the rendered prompt).
+- An item copied from an unrelated or merely related example is dropped (test with the real case above, rewritten).
+- The prompt with the most examples stays under the size the smallest preset's context can take (test on the rendered prompt).
 - The [user guide](../user-guide/README.md) has a page on corrections: what counts, the setting, the list, privacy.
 
 ## Not in this version

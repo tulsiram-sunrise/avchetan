@@ -28,7 +28,7 @@ A fix you make on your phone also teaches your PC and your hub, once they sync.
 
 The list shows each entry you fixed, newest first, with how it's organized now. Lines starting with **Not:** are things you deleted. **Forget** stops the AI using that entry as an example, on all your devices. Your entry and your fix stay as they are.
 
-When it organizes an entry, the AI sees up to 10 of your fixes, the ones whose words are most like the new entry's.
+When it organizes an entry, the AI sees up to 5 of your fixes, the ones whose words are most like the new entry's. A fix with nothing in common with the new entry isn't shown. If the AI still copies something from a fix into an unrelated entry, Avchetan leaves it out.
 
 ## Turn it off
 
