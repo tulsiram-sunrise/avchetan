@@ -6,7 +6,13 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { buildCaptureInput } from '../capture';
 import type { LlmDeps } from '../llm/generate-structured';
 import type { ModelConfig } from '../providers/config';
-import { createBriefRunner, dueBriefDays, saveBriefSettings } from './brief-schedule';
+import {
+  createBriefRunner,
+  dueBriefDays,
+  loadBriefFailure,
+  saveBriefFailure,
+  saveBriefSettings,
+} from './brief-schedule';
 import {
   type BriefText,
   briefNotes,
@@ -259,5 +265,20 @@ describe('createBriefRunner', () => {
     await runner(made, false).wake();
 
     expect(made).toEqual([]);
+  });
+});
+
+describe('brief failure', () => {
+  it('is saved, and cleared again after a brief succeeds', async () => {
+    await saveBriefFailure(store, { day: DAY, code: 'llm_auth', message: 'Bad key' });
+    expect(await loadBriefFailure(store)).toEqual({
+      day: DAY,
+      code: 'llm_auth',
+      message: 'Bad key',
+    });
+
+    await saveBriefFailure(store, null);
+
+    expect(await loadBriefFailure(store)).toBeNull();
   });
 });

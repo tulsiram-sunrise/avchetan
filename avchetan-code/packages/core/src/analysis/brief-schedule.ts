@@ -203,5 +203,8 @@ export async function saveBriefFailure(
   store: ClientStore,
   failure: BriefFailure | null,
 ): Promise<void> {
-  await store.write((tx) => setSetting(tx, BRIEF_FAILURE_SETTING, failure, store.clock.now()));
+  // Settings values can't be null: `false` means no failure.
+  await store.write((tx) =>
+    setSetting(tx, BRIEF_FAILURE_SETTING, failure ?? false, store.clock.now()),
+  );
 }
