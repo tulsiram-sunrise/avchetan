@@ -48,7 +48,11 @@ Tap an entry on **Days** to see what was found in it.
 - **Organize again:** try again, for example after you choose a better model.
 - **Edit text:** change what you wrote. The entry keeps its original time and is organized again.
 - **Delete entry:** remove it, along with everything found in it.
+- **Edit** under an activity: change its title or pick another category.
 - **Delete** under an activity: remove only that activity.
+- Tap a task to change it or delete it.
+
+Fixing what Avchetan found teaches it for next time ([Teach Avchetan with your fixes](corrections.md)).
 
 If something went wrong, the reason appears under the entry with a **Help** link.
 

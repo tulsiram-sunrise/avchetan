@@ -19,6 +19,7 @@ import { useServices } from '../services-context';
 import { AiModelsSetting } from './ai-models-setting';
 import { DataSetting } from './data-setting';
 import { HubSetting } from './hub-setting';
+import { LearnedSetting } from './learned-setting';
 import { SyncSetting } from './sync-setting';
 import { QuietButton } from './ui';
 import { UsageSetting } from './usage-setting';
@@ -39,6 +40,7 @@ export function SettingsPage() {
         <QuietButton onClick={() => openView('setup')}>Run setup again</QuietButton>
       </div>
       <AiModelsSetting />
+      <LearnedSetting />
       <DailyBriefSetting />
       <HubSetting />
       <SyncSetting />

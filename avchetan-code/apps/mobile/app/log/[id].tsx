@@ -3,21 +3,81 @@ import type { Activity, RawLog } from '@avchetan/db/sqlite';
 import { describeError, formatDay, formatTime, parseLastError } from '@avchetan/shared';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import { useActiveCategories } from '../../src/queries/corrections';
 import { useCategoryNames, useLogDetail } from '../../src/queries/entries';
 import {
   useDeleteActivity,
   useDeleteLog,
+  useEditActivity,
   useEditLog,
   useRequeueLog,
 } from '../../src/queries/writes';
 import { Button, Failure, Field, HelpLink } from '../../src/ui/parts';
 import { StatusBadge } from '../../src/ui/status-badge';
-import { TaskCheck } from '../../src/ui/task-row';
+import { TaskRow } from '../../src/ui/task-row';
+
+/** Title and category: a fix here also teaches the AI (product/correction-feedback.md). */
+function ActivityEditor({ activity, onClose }: { activity: Activity; onClose: () => void }) {
+  const [title, setTitle] = useState(activity.title);
+  const [categoryId, setCategoryId] = useState(activity.categoryId);
+  const categories = useActiveCategories();
+  const edit = useEditActivity();
+  const choices = categories.data ?? [];
+  // A merged or archived category isn't offered, but stays chosen until another is picked.
+  const changed = title.trim() !== activity.title || categoryId !== activity.categoryId;
+
+  return (
+    <View className="gap-3 pt-2">
+      <Field
+        label="Activity"
+        value={title}
+        onChangeText={setTitle}
+        autoCapitalize="sentences"
+        autoCorrect
+      />
+      <Text className="text-sm text-ink">Category</Text>
+      <View className="flex-row flex-wrap gap-2">
+        {choices.map((category) => {
+          const selected = category.id === categoryId;
+          return (
+            <Pressable
+              key={category.id}
+              accessibilityRole="radio"
+              accessibilityState={{ selected }}
+              onPress={() => setCategoryId(category.id)}
+              className={`rounded-full px-3 py-1.5 ${selected ? 'bg-accent' : 'border border-line'}`}
+            >
+              <Text className={`text-sm ${selected ? 'text-white' : 'text-ink'}`}>
+                {category.name}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+      <View className="flex-row flex-wrap gap-2">
+        <Button
+          primary
+          label="Save"
+          disabled={!title.trim() || !changed || edit.isPending}
+          onPress={() =>
+            edit.mutate(
+              { id: activity.id, title: title.trim(), categoryId },
+              { onSuccess: onClose },
+            )
+          }
+        />
+        <Button label="Cancel" onPress={onClose} />
+      </View>
+      <Failure error={edit.error} />
+    </View>
+  );
+}
 
 function ActivityItem({ activity }: { activity: Activity }) {
   const names = useCategoryNames();
   const remove = useDeleteActivity();
+  const [editing, setEditing] = useState(false);
   const metrics = metricsText(activity.metrics);
 
   return (
@@ -30,13 +90,18 @@ function ActivityItem({ activity }: { activity: Activity }) {
           {line}
         </Text>
       ))}
-      <View className="flex-row pt-1">
-        <Button
-          label="Delete"
-          disabled={remove.isPending}
-          onPress={() => remove.mutate(activity.id)}
-        />
-      </View>
+      {editing ? (
+        <ActivityEditor activity={activity} onClose={() => setEditing(false)} />
+      ) : (
+        <View className="flex-row gap-2 pt-1">
+          <Button label="Edit" onPress={() => setEditing(true)} />
+          <Button
+            label="Delete"
+            disabled={remove.isPending}
+            onPress={() => remove.mutate(activity.id)}
+          />
+        </View>
+      )}
       <Failure error={remove.error} />
     </View>
   );
@@ -147,16 +212,11 @@ export default function LogScreen() {
         </View>
       ) : null}
       {tasks.length > 0 ? (
-        <View className="gap-2">
-          <Text className="text-xs font-semibold uppercase text-inkMuted">Tasks</Text>
+        <View>
+          <Text className="pb-1 text-xs font-semibold uppercase text-inkMuted">Tasks</Text>
+          {/* Tap a task to edit or delete it, as in Days. */}
           {tasks.map((task) => (
-            <View key={task.id} className="flex-row items-center gap-3">
-              <TaskCheck task={task} />
-              <Text className="flex-1 text-sm text-ink">
-                {task.title}
-                {task.dueDate ? ` · due ${task.dueDate}` : ''}
-              </Text>
-            </View>
+            <TaskRow key={task.id} task={task} />
           ))}
         </View>
       ) : null}

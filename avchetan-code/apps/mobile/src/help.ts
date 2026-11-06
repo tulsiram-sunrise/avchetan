@@ -11,6 +11,11 @@ export function openGuide(): Promise<void> {
   return Linking.openURL(`${GUIDE_URL}/`);
 }
 
+/** A page of the user guide, such as `corrections`. */
+export function openGuidePage(page: string): Promise<void> {
+  return Linking.openURL(`${GUIDE_URL}/${page}`);
+}
+
 export function openReportProblem(): Promise<void> {
   return Linking.openURL(REPORT_PROBLEM_URL);
 }

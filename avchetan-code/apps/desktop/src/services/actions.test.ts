@@ -90,6 +90,28 @@ describe('actions', () => {
     expect(onDone).not.toHaveBeenCalled();
   });
 
+  it('deletes a task the user made without making it a correction', async () => {
+    const task = await newTask();
+
+    await actions.run('task.delete', { id: task.id });
+
+    expect(await store.queries.openTasks(store.db)).toEqual([]);
+    expect(
+      await store.queries.correctedEntries(store.db, { includePrivate: true, limit: 10 }),
+    ).toEqual([]);
+  });
+
+  it('forgets an entry as a correction example', async () => {
+    const log = await store.write((tx) =>
+      store.repos.rawLogs.capture(tx, { content: 'x', source: 'desktop_text', capturedTz: 'UTC' }),
+    );
+
+    await actions.run('log.forgetExample', { id: log.id });
+
+    const [stored] = await store.queries.logsById(store.db, [log.id], { includePrivate: true });
+    expect(stored?.exampleForgottenAt).not.toBeNull();
+  });
+
   it('rejects malformed arguments', async () => {
     await expect(actions.run('task.delete', { id: '' })).rejects.toThrow();
   });

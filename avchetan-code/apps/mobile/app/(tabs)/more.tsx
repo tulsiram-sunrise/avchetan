@@ -21,6 +21,16 @@ export default function MoreScreen() {
       <Pressable
         accessibilityRole="button"
         className="border-b border-line bg-surfaceRaised p-4"
+        onPress={() => router.push('/settings/learned')}
+      >
+        <Text className="text-base text-ink">What Avchetan learned</Text>
+        <Text className="text-sm text-inkMuted">
+          Your fixes the AI follows, and forgetting them.
+        </Text>
+      </Pressable>
+      <Pressable
+        accessibilityRole="button"
+        className="border-b border-line bg-surfaceRaised p-4"
         onPress={() => router.push('/settings/brief')}
       >
         <Text className="text-base text-ink">Daily brief</Text>
