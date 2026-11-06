@@ -162,7 +162,7 @@ Planned 2026-11-05, before the rest of Phase 6: the daily brief (Phase 6) will s
 
 Built one item at a time, each on its own branch and PR, tried on real devices before the next. Each item gets its own product spec before it starts (like [daily-brief.md](product/daily-brief.md)).
 
-1. **Daily brief** ([product/daily-brief.md](product/daily-brief.md)): the core brief on a `ClientStore`, device scheduler, the hub making it (`POST /v1/brief` + fallback), the brief at the top of a day in Days with **Move to tomorrow**, desktop notification, phone reminder. Planned 2026-11-06. ⏳ Built on branch phase-6/daily-brief (2026-11-06), being tried on real devices.
+1. **Daily brief** ([product/daily-brief.md](product/daily-brief.md)): the core brief on a `ClientStore`, device scheduler, the hub making it (`POST /v1/brief` + fallback), the brief at the top of a day in Days with **Move to tomorrow**, desktop notification, phone reminder. Planned 2026-11-06. ✅ Built 2026-11-06 (PR #17); tried on the desktop demo, the emulator and real devices.
 2. Correction feedback loop ([§7](product/advancements.md#7-new-correction-feedback-loop)).
 3. Command mode `/` with registry, confirmations, undo ([§3](product/advancements.md#3-unified-command-dock-capture--ask--act)).
 4. Android widget: quick-capture deep link.
