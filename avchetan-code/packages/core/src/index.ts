@@ -37,6 +37,30 @@ export {
 } from './analysis/daily-brief';
 export type { SearchHistory } from './analysis/tools';
 export { buildCaptureInput } from './capture';
+export { type CommandReading, interpretCommand } from './commands/interpret';
+export {
+  COMMANDS_ALIASES_SETTING,
+  COMMANDS_EXAMPLES_SETTING,
+  COMMANDS_LEARN_SETTING,
+  type CommandLearning,
+  forgetCommandAlias,
+  forgetCommandExample,
+  type LearnedCommandExample,
+  learnFromReading,
+  loadCommandLearning,
+  MAX_COMMAND_EXAMPLES,
+  saveCommandLearn,
+} from './commands/learning';
+export { matchOpenTask, type TaskMatch } from './commands/match';
+export {
+  type CommandAliases,
+  captureText,
+  isCommand,
+  type ParsedCommand,
+  parseCommand,
+  suggestCommands,
+} from './commands/parse';
+export { COMMAND_NAMES, COMMANDS, type CommandName, isCommandName } from './commands/registry';
 export { type EmbeddingSource, embeddingText, embedTexts } from './embeddings/embed';
 export {
   chooseExamples,

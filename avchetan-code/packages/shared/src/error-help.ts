@@ -131,6 +131,10 @@ export const ERROR_HELP = {
   unavailable: at('server_error', 'Your hub or server can’t reach its database'),
   token_from_env: at('token_from_env'),
   ask_unavailable: at('ask_unavailable', 'Your hub can’t answer questions right now'),
+
+  // Command mode in the capture box (docs/product/command-mode.md).
+  command_unknown: at('command_unknown', 'Couldn’t read this as a command'),
+  command_no_match: at('command_no_match'),
   search_unavailable: at('search_unavailable', 'Your hub can’t search by meaning right now'),
 
   // AI models: the thrown messages already say what happened, with the provider's detail.
