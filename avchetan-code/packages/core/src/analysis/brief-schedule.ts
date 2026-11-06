@@ -183,3 +183,25 @@ export function createBriefRunner(deps: BriefRunnerDeps): BriefRunner {
     makeNow,
   };
 }
+
+/** The last brief that failed on this device, for Days to explain. Cleared on success. */
+export const BRIEF_FAILURE_SETTING = 'brief.failure';
+
+export const briefFailureSchema = z.object({
+  day: z.string(),
+  code: z.string(),
+  message: z.string(),
+});
+export type BriefFailure = z.infer<typeof briefFailureSchema>;
+
+export async function loadBriefFailure(store: ClientStore): Promise<BriefFailure | null> {
+  const parsed = briefFailureSchema.safeParse(await getSetting(store.db, BRIEF_FAILURE_SETTING));
+  return parsed.success ? parsed.data : null;
+}
+
+export async function saveBriefFailure(
+  store: ClientStore,
+  failure: BriefFailure | null,
+): Promise<void> {
+  await store.write((tx) => setSetting(tx, BRIEF_FAILURE_SETTING, failure, store.clock.now()));
+}

@@ -25,6 +25,12 @@
       "expo-secure-store",
       "expo-sqlite",
       [
+        "expo-notifications",
+        {
+          "icon": "./assets/adaptive-monochrome.png"
+        }
+      ],
+      [
         "expo-camera",
         {
           "cameraPermission": "Avchetan uses the camera only to scan the pairing code shown on your PC.",

@@ -1,8 +1,8 @@
 import { dayCategories, dayCategoryText } from '@avchetan/core';
 import type { Task } from '@avchetan/db/sqlite';
-import { formatLocalDate, localDate, systemTimeZone } from '@avchetan/shared';
+import { formatLocalDate, isValidLocalDate, localDate, systemTimeZone } from '@avchetan/shared';
 import { useQuery } from '@tanstack/react-query';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useExtractionMode, useSlotModel } from '../../src/queries/ai-models';
@@ -19,6 +19,7 @@ import { needsSetup } from '../../src/services/first-run';
 import { byRawLog } from '../../src/services/grouping';
 import { useServices } from '../../src/services-context';
 import { CaptureButton } from '../../src/ui/capture-button';
+import { DailyBrief } from '../../src/ui/daily-brief';
 import { DayCalendar } from '../../src/ui/day-calendar';
 import { EntryRow } from '../../src/ui/entry-row';
 import { SectionTitle } from '../../src/ui/parts';
@@ -77,6 +78,14 @@ export default function DaysScreen() {
   const today = useToday();
   const [day, setDay] = useState(today);
   const [expanded, setExpanded] = useState(false);
+  const { brief } = useServices();
+  // A tapped brief reminder opens its day (app/_layout.tsx).
+  const requested = useLocalSearchParams<{ day?: string }>().day;
+  useEffect(() => {
+    if (requested && isValidLocalDate(requested)) setDay(requested);
+    // Opening Days is when a phone makes a due brief (it can't run at the brief time).
+    void brief.wake();
+  }, [requested, brief]);
 
   return (
     <View className="flex-1 bg-surface">
@@ -128,9 +137,16 @@ function DayContent({ day, today }: { day: string; today: string }) {
         <Text className="text-base font-semibold text-ink">
           {formatLocalDate(day, { weekday: 'long', day: 'numeric', month: 'long' })}
         </Text>
-        {summary.length > 0 ? (
-          <Text className="text-sm text-inkMuted">{summary.join(' · ')}</Text>
-        ) : null}
+        <DailyBrief
+          day={day}
+          today={today}
+          hasEntries={count > 0}
+          summary={
+            summary.length > 0 ? (
+              <Text className="text-sm text-inkMuted">{summary.join(' · ')}</Text>
+            ) : null
+          }
+        />
       </View>
       {empty ? (
         <Text className="p-6 text-center text-sm text-inkMuted">

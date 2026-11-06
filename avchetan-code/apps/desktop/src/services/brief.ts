@@ -7,6 +7,7 @@ import {
   loadAnalysisModel,
   makeDailyBrief,
   PROVIDER_ADAPTERS,
+  saveBriefFailure,
 } from '@avchetan/core';
 import { type ClientStore, getSetting, setSetting } from '@avchetan/db/sqlite';
 import {
@@ -19,7 +20,6 @@ import {
   toAppError,
 } from '@avchetan/shared';
 import { loadServerUrls, requestHubBrief, type SyncEngine } from '@avchetan/sync';
-import { z } from 'zod';
 import { emitAppEvent } from '../native/events';
 import type { Platform } from '../platform';
 import { announce } from './extraction';
@@ -27,22 +27,8 @@ import type { TimeZoneCache } from './time-zone';
 
 const log = createLogger('brief');
 
-/** The last automatic or asked-for brief that failed, for Days to explain. Cleared on success. */
-export const BRIEF_FAILURE_SETTING = 'brief.failure';
 /** The newest day a notification was shown for, so each brief notifies once. */
 const BRIEF_NOTIFIED_SETTING = 'brief.notified';
-
-export const briefFailureSchema = z.object({
-  day: z.string(),
-  code: z.string(),
-  message: z.string(),
-});
-export type BriefFailure = z.infer<typeof briefFailureSchema>;
-
-export async function loadBriefFailure(store: ClientStore): Promise<BriefFailure | null> {
-  const parsed = briefFailureSchema.safeParse(await getSetting(store.db, BRIEF_FAILURE_SETTING));
-  return parsed.success ? parsed.data : null;
-}
 
 async function saveSetting(store: ClientStore, key: string, value: unknown): Promise<void> {
   await store.write((tx) => setSetting(tx, key, value, store.clock.now()));
@@ -96,12 +82,12 @@ export function createBriefService(deps: {
     void emitAppEvent('brief:state', { day, making: true }).catch(() => undefined);
     try {
       const result = await makeHere(day, replace);
-      await saveSetting(store, BRIEF_FAILURE_SETTING, null);
+      await saveBriefFailure(store, null);
       return result;
     } catch (error) {
       const { code, message } = toAppError(error);
       log.warn('daily brief failed', { code });
-      await saveSetting(store, BRIEF_FAILURE_SETTING, { day, code, message });
+      await saveBriefFailure(store, { day, code, message });
       throw error;
     } finally {
       void announce(store, platform);
