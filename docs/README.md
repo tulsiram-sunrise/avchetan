@@ -22,6 +22,7 @@ The project started from an original discussion and first specification that are
 | [product/days-view.md](product/days-view.md) | The Days view: week strip, month calendar, one day's entries and tasks |
 | [product/daily-brief.md](product/daily-brief.md) | The daily brief: what it says, who makes it and when, reminders |
 | [product/correction-feedback.md](product/correction-feedback.md) | Correction feedback: how your fixes become examples for the model, and how to forget them |
+| [product/command-mode.md](product/command-mode.md) | Command mode: `/` commands in the desktop capture box, undo, and AI readings that teach aliases |
 | [product/glossary.md](product/glossary.md) | Shared vocabulary |
 
 ### Architecture

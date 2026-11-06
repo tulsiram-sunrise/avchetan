@@ -65,6 +65,8 @@ Specified in [daily-brief.md](daily-brief.md). In short:
 
 ## 3. Unified command dock (capture · ask · act)
 
+> Command mode is planned in detail in [command-mode.md](command-mode.md) (Phase 6). The outline below is the original idea.
+
 The dock is a launcher, not just a text box. One input, three modes by prefix:
 
 | Input | Mode | Result |
