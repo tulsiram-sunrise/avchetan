@@ -58,7 +58,8 @@ What a failure does is decided in `failure-policy.ts`:
 Input assembled by `buildExtractionInput(rawLog, vocabulary)`:
 - System prompt (versioned, `EXTRACTION_PROMPT_VERSION`).
 - Date context: local "today" in `captured_tz` **of the log** (not now) + weekday — so a log captured offline Tuesday and processed Thursday resolves "tomorrow" to Wednesday.
-- Vocabulary: active categories (slug + name + description), active project names + descriptions, top ~150 existing tag paths, known entity names (top ~100 by recency), metric key registry, recent user corrections (Phase 6).
+- Vocabulary: active categories (slug + name + description), active project names + descriptions, top ~150 existing tag paths, known entity names (top ~100 by recency), metric key registry.
+- Correction examples: up to 10 of the user's past fixes that share words with this entry ([correction feedback](../product/correction-feedback.md)), private ones only for a local model. Left out first on `llm_context_overflow`.
 - Context hints: `raw_logs.context` (active app, rule matches) when present.
 - The raw content and the already-parsed explicit tags.
 
@@ -136,7 +137,7 @@ Configuration (env): `FALLBACK_EXTRACTION_ENABLED` (default `true`), `FALLBACK_G
 
 - Pending badge count in dock and tray tooltip.
 - Error list with reason (rate limit, invalid key, validation) and actions: retry, retry with analysis model, edit text & re-extract (creates a **new** raw log linked via `context.supersedes`, keeping the original `captured_at` and `captured_tz` so its day and relative dates don't move; the original is soft-deleted — content stays immutable).
-- Manual edits of extracted rows set `is_user_edited` and record a correction.
+- Manual edits and deletes of extracted rows set `is_user_edited` and record a correction; the entry then becomes an example for later extractions ([correction feedback](../product/correction-feedback.md)).
 
 ## 8. Quality
 

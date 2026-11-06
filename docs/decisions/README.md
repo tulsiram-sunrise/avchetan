@@ -30,6 +30,7 @@ Short records of significant decisions: context, decision, consequences. Accepte
 | [0024](0024-hub-sidecar-node-single-executable.md) | The built-in hub is a Node single executable, stopped by closing its stdin | Accepted |
 | [0025](0025-server-data-epoch.md) | A data epoch tells devices when a server's data went back in time | Accepted |
 | [0026](0026-github-releases-unsigned-windows-first.md) | Releases on GitHub only; the Windows installer starts unsigned | Accepted |
+| [0027](0027-corrections-from-synced-edits.md) | Correction examples come from synced edits | Accepted |
 
 ## Template
 

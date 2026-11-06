@@ -61,6 +61,7 @@ The verbatim capture. Content is immutable after insert.
 | `extraction_model` | text, nullable | `provider:model` used |
 | `extraction_version` | int, nullable | Prompt/schema version used (re-extraction on upgrade is possible) |
 | `last_error` | text, nullable | Short error code + message (no content) |
+| `example_forgotten_at` | UTC ISO, nullable | The user chose **Forget** for this entry as a correction example ([ADR-0027](../decisions/0027-corrections-from-synced-edits.md)) |
 
 Indexes: `(status, captured_at)`, `(captured_at)`, `(updated_at)`.
 
@@ -101,7 +102,7 @@ Seeds (created on first run on every device; same derived IDs everywhere): `work
 | `logged_date` | `YYYY-MM-DD`, not null | Local date the activity applies to ("yesterday I ran" → yesterday) |
 | `occurred_at` | UTC ISO, nullable | When known precisely |
 | `origin` | enum | `extraction`, `user`, `system` (daily brief, weekly review) |
-| `is_user_edited` | bool, default false | Re-extraction never overwrites edited rows |
+| `is_user_edited` | bool, default false | Re-extraction never overwrites edited rows. Also set on an extracted row the user deleted, so it is a correction ([ADR-0027](../decisions/0027-corrections-from-synced-edits.md)) |
 | `ordinal` | int | Position in the extraction output (part of derived ID) |
 
 Indexes: `(logged_date)`, `(category_id, logged_date)`, `(raw_log_id)`, `(project_id)`.
@@ -183,7 +184,7 @@ ID = `derivedId('mention', entity_id, target_type, target_id, role)`.
 | `settings` | `key` PK, `value` JSON | Non-secret settings (model slots, hotkeys, server URL). Secrets are in the keychain |
 | `llm_runs` | `id`, `raw_log_id?`, `purpose`, `provider`, `model`, `latency_ms`, `input_tokens`, `output_tokens`, `ok`, `error_code`, `created_at` | Local audit/cost view; no prompt content |
 | `ask_history` | `id`, `question`, `answer`, `cited_ids`, `created_at` | Local only by design |
-| `extraction_corrections` | `id`, `raw_log_id`, `target_type` (`activity`/`task`), `target_id`, `field`, `before`, `after`, `created_at` | Feedback loop (Phase 6) |
+| `extraction_corrections` | `id`, `raw_log_id`, `target_type` (`activity`/`task`), `target_id`, `field`, `before`, `after`, `created_at` | Field-by-field record of each hand edit or delete of an extracted row, for export and for writing synthetic fixtures. Never sent to a model; prompt examples come from synced rows ([ADR-0027](../decisions/0027-corrections-from-synced-edits.md)) |
 
 ## Server-only tables
 
