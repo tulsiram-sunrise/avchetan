@@ -6,6 +6,7 @@ import { useMemo, useState } from 'react';
 import { GUIDE_URL, openExternal, REPORT_PROBLEM_URL } from '../help';
 import { HelpLink } from '../help-link';
 import { emitAppEvent } from '../native/events';
+import { useBriefSettings, useSaveBriefSettings } from '../queries/brief';
 import {
   useSetSubmitKey,
   useSetTimeZone,
@@ -38,6 +39,7 @@ export function SettingsPage() {
         <QuietButton onClick={() => openView('setup')}>Run setup again</QuietButton>
       </div>
       <AiModelsSetting />
+      <DailyBriefSetting />
       <HubSetting />
       <SyncSetting />
       <DataSetting />
@@ -159,6 +161,53 @@ function ShortcutSetting() {
         <p role="alert" className="text-sm text-danger">
           That shortcut can't be used (another app may own it). Try another.{' '}
           <HelpLink code={failedCode} />
+        </p>
+      ) : null}
+    </section>
+  );
+}
+
+function DailyBriefSetting() {
+  const settings = useBriefSettings();
+  const save = useSaveBriefSettings();
+  const [time, setTime] = useState<string | null>(null);
+  const shown = time ?? settings.data?.time ?? '';
+
+  return (
+    <section className="flex flex-col gap-2">
+      <h2 className="font-medium">Daily brief</h2>
+      <p className="text-sm text-ink-muted">
+        A short look back at each day with entries, at the top of the day in Days, with a
+        notification when it's ready. Made by your answers model, or by your hub.
+      </p>
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={settings.data?.enabled ?? true}
+          disabled={!settings.isSuccess || save.isPending}
+          onChange={(event) => save.mutate({ enabled: event.target.checked })}
+        />
+        Make a daily brief
+      </label>
+      <label className="flex items-center gap-2 text-sm">
+        At
+        <input
+          type="time"
+          aria-label="Brief time"
+          className="rounded-lg border border-line bg-surface-raised px-2 py-1 text-sm"
+          value={shown}
+          disabled={!settings.isSuccess || !settings.data?.enabled || save.isPending}
+          onChange={(event) => setTime(event.target.value)}
+          onBlur={() => {
+            if (time && time !== settings.data?.time) {
+              save.mutate({ time }, { onSettled: () => setTime(null) });
+            }
+          }}
+        />
+      </label>
+      {save.isError ? (
+        <p role="alert" className="text-sm text-danger">
+          Couldn't save this setting. Try again. <HelpLink code={toAppError(save.error).code} />
         </p>
       ) : null}
     </section>

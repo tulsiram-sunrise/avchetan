@@ -15,6 +15,8 @@ export function createShell(invoke: Invoke) {
   return {
     hideDock: () => callNative(invoke, 'dock_hide', {}, z.null()),
     openMain: (view: MainView = 'timeline') => callNative(invoke, 'main_open', { view }, z.null()),
+    /** "Your daily brief is ready"; clicking it opens Days on `day` (src-tauri/src/notify.rs). */
+    notifyBrief: (day: string) => callNative(invoke, 'brief_notify', { day }, z.null()),
     setTrayPending: (count: number) => callNative(invoke, 'tray_set_pending', { count }, z.null()),
     hotkeyStatus: () => callNative(invoke, 'hotkey_status', {}, hotkeyStatusSchema),
     setHotkey: (shortcut: string) =>

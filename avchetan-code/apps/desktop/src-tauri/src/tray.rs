@@ -37,12 +37,12 @@ pub fn create(app: &App) -> tauri::Result<()> {
         .on_menu_event(|app, event| match event.id().as_ref() {
             "open" => warn_on_err(
                 "open main",
-                windows::open_main(app, "timeline").map_err(|e| e.message),
+                windows::open_main(app, "timeline", None).map_err(|e| e.message),
             ),
             "preferences" => {
                 warn_on_err(
                     "open settings",
-                    windows::open_main(app, "settings").map_err(|e| e.message),
+                    windows::open_main(app, "settings", None).map_err(|e| e.message),
                 );
             }
             "quit" => app.exit(0),

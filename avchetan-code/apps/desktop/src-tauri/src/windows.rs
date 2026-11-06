@@ -67,10 +67,28 @@ fn center_on_cursor_monitor<R: Runtime>(
     ))
 }
 
-/// Shows the main window, creating it on first use. `view` is `timeline`, `settings` or `setup`.
-pub fn open_main<R: Runtime>(app: &AppHandle<R>, view: &str) -> CommandResult<()> {
+/// A local date, `YYYY-MM-DD`: only digits and dashes, so safe to put into a script.
+pub fn is_local_date(value: &str) -> bool {
+    let bytes = value.as_bytes();
+    bytes.len() == 10
+        && bytes.iter().enumerate().all(|(index, byte)| match index {
+            4 | 7 => *byte == b'-',
+            _ => byte.is_ascii_digit(),
+        })
+}
+
+/// Shows the main window, creating it on first use. `view` is `timeline`, `settings` or `setup`;
+/// `day` (`YYYY-MM-DD`) opens that day in Days.
+pub fn open_main<R: Runtime>(
+    app: &AppHandle<R>,
+    view: &str,
+    day: Option<&str>,
+) -> CommandResult<()> {
     if !matches!(view, "timeline" | "settings" | "setup") {
         return Err(CommandError::new("invalid_view", "Unknown view"));
+    }
+    if day.is_some_and(|day| !is_local_date(day)) {
+        return Err(CommandError::new("invalid_date", "Invalid date"));
     }
     if let Some(main) = app.get_webview_window(MAIN) {
         warn_on_err("unminimize main", main.unminimize());
@@ -78,12 +96,20 @@ pub fn open_main<R: Runtime>(app: &AppHandle<R>, view: &str) -> CommandResult<()
         warn_on_err("focus main", main.set_focus());
         warn_on_err(
             "emit main:navigate",
-            app.emit_to(MAIN, "main:navigate", serde_json::json!({ "view": view })),
+            app.emit_to(
+                MAIN,
+                "main:navigate",
+                serde_json::json!({ "view": view, "day": day }),
+            ),
         );
         return Ok(());
     }
-    // `view` is one of three literals (checked above), so it is safe to inline.
-    let script = format!("window.__AVCHETAN_INITIAL_VIEW__ = '{view}';");
+    // `view` is one of three literals and `day` only digits and dashes (checked above), so both
+    // are safe to inline.
+    let mut script = format!("window.__AVCHETAN_INITIAL_VIEW__ = '{view}';");
+    if let Some(day) = day {
+        script.push_str(&format!("window.__AVCHETAN_INITIAL_DAY__ = '{day}';"));
+    }
     WebviewWindowBuilder::new(app, MAIN, WebviewUrl::App("main.html".into()))
         .title("Avchetan")
         .inner_size(1000.0, 700.0)
@@ -126,6 +152,20 @@ pub fn dock_hide(app: AppHandle) -> CommandResult<()> {
 
 /// `async` because creating a window from a synchronous command deadlocks on Windows.
 #[tauri::command(async)]
-pub fn main_open(app: AppHandle, view: String) -> CommandResult<()> {
-    open_main(&app, &view)
+pub fn main_open(app: AppHandle, view: String, day: Option<String>) -> CommandResult<()> {
+    open_main(&app, &view, day.as_deref())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::is_local_date;
+
+    #[test]
+    fn local_dates_are_only_digits_and_dashes() {
+        assert!(is_local_date("2026-11-06"));
+        assert!(!is_local_date("2026-11-6"));
+        assert!(!is_local_date("2026-11-06'"));
+        assert!(!is_local_date("2026/11/06"));
+        assert!(!is_local_date("x';alert(1)"));
+    }
 }
