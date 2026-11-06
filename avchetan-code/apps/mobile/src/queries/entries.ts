@@ -2,6 +2,7 @@ import type { ClientStore } from '@avchetan/db/sqlite';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { refreshAll } from '../query-client';
 import { scheduleBriefReminder } from '../services/brief-reminder';
+import type { MobileSource } from '../services/capture';
 import { useServices } from '../services-context';
 
 export function useExtracted(rawLogIds: readonly string[]) {
@@ -60,7 +61,8 @@ export function useCategoryNames() {
 export function useCapture() {
   const { capture, extraction, sync, store } = useServices();
   return useMutation({
-    mutationFn: (text: string) => capture.capture(text),
+    mutationFn: ({ text, source }: { text: string; source?: MobileSource }) =>
+      capture.capture(text, source),
     // The row is committed by now: nothing here may delay the sheet closing.
     onSuccess: () => {
       refreshAll();

@@ -25,6 +25,20 @@ If you close the box without saving, your text is still there the next time you 
 
 ![Typing an entry on the phone, with the Save button above it](images/capture-on-android-capture.png)
 
+## Add the widget
+
+The **Quick capture** widget puts a *What's on your mind?* bar on your home screen. Tap it, type, tap **Save**, and you're back on the home screen. The widget never shows your entries.
+
+1. Touch and hold an empty part of your home screen, then tap **Widgets**.
+2. Find **Avchetan** and drag **Quick capture** to your home screen (on some phones, tap it and then **Add**).
+3. To make it narrower or wider, touch and hold it, then drag its edges.
+
+Tapping the bar opens the same box as **+**, with the keyboard up. **Back** keeps your text for next time and also returns to the home screen.
+
+![The Quick capture bar on the phone's home screen](images/capture-on-android-widget.png)
+
+If tapping the widget does nothing (for example after you used **Force stop** on Avchetan in the phone's settings), open Avchetan once. The widget works again after that.
+
 ## Look back by day
 
 **Days** shows one day at a time: its [daily brief](daily-brief.md) in the evening (until then, how many entries and totals such as *Workout 45 min*), the tasks due or done that day, and the entries.

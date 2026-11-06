@@ -1,6 +1,8 @@
 # Builds the Windows installer (with the hub inside) and the signed Android APK.
 # - Run by hand (Actions → Release → Run workflow), or by pushing to a `release/**` branch (to try
-#   a branch before it is merged): both files as downloadable artifacts.
+#   a branch before it is merged): the files as downloadable artifacts. A `release/**` push builds
+#   the APK only when the branch name contains `android` (it takes most of the time); a manual run
+#   has an "Android APK" checkbox, on by default.
 # - On a tag `v*`: the tag must match the apps' version (`pnpm version:set`). Also the server
 #   image on GitHub's container registry (ghcr.io/<owner>/avchetan-server), and a *draft* GitHub
 #   release with both files, their SHA-256 sums and the install notes (.github/release-notes.md),
@@ -14,6 +16,11 @@ on:
     tags: ["v*"]
     branches: ["release/**"]
   workflow_dispatch:
+    inputs:
+      android:
+        description: Android APK
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -95,6 +102,10 @@ jobs:
   android:
     name: Android APK
     needs: version
+    if: >-
+      (github.event_name == 'workflow_dispatch' && inputs.android) ||
+      startsWith(github.ref, 'refs/tags/v') ||
+      contains(github.ref_name, 'android')
     runs-on: ubuntu-latest
     defaults:
       run:

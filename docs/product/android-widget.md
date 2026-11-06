@@ -37,6 +37,7 @@ Entries saved from the widget have `source = mobile_widget` (already in the [dat
 - **A small native widget, no new dependency.** A config plugin (`apps/mobile/plugins/capture-widget.js`) adds to the generated `android/` project: an `AppWidgetProvider` in Kotlin (`CaptureWidgetProvider`, about 30 lines), its layout and `appwidget-provider` XML, a background drawable with night and Android 12 variants, the strings, and the `<receiver>` in the manifest. `android/` stays generated and uncommitted ([mobile](../architecture/mobile.md#build--run)).
 - **The tap** is a `PendingIntent` that opens `avchetan://capture?from=widget` in this app. No JavaScript runs for the widget itself, and no work happens until you tap it.
 - **The capture screen** (`app/capture.tsx`) reads `from=widget`: it saves with `source = mobile_widget`, and after **Save** or **Back** sends the app to the background instead of going back inside the app (Android's own Back behaviour on the root screen). The capture service takes the source as an argument.
+- **After a force stop** Android cancels the widget's tap action and doesn't ask the widget to update again, so the tap does nothing. The app refreshes the widget each time it starts (`CaptureWidgetProvider.refresh`, called from `MainApplication.onCreate` by the same plugin), so opening the app once fixes it; the guide says so.
 - **Logging:** "capture from widget" with the entry ID only (non-negotiable rule 11).
 
 ## Test builds without the APK

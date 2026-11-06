@@ -16,4 +16,13 @@ describe('capture', () => {
     });
     expect(await store.queries.pendingCount(store.db)).toBe(1);
   });
+
+  it('marks entries from the home-screen widget', async () => {
+    const { store } = await openTestStore();
+    const service = createCaptureService(store, () => 'UTC');
+
+    const rawLog = await service.capture('call the plumber', 'mobile_widget');
+
+    expect(rawLog.source).toBe('mobile_widget');
+  });
 });
