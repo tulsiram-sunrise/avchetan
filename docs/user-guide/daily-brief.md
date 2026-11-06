@@ -33,7 +33,7 @@ Each device has its own setting. Your hub follows the device you used most recen
 ## Reminders
 
 - **Windows:** a notification *"Your daily brief is ready"* when your PC makes it or gets it from the hub. Click it to open that day.
-- **Android:** once today has an entry, **Days** asks once: *"Get a reminder at 21:00 when your day's brief is ready?"* Tap **Turn on** and allow notifications. On days you logged something, a reminder arrives at the brief time. Tap it to open that day and see the brief.
+- **Android:** once today has an entry, **Days** asks once: *"Get a reminder at 21:00 when your day's brief is ready?"* Tap **Turn on** and allow notifications. On days you logged something, a reminder arrives at the brief time, or up to an hour later when Android saves battery. Tap it to open that day and see the brief.
 
 If you tapped **Not now**, or Android didn't allow notifications, turn **Remind me** on in **More → Daily brief**. If Android still refuses, allow notifications for Avchetan in Android's **Settings → Apps → Avchetan → Notifications**.
 
