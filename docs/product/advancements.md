@@ -51,11 +51,12 @@ Tauri's Rust side runs with native OS privileges, so the dock can record context
 Tracking needs output, not just input.
 
 ### Daily brief (Phase 6)
-- Runs at a configurable local time (default 21:00) on whichever device is awake; the server runs it as fallback at 23:30 if none did.
+Specified in [daily-brief.md](daily-brief.md). In short:
+- Made at a configurable local time (default 21:00) by a device with its own analysis model, or by the hub; the server makes it 30 minutes later if no device did.
 - Inputs: the day's raw logs, activities, completed and open tasks, tags.
 - Output: 4 bullets — (1) what moved forward and total focus volume, (2) friction points (pain, fatigue, blockers — from tags), (3) rolled-over tasks needing a new date, (4) one observation or suggestion.
 - Saved as an `activities` row: seed category `reflection`, `origin = 'system'`, `metrics.kind = 'daily_brief'`, ID = `derivedId('daily-brief', date)` so two devices generating it converge to one row.
-- Desktop notification "Your daily brief is ready"; rolled-over tasks get one-click "move to tomorrow".
+- Desktop notification "Your daily brief is ready", phone reminder; rolled-over tasks get one-click "move to tomorrow".
 
 ### Weekly pattern detection (Phase 7)
 - Weekly job (Sunday evening). **SQL first**: compute co-occurrences between inferred tags and metrics across days (e.g. `low-energy` vs previous night's `sleep_h < 6.5`), streaks, and deltas vs. the prior 4 weeks.

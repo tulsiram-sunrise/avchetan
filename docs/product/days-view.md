@@ -1,6 +1,6 @@
 # Days view
 
-The main way to look back at entries and ahead at tasks, one day at a time. It replaces the desktop **Timeline** page and the phone's **Today** tab ([roadmap: v0.2.0](../roadmap.md#v020--days-view-and-more-ai-providers)).
+The main way to look back at entries and ahead at tasks, one day at a time. It replaces the desktop **Timeline** page and the phone's **Today** tab ([roadmap: v0.2.0](../roadmap.md#v020--days-view-and-more-ai-providers-)).
 
 ## Why
 
