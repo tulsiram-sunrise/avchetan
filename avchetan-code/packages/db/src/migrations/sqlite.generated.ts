@@ -42,5 +42,11 @@ export const sqliteMigrations: readonly Migration[] = [
       "CREATE INDEX `tasks_completed_at_due_date_idx` ON `tasks` (`completed_at`,`due_date`);",
       "CREATE INDEX `tasks_raw_log_id_idx` ON `tasks` (`raw_log_id`);"
     ]
+  },
+  {
+    "tag": "0001_example_forgotten_at",
+    "statements": [
+      "ALTER TABLE `raw_logs` ADD `example_forgotten_at` text;"
+    ]
   }
 ];

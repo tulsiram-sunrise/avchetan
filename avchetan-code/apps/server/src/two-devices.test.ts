@@ -1,5 +1,12 @@
+import { buildExtractionInput, loadVocabulary } from '@avchetan/core';
 import { tasks as serverTasks } from '@avchetan/db/pg';
-import { type ClientStore, SYNCED_TABLES, setSyncState } from '@avchetan/db/sqlite';
+import {
+  type ClientStore,
+  type ExtractionPlan,
+  SYNCED_TABLES,
+  seedCategoryId,
+  setSyncState,
+} from '@avchetan/db/sqlite';
 import { openTestStore } from '@avchetan/db/testing';
 import { createMonotonicClock, type HttpFetch } from '@avchetan/shared';
 import { FakeNetworkMonitor, ManualScheduler, MemorySecretStore } from '@avchetan/shared/testing';
@@ -484,5 +491,96 @@ describe('two devices and a server', () => {
     await phone.engine.syncNow();
 
     expect((await loadSyncStatus(phone.store)).state).toBe('synced');
+  });
+});
+
+describe('corrections across devices (ADR-0027)', () => {
+  /** What the model made of the entry: a wrong category and a task that isn't one. */
+  const organized = (rawLogId: string): ExtractionPlan => ({
+    rawLogId,
+    status: 'processed',
+    model: 'mock:model',
+    version: 2,
+    activities: [
+      {
+        categoryId: seedCategoryId('other'),
+        title: 'Pool',
+        notes: null,
+        metrics: {},
+        loggedDate: '2026-10-26',
+        projectId: null,
+        tagPaths: [],
+      },
+    ],
+    tasks: [
+      {
+        categoryId: null,
+        title: 'Think about swimming',
+        notes: null,
+        dueDate: null,
+        projectId: null,
+        tagPaths: [],
+      },
+    ],
+    logTagPaths: [],
+    entities: [],
+    newCategory: null,
+    categorySuggestion: null,
+  });
+
+  async function correctOnPhone(phone: Device) {
+    const log = await capture(phone, 'swam 20 laps at the pool');
+    await phone.store.write((tx) => phone.store.repos.extraction.apply(tx, organized(log.id)));
+    const {
+      activities: [activity],
+      tasks: [task],
+    } = await phone.store.queries.extractedFrom(phone.store.db, [log.id]);
+    if (!activity || !task) throw new Error('expected the entry to be organized');
+    await phone.store.write((tx) =>
+      phone.store.repos.activities.editByUser(tx, activity.id, {
+        title: 'Swim',
+        categoryId: seedCategoryId('workout'),
+      }),
+    );
+    await phone.store.write((tx) => phone.store.repos.tasks.deleteByUser(tx, task.id));
+    return log;
+  }
+
+  /** The examples the device would put in the prompt for a new entry. */
+  async function examplesFor({ store }: Device, content: string) {
+    const vocabulary = await loadVocabulary(
+      store,
+      { includePrivate: false },
+      { corrections: true },
+    );
+    const input = buildExtractionInput(
+      { id: 'new', content, context: {}, capturedAt: START, capturedTz: 'UTC' },
+      vocabulary,
+    );
+    return input.corrections;
+  }
+
+  it('a fix made on the phone teaches the desktop', async () => {
+    const phone = await device();
+    const desktop = await device();
+    await correctOnPhone(phone);
+
+    await converge(phone, desktop);
+
+    expect(await examplesFor(desktop, 'swam 30 laps at the pool')).toEqual([
+      'Entry (2026-10-26): swam 20 laps at the pool\nactivity: workout | Swim\nnot task: Think about swimming',
+    ]);
+  });
+
+  it('Forget on one device stops the example on the other', async () => {
+    const phone = await device();
+    const desktop = await device();
+    const log = await correctOnPhone(phone);
+    await converge(phone, desktop);
+
+    await desktop.store.write((tx) => desktop.store.repos.rawLogs.forgetExample(tx, log.id));
+    await converge(desktop, phone);
+
+    expect(await examplesFor(phone, 'swam 30 laps at the pool')).toEqual([]);
   });
 });

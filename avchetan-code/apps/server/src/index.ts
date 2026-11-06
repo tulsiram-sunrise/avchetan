@@ -172,6 +172,7 @@ async function main(): Promise<void> {
       internalToken,
       models: organizing,
       graceMinutes: env.FALLBACK_GRACE_MINUTES,
+      learnFromCorrections: env.EXTRACTION_LEARN_FROM_CORRECTIONS,
       llm,
     });
     device.start();

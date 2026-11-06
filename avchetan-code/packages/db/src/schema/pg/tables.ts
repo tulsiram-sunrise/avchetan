@@ -85,6 +85,7 @@ export const rawLogs = pgTable(
     extractionModel: text('extraction_model'),
     extractionVersion: integer('extraction_version'),
     lastError: text('last_error'),
+    exampleForgottenAt: instant('example_forgotten_at'),
   },
   (t) => [
     seqIndex('raw_logs', t),

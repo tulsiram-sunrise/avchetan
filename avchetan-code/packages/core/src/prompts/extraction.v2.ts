@@ -2,7 +2,8 @@ import { addDays, weekdayOf } from '@avchetan/shared';
 import type { ExtractionInput } from '../extraction/input';
 import { METRICS } from '../normalize/metric-keys';
 
-export const version = 1;
+/** 2: adds the user's own corrections as examples (docs/product/correction-feedback.md). */
+export const version = 2;
 
 const metricList = METRICS.filter((metric) => metric.key !== 'kind' && metric.key !== 'exercises')
   .map((metric) => metric.key)
@@ -73,6 +74,11 @@ export function buildUser(input: ExtractionInput): string {
   ];
   if (Object.keys(input.context).length > 0) {
     sections.push(`Context: ${JSON.stringify(input.context)}`);
+  }
+  if (input.corrections.length > 0) {
+    sections.push(
+      `How this person corrected similar entries before. Organize alike entries the same way (category, title style, task or not, dates relative to the entry's own date). "not" lines were wrong: don't make such items again.\n\n${input.corrections.join('\n\n')}`,
+    );
   }
   sections.push(`Entry: ${input.content}`);
   return sections.join('\n\n');

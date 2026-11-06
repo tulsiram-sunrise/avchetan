@@ -46,4 +46,18 @@ describe('synced row schemas', () => {
 
     expect(parsed).toEqual(row);
   });
+
+  it('reads a nullable field an older client does not send as null', async () => {
+    const { exampleForgottenAt: _missing, ...fromAnOlderApp } = await capturedRow();
+
+    const parsed = SYNCED_ROW_SCHEMAS.raw_logs?.parse(fromAnOlderApp);
+
+    expect(parsed).toMatchObject({ exampleForgottenAt: null });
+  });
+
+  it('still requires the fields that are not nullable', async () => {
+    const { content: _missing, ...row } = await capturedRow();
+
+    expect(SYNCED_ROW_SCHEMAS.raw_logs?.safeParse(row).success).toBe(false);
+  });
 });

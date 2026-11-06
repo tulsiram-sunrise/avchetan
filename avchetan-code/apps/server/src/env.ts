@@ -49,6 +49,8 @@ const envSchema = z
     // The server organizes entries other devices left waiting (extraction-pipeline §5).
     FALLBACK_EXTRACTION_ENABLED: flag,
     FALLBACK_GRACE_MINUTES: z.coerce.number().int().min(0).default(15),
+    /** The user's corrections go into the prompt as examples (product/correction-feedback.md). */
+    EXTRACTION_LEARN_FROM_CORRECTIONS: flag,
     /** Minutes after the brief time before the server makes a daily brief no device made. */
     BRIEF_GRACE_MINUTES: z.coerce.number().int().min(0).max(180).default(30),
     /** With no provider, the server organizes nothing and devices do it themselves. */

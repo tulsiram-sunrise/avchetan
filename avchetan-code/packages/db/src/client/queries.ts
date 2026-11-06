@@ -17,7 +17,15 @@ import {
   sql,
 } from 'drizzle-orm';
 import type { RawLogStatus } from '../schema/enums';
-import { activities, entityTags, llmRuns, rawLogs, tags, tasks } from '../schema/sqlite/tables';
+import {
+  activities,
+  categories,
+  entityTags,
+  llmRuns,
+  rawLogs,
+  tags,
+  tasks,
+} from '../schema/sqlite/tables';
 import type { ClientDb } from './database';
 import { type DataScope, notFromPrivateLog } from './privacy';
 import type { Activity } from './repos/activities';
@@ -82,6 +90,123 @@ export async function rawLogDetail(db: ClientDb, id: string): Promise<RawLogDeta
       .orderBy(asc(tasks.ordinal), asc(tasks.createdAt)),
   ]);
   return { rawLog, activities: children, tasks: todo };
+}
+
+/** An item of a corrected entry: as it is now, or deleted by the user (`deleted`). */
+export type CorrectedItem = {
+  id: string;
+  title: string;
+  deleted: boolean;
+  userEdited: boolean;
+};
+export type CorrectedActivity = CorrectedItem & {
+  categorySlug: string | null;
+  metrics: Record<string, unknown>;
+};
+export type CorrectedTask = CorrectedItem & { dueDate: string | null };
+
+/** An entry whose extracted items the user edited or deleted: one correction example. */
+export type CorrectedEntry = {
+  rawLog: Pick<RawLog, 'id' | 'content' | 'capturedAt' | 'capturedTz' | 'privacy'>;
+  /** When the latest of its items was corrected. */
+  correctedAt: string;
+  activities: CorrectedActivity[];
+  tasks: CorrectedTask[];
+};
+
+/**
+ * Entries the user corrected, most recently corrected first (ADR-0027): live, processed, not
+ * forgotten. Their items are the live ones plus extracted ones the user deleted; items removed
+ * by re-extraction are left out (they are not user-edited).
+ */
+export async function correctedEntries(
+  db: ClientDb,
+  options: DataScope & { limit: number },
+): Promise<CorrectedEntry[]> {
+  const corrected = (table: typeof activities | typeof tasks) =>
+    db
+      .select({ rawLogId: table.rawLogId, at: sql<string>`max(${table.updatedAt})` })
+      .from(table)
+      .where(
+        and(
+          eq(table.origin, 'extraction'),
+          eq(table.isUserEdited, true),
+          isNotNull(table.rawLogId),
+        ),
+      )
+      .groupBy(table.rawLogId);
+  const latest = new Map<string, string>();
+  for (const { rawLogId, at } of [...(await corrected(activities)), ...(await corrected(tasks))]) {
+    if (rawLogId && (latest.get(rawLogId) ?? '') < at) latest.set(rawLogId, at);
+  }
+  if (latest.size === 0) return [];
+
+  const logs = await db
+    .select({
+      id: rawLogs.id,
+      content: rawLogs.content,
+      capturedAt: rawLogs.capturedAt,
+      capturedTz: rawLogs.capturedTz,
+      privacy: rawLogs.privacy,
+    })
+    .from(rawLogs)
+    .where(
+      and(
+        live(rawLogs),
+        eq(rawLogs.status, 'processed'),
+        isNull(rawLogs.exampleForgottenAt),
+        inArray(rawLogs.id, [...latest.keys()]),
+        options.includePrivate ? undefined : eq(rawLogs.privacy, 'normal'),
+      ),
+    );
+  const chosen = logs
+    .map((rawLog) => ({ rawLog, correctedAt: latest.get(rawLog.id) as string }))
+    .sort(
+      (a, b) =>
+        b.correctedAt.localeCompare(a.correctedAt) || b.rawLog.id.localeCompare(a.rawLog.id),
+    )
+    .slice(0, options.limit);
+  if (chosen.length === 0) return [];
+
+  const ids = chosen.map((c) => c.rawLog.id);
+  const shown = (table: typeof activities | typeof tasks) =>
+    and(
+      inArray(table.rawLogId, ids),
+      or(live(table), and(eq(table.origin, 'extraction'), eq(table.isUserEdited, true))),
+    );
+  const [activityRows, taskRows] = await Promise.all([
+    db
+      .select({ activity: activities, categorySlug: categories.slug })
+      .from(activities)
+      .leftJoin(categories, eq(categories.id, activities.categoryId))
+      .where(shown(activities))
+      .orderBy(asc(activities.ordinal), asc(activities.createdAt)),
+    db.select().from(tasks).where(shown(tasks)).orderBy(asc(tasks.ordinal), asc(tasks.createdAt)),
+  ]);
+
+  return chosen.map(({ rawLog, correctedAt }) => ({
+    rawLog,
+    correctedAt,
+    activities: activityRows
+      .filter(({ activity }) => activity.rawLogId === rawLog.id)
+      .map(({ activity, categorySlug }) => ({
+        id: activity.id,
+        title: activity.title,
+        deleted: activity.deletedAt !== null,
+        userEdited: activity.isUserEdited,
+        categorySlug,
+        metrics: activity.metrics,
+      })),
+    tasks: taskRows
+      .filter((task) => task.rawLogId === rawLog.id)
+      .map((task) => ({
+        id: task.id,
+        title: task.title,
+        deleted: task.deletedAt !== null,
+        userEdited: task.isUserEdited,
+        dueDate: task.dueDate,
+      })),
+  }));
 }
 
 /** Activities whose local date is `loggedDate`. */

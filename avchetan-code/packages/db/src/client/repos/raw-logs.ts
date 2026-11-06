@@ -151,6 +151,13 @@ export function rawLogsRepo(deps: RepoDeps, tags: ReturnType<typeof tagsRepo>) {
       });
     },
 
+    /** Stops this entry being used as a correction example, on every device (ADR-0027). */
+    async forgetExample(tx: Tx, id: string): Promise<void> {
+      const log = await getById(tx, rawLogs, id);
+      if (!log || log.deletedAt || log.exampleForgottenAt) return;
+      await updateSynced(tx, deps, rawLogs, id, { exampleForgottenAt: deps.clock.now() });
+    },
+
     /**
      * Content is immutable: an edit is a new log that points back at the one it replaces. It
      * keeps the original capture time, so its day and "yesterday" still mean the same thing.

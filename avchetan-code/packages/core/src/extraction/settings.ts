@@ -3,6 +3,7 @@ import { type ClientStore, getSetting, setSetting } from '@avchetan/db/sqlite';
 import { createLogger } from '@avchetan/shared';
 import { z } from 'zod';
 import { extractionChain, type ModelConfig, modelSlotsSchema } from '../providers/config';
+import { loadLearnFromCorrections } from './corrections';
 import { LLM_MAY_CREATE_SETTING, type LlmMayCreate, llmMayCreateSchema } from './normalize';
 
 const log = createLogger('extraction');
@@ -36,7 +37,12 @@ export async function saveExtractionMode(store: ClientStore, mode: ExtractionMod
   await store.write((tx) => setSetting(tx, EXTRACTION_MODE_SETTING, mode, store.clock.now()));
 }
 
-export type ExtractionSettings = { models: ModelConfig[]; llmMayCreate: LlmMayCreate };
+export type ExtractionSettings = {
+  models: ModelConfig[];
+  llmMayCreate: LlmMayCreate;
+  /** Put the user's past corrections in the prompt as examples. */
+  learnFromCorrections: boolean;
+};
 
 /** The model that answers questions: its own slot, else the one that organizes entries. */
 export async function loadAnalysisModel(store: ClientStore): Promise<ModelConfig | null> {
@@ -57,5 +63,6 @@ export async function loadExtractionSettings(store: ClientStore): Promise<Extrac
   return {
     models: slots.success && !delegated ? extractionChain(slots.data) : [],
     llmMayCreate: mayCreate.success ? mayCreate.data : 'auto',
+    learnFromCorrections: await loadLearnFromCorrections(store),
   };
 }

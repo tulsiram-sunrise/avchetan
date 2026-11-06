@@ -4,7 +4,7 @@ import {
   type LlmDeps,
   type StructuredRequest,
 } from '../llm/generate-structured';
-import * as prompt from '../prompts/extraction.v1';
+import * as prompt from '../prompts/extraction.v2';
 import type { ModelConfig } from '../providers/config';
 import { PROVIDER_ADAPTERS } from '../providers/registry';
 import { buildExtractionInput, type ExtractionVocabulary } from './input';
