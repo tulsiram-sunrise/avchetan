@@ -118,7 +118,7 @@ Indexes: `(logged_date)`, `(category_id, logged_date)`, `(raw_log_id)`, `(projec
 | `due_date` | `YYYY-MM-DD`, nullable | Local date |
 | `completed_at` | UTC ISO, nullable | Replaces the spec's `is_completed` boolean (completion time is useful; `is_completed` = `completed_at IS NOT NULL`) |
 | `origin` | enum | `extraction`, `user`, `system` |
-| `is_user_edited` | bool | |
+| `is_user_edited` | bool | As for activities, except that changing only `due_date` (moving the task) doesn't set it |
 | `ordinal` | int | |
 
 Indexes: `(completed_at, due_date)`, `(raw_log_id)`.

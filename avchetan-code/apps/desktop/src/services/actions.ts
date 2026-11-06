@@ -38,8 +38,9 @@ const ACTIONS = {
         }),
       ),
   ),
+  // A delete by the user: an extracted item becomes a correction (ADR-0027).
   'task.delete': action(idArgs, (store, { id }) =>
-    store.write((tx) => store.repos.tasks.softDelete(tx, id)),
+    store.write((tx) => store.repos.tasks.deleteByUser(tx, id)),
   ),
 
   'activity.edit': action(
@@ -53,7 +54,7 @@ const ACTIONS = {
       ),
   ),
   'activity.delete': action(idArgs, (store, { id }) =>
-    store.write((tx) => store.repos.activities.softDelete(tx, id)),
+    store.write((tx) => store.repos.activities.deleteByUser(tx, id)),
   ),
 
   'log.requeue': action(idArgs, (store, { id }) =>
@@ -71,6 +72,9 @@ const ACTIONS = {
   ),
   'log.delete': action(idArgs, (store, { id }) =>
     store.write((tx) => store.repos.rawLogs.softDelete(tx, id)),
+  ),
+  'log.forgetExample': action(idArgs, (store, { id }) =>
+    store.write((tx) => store.repos.rawLogs.forgetExample(tx, id)),
   ),
 
   'category.create': action(

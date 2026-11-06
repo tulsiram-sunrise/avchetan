@@ -1,0 +1,1 @@
+ALTER TABLE `raw_logs` ADD `example_forgotten_at` text;

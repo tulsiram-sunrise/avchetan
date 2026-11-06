@@ -19,7 +19,7 @@ import { MockLanguageModelV4 } from 'ai/test';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { LlmDeps } from '../llm/generate-structured';
 import type { ModelConfig } from '../providers/config';
-import { processRawLog } from './extract';
+import { EXTRACTION_PROMPT_VERSION, processRawLog } from './extract';
 import { loadVocabulary } from './input';
 import type { LlmMayCreate } from './normalize';
 import type { ExtractionResult } from './schema';
@@ -149,7 +149,7 @@ describe('processRawLog', () => {
       status: 'processed',
       processedBy: store.deviceId,
       extractionModel: 'groq:test-model',
-      extractionVersion: 1,
+      extractionVersion: EXTRACTION_PROMPT_VERSION,
       processingLeaseUntil: null,
     });
   });

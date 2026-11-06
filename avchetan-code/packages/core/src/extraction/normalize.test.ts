@@ -13,6 +13,7 @@ const vocabulary: ExtractionVocabulary = {
   projects: [{ id: 'project-1', name: 'Home Renovation', description: null }],
   tagPaths: ['health/knee', 'left/hand', 'right/hand'],
   entityNames: [],
+  corrections: [],
 };
 
 const context: NormalizeContext = {

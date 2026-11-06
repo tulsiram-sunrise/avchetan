@@ -37,6 +37,8 @@ export type ServerDeviceDeps = {
   internalToken: string;
   models: readonly ModelConfig[];
   graceMinutes: number;
+  /** Use the user's corrections as examples (`EXTRACTION_LEARN_FROM_CORRECTIONS`). Default on. */
+  learnFromCorrections?: boolean;
   llm: LlmDeps;
   scheduler?: Scheduler;
   /** Injectable for tests. */
@@ -108,7 +110,11 @@ export async function openServerDevice(deps: ServerDeviceDeps): Promise<ServerDe
     network: alwaysOnline,
     scheduler,
     // Settings don't sync, so the server can't see the apps' choices.
-    loadSettings: async () => ({ models: [...deps.models], llmMayCreate: 'auto' }),
+    loadSettings: async () => ({
+      models: [...deps.models],
+      llmMayCreate: 'auto',
+      learnFromCorrections: deps.learnFromCorrections ?? true,
+    }),
     findClaimable,
     onChange: () => engine.schedule(),
   });

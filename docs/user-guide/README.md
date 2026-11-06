@@ -22,6 +22,7 @@ Avchetan is a personal logger and planner. Type (or say) anything — a workout,
 ## More
 
 - [Daily brief](daily-brief.md): a short look back at each day, and the evening reminder
+- [Teach Avchetan with your fixes](corrections.md): how your fixes become examples for the AI, and how to forget them
 - [Use your phone away from home (Tailscale)](remote-access-tailscale.md)
 - [Back up and restore](backup-and-restore.md)
 - [Install, update and uninstall](install-and-update.md)

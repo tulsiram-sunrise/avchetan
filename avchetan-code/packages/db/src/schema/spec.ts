@@ -73,6 +73,7 @@ export const TABLES = {
     extraction_model: opt('text'),
     extraction_version: opt('int'),
     last_error: opt('text'),
+    example_forgotten_at: opt('instant'),
   }),
   categories: synced({
     name: req('text'),

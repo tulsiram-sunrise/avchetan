@@ -39,6 +39,14 @@ export type { SearchHistory } from './analysis/tools';
 export { buildCaptureInput } from './capture';
 export { type EmbeddingSource, embeddingText, embedTexts } from './embeddings/embed';
 export {
+  chooseExamples,
+  LEARN_FROM_CORRECTIONS_SETTING,
+  loadLearnFromCorrections,
+  MAX_EXAMPLES,
+  renderExample,
+  saveLearnFromCorrections,
+} from './extraction/corrections';
+export {
   EXTRACTION_PROMPT_VERSION,
   type ExtractionOptions,
   extractRawLog,

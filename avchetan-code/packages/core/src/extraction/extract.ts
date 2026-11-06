@@ -1,17 +1,21 @@
 import type { ClientStore, ExtractionPlan, RawLog } from '@avchetan/db/sqlite';
+import { createLogger } from '@avchetan/shared';
 import {
   generateStructured,
   type LlmDeps,
   type StructuredRequest,
 } from '../llm/generate-structured';
-import * as prompt from '../prompts/extraction.v1';
+import * as prompt from '../prompts/extraction.v2';
 import type { ModelConfig } from '../providers/config';
 import { PROVIDER_ADAPTERS } from '../providers/registry';
+import { chooseExamples, dropCopiedItems } from './corrections';
 import { buildExtractionInput, type ExtractionVocabulary } from './input';
 import { type LlmMayCreate, normalizeExtraction } from './normalize';
 import { type ExtractionResult, extractionResultSchema } from './schema';
 
 export const EXTRACTION_PROMPT_VERSION = prompt.version;
+
+const log = createLogger('extraction');
 
 export type ExtractionOptions = {
   /** The extraction slot's model, then its fallbacks. */
@@ -68,7 +72,10 @@ export async function extractRawLog(
     extractionRequest(rawLog, allowed, vocabulary),
     llm,
   );
-  return normalizeExtraction(output, {
+  const examples = chooseExamples(rawLog.content, rawLog.id, vocabulary.corrections);
+  const { result, dropped } = dropCopiedItems(output, rawLog.content, examples);
+  if (dropped > 0) log.info('dropped items copied from examples', { id: rawLog.id, dropped });
+  return normalizeExtraction(result, {
     rawLog,
     vocabulary,
     llmMayCreate,

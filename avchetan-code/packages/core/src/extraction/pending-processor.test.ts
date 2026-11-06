@@ -49,7 +49,7 @@ beforeEach(async () => {
   doGenerate.mockResolvedValue(answer(EMPTY));
   ({ store, advance } = await openTestStore());
   network = new FakeNetworkMonitor();
-  settings = { models: [groq], llmMayCreate: 'auto' };
+  settings = { models: [groq], llmMayCreate: 'auto', learnFromCorrections: true };
   runs = [];
   processor = createPendingProcessor({
     store,

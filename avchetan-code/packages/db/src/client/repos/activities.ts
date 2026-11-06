@@ -13,6 +13,7 @@ import {
   upsertSynced,
 } from '../synced';
 import { softDeleteLinksTo } from './cascade';
+import { recordCorrection } from './corrections';
 
 export type Activity = Row<typeof activities>;
 
@@ -44,7 +45,7 @@ function validate(title: string | undefined, loggedDate: string | undefined) {
 }
 
 export function activitiesRepo(deps: RepoDeps) {
-  return {
+  const repo = {
     /** Manually created (or system) activity. Extraction writes go through `@avchetan/core`. */
     create(tx: Tx, input: NewActivity): Promise<Activity> {
       validate(input.title, input.loggedDate);
@@ -67,11 +68,29 @@ export function activitiesRepo(deps: RepoDeps) {
     async editByUser(tx: Tx, id: string, edit: ActivityEdit): Promise<Activity> {
       validate(edit.title, edit.loggedDate);
       const current = await getById(tx, activities, id);
-      return updateSynced(tx, deps, activities, id, {
+      const changes = {
         ...edit,
         ...(edit.title !== undefined ? { title: edit.title.trim() } : {}),
+      };
+      await recordCorrection(tx, deps, 'activity', current, changes);
+      return updateSynced(tx, deps, activities, id, {
+        ...changes,
         isUserEdited: current?.origin === 'extraction' ? true : (current?.isUserEdited ?? false),
       });
+    },
+
+    /**
+     * A delete the user asked for. An extracted activity is marked user-edited first, so it counts
+     * as a correction ("not an activity") and re-extraction won't bring it back (ADR-0027).
+     */
+    async deleteByUser(tx: Tx, id: string): Promise<void> {
+      const current = await getById(tx, activities, id);
+      if (!current || current.deletedAt) return;
+      if (current.origin === 'extraction') {
+        await recordCorrection(tx, deps, 'activity', current, 'deleted');
+        await updateSynced(tx, deps, activities, id, { isUserEdited: true });
+      }
+      await repo.softDelete(tx, id);
     },
 
     /**
@@ -101,4 +120,5 @@ export function activitiesRepo(deps: RepoDeps) {
       await softDeleteSynced(tx, deps, activities, [id]);
     },
   };
+  return repo;
 }

@@ -35,7 +35,9 @@ function rowSchema(table: TableName) {
   const fields = Object.entries(TABLES[table].columns as Record<string, ColumnSpec>).map(
     ([name, spec]) => {
       const base = baseSchema(spec);
-      return [camelCase(name), spec.nullable ? base.nullable() : base] as const;
+      // A missing nullable field reads as null, so an older client that doesn't know a newly
+      // added column can still push.
+      return [camelCase(name), spec.nullable ? base.nullable().default(null) : base] as const;
     },
   );
   return z.object(Object.fromEntries(fields));
@@ -43,7 +45,8 @@ function rowSchema(table: TableName) {
 
 /**
  * One wire schema per synced table, built from the column spec so they can't drift from the
- * database. Unknown fields are dropped, so an older client tolerates a newer server.
+ * database. Unknown fields are dropped, so an older client tolerates a newer server, and missing
+ * nullable fields become null, so a newer server accepts an older client.
  */
 export const SYNCED_ROW_SCHEMAS = Object.fromEntries(
   SYNCED_TABLE_NAMES.map((table) => [table, rowSchema(table)]),

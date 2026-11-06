@@ -48,6 +48,7 @@ export const rawLogs = sqliteTable(
     extractionModel: text('extraction_model'),
     extractionVersion: integer('extraction_version'),
     lastError: text('last_error'),
+    exampleForgottenAt: text('example_forgotten_at'),
   },
   (t) => [
     index('raw_logs_status_captured_at_idx').on(t.status, t.capturedAt),

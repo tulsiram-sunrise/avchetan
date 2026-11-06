@@ -1,6 +1,7 @@
-import type { ClientStore, DataScope, RawLog } from '@avchetan/db/sqlite';
+import type { ClientStore, CorrectedEntry, DataScope, RawLog } from '@avchetan/db/sqlite';
 import { addDays, type LocalDate, localDate, type Weekday, weekdayOf } from '@avchetan/shared';
 import { parseCaptureText } from '../normalize/capture-text';
+import { chooseExamples, loadCorrectionPool, renderExample } from './corrections';
 
 const MAX_TAGS = 150;
 const MAX_ENTITIES = 100;
@@ -14,21 +15,25 @@ export type ExtractionVocabulary = {
   projects: { id: string; name: string; description: string | null }[];
   tagPaths: string[];
   entityNames: string[];
+  /** Recently corrected entries; each extraction picks its examples from these. */
+  corrections: CorrectedEntry[];
 };
 
 /** The default scope is the safe one: nothing from private entries. */
 export async function loadVocabulary(
   store: ClientStore,
   scope: DataScope = { includePrivate: false },
+  options: { corrections?: boolean } = {},
 ): Promise<ExtractionVocabulary> {
   const { categories, projects, tags, entities } = store.repos;
-  const [activeCategories, categoryAliases, activeProjects, tagPaths, entityNames] =
+  const [activeCategories, categoryAliases, activeProjects, tagPaths, entityNames, corrections] =
     await Promise.all([
       categories.listActive(store.db, scope),
       categories.listMergedAliases(store.db),
       projects.listActive(store.db),
       tags.listRecentPaths(store.db, MAX_TAGS, scope),
       entities.listRecentNames(store.db, MAX_ENTITIES, scope),
+      options.corrections ? loadCorrectionPool(store, scope) : [],
     ]);
   return {
     categories: activeCategories.map(({ id, slug, name, description }) => ({
@@ -41,6 +46,7 @@ export async function loadVocabulary(
     projects: activeProjects.map(({ id, name, description }) => ({ id, name, description })),
     tagPaths,
     entityNames,
+    corrections,
   };
 }
 
@@ -54,10 +60,12 @@ export type ExtractionInput = {
   /** The coming days, so the model looks dates up instead of calculating them. */
   upcoming: { date: LocalDate; weekday: Weekday }[];
   vocabulary: ExtractionVocabulary;
+  /** The user's past corrections most like this entry, as prompt text. */
+  corrections: string[];
 };
 
 export function buildExtractionInput(
-  rawLog: Pick<RawLog, 'content' | 'context' | 'capturedAt' | 'capturedTz'>,
+  rawLog: Pick<RawLog, 'id' | 'content' | 'context' | 'capturedAt' | 'capturedTz'>,
   vocabulary: ExtractionVocabulary,
 ): ExtractionInput {
   const today = localDate(rawLog.capturedAt, rawLog.capturedTz);
@@ -73,5 +81,8 @@ export function buildExtractionInput(
     weekday: weekdayOf(today),
     upcoming,
     vocabulary,
+    corrections: chooseExamples(rawLog.content, rawLog.id, vocabulary.corrections).map(
+      renderExample,
+    ),
   };
 }

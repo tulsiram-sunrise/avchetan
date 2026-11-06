@@ -69,15 +69,26 @@ export function createPendingProcessor(deps: PendingProcessorDeps): PendingProce
   const later = (ms: number) => new Date(Date.parse(store.clock.now()) + ms).toISOString();
 
   async function extract(rawLog: RawLog, models: ModelConfig[], settings: ExtractionSettings) {
-    // A prompt that may reach a cloud model can't mention tags or names from private entries.
+    // A prompt that may reach a cloud model can't mention tags, names or corrections from
+    // private entries.
     const includePrivate = models.every((model) => PROVIDER_ADAPTERS[model.provider].local);
-    const vocabulary = await loadVocabulary(store, { includePrivate });
+    const vocabulary = await loadVocabulary(
+      store,
+      { includePrivate },
+      { corrections: settings.learnFromCorrections },
+    );
     const options = { ...settings, models, vocabulary };
     try {
       await processRawLog(store, rawLog, options, llm);
     } catch (error) {
       if (toLlmError(error).code !== 'llm_context_overflow') throw error;
-      const trimmed: ExtractionVocabulary = { ...vocabulary, tagPaths: [], entityNames: [] };
+      // The one retry leaves out what's longest and least needed: examples, tags and names.
+      const trimmed: ExtractionVocabulary = {
+        ...vocabulary,
+        tagPaths: [],
+        entityNames: [],
+        corrections: [],
+      };
       await processRawLog(store, rawLog, { ...options, vocabulary: trimmed }, llm);
     }
   }

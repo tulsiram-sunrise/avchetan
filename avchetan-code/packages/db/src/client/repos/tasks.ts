@@ -11,6 +11,7 @@ import {
   updateSynced,
 } from '../synced';
 import { softDeleteLinksTo } from './cascade';
+import { recordCorrection } from './corrections';
 
 export type Task = Row<typeof tasks>;
 
@@ -38,7 +39,7 @@ function validate(title: string | undefined, dueDate: string | null | undefined)
 }
 
 export function tasksRepo(deps: RepoDeps) {
-  return {
+  const repo = {
     create(tx: Tx, input: NewTask): Promise<Task> {
       validate(input.title, input.dueDate);
       return insertSynced(tx, deps, tasks, {
@@ -55,14 +56,46 @@ export function tasksRepo(deps: RepoDeps) {
       });
     },
 
+    /**
+     * A hand edit. Changing only the due date is moving the task (Move to tomorrow, a new date),
+     * not fixing what the model read: it doesn't mark the task user-edited or record a correction,
+     * so the entry is no example (product/correction-feedback.md). Organize again may then set
+     * the date again from the entry.
+     */
     async editByUser(tx: Tx, id: string, edit: TaskEdit): Promise<Task> {
       validate(edit.title, edit.dueDate);
       const current = await getById(tx, tasks, id);
-      return updateSynced(tx, deps, tasks, id, {
+      const { dueDate, ...rest } = {
         ...edit,
         ...(edit.title !== undefined ? { title: edit.title.trim() } : {}),
-        isUserEdited: current?.origin === 'extraction' ? true : (current?.isUserEdited ?? false),
+      };
+      const fixed = current
+        ? Object.entries(rest).some(
+            ([field, value]) =>
+              value !== undefined && value !== (current as Record<string, unknown>)[field],
+          )
+        : false;
+      await recordCorrection(tx, deps, 'task', current, rest);
+      return updateSynced(tx, deps, tasks, id, {
+        ...rest,
+        ...(dueDate !== undefined ? { dueDate } : {}),
+        isUserEdited:
+          current?.origin === 'extraction' && fixed ? true : (current?.isUserEdited ?? false),
       });
+    },
+
+    /**
+     * A delete the user asked for. An extracted task is marked user-edited first, so it counts as
+     * a correction ("not a task") and re-extraction won't bring it back (ADR-0027).
+     */
+    async deleteByUser(tx: Tx, id: string): Promise<void> {
+      const current = await getById(tx, tasks, id);
+      if (!current || current.deletedAt) return;
+      if (current.origin === 'extraction') {
+        await recordCorrection(tx, deps, 'task', current, 'deleted');
+        await updateSynced(tx, deps, tasks, id, { isUserEdited: true });
+      }
+      await repo.softDelete(tx, id);
     },
 
     complete: (tx: Tx, id: string) =>
@@ -75,4 +108,5 @@ export function tasksRepo(deps: RepoDeps) {
       await softDeleteSynced(tx, deps, tasks, [id]);
     },
   };
+  return repo;
 }

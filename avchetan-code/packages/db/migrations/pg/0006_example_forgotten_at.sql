@@ -1,0 +1,1 @@
+ALTER TABLE "raw_logs" ADD COLUMN "example_forgotten_at" timestamp(3) with time zone;

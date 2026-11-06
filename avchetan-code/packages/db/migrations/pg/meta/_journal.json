@@ -43,6 +43,13 @@
       "when": 1793958406156,
       "tag": "0005_device_brief_time",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793986936290,
+      "tag": "0006_example_forgotten_at",
+      "breakpoints": true
     }
   ]
 }

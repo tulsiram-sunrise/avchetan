@@ -95,5 +95,11 @@ export const pgMigrations: readonly Migration[] = [
       "ALTER TABLE \"devices\" ADD COLUMN \"time_zone\" text;",
       "ALTER TABLE \"devices\" ADD COLUMN \"brief_time\" text;"
     ]
+  },
+  {
+    "tag": "0006_example_forgotten_at",
+    "statements": [
+      "ALTER TABLE \"raw_logs\" ADD COLUMN \"example_forgotten_at\" timestamp(3) with time zone;"
+    ]
   }
 ];
