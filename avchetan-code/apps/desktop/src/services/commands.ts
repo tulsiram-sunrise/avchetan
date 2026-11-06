@@ -114,7 +114,7 @@ const SYNC_MESSAGES: Record<SyncState, string> = {
   offline: 'This PC is offline; it syncs when it’s back',
   unauthorized: 'Your hub or server refused this PC’s sync token',
   server_unreachable: 'Can’t reach your hub or server',
-  failed: 'Sync failed; Settings → Sync says why',
+  failed: 'Sync failed; Settings → Hub & sync → Sync says why',
 };
 
 /** The plan for a known command and its text. */
@@ -201,7 +201,7 @@ export async function readCommand(services: AppServices, input: string): Promise
   const { store, platform } = services;
   const model = await loadAnalysisModel(store);
   if (!model) {
-    throw new LlmError('llm_auth', 'Reading commands needs a model in Settings → AI models');
+    throw new LlmError('llm_auth', 'Reading commands needs a model in Settings → AI → AI models');
   }
   if (!platform.network.isOnline() && !PROVIDER_ADAPTERS[model.provider].local) {
     throw new LlmError('llm_unavailable', 'This PC is offline, so the AI can’t read this command');

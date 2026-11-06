@@ -64,7 +64,7 @@ export function SetupPage(props: { onDone: () => void }) {
       {hubOff ? (
         <p className="text-sm text-ink-muted">
           The hub is off, so your phone can't sync yet. Turn it on above, or finish now and turn it
-          on later in Settings → Home Hub on this PC.
+          on later in Settings → Hub & sync → Home Hub on this PC.
         </p>
       ) : null}
       <div className="flex gap-2">

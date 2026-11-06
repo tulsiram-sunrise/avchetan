@@ -63,7 +63,7 @@ The phone stores an **ordered list of server URLs** (`sync.serverUrls`, e.g. LAN
 
 ### Pairing (no typing of tokens)
 
-Desktop → Settings → Sync → *Pair a phone* shows a QR code (made on demand and drawn from its squares, never stored as an image):
+Desktop → Settings → Hub & sync → Sync → *Pair a phone* shows a QR code (made on demand and drawn from its squares, never stored as an image):
 `avchetan://pair?v=1&server=<serverId>&urls=<lan>,<tailscale>&token=<sync-token>`
 The desktop asks the hub for `serverId` and the addresses (`GET /v1/pairing`: the hub's own IPv4 addresses, home network first, Tailscale last, without adapters named as virtual; `PAIRING_URLS` overrides, e.g. in a container) and adds the token it holds. The phone scans it, tries every address at once, keeps those where `/v1/health` answers with the same `serverId` (plus Tailscale ones, for away), stores the token in secure storage, saves the URLs, registers and syncs (`pairWithLink` in `@avchetan/sync`). *Change token* calls `POST /v1/token/rotate`: the old token stops at once and every other device pairs again; a token set by `SYNC_TOKEN` can only be changed there. The same pairing flow works for Cloud mode.
 

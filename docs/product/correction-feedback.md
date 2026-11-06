@@ -48,7 +48,7 @@ Examples follow the same line as the vocabulary: an example from a `!private` en
 
 ## Your control
 
-- **Where:** Settings → What Avchetan learned (desktop) and More → What Avchetan learned (phone), with the setting at the top and the list below. Guide: [Teach Avchetan with your fixes](../user-guide/corrections.md).
+- **Where:** Settings → AI → What Avchetan learned (desktop) and More → What Avchetan learned (phone), with the setting at the top and the list below. Guide: [Teach Avchetan with your fixes](../user-guide/corrections.md).
 - **Setting:** "Learn from my corrections" (`extraction.learnFromCorrections`, a device setting, default on). Off means this device sends no examples. The hub follows `EXTRACTION_LEARN_FROM_CORRECTIONS` (default `true`).
 - **What it learned:** a list of the examples (entry text and the corrected items, newest first, with a count), with **Forget** on each.
 - **Phone tasks:** the entry screen shows its tasks as in Days, so they can be edited and deleted there too.

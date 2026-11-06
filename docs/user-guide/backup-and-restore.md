@@ -26,7 +26,7 @@ Deleted entries, settings and API keys are never included.
 ## Restore
 
 - **A device broke or was replaced:** install Avchetan on the new device and pair it ([Pair your phone](pair-your-phone.md)). Everything downloads from the hub or server.
-- **The hub inside Avchetan:** open **Settings → Home Hub on this PC → Hub backups**, choose a day and click **Restore…**, then confirm. The hub stops, its current data is kept beside it (renamed `pglite-data-before-restore-…`), the backup goes back in, and the hub starts again. Your devices notice and send it everything they hold, so entries made since that day come back too. **Open backups folder** shows the files.
+- **The hub inside Avchetan:** open **Settings → Hub & sync → Home Hub on this PC → Hub backups**, choose a day and click **Restore…**, then confirm. The hub stops, its current data is kept beside it (renamed `pglite-data-before-restore-…`), the backup goes back in, and the hub starts again. Your devices notice and send it everything they hold, so entries made since that day come back too. **Open backups folder** shows the files.
 - **The hub's data was lost:** start an empty hub and pair your devices again. They upload everything they hold. To get the hub's own state back too (its token, its device list, its search index), restore a snapshot:
   1. Stop the hub.
   2. Rename the `pglite-data` folder, for example to `pglite-data-old`.

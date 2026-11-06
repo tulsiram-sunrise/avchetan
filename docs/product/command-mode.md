@@ -57,7 +57,7 @@ When you confirm an AI reading, Avchetan learns from it, so the next time needs 
 
 1. **First words become aliases.** `/finish the plumber thing` read as `/done plumber`: `finish` now means `done`. The next `/finish …` runs as `/done …` straight away, and the hint says "finish = done (learned)". An alias is learned only when its word isn't a command already.
 2. **Readings become examples.** The last 20 confirmed readings go into the command prompt as examples, so phrasings that aren't a single word get better too.
-3. **Settings → Commands** lists the learned aliases and examples, each with **Forget**, and has a switch "Learn from commands I confirm" (default on).
+3. **Settings → Capture box → Commands** lists the learned aliases and examples, each with **Forget**, and has a switch "Learn from commands I confirm" (default on).
 
 Learning is per PC, kept in client-local settings (`commands.aliases`, `commands.examples`, `commands.learn`): command mode is desktop-only, and these phrases are not log content to sync.
 
@@ -83,7 +83,7 @@ None on synced tables. Client settings `commands.learn`, `commands.aliases` (wor
 - `/finish …` is read by the AI and runs only after confirmation; after that, `/finish …` runs without a model call (test with the mock model counting calls).
 - The AI request contains no task titles or entry text (fetch spy test).
 - `//note` saves an entry "/note".
-- The [user guide](../user-guide/README.md) has a Commands page; Settings → Commands lists and forgets what was learned.
+- The [user guide](../user-guide/README.md) has a Commands page; Settings → Capture box → Commands lists and forgets what was learned.
 
 ## Not in this version
 

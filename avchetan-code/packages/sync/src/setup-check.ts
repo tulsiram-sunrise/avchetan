@@ -118,7 +118,8 @@ function hubModelRow(check: ModelCheck): CheckRow {
         id,
         state: 'problem',
         title: `The hub's PC hasn't downloaded ${check.model}`,
-        detail: 'Open Avchetan on that PC, then Settings → Home Hub on this PC → Download them.',
+        detail:
+          'Open Avchetan on that PC, then Settings → Hub & sync → Home Hub on this PC → Download them.',
         helpCode: 'model_missing',
       };
     case 'no_api_key':

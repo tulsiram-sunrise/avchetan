@@ -35,7 +35,7 @@ When you confirm what the AI read, Avchetan remembers it:
 - **The first word becomes a shortcut.** After `/finish the plumber thing` → `/done plumber`, the word `finish` means `done`. Next time, `/finish the dentist call` runs as `/done` straight away, without asking the AI. The box shows "finish = done (learned)".
 - **The phrase becomes an example** for the AI, so other ways of saying things get read better too. The last 20 are kept.
 
-To see and remove what it learned, open **Settings → Commands**. **Forget** removes one. Untick **Learn from commands I confirm** to stop learning. What's learned stays on this PC.
+To see and remove what it learned, open **Settings → Capture box → Commands**. **Forget** removes one. Untick **Learn from commands I confirm** to stop learning. What's learned stays on this PC.
 
 ## Check it worked
 
@@ -48,4 +48,4 @@ To see and remove what it learned, open **Settings → Commands**. **Forget** re
 
 - **"No open task matches …"**: no open task has those words. Use a word from its title, or find it in **Tasks** ([Troubleshooting](troubleshooting.md#command_no_match)).
 - **"Couldn't read this as a command"**: the AI couldn't map your text to a command. Type `/` alone to see the list ([Troubleshooting](troubleshooting.md#command_unknown)).
-- **"Reading commands needs a model"**: choose a model in **Settings → AI models**.
+- **"Reading commands needs a model"**: choose a model in **Settings → AI → AI models**.

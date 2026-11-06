@@ -65,7 +65,7 @@ export function createBriefService(deps: {
       return status === 'empty' ? 'empty' : 'made';
     }
     const model = await loadAnalysisModel(store);
-    if (!model) throw new LlmError('llm_auth', 'Choose a model in Settings → AI models first');
+    if (!model) throw new LlmError('llm_auth', 'Choose a model in Settings → AI → AI models first');
     const result = await makeDailyBrief(
       store,
       { day, timeZone: timeZone.current(), models: [model] },

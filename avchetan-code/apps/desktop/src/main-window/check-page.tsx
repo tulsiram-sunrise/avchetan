@@ -14,6 +14,7 @@ import type { HubStatus } from '../native/hub';
 import { hubOllamaModels } from '../services/hub';
 import { useServices } from '../services-context';
 import { HubChecklist, Row, type RowState } from './hub-checklist';
+import { type SettingsTab, saveSettingsTab } from './settings-tabs';
 import { ActionError, QuietButton } from './ui';
 
 const log = createLogger('setup-check');
@@ -28,8 +29,10 @@ const ROW_STATE: Record<CheckRow['state'], RowState> = {
   info: 'info',
 };
 
-function openSettings() {
-  void emitAppEvent('main:navigate', { view: 'settings' }).catch(() =>
+/** Opens Settings on the tab with the fix; saved first, as Settings may not be open yet. */
+function openSettings(tab: SettingsTab) {
+  saveSettingsTab(tab);
+  void emitAppEvent('main:navigate', { view: 'settings', tab }).catch(() =>
     log.warn('could not open settings'),
   );
 }
@@ -81,12 +84,14 @@ function actionButton(action: CheckAction | undefined, use?: DeviceModelUse): Re
       return use ? <DownloadModel use={use} /> : null;
     case 'pair':
     case 'sync_settings':
-    case 'ai_models':
+    case 'ai_models': {
+      const tab: SettingsTab = action === 'ai_models' ? 'ai' : 'hub';
       return (
         <div>
-          <QuietButton onClick={openSettings}>Open Settings</QuietButton>
+          <QuietButton onClick={() => openSettings(tab)}>Open Settings</QuietButton>
         </div>
       );
+    }
     // Windows sets its clock itself; the guide says where to switch that on.
     case 'date_settings':
     case undefined:
@@ -132,7 +137,7 @@ function hubRow(status: HubStatus): CheckRow {
         id: 'hub',
         state: 'problem',
         title: 'The hub stopped unexpectedly and is starting again',
-        detail: 'Settings → Home Hub on this PC → Recent hub log shows why.',
+        detail: 'Settings → Hub & sync → Home Hub on this PC → Recent hub log shows why.',
         helpCode: 'hub_crashed',
       };
     case 'failed':

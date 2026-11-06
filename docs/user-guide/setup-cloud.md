@@ -54,7 +54,7 @@ Without your PC, the server can't use Ollama. To organize entries and answer que
 
 ## Part 3 — Connect your devices
 
-1. On the PC, open Avchetan **Settings → Sync**. Paste your server's address, and paste the `SYNC_TOKEN` value (in Render: your service → **Environment**, click the eye icon to show it). Click **Save**.
+1. On the PC, open Avchetan **Settings → Hub & sync → Sync**. Paste your server's address, and paste the `SYNC_TOKEN` value (in Render: your service → **Environment**, click the eye icon to show it). Click **Save**.
 2. Pair your phone from the PC: [Pair your phone](pair-your-phone.md).
 
 ## Check it worked
