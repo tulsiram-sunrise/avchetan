@@ -35,6 +35,9 @@ export type SyncDevice = {
   name: string;
   platform: DevicePlatform;
   extractionMode: ExtractionMode;
+  /** For the hub's daily brief fallback: when this device's days end, and its brief time. */
+  timeZone?: string;
+  briefTime?: string | null;
 };
 
 export type SyncEngineDeps = {

@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { checkModels, createEmbeddingModel, embedTexts } from '@avchetan/core';
+import { type BriefRunner, checkModels, createEmbeddingModel, embedTexts } from '@avchetan/core';
 import {
   configureLogging,
   createLogger,
@@ -16,6 +16,7 @@ import { createHubAsk, type HubAsk } from './ask/hub-ask';
 import { loadServerIdentity } from './auth';
 import { restoreSnapshot } from './backups/restore';
 import { startHubSnapshots } from './backups/snapshots';
+import { createHubBrief, type HubBrief } from './brief/hub-brief';
 import { openPglite, openPostgres, type ServerDatabase } from './db/client';
 import { databaseStartupHint } from './db/startup-hint';
 import { createEmbedder, type Embedder, embeddingModelId } from './embeddings/embedder';
@@ -110,6 +111,8 @@ async function main(): Promise<void> {
   ];
   // Set once the server's device is open, which needs the app's own fetch.
   let hubAsk: HubAsk | null = null;
+  let hubBrief: HubBrief | null = null;
+  let briefRunner: BriefRunner | null = null;
 
   const app = createApp({
     db: database.db,
@@ -144,6 +147,11 @@ async function main(): Promise<void> {
           ask: (request, onText, abortSignal) => {
             if (!hubAsk) throw new ApiError(503, 'ask_unavailable', 'The server is still starting');
             return hubAsk(request, onText, abortSignal);
+          },
+          brief: (request) => {
+            if (!hubBrief)
+              throw new ApiError(503, 'ask_unavailable', 'The server is still starting');
+            return hubBrief(request);
           },
         }
       : {}),
@@ -183,6 +191,18 @@ async function main(): Promise<void> {
       });
     }
   }
+  if (analysis && device) {
+    const brief = createHubBrief({
+      db: database.db,
+      device,
+      model: analysis,
+      llm: llmFromEnv(env),
+      graceMinutes: env.BRIEF_GRACE_MINUTES,
+    });
+    hubBrief = brief.handle;
+    briefRunner = brief.runner;
+    briefRunner.start();
+  }
   if (!analysis) log.info('not answering questions', { reason: 'no_analysis_provider' });
   if (embedding && resolveEmbedding) {
     embedder = createEmbedder({
@@ -219,6 +239,7 @@ async function main(): Promise<void> {
     if (stopping) return;
     stopping = true;
     log.info('shutting down');
+    briefRunner?.stop();
     device?.stop();
     embedder?.stop();
     stopSnapshots?.();

@@ -10,6 +10,7 @@ import {
   type RowPatch,
   softDeleteSynced,
   updateSynced,
+  upsertSynced,
 } from '../synced';
 import { softDeleteLinksTo } from './cascade';
 
@@ -70,6 +71,28 @@ export function activitiesRepo(deps: RepoDeps) {
         ...edit,
         ...(edit.title !== undefined ? { title: edit.title.trim() } : {}),
         isUserEdited: current?.origin === 'extraction' ? true : (current?.isUserEdited ?? false),
+      });
+    },
+
+    /**
+     * A system row with a derived ID (the daily brief): inserted, or replaced and brought back
+     * if it was deleted, so every device that makes it converges on one row.
+     */
+    saveSystem(tx: Tx, input: Omit<NewActivity, 'origin' | 'rawLogId'> & { id: string }) {
+      validate(input.title, input.loggedDate);
+      return upsertSynced(tx, deps, activities, {
+        id: input.id,
+        categoryId: input.categoryId,
+        title: input.title.trim(),
+        loggedDate: input.loggedDate,
+        metrics: input.metrics ?? {},
+        notes: input.notes ?? null,
+        projectId: input.projectId ?? null,
+        occurredAt: input.occurredAt ?? null,
+        rawLogId: null,
+        origin: 'system',
+        isUserEdited: false,
+        ordinal: null,
       });
     },
 

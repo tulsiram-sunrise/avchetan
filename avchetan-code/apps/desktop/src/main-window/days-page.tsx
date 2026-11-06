@@ -23,7 +23,9 @@ import {
 } from '../queries/days';
 import { useExtracted } from '../queries/organize';
 import { useServices } from '../services-context';
+import { useAppEvent } from '../use-app-event';
 import { useColorScheme } from '../use-color-scheme';
+import { DailyBrief } from './daily-brief';
 import { TimelineEntry } from './timeline';
 import { TaskRow } from './timeline-items';
 import { panelClass, QuietButton } from './ui';
@@ -32,15 +34,20 @@ import { panelClass, QuietButton } from './ui';
  * One day at a time, with a month calendar beside it (docs/product/days-view.md). Opens on
  * today; ← and → move a day, Page Up and Page Down a month, T goes back to today.
  */
-export function DaysPage() {
+export function DaysPage(props: { requestedDay?: string | null }) {
   const today = useToday();
-  const [day, setDay] = useState(today);
-  const [month, setMonth] = useState<LocalMonth>(monthOf(today));
+  const [day, setDay] = useState(props.requestedDay ?? today);
+  const [month, setMonth] = useState<LocalMonth>(monthOf(props.requestedDay ?? today));
 
   const select = (next: string) => {
     setDay(next);
     setMonth(monthOf(next));
   };
+
+  // A brief notification opens its day.
+  useAppEvent('main:navigate', (payload) => {
+    if (payload.view === 'timeline' && payload.day) select(payload.day);
+  });
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -243,11 +250,20 @@ function DayPanel(props: { day: string; today: string; onToday: () => void }) {
         )}
       </header>
 
-      <Summary
-        entries={entries.data?.length ?? 0}
-        activities={dayActivities.data ?? []}
-        doneTasks={(tasks.data?.done.length ?? 0) + (tasks.data?.due.filter(isDone).length ?? 0)}
-        categories={categories.data}
+      <DailyBrief
+        day={day}
+        today={today}
+        hasEntries={(entries.data?.length ?? 0) > 0}
+        summary={
+          <Summary
+            entries={entries.data?.length ?? 0}
+            activities={dayActivities.data ?? []}
+            doneTasks={
+              (tasks.data?.done.length ?? 0) + (tasks.data?.due.filter(isDone).length ?? 0)
+            }
+            categories={categories.data}
+          />
+        }
       />
 
       {nothing ? (

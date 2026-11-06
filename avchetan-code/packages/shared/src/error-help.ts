@@ -66,6 +66,7 @@ export const ERROR_HELP = {
   invalid_view: at('other_errors', BUG),
   window_failed: at('other_errors', BUG),
   tray_failed: at('other_errors', BUG),
+  notification_failed: at('other_errors', BUG),
   internal: at('other_errors', BUG),
 
   // The Home Hub inside the desktop app.

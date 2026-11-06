@@ -24,8 +24,18 @@ const eventSchemas = {
   'dock:shown': z.null(),
   /** Any window → all: these tables changed; refetch queries keyed by them. */
   'logs:changed': z.object({ tables: z.array(z.string()) }),
-  /** Rust → main: switch to a view. */
-  'main:navigate': z.object({ view: mainViewSchema }),
+  /** Rust → main: switch to a view; `day` opens that day in Days (a brief notification). */
+  'main:navigate': z.object({
+    view: mainViewSchema,
+    day: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .nullish(),
+  }),
+  /** Main → dock: make this day's daily brief now (Make the brief now, Make it again). */
+  'brief:make': z.object({ day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }),
+  /** Dock → main: a brief is being made, or no longer. */
+  'brief:state': z.object({ day: z.string(), making: z.boolean() }),
   /** Main → dock: please do this write. */
   'action:request': actionRequestSchema,
   /** Dock → main: how it went. */

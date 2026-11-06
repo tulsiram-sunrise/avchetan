@@ -226,3 +226,12 @@ Problems come first, each with its fix and a **Help** link to its section below.
 
 ## Entries stay "pending"
 Normal when offline or when the hub is unreachable. They are processed automatically later. If they stay pending while everything is connected, open **Review** in the main window: it shows the reason for each entry.
+
+## Daily brief
+**"Couldn't make the brief"** shows the reason and a **Help** link for it, usually [llm_auth](#llm_auth), [llm_no_credit](#llm_no_credit), [llm_rate_limit](#llm_rate_limit) or [server_unreachable](#server_unreachable). After fixing it, click or tap **Try again**.
+- **No brief on a day:** a day without entries gets none, and a brief you deleted isn't made again by itself. Use **Make a brief** on that day.
+- **No brief on the phone at the brief time:** expected. Android doesn't let apps run on time in the background, so the phone makes it when you open Avchetan or tap the reminder.
+- **No Windows notification:** check that notifications for Avchetan are on in Windows **Settings → System → Notifications**, and that *Do not disturb* is off.
+- **No reminder on the phone:** turn **Remind me** on in **More → Daily brief**, and allow notifications for Avchetan in Android's settings. Reminders come only on days you logged something.
+
+More in [Daily brief](daily-brief.md).

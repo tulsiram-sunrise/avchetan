@@ -27,7 +27,7 @@ If you close the box without saving, your text is still there the next time you 
 
 ## Look back by day
 
-**Days** shows one day at a time: how many entries, totals such as *Workout 45 min*, the tasks due or done that day, and the entries.
+**Days** shows one day at a time: its [daily brief](daily-brief.md) in the evening (until then, how many entries and totals such as *Workout 45 min*), the tasks due or done that day, and the entries.
 
 - **Another day:** tap it in the week at the top. Swipe the week left or right for the next or previous week.
 - **The whole month:** tap the month name, or swipe down on the week. Swipe up to go back to one week.

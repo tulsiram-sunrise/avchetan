@@ -220,6 +220,8 @@ export const TABLES = {
       created_at: req('instant'),
       last_seen_at: opt('instant'),
       last_pull_cursor: req('bigint'),
+      time_zone: opt('text'),
+      brief_time: opt('text'),
     },
   },
   server_meta: {

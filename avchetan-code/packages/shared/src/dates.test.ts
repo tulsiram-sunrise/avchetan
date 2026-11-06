@@ -3,8 +3,10 @@ import {
   addDays,
   daysBetween,
   isValidLocalDate,
+  isValidLocalTime,
   isValidTimeZone,
   localDate,
+  localTime,
   systemTimeZone,
   weekdayOf,
 } from './dates';
@@ -76,5 +78,18 @@ describe('local date arithmetic', () => {
 
   it('rejects invalid input', () => {
     expect(() => addDays('2026-02-30', 1)).toThrow(TypeError);
+  });
+});
+
+describe('localTime', () => {
+  it('gives the 24-hour local time in a zone', () => {
+    expect(localTime('2026-11-05T15:34:10.000Z', 'Asia/Kolkata')).toBe('21:04');
+    expect(localTime('2026-11-05T18:30:00.000Z', 'Asia/Kolkata')).toBe('00:00');
+  });
+
+  it('checks HH:MM', () => {
+    expect(isValidLocalTime('21:00')).toBe(true);
+    expect(isValidLocalTime('24:00')).toBe(false);
+    expect(isValidLocalTime('9:00')).toBe(false);
   });
 });

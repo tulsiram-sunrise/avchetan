@@ -5,6 +5,7 @@ import type { SyncEngine } from '@avchetan/sync';
 import { AppState } from 'react-native';
 import { createExpoPlatform, type Platform } from './platform';
 import { refreshAll } from './query-client';
+import { type BriefService, createBriefService } from './services/brief';
 import { type CaptureService, createCaptureService } from './services/capture';
 import { startBackups } from './services/data';
 import { createExtractionService } from './services/extraction';
@@ -18,6 +19,7 @@ export type AppServices = {
   capture: CaptureService;
   extraction: PendingProcessor;
   sync: SyncEngine;
+  brief: BriefService;
 };
 
 /** Wires the packages: native database → client store → services. */
@@ -40,6 +42,7 @@ async function openAppServices(platform: Platform): Promise<AppServices> {
     capture: createCaptureService(store),
     extraction,
     sync,
+    brief: createBriefService({ store, platform, sync }),
   };
 }
 

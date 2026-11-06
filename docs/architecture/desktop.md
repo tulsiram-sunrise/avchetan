@@ -52,7 +52,7 @@ commands/
 
 ## Plugins
 
-Phase 2: `global-shortcut`, `autostart` (start at login, on by default the first time only), `single-instance` (second launch shows the dock), `window-state` (main window), `opener` (help links open in the browser, scoped to the guide site). Later: `http` (Phase 3), `notification`, `positioner` (anchor options), `process`, `updater`. SQLite goes through our own commands, not the `sql` plugin ([ADR-0019](../decisions/0019-desktop-sqlite-own-commands.md)). Secrets use the `keyring` crate (3.x), not `stronghold`.
+Phase 2: `global-shortcut`, `autostart` (start at login, on by default the first time only), `single-instance` (second launch shows the dock), `window-state` (main window), `opener` (help links open in the browser, scoped to the guide site). Later: `http` (Phase 3), `positioner` (anchor options), `process`, `updater`. SQLite goes through our own commands, not the `sql` plugin ([ADR-0019](../decisions/0019-desktop-sqlite-own-commands.md)). Secrets use the `keyring` crate (3.x), not `stronghold`. Notifications use the `tauri-winrt-notification` crate directly (`src-tauri/src/notify.rs`), not the `notification` plugin, because a click must open Days on the brief's day; the installed app shows them under its bundle identifier, a dev build under PowerShell's.
 
 ## HTTP
 
@@ -67,7 +67,7 @@ Every request from the app (models, Ollama, the hub or server) goes through the 
 
 ## Background work
 
-Runs in the dock webview (always alive): pending processor, sync engine timers, daily brief scheduler. WebView2 may throttle timers in hidden windows — Phase 2 must verify timers fire while hidden; if not, drive a 30 s heartbeat event from Rust (`tokio` interval → `emit('tick')`).
+Runs in the dock webview (always alive): pending processor, sync engine timers, daily brief runner (`services/brief.ts`; the main window asks it with the `brief:make` event and follows `brief:state`, because a brief can take minutes, longer than an action may). WebView2 may throttle timers in hidden windows — Phase 2 must verify timers fire while hidden; if not, drive a 30 s heartbeat event from Rust (`tokio` interval → `emit('tick')`).
 
 ## Frontend stack
 

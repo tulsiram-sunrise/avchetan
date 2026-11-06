@@ -1,6 +1,7 @@
 import type { ClientStore } from '@avchetan/db/sqlite';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { refreshAll } from '../query-client';
+import { scheduleBriefReminder } from '../services/brief-reminder';
 import { useServices } from '../services-context';
 
 export function useExtracted(rawLogIds: readonly string[]) {
@@ -57,7 +58,7 @@ export function useCategoryNames() {
 }
 
 export function useCapture() {
-  const { capture, extraction, sync } = useServices();
+  const { capture, extraction, sync, store } = useServices();
   return useMutation({
     mutationFn: (text: string) => capture.capture(text),
     // The row is committed by now: nothing here may delay the sheet closing.
@@ -65,6 +66,8 @@ export function useCapture() {
       refreshAll();
       void extraction.wake();
       sync.schedule();
+      // The day has an entry now, so it gets the evening reminder.
+      void scheduleBriefReminder(store);
     },
   });
 }

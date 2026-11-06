@@ -40,6 +40,35 @@ export function systemTimeZone(): TimeZone {
   return Intl.DateTimeFormat().resolvedOptions().timeZone;
 }
 
+/** Local time of day, `HH:MM` (24-hour). */
+export type LocalTime = string;
+
+const LOCAL_TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+export function isValidLocalTime(value: string): value is LocalTime {
+  return LOCAL_TIME_PATTERN.test(value);
+}
+
+const timeFormatterCache = new Map<TimeZone, Intl.DateTimeFormat>();
+
+/** Local time of day of an instant in a zone, `HH:MM`. */
+export function localTime(instant: UtcInstant, timeZone: TimeZone): LocalTime {
+  let formatter = timeFormatterCache.get(timeZone);
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    });
+    timeFormatterCache.set(timeZone, formatter);
+  }
+  const parts = formatter.formatToParts(new Date(instant));
+  const get = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value ?? '00';
+  return `${get('hour')}:${get('minute')}`;
+}
+
 /** Local calendar date of an instant in a zone ("ran yesterday" at 00:30 local → yesterday). */
 export function localDate(instant: UtcInstant, timeZone: TimeZone): LocalDate {
   const parts = formatterFor(timeZone).formatToParts(new Date(instant));

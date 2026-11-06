@@ -5,6 +5,7 @@ import type { SyncEngine } from '@avchetan/sync';
 import { tauriActionBus } from './native/action-bus';
 import type { Platform } from './platform';
 import { type ActionClient, createActionClient } from './services/actions';
+import { type BriefService, createBriefService } from './services/brief';
 import { type CaptureService, createCaptureService } from './services/capture';
 import { createExtractionService } from './services/extraction';
 import { createSyncService } from './services/sync';
@@ -20,6 +21,8 @@ export type AppServices = {
   sync: SyncEngine;
   actions: ActionClient;
   timeZone: TimeZoneCache;
+  /** Started by the dock only. */
+  brief: BriefService;
 };
 
 /** Wires the packages for one window: native database → client store → services. */
@@ -32,7 +35,7 @@ export async function openAppServices(platform: Platform): Promise<AppServices> 
   await timeZone.refresh();
   // Each needs the other: organizing queues a sync, and a sync may bring entries to organize.
   const extraction = createExtractionService(store, platform, () => sync.schedule());
-  const sync = createSyncService(store, platform, extraction);
+  const sync = createSyncService(store, platform, extraction, timeZone);
   return {
     platform,
     store,
@@ -41,5 +44,6 @@ export async function openAppServices(platform: Platform): Promise<AppServices> 
     capture: createCaptureService({ store, timeZone: timeZone.current }),
     extraction,
     sync,
+    brief: createBriefService({ store, platform, sync, timeZone }),
   };
 }

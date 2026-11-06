@@ -22,10 +22,11 @@ const VIEWS: { id: MainView; label: string }[] = [
   { id: 'settings', label: 'Settings' },
 ];
 
-function CurrentView({ view, onDone }: { view: MainView; onDone: () => void }) {
+function CurrentView(props: { view: MainView; day: string | null; onDone: () => void }) {
+  const { view, onDone } = props;
   switch (view) {
     case 'timeline':
-      return <DaysPage />;
+      return <DaysPage requestedDay={props.day} />;
     case 'tasks':
       return <TasksPage />;
     case 'review':
@@ -46,10 +47,14 @@ function CurrentView({ view, onDone }: { view: MainView; onDone: () => void }) {
 }
 
 /** The full window. Hidden (not closed) when the user closes it. */
-export function MainApp(props: { initialView: MainView }) {
+export function MainApp(props: { initialView: MainView; initialDay?: string | null }) {
   const [view, setView] = useState<MainView>(props.initialView);
+  const [day, setDay] = useState<string | null>(props.initialDay ?? null);
   useTableInvalidation();
-  useAppEvent('main:navigate', (payload) => setView(payload.view));
+  useAppEvent('main:navigate', (payload) => {
+    setView(payload.view);
+    if (payload.day) setDay(payload.day);
+  });
 
   return (
     <div className="flex h-screen">
@@ -70,7 +75,7 @@ export function MainApp(props: { initialView: MainView }) {
         ))}
       </nav>
       <main className="min-w-0 flex-1 overflow-y-auto p-6">
-        <CurrentView view={view} onDone={() => setView('timeline')} />
+        <CurrentView view={view} day={day} onDone={() => setView('timeline')} />
       </main>
     </div>
   );

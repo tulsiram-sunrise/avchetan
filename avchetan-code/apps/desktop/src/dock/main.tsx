@@ -57,12 +57,22 @@ void bootstrap(
     void settleNativeState(services);
     services.extraction.start();
     services.sync.start();
+    services.brief.start();
+    // A brief the hub made arrives by sync; tell the person once.
+    services.platform.scheduler.every(60_000, () => {
+      services.brief.checkReceived().catch(() => log.warn('could not check for a new brief'));
+    });
+    onAppEvent('brief:make', ({ day }) => {
+      // The failure is saved for Days to show.
+      services.brief.makeNow(day).catch(() => undefined);
+    }).catch(() => log.warn('could not subscribe to brief requests'));
     startBackups(services);
     // A changed model or key may clear whatever the queue is waiting for.
     onAppEvent('logs:changed', ({ tables }) => {
       if (!tables.includes('settings')) return;
       services.extraction.resume();
       void services.sync.syncNow();
+      void services.brief.wake();
       services.timeZone.refresh().catch(() => log.warn('could not refresh time zone'));
     }).catch(() => log.warn('could not subscribe to setting changes'));
     // This window does every write the main window asks for.

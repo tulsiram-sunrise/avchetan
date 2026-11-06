@@ -47,7 +47,7 @@ SYNC_TOKEN, PORT=8787, BIND_HOST=0.0.0.0, LOG_LEVEL=info, TZ_DEFAULT=UTC  (fallb
 EXTRACTION_PROVIDER, EXTRACTION_MODEL, ANALYSIS_PROVIDER (hub answers questions), ANALYSIS_MODEL,
 EMBEDDING_PROVIDER, EMBEDDING_MODEL   (no EMBEDDING_DIMS: each row records its length; see retrieval.md)
 <PROVIDER>_API_KEY …, OLLAMA_BASE_URL (optional)
-FALLBACK_EXTRACTION_ENABLED=true, FALLBACK_GRACE_MINUTES=15
+FALLBACK_EXTRACTION_ENABLED=true, FALLBACK_GRACE_MINUTES=15, BRIEF_GRACE_MINUTES=30
 SHUTDOWN_ON_STDIN_CLOSE=false  (true: stop cleanly when stdin closes; set by the desktop app for its hub, ADR-0024)
 RESET_DATA_EPOCH=false  (true: a new data epoch on this start, after data was moved in; ADR-0025)
 RESTORE_SNAPSHOT  (a hub snapshot file: restore it into the empty PGLITE_DATA_DIR and exit; how the desktop app restores its hub)

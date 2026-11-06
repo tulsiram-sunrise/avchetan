@@ -23,13 +23,15 @@ export type { ColorScheme } from './category-colors';
 export { CATEGORY_PALETTE, categoryColor, UNORGANIZED_COLOR } from './category-colors';
 export type { Clock, MonotonicClockOptions, UtcInstant } from './clock';
 export { addMs, createMonotonicClock, isUtcInstant } from './clock';
-export type { LocalDate, TimeZone, Weekday } from './dates';
+export type { LocalDate, LocalTime, TimeZone, Weekday } from './dates';
 export {
   addDays,
   daysBetween,
   isValidLocalDate,
+  isValidLocalTime,
   isValidTimeZone,
   localDate,
+  localTime,
   systemTimeZone,
   weekdayOf,
 } from './dates';

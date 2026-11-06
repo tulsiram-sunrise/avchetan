@@ -21,6 +21,14 @@ export default function MoreScreen() {
       <Pressable
         accessibilityRole="button"
         className="border-b border-line bg-surfaceRaised p-4"
+        onPress={() => router.push('/settings/brief')}
+      >
+        <Text className="text-base text-ink">Daily brief</Text>
+        <Text className="text-sm text-inkMuted">When it's made, and the evening reminder.</Text>
+      </Pressable>
+      <Pressable
+        accessibilityRole="button"
+        className="border-b border-line bg-surfaceRaised p-4"
         onPress={() => router.push('/settings/sync')}
       >
         <Text className="text-base text-ink">Sync</Text>

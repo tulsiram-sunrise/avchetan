@@ -4,6 +4,7 @@
 mod commands;
 mod error;
 mod hotkey;
+mod notify;
 mod tray;
 mod windows;
 
@@ -71,6 +72,7 @@ pub fn run() {
             hotkey::hotkey_status,
             hotkey::hotkey_set,
             tray::tray_set_pending,
+            notify::brief_notify,
         ])
         .build(tauri::generate_context!())
         .expect("failed to start Avchetan")
