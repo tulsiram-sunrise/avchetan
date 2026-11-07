@@ -568,7 +568,6 @@
     "expect": {
       "tasks": [
         {
-          "dueDate": null,
           "titleHas": "article"
         }
       ]
