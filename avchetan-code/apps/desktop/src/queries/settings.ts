@@ -1,4 +1,10 @@
-import { LLM_MAY_CREATE_SETTING, type LlmMayCreate, llmMayCreateSchema } from '@avchetan/core';
+import {
+  LLM_MAY_CREATE_SETTING,
+  type LlmMayCreate,
+  llmMayCreateSchema,
+  loadExtractionMode,
+  loadExtractionSettings,
+} from '@avchetan/core';
 import { getSetting, setSetting } from '@avchetan/db/sqlite';
 import { createLogger } from '@avchetan/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -76,5 +82,17 @@ export function useSetSubmitKey() {
         log.warn('could not announce setting change'),
       );
     },
+  });
+}
+
+/** Who organizes this device's entries, and with which models (private-entries.md badge). */
+export function useOrganizingSetup() {
+  const { store } = useServices();
+  return useQuery({
+    queryKey: ['settings', 'organizing-setup'] as const,
+    queryFn: async () => ({
+      models: (await loadExtractionSettings(store)).models,
+      delegated: (await loadExtractionMode(store)) === 'delegate',
+    }),
   });
 }

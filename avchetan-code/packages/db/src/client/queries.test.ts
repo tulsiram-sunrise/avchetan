@@ -59,8 +59,28 @@ describe('claimablePendingLogs', () => {
       now,
       maxAttempts: 3,
       limit: 10,
+      includePrivate: true,
     });
     expect(claimable.map((l) => l.id)).toEqual([ok?.id]);
     expect(await store.queries.pendingCount(store.db)).toBe(5);
+  });
+});
+
+describe('claimablePendingLogs and private entries', () => {
+  it('leaves private logs waiting unless a local model may take them', async () => {
+    const { store } = await openTestStore();
+    const normal = await captureIn(store, 'normal');
+    const priv = await captureIn(store, 'private');
+    await store.write((tx) => store.repos.rawLogs.setPrivacy(tx, priv?.id ?? '', 'local_only'));
+    const claimable = (includePrivate: boolean) =>
+      store.queries.claimablePendingLogs(store.db, {
+        deviceId: store.deviceId,
+        now: '2030-01-01T00:00:00.000Z',
+        maxAttempts: 3,
+        limit: 10,
+        includePrivate,
+      });
+    expect((await claimable(false)).map((l) => l.id)).toEqual([normal?.id]);
+    expect((await claimable(true)).map((l) => l.id).sort()).toEqual([normal?.id, priv?.id].sort());
   });
 });

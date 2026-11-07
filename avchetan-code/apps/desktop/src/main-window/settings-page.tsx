@@ -23,6 +23,7 @@ import { CommandsSetting } from './commands-setting';
 import { DataSetting } from './data-setting';
 import { HubSetting } from './hub-setting';
 import { LearnedSetting } from './learned-setting';
+import { PrivateTagsSetting } from './private-tags-setting';
 import { loadSettingsTab, SETTINGS_TABS, type SettingsTab, saveSettingsTab } from './settings-tabs';
 import { SyncSetting } from './sync-setting';
 import { QuietButton } from './ui';
@@ -43,6 +44,7 @@ function TabContent({ tab }: { tab: SettingsTab }) {
       return (
         <>
           <AiModelsSetting />
+          <PrivateTagsSetting />
           <LearnedSetting />
           <UsageSetting />
         </>

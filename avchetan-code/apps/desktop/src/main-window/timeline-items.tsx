@@ -78,7 +78,11 @@ export function EntryActions({ rawLog }: { rawLog: RawLog }) {
   const requeue = useAction('log.requeue');
   const editContent = useAction('log.editContent');
   const remove = useAction('log.delete');
-  const busy = requeue.isPending || editContent.isPending || remove.isPending;
+  const setPrivacy = useAction('log.setPrivacy');
+  const [confirmPrivate, setConfirmPrivate] = useState(false);
+  const busy =
+    requeue.isPending || editContent.isPending || remove.isPending || setPrivacy.isPending;
+  const isPrivate = rawLog.privacy !== 'normal';
   const window = windowContextOf(rawLog.context);
   const [makingRule, setMakingRule] = useState(false);
 
@@ -120,11 +124,45 @@ export function EntryActions({ rawLog }: { rawLog: RawLog }) {
           <QuietButton disabled={busy} onClick={() => remove.mutate({ id: rawLog.id })}>
             Delete entry
           </QuietButton>
+          {isPrivate ? (
+            <QuietButton
+              disabled={busy}
+              onClick={() => setPrivacy.mutate({ id: rawLog.id, privacy: 'normal' })}
+            >
+              Make normal
+            </QuietButton>
+          ) : (
+            <QuietButton disabled={busy || confirmPrivate} onClick={() => setConfirmPrivate(true)}>
+              Make private
+            </QuietButton>
+          )}
           {window && !makingRule ? (
             <QuietButton onClick={() => setMakingRule(true)}>Make a rule from this</QuietButton>
           ) : null}
         </div>
       )}
+      {confirmPrivate && !isPrivate ? (
+        <div className="flex flex-col gap-1">
+          <p>
+            From now on only a local AI reads this entry. Anything a cloud AI already made from it
+            stays.
+          </p>
+          <div className="flex gap-2">
+            <QuietButton
+              disabled={busy}
+              onClick={() =>
+                setPrivacy.mutate(
+                  { id: rawLog.id, privacy: 'local_only' },
+                  { onSettled: () => setConfirmPrivate(false) },
+                )
+              }
+            >
+              Make it private
+            </QuietButton>
+            <QuietButton onClick={() => setConfirmPrivate(false)}>Cancel</QuietButton>
+          </div>
+        </div>
+      ) : null}
       {window ? (
         <p className="break-words">
           Typed over {window.app_name} ({window.app})
@@ -134,7 +172,7 @@ export function EntryActions({ rawLog }: { rawLog: RawLog }) {
       {window && makingRule ? (
         <RuleForm sample={window} onDone={() => setMakingRule(false)} />
       ) : null}
-      <ActionError errors={[requeue.error, editContent.error, remove.error]} />
+      <ActionError errors={[requeue.error, editContent.error, remove.error, setPrivacy.error]} />
     </div>
   );
 }

@@ -141,6 +141,8 @@ export const tags = sqliteTable(
     parentId: text('parent_id'),
     color: text('color'),
     mergedIntoId: text('merged_into_id'),
+    /** Entries with this tag, or one under it, are private (docs/product/private-entries.md). */
+    makesPrivate: bool('makes_private').notNull().default(false),
   },
   (t) => [index('tags_path_idx').on(t.path), index('tags_parent_id_idx').on(t.parentId)],
 );

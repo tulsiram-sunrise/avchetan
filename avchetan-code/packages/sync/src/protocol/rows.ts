@@ -37,7 +37,13 @@ function rowSchema(table: TableName) {
       const base = baseSchema(spec);
       // A missing nullable field reads as null, so an older client that doesn't know a newly
       // added column can still push.
-      return [camelCase(name), spec.nullable ? base.nullable().default(null) : base] as const;
+      // Likewise a missing column with a default takes it.
+      const field = spec.nullable
+        ? base.nullable().default(null)
+        : spec.default !== undefined
+          ? base.default(spec.default)
+          : base;
+      return [camelCase(name), field] as const;
     },
   );
   return z.object(Object.fromEntries(fields));

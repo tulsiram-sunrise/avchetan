@@ -382,10 +382,18 @@ export function openTasks(db: ClientDb, limit = 500): Promise<Task[]> {
 /**
  * Raw logs this device may process now: its own captures, still pending, not leased,
  * under the attempt cap and past their backoff (docs/architecture/extraction-pipeline.md).
+ * Private logs only when `includePrivate`: without a local model they wait
+ * (docs/product/private-entries.md).
  */
 export function claimablePendingLogs(
   db: ClientDb,
-  options: { deviceId: string; now: string; maxAttempts: number; limit: number },
+  options: {
+    deviceId: string;
+    now: string;
+    maxAttempts: number;
+    limit: number;
+    includePrivate: boolean;
+  },
 ): Promise<RawLog[]> {
   return db
     .select()
@@ -395,6 +403,7 @@ export function claimablePendingLogs(
         live(rawLogs),
         eq(rawLogs.status, 'pending_llm'),
         eq(rawLogs.originDeviceId, options.deviceId),
+        options.includePrivate ? undefined : eq(rawLogs.privacy, 'normal'),
         lt(rawLogs.processingAttempts, options.maxAttempts),
         or(isNull(rawLogs.processingLeaseUntil), lt(rawLogs.processingLeaseUntil, options.now)),
         or(isNull(rawLogs.nextAttemptAt), lte(rawLogs.nextAttemptAt, options.now)),

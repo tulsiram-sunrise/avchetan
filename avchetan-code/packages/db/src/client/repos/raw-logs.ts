@@ -43,6 +43,11 @@ function ruleTagPaths(context: Record<string, unknown>): string[] {
   );
 }
 
+/** `health/knee` is at or under `health`. */
+export function isAtOrUnder(path: string, root: string): boolean {
+  return path === root || path.startsWith(`${root}/`);
+}
+
 export function rawLogsRepo(deps: RepoDeps, tags: ReturnType<typeof tagsRepo>) {
   const repo = {
     /**
@@ -58,6 +63,21 @@ export function rawLogsRepo(deps: RepoDeps, tags: ReturnType<typeof tagsRepo>) {
         });
       }
 
+      // Resolved before the log exists, so a merged tag counts as the tag it was merged into.
+      const explicitTags = [];
+      for (const path of new Set(input.explicitTagPaths ?? [])) {
+        explicitTags.push(await tags.ensurePath(tx, path));
+      }
+      let privacy = input.privacy ?? 'normal';
+      // Private tags (docs/product/private-entries.md#private-tags); one read, only with tags.
+      if (privacy === 'normal' && explicitTags.length > 0) {
+        const privatePaths = await tags.privatePaths(tx);
+        const isPrivate = explicitTags.some((tag) =>
+          privatePaths.some((root) => isAtOrUnder(tag.path, root)),
+        );
+        if (isPrivate) privacy = 'local_only';
+      }
+
       const now = deps.clock.now();
       const capturedAt = input.capturedAt ?? now;
       const rawLog = await insertSynced(
@@ -70,7 +90,7 @@ export function rawLogsRepo(deps: RepoDeps, tags: ReturnType<typeof tagsRepo>) {
           capturedTz: input.capturedTz,
           source: input.source,
           context: input.context ?? {},
-          privacy: input.privacy ?? 'normal',
+          privacy,
           status: 'pending_llm',
           originDeviceId: deps.deviceId,
           processingAttempts: 0,
@@ -80,8 +100,7 @@ export function rawLogsRepo(deps: RepoDeps, tags: ReturnType<typeof tagsRepo>) {
 
       // Different spellings can resolve to one tag (`#Health`, `#health`); link it once.
       const linked = new Set<string>();
-      for (const path of new Set(input.explicitTagPaths ?? [])) {
-        const tag = await tags.ensurePath(tx, path);
+      for (const tag of explicitTags) {
         if (linked.has(tag.id)) continue;
         linked.add(tag.id);
         await tags.link(
@@ -91,6 +110,17 @@ export function rawLogsRepo(deps: RepoDeps, tags: ReturnType<typeof tagsRepo>) {
         );
       }
       return rawLog;
+    },
+
+    /**
+     * Make private / Make normal (docs/product/private-entries.md#what-it-looks-like). A log
+     * made normal while waiting for a local AI is picked up by the usual model next time.
+     */
+    async setPrivacy(tx: Tx, id: string, privacy: RawLogPrivacy): Promise<RawLog> {
+      const log = await getById(tx, rawLogs, id);
+      if (!log || log.deletedAt) throw new ValidationError('not_found', 'Entry no longer exists');
+      if (log.privacy === privacy) return log;
+      return updateSynced(tx, deps, rawLogs, id, { privacy });
     },
 
     /** Takes the lease on a pending log and counts one extraction attempt. */
@@ -184,6 +214,8 @@ export function rawLogsRepo(deps: RepoDeps, tags: ReturnType<typeof tagsRepo>) {
       if (!old || old.deletedAt) throw new ValidationError('not_found', 'Entry no longer exists');
       const next = await repo.capture(tx, {
         ...input,
+        // Editing never makes a private entry normal: that is Make normal's job.
+        privacy: old.privacy === 'local_only' ? 'local_only' : (input.privacy ?? 'normal'),
         capturedTz: old.capturedTz,
         capturedAt: old.capturedAt,
         explicitTagPaths: [...(input.explicitTagPaths ?? []), ...ruleTagPaths(old.context)],

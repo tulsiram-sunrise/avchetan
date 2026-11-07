@@ -20,6 +20,13 @@ export type ApplyResult = { applied: number; skipped: number };
 export async function applyRemoteChanges(
   tx: Tx,
   changes: readonly RemoteChange[],
+  options: {
+    /**
+     * Also take rows of the same version: the same write, but the server's copy has columns an
+     * older app dropped when it pulled it. Only for the one full pull after an update.
+     */
+    refill?: boolean;
+  } = {},
 ): Promise<ApplyResult> {
   const result: ApplyResult = { applied: 0, skipped: 0 };
   for (const { table: tableName, row } of changes) {
@@ -33,6 +40,12 @@ export async function applyRemoteChanges(
         .set(row as never)
         .where(eq(table.id, row.id));
       await removeOutboxEntry(tx, tableName, row.id);
+    } else if (options.refill && compareVersions(row, local) === 0) {
+      // Same version: nothing in the outbox can be newer, so it stays as it is.
+      await tx
+        .update(table)
+        .set(row as never)
+        .where(eq(table.id, row.id));
     } else {
       result.skipped += 1;
       continue;

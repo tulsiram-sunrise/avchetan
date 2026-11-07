@@ -21,6 +21,14 @@ export default function MoreScreen() {
       <Pressable
         accessibilityRole="button"
         className="border-b border-line bg-surfaceRaised p-4"
+        onPress={() => router.push('/settings/private-tags')}
+      >
+        <Text className="text-base text-ink">Private tags</Text>
+        <Text className="text-sm text-inkMuted">Tags that keep an entry away from cloud AI.</Text>
+      </Pressable>
+      <Pressable
+        accessibilityRole="button"
+        className="border-b border-line bg-surfaceRaised p-4"
         onPress={() => router.push('/settings/learned')}
       >
         <Text className="text-base text-ink">What Avchetan learned</Text>

@@ -402,3 +402,46 @@ describe('pending processor', () => {
     expect(row?.lastError).toBeNull();
   });
 });
+
+describe('private entries (docs/product/private-entries.md)', () => {
+  const capturePrivate = (content: string): Promise<RawLog> =>
+    store.write((tx) =>
+      store.repos.rawLogs.capture(tx, {
+        content,
+        source: 'desktop_text',
+        capturedTz: 'UTC',
+        privacy: 'local_only',
+      }),
+    );
+
+  it('waits for a local model instead of skipping, and still organizes normal entries', async () => {
+    const priv = await capturePrivate('knee hurt !private');
+    const normal = await capture('ran 5k');
+
+    await processor.wake();
+
+    expect(await stored(priv)).toMatchObject({ status: 'pending_llm', processingAttempts: 0 });
+    expect(await stored(normal)).toMatchObject({ status: 'processed' });
+    expect(doGenerate).toHaveBeenCalledTimes(1);
+  });
+
+  it('is organized once a local model is set up', async () => {
+    const priv = await capturePrivate('knee hurt !private');
+    await processor.wake();
+    settings = { ...settings, models: [ollama] };
+
+    await processor.wake();
+
+    expect(await stored(priv)).toMatchObject({ status: 'processed' });
+  });
+
+  it('made normal while waiting, goes to the usual model', async () => {
+    const priv = await capturePrivate('knee hurt');
+    await processor.wake();
+    await store.write((tx) => store.repos.rawLogs.setPrivacy(tx, priv.id, 'normal'));
+
+    await processor.wake();
+
+    expect(await stored(priv)).toMatchObject({ status: 'processed' });
+  });
+});

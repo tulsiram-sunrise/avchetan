@@ -173,3 +173,78 @@ describe('rawLogs.softDelete', () => {
     ).toHaveLength(1);
   });
 });
+
+describe('private tags (docs/product/private-entries.md)', () => {
+  async function withPrivateTag(path: string) {
+    const opened = await openTestStore();
+    const { store } = opened;
+    const tag = await store.write((tx) => store.repos.tags.ensurePath(tx, path));
+    await store.write((tx) => store.repos.tags.setMakesPrivate(tx, tag.id, true));
+    return { ...opened, tag };
+  }
+
+  it('makes an entry private when a typed tag is at or under a private tag', async () => {
+    const { store } = await withPrivateTag('health');
+    const knee = await store.write((tx) =>
+      store.repos.rawLogs.capture(tx, capture('knee hurt', ['health/knee'])),
+    );
+    const other = await store.write((tx) =>
+      store.repos.rawLogs.capture(tx, capture('ate well', ['healthy-food'])),
+    );
+    expect(knee.privacy).toBe('local_only');
+    expect(other.privacy).toBe('normal');
+  });
+
+  it('counts a tag merged into a private one', async () => {
+    const { store, tag } = await withPrivateTag('health');
+    const old = await store.write((tx) => store.repos.tags.ensurePath(tx, 'wellbeing'));
+    await store.write((tx) => store.repos.tags.merge(tx, old.id, tag.id));
+    const log = await store.write((tx) =>
+      store.repos.rawLogs.capture(tx, capture('slept badly', ['wellbeing'])),
+    );
+    expect(log.privacy).toBe('local_only');
+  });
+
+  it('makes the survivor private when a private tag is merged into it', async () => {
+    const { store, tag } = await withPrivateTag('money');
+    const finance = await store.write((tx) => store.repos.tags.ensurePath(tx, 'finance'));
+    await store.write((tx) => store.repos.tags.merge(tx, tag.id, finance.id));
+    expect(await store.repos.tags.privatePaths(store.db)).toEqual(['finance']);
+  });
+
+  it('keeps the mark when a tag is renamed', async () => {
+    const { store, tag } = await withPrivateTag('health');
+    await store.write((tx) => store.repos.tags.move(tx, tag.id, 'body'));
+    expect(await store.repos.tags.privatePaths(store.db)).toEqual(['body']);
+  });
+
+  it('Edit text never makes a private entry normal, but can make a normal one private', async () => {
+    const { store } = await withPrivateTag('health');
+    const priv = await store.write((tx) =>
+      store.repos.rawLogs.capture(tx, capture('knee', ['health'])),
+    );
+    const edited = await store.write((tx) =>
+      store.repos.rawLogs.replace(tx, priv.id, capture('knee, better now')),
+    );
+    expect(edited.privacy).toBe('local_only');
+
+    const plain = await store.write((tx) => store.repos.rawLogs.capture(tx, capture('stairs')));
+    const tagged = await store.write((tx) =>
+      store.repos.rawLogs.replace(tx, plain.id, capture('stairs', ['health/knee'])),
+    );
+    expect(tagged.privacy).toBe('local_only');
+  });
+
+  it('Make private and Make normal change the entry and enqueue it for sync', async () => {
+    const { store } = await openTestStore();
+    const log = await store.write((tx) => store.repos.rawLogs.capture(tx, capture('note')));
+    const made = await store.write((tx) =>
+      store.repos.rawLogs.setPrivacy(tx, log.id, 'local_only'),
+    );
+    expect(made.privacy).toBe('local_only');
+    const back = await store.write((tx) => store.repos.rawLogs.setPrivacy(tx, log.id, 'normal'));
+    expect(back.privacy).toBe('normal');
+    const queued = await store.db.select().from(syncOutbox).where(eq(syncOutbox.recordId, log.id));
+    expect(queued.length).toBeGreaterThan(0);
+  });
+});

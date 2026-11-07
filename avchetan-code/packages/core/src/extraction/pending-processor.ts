@@ -36,7 +36,13 @@ export type PendingProcessorDeps = {
   onChange?: () => void;
 };
 
-export type ClaimOptions = { now: string; maxAttempts: number; limit: number };
+export type ClaimOptions = {
+  now: string;
+  maxAttempts: number;
+  limit: number;
+  /** A local model is available: private logs may be taken (docs/product/private-entries.md). */
+  includePrivate: boolean;
+};
 
 export type PendingProcessor = {
   /** Look for work now. Never awaited by capture. */
@@ -151,7 +157,14 @@ export function createPendingProcessor(deps: PendingProcessorDeps): PendingProce
     );
     if (models.length === 0) return 'idle';
 
-    const [next] = await findClaimable({ now, maxAttempts: MAX_ATTEMPTS, limit: 1 });
+    // Without a local model, private logs stay pending instead of being skipped.
+    const includePrivate = models.some((model) => PROVIDER_ADAPTERS[model.provider].local);
+    const [next] = await findClaimable({
+      now,
+      maxAttempts: MAX_ATTEMPTS,
+      limit: 1,
+      includePrivate,
+    });
     if (!next) return (await giveUpOnAbandoned(now)) ? 'more' : 'idle';
 
     if (budget !== null) budget -= 1;

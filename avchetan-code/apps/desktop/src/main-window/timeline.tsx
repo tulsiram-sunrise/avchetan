@@ -3,6 +3,7 @@ import type { Activity, RawLog, Task } from '@avchetan/db/sqlite';
 import { formatTime } from '@avchetan/shared';
 import { StatusBadge } from '../dock/status-badge';
 import { EntryClipboard } from './entry-clipboard';
+import { PrivateLock, WaitsForLocalAi } from './private-mark';
 import { ActivityRow, EntryActions, TaskRow } from './timeline-items';
 
 /**
@@ -24,7 +25,11 @@ export function TimelineEntry(props: {
       </span>
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         {props.addedOn ? <p className="text-xs text-ink-muted">added on {props.addedOn}</p> : null}
-        <p className="whitespace-pre-wrap break-words">{rawLog.content}</p>
+        <p className="whitespace-pre-wrap break-words">
+          <PrivateLock rawLog={rawLog} />
+          {rawLog.content}
+        </p>
+        <WaitsForLocalAi rawLog={rawLog} />
         {window ? (
           <p className="text-xs text-ink-muted" title={window.window_title ?? window.app_name}>
             from {window.app_name}
