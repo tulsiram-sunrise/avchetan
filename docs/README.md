@@ -26,6 +26,7 @@ The project started from an original discussion and first specification that are
 | [product/android-widget.md](product/android-widget.md) | Android widget: the home-screen quick-capture bar |
 | [product/window-context.md](product/window-context.md) | Window context: the app and title noted at capture on the PC, rules, deny-list, pause |
 | [product/private-entries.md](product/private-entries.md) | Private entries: `!private` and private tags read only by a local AI, waiting without one, lock and Make private / normal |
+| [product/voice-capture.md](product/voice-capture.md) | Voice capture: hold the shortcut or tap a mic; offline Whisper on the PC, Android's on-device recognizer on the phone |
 | [product/clipboard-snap.md](product/clipboard-snap.md) | Clipboard snap: a second shortcut attaches the clipboard text (4 KB) to an entry on the PC |
 | [product/glossary.md](product/glossary.md) | Shared vocabulary |
 
