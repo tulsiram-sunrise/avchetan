@@ -1,6 +1,6 @@
 # Window context
 
-When you open the capture box on the PC, Avchetan notes which window you were in: the app and its title. Rules turn that into a project and tags, so `fixed the login bug` typed over VS Code on *my-project* lands in **Engineering** with `#my-project` without you typing either. It is the fifth item of [Phase 6](../roadmap.md#phase-6--advancements-a-ambient-intelligence) and replaces the outline in [advancements §1](advancements.md#1-context-awareness-desktop-metadata-capture) (clipboard snap is item 6).
+When you open the capture box on the PC, Avchetan notes which window you were in: the app and its title. Rules turn that into a project and tags, so `fixed the login bug` typed over VS Code on *my-project* lands in **Engineering** with `#my-project` without you typing either. It is the fifth item of [Phase 6](../roadmap.md#phase-6--advancements-a-ambient-intelligence-) and replaces the outline in [advancements §1](advancements.md#1-context-awareness-desktop-metadata-capture) (clipboard snap is item 6).
 
 ## Why
 

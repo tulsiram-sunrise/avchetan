@@ -1,6 +1,6 @@
 # Clipboard snap
 
-A second shortcut opens the capture box with the text on your clipboard attached: copy a stack trace, an address or a few lines of code, press **Ctrl+Shift+Alt+Space**, type `login fails on staging` and save. The entry keeps the copied text with it. It is the sixth and last item of [Phase 6](../roadmap.md#phase-6--advancements-a-ambient-intelligence) and replaces the clipboard line in [advancements §1](advancements.md#1-context-awareness-desktop-metadata-capture).
+A second shortcut opens the capture box with the text on your clipboard attached: copy a stack trace, an address or a few lines of code, press **Ctrl+Shift+Alt+Space**, type `login fails on staging` and save. The entry keeps the copied text with it. It is the sixth and last item of [Phase 6](../roadmap.md#phase-6--advancements-a-ambient-intelligence-) and replaces the clipboard line in [advancements §1](advancements.md#1-context-awareness-desktop-metadata-capture).
 
 ## Why
 

@@ -1,6 +1,6 @@
 # Command mode
 
-Type `/` in the desktop capture box to act instead of log: finish a task, make the daily brief, sync. It is the third item of [Phase 6](../roadmap.md#phase-6--advancements-a-ambient-intelligence) and replaces the outline in [advancements §3](advancements.md#3-unified-command-dock-capture--ask--act) for this version.
+Type `/` in the desktop capture box to act instead of log: finish a task, make the daily brief, sync. It is the third item of [Phase 6](../roadmap.md#phase-6--advancements-a-ambient-intelligence-) and replaces the outline in [advancements §3](advancements.md#3-unified-command-dock-capture--ask--act) for this version.
 
 ## Why
 

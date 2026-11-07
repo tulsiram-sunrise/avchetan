@@ -1,6 +1,6 @@
 # Android widget
 
-A bar on the phone's home screen that opens the capture box in one tap. After **Save** you are back on the home screen. It is the fourth item of [Phase 6](../roadmap.md#phase-6--advancements-a-ambient-intelligence); the microphone button is Phase 7.
+A bar on the phone's home screen that opens the capture box in one tap. After **Save** you are back on the home screen. It is the fourth item of [Phase 6](../roadmap.md#phase-6--advancements-a-ambient-intelligence-); the microphone button is Phase 7.
 
 ## Why
 
