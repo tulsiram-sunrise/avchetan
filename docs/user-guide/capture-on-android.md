@@ -53,7 +53,9 @@ If tapping the widget does nothing (for example after you used **Force stop** on
 ## Add tags and keep entries private
 
 - Type `#` before a word to tag the entry: `#health`, or `#health/knee` for a tag inside another tag.
-- Type `!private` anywhere in the entry to keep it on your own devices. Private entries are never sent to an online AI service.
+- Type `!private` anywhere in the entry to keep it from online AI: only an AI on your own PC or hub reads it. A 🔒 shows before it on **Days**. More in [Private entries](ai-models.md#private-entries).
+- **Always private for some topics:** add tags such as `health` under **More → Private tags**. Any entry you tag `#health`, or `#health/knee`, is then private without typing `!private`.
+- **Change it later:** open the entry and tap **Make private** or **Make normal**.
 
 ## Change or fix an entry
 

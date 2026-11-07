@@ -1,0 +1,1 @@
+ALTER TABLE `tags` ADD `makes_private` integer DEFAULT false NOT NULL;

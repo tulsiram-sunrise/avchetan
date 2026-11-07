@@ -101,5 +101,11 @@ export const pgMigrations: readonly Migration[] = [
     "statements": [
       "ALTER TABLE \"raw_logs\" ADD COLUMN \"example_forgotten_at\" timestamp(3) with time zone;"
     ]
+  },
+  {
+    "tag": "0007_tag_makes_private",
+    "statements": [
+      "ALTER TABLE \"tags\" ADD COLUMN \"makes_private\" boolean DEFAULT false NOT NULL;"
+    ]
   }
 ];

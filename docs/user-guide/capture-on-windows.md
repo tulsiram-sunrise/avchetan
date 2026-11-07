@@ -19,7 +19,9 @@ Half-written text is kept, even if you close the box or restart your PC.
 ## Add tags and keep entries private
 
 - Type `#` before a word to tag the entry: `#health`, or `#health/knee` for a tag inside another tag.
-- Type `!private` anywhere in the entry to keep it on your own devices. Private entries are never sent to an online AI service.
+- Type `!private` anywhere in the entry to keep it from online AI: only an AI on your own PC or hub reads it. A 🔒 shows before it on **Days**. More in [Private entries](ai-models.md#private-entries).
+- **Always private for some topics:** add tags such as `health` under **Settings → AI → Private tags**. Any entry you tag `#health`, or `#health/knee`, is then private without typing `!private`.
+- **Change it later:** open the entry's **Options** on **Days** and click **Make private** or **Make normal**.
 
 ## Window context and rules
 

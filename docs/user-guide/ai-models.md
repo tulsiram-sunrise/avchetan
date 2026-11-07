@@ -74,4 +74,14 @@ Your key is stored in your device's secure storage (Windows Credential Manager /
 
 - With Ollama only, your entries never leave your devices and hub.
 - With a cloud provider, the text of your entries (and your questions) is sent to that provider to be processed, under that provider's terms. The settings screen shows which jobs use which provider.
-- Add `!private` to an entry to keep it away from cloud AI entirely (coming in a later version).
+- Add `!private` to an entry, or a [private tag](#private-entries), to keep it away from cloud AI entirely.
+
+## Private entries
+
+An entry with `!private`, or with a tag you made private, is read only by an AI on your own hardware: Ollama on your PC, or your Home Hub with Ollama. No cloud AI sees it, not to organize it, not to answer a question in **Ask**, and not for a daily brief.
+
+- **Private tags:** **Settings → AI → Private tags** on the PC, **More → Private tags** on the phone. A tag covers the tags under it: `health` also makes `#health/knee` private. Only tags you type count (and tags a window rule adds), not the ones the AI suggests. Changes reach your other devices.
+- **No local AI yet?** A private entry then shows *Private: waits for a local AI* and stays *Pending*. It is organized as soon as one is available. To set one up: [Ollama on this PC](#free-and-private-ollama-on-your-pc), or a [Home Hub](setup-home-hub.md), which can use Ollama for everything. You can still tag the entry yourself meanwhile.
+- **Make private / Make normal:** in the entry's **Options** on **Days** (PC), or on the entry (phone). Making an entry private stops cloud AI reading it from then on; anything a cloud AI already made from it stays. Making it normal lets your usual AI organize it.
+- **Editing** an entry never makes a private one normal; use **Make normal** for that.
+- Private entries still [sync](pair-your-phone.md) to your own hub or server like any other, so you see them on every device.

@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useActiveCategories } from '../../src/queries/corrections';
 import { useCategoryNames, useLogDetail } from '../../src/queries/entries';
+import { useSetPrivacy } from '../../src/queries/private';
 import {
   useDeleteActivity,
   useDeleteLog,
@@ -14,6 +15,7 @@ import {
   useRequeueLog,
 } from '../../src/queries/writes';
 import { Button, Failure, Field, HelpLink } from '../../src/ui/parts';
+import { privatePrefix, WaitsForLocalAi } from '../../src/ui/private-mark';
 import { StatusBadge } from '../../src/ui/status-badge';
 import { TaskRow } from '../../src/ui/task-row';
 
@@ -124,7 +126,10 @@ function EntryActions({ rawLog }: { rawLog: RawLog }) {
   const requeue = useRequeueLog();
   const edit = useEditLog();
   const remove = useDeleteLog();
-  const busy = requeue.isPending || edit.isPending || remove.isPending;
+  const setPrivacy = useSetPrivacy();
+  const [confirmPrivate, setConfirmPrivate] = useState(false);
+  const busy = requeue.isPending || edit.isPending || remove.isPending || setPrivacy.isPending;
+  const isPrivate = rawLog.privacy !== 'normal';
 
   return (
     <View className="gap-3">
@@ -141,6 +146,19 @@ function EntryActions({ rawLog }: { rawLog: RawLog }) {
             disabled={busy}
             onPress={() => remove.mutate(rawLog.id, { onSuccess: () => router.back() })}
           />
+          {isPrivate ? (
+            <Button
+              label="Make normal"
+              disabled={busy}
+              onPress={() => setPrivacy.mutate({ id: rawLog.id, privacy: 'normal' })}
+            />
+          ) : (
+            <Button
+              label="Make private"
+              disabled={busy || confirmPrivate}
+              onPress={() => setConfirmPrivate(true)}
+            />
+          )}
         </View>
       ) : (
         <>
@@ -169,7 +187,29 @@ function EntryActions({ rawLog }: { rawLog: RawLog }) {
           </View>
         </>
       )}
-      <Failure error={requeue.error ?? edit.error ?? remove.error} />
+      {confirmPrivate && !isPrivate ? (
+        <View className="gap-2">
+          <Text className="text-sm text-ink">
+            From now on only a local AI reads this entry. Anything a cloud AI already made from it
+            stays.
+          </Text>
+          <View className="flex-row gap-2">
+            <Button
+              primary
+              label="Make it private"
+              disabled={busy}
+              onPress={() =>
+                setPrivacy.mutate(
+                  { id: rawLog.id, privacy: 'local_only' },
+                  { onSettled: () => setConfirmPrivate(false) },
+                )
+              }
+            />
+            <Button label="Cancel" onPress={() => setConfirmPrivate(false)} />
+          </View>
+        </View>
+      ) : null}
+      <Failure error={requeue.error ?? edit.error ?? remove.error ?? setPrivacy.error} />
     </View>
   );
 }
@@ -200,7 +240,11 @@ export default function LogScreen() {
         </Text>
         <StatusBadge status={rawLog.status} />
       </View>
-      <Text className="text-base text-ink">{rawLog.content}</Text>
+      <Text className="text-base text-ink">
+        {privatePrefix(rawLog)}
+        {rawLog.content}
+      </Text>
+      <WaitsForLocalAi rawLog={rawLog} />
       <WindowLine context={rawLog.context} />
       <ClipboardText context={rawLog.context} />
       <LastError rawLog={rawLog} />

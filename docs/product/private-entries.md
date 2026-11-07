@@ -29,7 +29,7 @@ Days
 
 ## Private tags
 
-**Settings → AI → Private tags** (PC) and **More → Settings → Private tags** (phone): a list of tags that make an entry private.
+**Settings → AI → Private tags** (PC) and **More → Private tags** (phone): a list of tags that make an entry private.
 
 - **Add** by typing a tag (`health`) or choosing from your tags; **Remove** with ×. Empty by default.
 - **A tag covers everything under it:** `health` also matches `#health/knee`.

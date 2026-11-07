@@ -3,6 +3,7 @@ import type { Activity, RawLog, Task } from '@avchetan/db/sqlite';
 import { describeError, formatTime, parseLastError } from '@avchetan/shared';
 import { router } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
+import { privatePrefix, WaitsForLocalAi } from './private-mark';
 import { StatusBadge } from './status-badge';
 import { TaskCheck } from './task-row';
 
@@ -32,7 +33,11 @@ export function EntryRow(props: {
         </Text>
         <StatusBadge status={rawLog.status} />
       </View>
-      <Text className="text-sm text-ink">{rawLog.content}</Text>
+      <Text className="text-sm text-ink">
+        {privatePrefix(rawLog)}
+        {rawLog.content}
+      </Text>
+      <WaitsForLocalAi rawLog={rawLog} />
       {window || copied ? (
         <Text className="text-xs text-inkMuted">
           {[window ? `from ${window.app_name}` : null, copied ? 'with clipboard' : null]

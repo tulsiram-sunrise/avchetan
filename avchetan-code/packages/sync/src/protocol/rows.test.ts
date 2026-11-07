@@ -55,6 +55,14 @@ describe('synced row schemas', () => {
     expect(parsed).toMatchObject({ exampleForgottenAt: null });
   });
 
+  it('reads a tag row from an app without private tags as not private', async () => {
+    const { store } = await openTestStore();
+    const tag = await store.write((tx) => store.repos.tags.ensurePath(tx, 'health'));
+    const { makesPrivate: _missing, ...fromAnOlderApp } = tag;
+
+    expect(SYNCED_ROW_SCHEMAS.tags?.parse(fromAnOlderApp)).toMatchObject({ makesPrivate: false });
+  });
+
   it('still requires the fields that are not nullable', async () => {
     const { content: _missing, ...row } = await capturedRow();
 

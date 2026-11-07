@@ -189,6 +189,8 @@ export const tags = pgTable(
     parentId: uuid('parent_id'),
     color: text('color'),
     mergedIntoId: uuid('merged_into_id'),
+    /** Entries with this tag, or one under it, are private (docs/product/private-entries.md). */
+    makesPrivate: boolean('makes_private').notNull().default(false),
   },
   (t) => [
     seqIndex('tags', t),

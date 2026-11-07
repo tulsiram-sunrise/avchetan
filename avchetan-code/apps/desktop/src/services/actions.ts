@@ -1,4 +1,4 @@
-import { buildCaptureInput } from '@avchetan/core';
+import { buildCaptureInput, normalizeTagPath } from '@avchetan/core';
 import type { ClientStore } from '@avchetan/db/sqlite';
 import { AppError, createLogger, newId, toAppError } from '@avchetan/shared';
 import { z } from 'zod';
@@ -83,6 +83,12 @@ const ACTIONS = {
   'log.forgetExample': action(idArgs, (store, { id }) =>
     store.write((tx) => store.repos.rawLogs.forgetExample(tx, id)),
   ),
+  /** Make private / Make normal (docs/product/private-entries.md). */
+  'log.setPrivacy': action(
+    idArgs.extend({ privacy: z.enum(['normal', 'local_only']) }),
+    (store, { id, privacy }) =>
+      store.write((tx) => store.repos.rawLogs.setPrivacy(tx, id, privacy)),
+  ),
 
   'category.create': action(
     z.object({ name: z.string(), description: z.string().nullable() }),
@@ -107,6 +113,19 @@ const ACTIONS = {
   ),
   'tag.merge': action(mergeArgs, (store, { id, intoId }) =>
     store.write((tx) => store.repos.tags.merge(tx, id, intoId)),
+  ),
+  /** Settings → Private tags: add by typing, creating the tag if needed. */
+  'tag.addPrivate': action(z.object({ path: z.string() }), (store, { path }) =>
+    store.write(async (tx) => {
+      // Normalized like a typed #tag, so `#Health` and `health` are one tag.
+      const tag = await store.repos.tags.ensurePath(tx, normalizeTagPath(path));
+      return store.repos.tags.setMakesPrivate(tx, tag.id, true);
+    }),
+  ),
+  'tag.setPrivate': action(
+    idArgs.extend({ makesPrivate: z.boolean() }),
+    (store, { id, makesPrivate }) =>
+      store.write((tx) => store.repos.tags.setMakesPrivate(tx, id, makesPrivate)),
   ),
   'tag.recolor': action(idArgs.extend({ color: z.string().nullable() }), (store, { id, color }) =>
     store.write((tx) => store.repos.tags.recolor(tx, id, color)),

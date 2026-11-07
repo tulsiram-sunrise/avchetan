@@ -1,0 +1,1 @@
+ALTER TABLE "tags" ADD COLUMN "makes_private" boolean DEFAULT false NOT NULL;

@@ -48,5 +48,11 @@ export const sqliteMigrations: readonly Migration[] = [
     "statements": [
       "ALTER TABLE `raw_logs` ADD `example_forgotten_at` text;"
     ]
+  },
+  {
+    "tag": "0002_tag_makes_private",
+    "statements": [
+      "ALTER TABLE `tags` ADD `makes_private` integer DEFAULT false NOT NULL;"
+    ]
   }
 ];

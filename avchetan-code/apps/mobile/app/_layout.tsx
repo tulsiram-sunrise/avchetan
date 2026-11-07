@@ -84,6 +84,7 @@ function AppRoutes({ startup }: { startup: Startup }) {
           <Stack.Screen name="settings/sync" options={{ title: 'Sync' }} />
           <Stack.Screen name="settings/data" options={{ title: 'Your data' }} />
           <Stack.Screen name="settings/brief" options={{ title: 'Daily brief' }} />
+          <Stack.Screen name="settings/private-tags" options={{ title: 'Private tags' }} />
           <Stack.Screen name="settings/learned" options={{ title: 'What Avchetan learned' }} />
           <Stack.Screen name="settings/pair" options={{ title: 'Scan pairing code' }} />
           <Stack.Screen name="settings/check" options={{ title: 'Setup check' }} />

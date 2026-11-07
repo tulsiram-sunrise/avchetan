@@ -23,6 +23,8 @@ export type ColumnSpec = {
   type: LogicalType;
   nullable: boolean;
   enum?: readonly string[];
+  /** For a column added later: what an older client that doesn't send it means. */
+  default?: boolean;
 };
 
 /** synced = both dialects; local = SQLite clients only; server = Postgres only. */
@@ -33,6 +35,12 @@ export type TableSpec = { scope: TableScope; columns: Record<string, ColumnSpec>
 const req = (type: LogicalType, values?: readonly string[]): ColumnSpec =>
   values ? { type, nullable: false, enum: values } : { type, nullable: false };
 const opt = (type: LogicalType): ColumnSpec => ({ type, nullable: true });
+/** Not null, with a default an older client's rows take on (columns added after release). */
+const flag = (fallback: boolean): ColumnSpec => ({
+  type: 'bool',
+  nullable: false,
+  default: fallback,
+});
 
 /** Present on every synced table (docs/architecture/data-model.md#common-sync-columns). */
 export const SYNC_COLUMNS = {
@@ -124,6 +132,7 @@ export const TABLES = {
     parent_id: opt('uuid'),
     color: opt('text'),
     merged_into_id: opt('uuid'),
+    makes_private: flag(false),
   }),
   entity_tags: synced({
     tag_id: req('uuid'),

@@ -86,6 +86,7 @@ export function tagsRepo(deps: RepoDeps) {
             parentId: parent?.id ?? null,
             color: null,
             mergedIntoId: null,
+            makesPrivate: false,
           };
           const id = derivedId('tag', prefix);
           const holder = await getById(tx, tags, id);
@@ -181,6 +182,19 @@ export function tagsRepo(deps: RepoDeps) {
     recolor: (tx: Tx, id: string, color: string | null) =>
       updateSynced(tx, deps, tags, id, { color }),
 
+    /** Settings → Private tags (docs/product/private-entries.md#private-tags). */
+    setMakesPrivate: (tx: Tx, id: string, makesPrivate: boolean) =>
+      updateSynced(tx, deps, tags, id, { makesPrivate }),
+
+    /** The paths of the tags marked private, for matching at capture. */
+    async privatePaths(db: ClientDb): Promise<string[]> {
+      const rows = await db
+        .select({ path: tags.path })
+        .from(tags)
+        .where(and(live(tags), isNull(tags.mergedIntoId), eq(tags.makesPrivate, true)));
+      return rows.map((row) => row.path);
+    },
+
     listAll(db: ClientDb): Promise<Tag[]> {
       return db
         .select()
@@ -266,6 +280,11 @@ export function tagsRepo(deps: RepoDeps) {
         entityTags,
         links.map((link) => link.id),
       );
+      // Private wins: merging a private tag into another makes that one private.
+      const merged = await getById(tx, tags, id);
+      if (merged?.makesPrivate && !survivor.makesPrivate) {
+        await updateSynced(tx, deps, tags, survivor.id, { makesPrivate: true });
+      }
       await updateSynced(tx, deps, tags, id, { mergedIntoId: survivor.id });
     },
   };

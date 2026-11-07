@@ -138,6 +138,7 @@ export {
   type PendingProcessor,
   type PendingProcessorDeps,
 } from './extraction/pending-processor';
+export { waitsForLocalAi } from './extraction/private';
 export { type ExtractionResult, extractionResultSchema } from './extraction/schema';
 export {
   ANALYSIS_MODE_SETTING,

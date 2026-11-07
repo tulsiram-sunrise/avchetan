@@ -15,6 +15,13 @@
       "when": 1793986935110,
       "tag": "0001_example_forgotten_at",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1794014516521,
+      "tag": "0002_tag_makes_private",
+      "breakpoints": true
     }
   ]
 }
