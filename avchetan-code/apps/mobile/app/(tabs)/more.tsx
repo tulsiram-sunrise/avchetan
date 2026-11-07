@@ -29,6 +29,14 @@ export default function MoreScreen() {
       <Pressable
         accessibilityRole="button"
         className="border-b border-line bg-surfaceRaised p-4"
+        onPress={() => router.push('/settings/voice')}
+      >
+        <Text className="text-base text-ink">Voice</Text>
+        <Text className="text-sm text-inkMuted">Say entries instead of typing, offline.</Text>
+      </Pressable>
+      <Pressable
+        accessibilityRole="button"
+        className="border-b border-line bg-surfaceRaised p-4"
         onPress={() => router.push('/settings/learned')}
       >
         <Text className="text-base text-ink">What Avchetan learned</Text>
