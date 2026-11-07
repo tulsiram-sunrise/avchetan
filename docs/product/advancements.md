@@ -97,6 +97,8 @@ The dock is a launcher, not just a text box. One input, three modes by prefix:
 
 ## 6. [new] Privacy-local routing
 
+> Planned in detail in [private-entries.md](private-entries.md) (Phase 7). The outline below is the original idea.
+
 - `!private` anywhere in an entry (or a per-tag rule such as `#health/*`) marks it `privacy = 'local_only'`.
 - Such entries are only processed by a local provider (Ollama); if none is configured, they stay unprocessed (user can tag/categorize manually). They are never embedded by a cloud model; the server fallback skips them.
 - They still sync (the server is the user's own), unless "don't sync private" is enabled.

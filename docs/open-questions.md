@@ -7,7 +7,7 @@ Questions not yet decided. When answered: record the answer here (or in an ADR i
 | # | Question | Leaning | Blocking for |
 |---|---|---|---|
 | Q3 | Offline semantic search on clients via `sqlite-vec`? Needs on-device embeddings (local model or cached vectors pulled from the server). | Not now; server-only | — |
-| Q5 | Sync private (`!private`) entries to the server? | Yes by default (own server), toggle to exclude | Phase 7 |
+| Q5 | Sync private (`!private`) entries to the server? | Yes: they sync like any other (the hub or server is the user's own). A "don't sync private" switch is deferred; it was left out of [private entries](product/private-entries.md#not-in-this-version) on 2026-11-07 | — |
 | Q6 | SQLite encryption at rest (SQLCipher) on desktop/mobile? | Rely on OS disk encryption for now | — |
 | Q9 | Should Ask mode be able to *propose* writes (e.g. "create task?") in Phase 3, or only after the command registry exists (Phase 6)? | Phase 6 | — |
 | Q10 | Display units: metric only, or allow imperial display (lb/mi)? Storage stays metric. | Metric; setting later | — |
