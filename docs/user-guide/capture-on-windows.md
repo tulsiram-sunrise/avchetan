@@ -106,7 +106,7 @@ Open Avchetan (tray icon → **Open Avchetan**):
 - **Tags:** rename, nest (`health/knee`), merge or recolor them.
 - **Projects:** list what you're working on. Entries are linked to a project only if it's listed here.
 
-![The main window's Days page: the month calendar with coloured dots, and one day's summary, tasks and entries](images/capture-on-windows-days.png)
+![The main window's Days page: the week pinned at the top with coloured dots under each date, the month and year above it, and today's summary, overdue, due and done tasks, and entries](images/capture-on-windows-days.png)
 
 ![The Tasks page listing two tasks with their due dates](images/capture-on-windows-tasks.png)
 
