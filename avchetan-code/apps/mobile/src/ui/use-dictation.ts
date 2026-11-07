@@ -3,7 +3,7 @@ import { createLogger } from '@avchetan/shared';
 import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
 import { useCallback, useRef, useState } from 'react';
 import { Platform } from 'react-native';
-import { phoneLocale, speechErrorOutcome, speechLanguage, speechSupport } from '../services/speech';
+import { phoneLocale, speechErrorOutcome, speechRequest, speechSupport } from '../services/speech';
 import { useServices } from '../services-context';
 
 const log = createLogger('voice');
@@ -80,8 +80,12 @@ export function useDictation(props: {
       const settings = await loadVoiceSettings(store);
       base.current = { text: props.text(), cursor: props.cursor() };
       heardAny.current = false;
+      const request = speechRequest(settings.locale, phoneLocale(), Number(Platform.Version));
       ExpoSpeechRecognitionModule.start({
-        lang: speechLanguage(settings.locale, phoneLocale()),
+        lang: request.lang,
+        ...(request.androidIntentOptions
+          ? { androidIntentOptions: request.androidIntentOptions }
+          : {}),
         interimResults: true,
         continuous: false,
         requiresOnDeviceRecognition: true,

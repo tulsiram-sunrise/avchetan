@@ -44,9 +44,41 @@ export function phoneLocale(): string {
   }
 }
 
-/** The recognizer's language: the setting, or the phone's own for `phone`. */
-export function speechLanguage(locale: SpeechLocale, phoneLocale: string): string {
-  return locale === 'phone' ? phoneLocale : locale;
+/** Android 14 (API 34) added switching between languages while listening. */
+export const LANGUAGE_SWITCH_API = 34;
+
+export type SpeechRequest = {
+  /** The language listening starts in. */
+  lang: string;
+  /** Every language that must be on the phone. */
+  languages: string[];
+  androidIntentOptions?: {
+    EXTRA_ENABLE_LANGUAGE_SWITCH: 'balanced';
+    EXTRA_LANGUAGE_SWITCH_ALLOWED_LANGUAGES: string[];
+  };
+};
+
+/**
+ * What to ask the recognizer for. `mixed` starts in English (India) and may switch to Hindi
+ * (India) when it hears Hindi; below Android 14 it is English (India) only.
+ */
+export function speechRequest(
+  locale: SpeechLocale,
+  phoneLocale: string,
+  androidApi: number,
+): SpeechRequest {
+  if (locale === 'phone') return { lang: phoneLocale, languages: [phoneLocale] };
+  if (locale !== 'mixed') return { lang: locale, languages: [locale] };
+  if (androidApi < LANGUAGE_SWITCH_API) return { lang: 'en-IN', languages: ['en-IN'] };
+  const languages = ['en-IN', 'hi-IN'];
+  return {
+    lang: 'en-IN',
+    languages,
+    androidIntentOptions: {
+      EXTRA_ENABLE_LANGUAGE_SWITCH: 'balanced',
+      EXTRA_LANGUAGE_SWITCH_ALLOWED_LANGUAGES: languages,
+    },
+  };
 }
 
 export type LocaleReadiness = 'installed' | 'downloadable' | 'unknown';

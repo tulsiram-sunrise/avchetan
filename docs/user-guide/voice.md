@@ -16,8 +16,8 @@ The AI then organizes it like any typed entry.
 
 1. Open Avchetan from the tray and go to **Settings → Voice**.
 2. Under **Speech model**, press **Download** next to one of the models:
-   - **Multilingual, small download** (about 150 MB). It's fine for most voices and fast on any PC.
-   - **Multilingual, more accurate, slower** (about 190 MB). It's better at mixed Hindi and English, but takes a few seconds longer on an older PC.
+   - **Fast; good for English, weak for Hindi** (about 150 MB). A second or two per note.
+   - **Better for Hindi and Hinglish; a few seconds slower** (about 190 MB). Choose this one if you speak Hindi at all.
 
    The download is checked against its checksum before Avchetan uses it.
 3. Under **Microphone**, keep **Windows default**, or pick the one you talk into. Press **Test** and say something: the bar should move.
@@ -32,7 +32,7 @@ The AI then organizes it like any typed entry.
 
 ### Language
 
-**Settings → Voice → Language** is **Detect automatically** by default. If mixed Hindi and English sentences come out wrong (for example, all in English letters, or translated), choose **Hindi**.
+**Settings → Voice → Language** is **English or Hindi, detected** by default: each recording is checked for which of the two it is, never any other language. If you mostly speak Hindi or Hinglish, choose **Hindi**: it skips the check, so it's quicker. Hindi is written in Devanagari, and English words in it stay in English letters as far as the model manages; the small model gets less of it right.
 
 To free the space, press **Delete** next to a model. Voice then asks you to download one again.
 
@@ -40,8 +40,12 @@ To free the space, press **Delete** next to a model. Voice then asks you to down
 
 Avchetan uses your phone's own speech recognition, **on the device only**. It never falls back to Google's online recognition, so the language must be downloaded on the phone:
 
-1. In Avchetan, open **More → Voice** and choose **Hindi + English (India)** (best for mixed speech), **English (India)**, or **Phone language**. The screen says whether that language is ready offline.
-2. If it isn't, open Android **Settings**, search for **On-device speech recognition** (or **Offline speech recognition**), and download that language.
+1. In Avchetan, open **More → Voice** and choose a language:
+   - **Hindi + English (switches as you speak)**, the default: starts in English and switches to Hindi when it hears Hindi, so English comes out in English letters and Hindi in Devanagari. It needs Android 14 and both languages on the phone; some phones ignore the switch and stay in English.
+   - **English (India)**: everything in English letters. Accurate for English.
+   - **Hindi**: everything in Devanagari, English words too (that's how Android's Hindi recognition writes them).
+   - **Phone language**.
+2. The screen says whether each language it needs is ready offline. If one isn't, tap its **Download**, or open Android **Settings**, search for **On-device speech recognition** (or **Offline speech recognition**), and download it there.
 
 Then:
 

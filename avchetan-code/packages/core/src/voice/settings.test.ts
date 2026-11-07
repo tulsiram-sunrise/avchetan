@@ -15,9 +15,9 @@ beforeEach(async () => {
 });
 
 describe('voice settings', () => {
-  it('starts with no model, automatic language and the Hindi + English locale', async () => {
+  it('starts with no model, automatic language and switching Hindi + English', async () => {
     expect(await loadVoiceSettings(store)).toEqual(DEFAULT_VOICE_SETTINGS);
-    expect(DEFAULT_VOICE_SETTINGS).toMatchObject({ model: '', language: 'auto', locale: 'hi-IN' });
+    expect(DEFAULT_VOICE_SETTINGS).toMatchObject({ model: '', language: 'auto', locale: 'mixed' });
   });
 
   it('saves and loads each field', async () => {

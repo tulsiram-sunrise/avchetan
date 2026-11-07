@@ -53,13 +53,14 @@ Typing is the slowest part of capture when your hands are busy or the thought is
 
 ### Settings → Voice (PC)
 
-- **Speech model:** *Off* · *Multilingual, small download (base, about 150 MB)* · *Multilingual, more accurate (small, about 190 MB, slower)*. **Download** shows progress and can be cancelled. **Delete** frees the space.
-- **Language:** *Detect automatically* (default) · *English* · *Hindi*. Choose Hindi if mixed sentences come out wrong.
+- **Speech model:** *Off* · *Fast; good for English, weak for Hindi* (base, about 150 MB) · *Better for Hindi and Hinglish; a few seconds slower* (small q5_1, about 190 MB). **Download** shows progress and can be cancelled. **Delete** frees the space.
+- **Language:** *English or Hindi, detected* (default) · *English* · *Hindi*. Detection only chooses between English and Hindi (Urdu counts as Hindi): left to itself, Whisper wrote Hindi speech as Urdu or Chinese in the first real test. For Hindi, Whisper gets a short made-up Hinglish sentence as its initial prompt, so Hindi stays in Devanagari and English words in English letters.
+- Measured on a 14-core laptop CPU, 6.8 s of English: base 1.8 s, small 6.1 s, large-v3-turbo (q5_0) 32 s. Turbo is too slow on a CPU for dictation and isn't offered. Shrinking Whisper's 30 s window (`audio_ctx`) saved about 30% but made turbo repeat itself, so it isn't used.
 - **Microphone:** *Windows default* or a named device, with a **Test** button that shows the level.
 
 ### More → Voice (phone)
 
-- **Language:** *Hindi + English (India)* (default, `hi-IN`) · *English (India)* (`en-IN`) · *Phone language*. It shows whether that language is ready offline, and if it isn't, how to download it.
+- **Language:** *Hindi + English (switches as you speak)* (default, `mixed`) · *English (India)* (`en-IN`) · *Hindi* (`hi-IN`) · *Phone language*. Google's `hi-IN` recognizer writes English words in Devanagari too (first real test), so `mixed` starts in `en-IN` and allows a switch to `hi-IN` (`EXTRA_ENABLE_LANGUAGE_SWITCH`, Android 14+; below 14 it is `en-IN` only). It shows whether each language it needs is ready offline, with a Download button for each that isn't.
 
 ## How it's built
 

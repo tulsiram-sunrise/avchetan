@@ -11,15 +11,16 @@ import { Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import {
   localeReadiness,
   phoneLocale,
-  speechLanguage,
+  speechRequest,
   speechSupport,
 } from '../../src/services/speech';
 import { useServices } from '../../src/services-context';
 import { Button, Failure, HelpLink } from '../../src/ui/parts';
 
 const LABELS: Record<SpeechLocale, string> = {
-  'hi-IN': 'Hindi + English (India)',
+  mixed: 'Hindi + English (switches as you speak)',
   'en-IN': 'English (India)',
+  'hi-IN': 'Hindi (English words in Devanagari too)',
   phone: 'Phone language',
 };
 
@@ -35,17 +36,22 @@ export default function VoiceScreen() {
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['settings'] }),
   });
   const support = speechSupport(ExpoSpeechRecognitionModule, Number(Platform.Version));
-  const chosen = settings.data?.locale ?? 'hi-IN';
-  const language = speechLanguage(chosen, phoneLocale());
+  const chosen = settings.data?.locale ?? 'mixed';
+  const { languages } = speechRequest(chosen, phoneLocale(), Number(Platform.Version));
   const readiness = useQuery({
-    queryKey: ['native', 'speech-locales', language],
+    queryKey: ['native', 'speech-locales', ...languages],
     enabled: support.ok,
-    queryFn: async () =>
-      localeReadiness(language, await ExpoSpeechRecognitionModule.getSupportedLocales({})),
+    queryFn: async () => {
+      const supported = await ExpoSpeechRecognitionModule.getSupportedLocales({});
+      return languages.map((language) => ({
+        language,
+        readiness: localeReadiness(language, supported),
+      }));
+    },
   });
   const download = useMutation({
-    mutationFn: () =>
-      ExpoSpeechRecognitionModule.androidTriggerOfflineModelDownload({ locale: language }),
+    mutationFn: (locale: string) =>
+      ExpoSpeechRecognitionModule.androidTriggerOfflineModelDownload({ locale }),
     onSettled: () => void queryClient.invalidateQueries({ queryKey: ['native', 'speech-locales'] }),
   });
 
@@ -81,27 +87,40 @@ export default function VoiceScreen() {
           </Pressable>
         ))}
       </View>
-      {support.ok && readiness.data ? (
-        <View className="gap-2">
-          <Text className="text-sm text-inkMuted">
-            {readiness.data === 'installed'
-              ? `${language} is ready offline.`
-              : readiness.data === 'downloadable'
-                ? `${language} isn't on this phone yet. Download it once to use voice offline.`
-                : `The phone didn't say whether ${language} is ready offline. Try 🎤; if it doesn't work, download the language in Android settings.`}{' '}
-            {readiness.data === 'installed' ? null : <HelpLink code="speech_offline_unavailable" />}
-          </Text>
-          {readiness.data === 'downloadable' ? (
-            <View className="flex-row">
-              <Button
-                label={download.isSuccess ? 'Download started' : 'Download'}
-                disabled={download.isPending || download.isSuccess}
-                onPress={() => download.mutate()}
-              />
-            </View>
-          ) : null}
-        </View>
+      {chosen === 'mixed' ? (
+        <Text className="text-sm text-inkMuted">
+          Starts in English and switches to Hindi when it hears Hindi, so English comes out in
+          English letters and Hindi in Devanagari. Needs Android 14 and both languages on the phone;
+          some phones ignore the switch and stay in English.
+        </Text>
       ) : null}
+      {support.ok && readiness.data
+        ? readiness.data.map(({ language, readiness: state }) => (
+            <View key={language} className="gap-2">
+              <Text className="text-sm text-inkMuted">
+                {state === 'installed'
+                  ? `${language} is ready offline.`
+                  : state === 'downloadable'
+                    ? `${language} isn't on this phone yet. Download it once to use voice offline.`
+                    : `The phone didn't say whether ${language} is ready offline. Try 🎤; if it doesn't work, download the language in Android settings.`}{' '}
+                {state === 'installed' ? null : <HelpLink code="speech_offline_unavailable" />}
+              </Text>
+              {state === 'downloadable' ? (
+                <View className="flex-row">
+                  <Button
+                    label={
+                      download.isSuccess && download.variables === language
+                        ? 'Download started'
+                        : `Download ${language}`
+                    }
+                    disabled={download.isPending}
+                    onPress={() => download.mutate(language)}
+                  />
+                </View>
+              ) : null}
+            </View>
+          ))
+        : null}
       <Failure error={save.error ?? download.error ?? readiness.error} />
     </ScrollView>
   );

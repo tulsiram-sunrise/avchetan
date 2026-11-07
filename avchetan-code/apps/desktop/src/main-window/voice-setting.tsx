@@ -22,7 +22,7 @@ const filesKey = ['native', 'voice-models'] as const;
 const devicesKey = ['native', 'voice-devices'] as const;
 
 const LANGUAGE_LABELS: Record<WhisperLanguage, string> = {
-  auto: 'Detect automatically',
+  auto: 'English or Hindi, detected',
   en: 'English',
   hi: 'Hindi',
 };
@@ -73,7 +73,9 @@ export function VoiceSetting() {
       <section className="flex flex-col gap-2">
         <h2 className="font-medium">Language</h2>
         <p className="text-sm text-ink-muted">
-          Choose Hindi if mixed Hindi and English sentences come out wrong.
+          Detection chooses between English and Hindi for each recording. Choose Hindi if you mostly
+          speak Hindi or Hinglish: it skips detection, so it is quicker and never guesses English by
+          mistake.
         </p>
         <select
           aria-label="Language"
@@ -185,8 +187,7 @@ function ModelList(props: { chosen: string; onChoose: (id: string) => void }) {
       })}
       {files.data && !files.data.some((file) => file.present) ? (
         <p className="text-sm text-ink-muted">
-          Nothing downloaded yet. The small download is fine for most voices; the more accurate one
-          is better at mixed Hindi and English but takes longer on an older PC.
+          Nothing downloaded yet. If you speak Hindi or Hinglish, choose the second one.
         </p>
       ) : null}
       {cancelled ? null : <ActionError errors={[download.error, remove.error]} />}

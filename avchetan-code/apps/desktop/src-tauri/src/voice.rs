@@ -497,10 +497,17 @@ fn transcribe(
         }
     };
     let mut state = context.create_state().map_err(|_| "transcription_failed")?;
-    let mut params = FullParams::new(SamplingStrategy::Greedy { best_of: 1 });
     let threads = thread::available_parallelism().map_or(4, |n| n.get().min(8));
+    let language = match language {
+        Some(code) => code,
+        None => detect_english_or_hindi(&mut state, audio, threads),
+    };
+    let mut params = FullParams::new(SamplingStrategy::Greedy { best_of: 1 });
     params.set_n_threads(i32::try_from(threads).unwrap_or(4));
-    params.set_language(language.or(Some("auto")));
+    params.set_language(Some(language));
+    if language == "hi" {
+        params.set_initial_prompt(HINGLISH_PROMPT);
+    }
     params.set_translate(false);
     params.set_no_context(true);
     params.set_suppress_blank(true);
@@ -520,6 +527,46 @@ fn transcribe(
     }
     used.fetch_add(1, Ordering::SeqCst);
     Ok(clean_transcript(&text))
+}
+
+/// Shown to Whisper before Hindi speech: an example of how mixed speech is written, so Hindi stays
+/// in Devanagari and English words stay in English letters (docs/product/voice-capture.md).
+const HINGLISH_PROMPT: &str =
+    "आज सुबह gym गया, फिर office में meeting थी। Tomorrow plumber को call करना है।";
+
+/// "Detect automatically" means English or Hindi, the languages Avchetan's voice is for. Left to
+/// itself Whisper picks from about 100, and spoken Hindi often comes out as Urdu (the same spoken
+/// language) or, on a short noisy clip, something else entirely.
+fn detect_english_or_hindi(
+    state: &mut whisper_rs::WhisperState,
+    audio: &[f32],
+    threads: usize,
+) -> &'static str {
+    let probabilities = state
+        .pcm_to_mel(audio, threads)
+        .and_then(|()| state.lang_detect(0, threads))
+        .map(|(_, probabilities)| probabilities);
+    match probabilities {
+        Ok(probabilities) => pick_english_or_hindi(&probabilities),
+        Err(error) => {
+            eprintln!("[avchetan] language detection failed: {error}");
+            "hi"
+        }
+    }
+}
+
+fn pick_english_or_hindi(probabilities: &[f32]) -> &'static str {
+    let p = |code: &str| {
+        whisper_rs::get_lang_id(code)
+            .and_then(|id| usize::try_from(id).ok())
+            .and_then(|id| probabilities.get(id).copied())
+            .unwrap_or(0.0)
+    };
+    if p("en") >= p("hi") + p("ur") {
+        "en"
+    } else {
+        "hi"
+    }
 }
 
 /// Whisper marks silence and noise with bracketed tags such as `[BLANK_AUDIO]` or `(music)`;
@@ -852,6 +899,27 @@ mod tests {
         assert!(!text.is_empty());
         // The second run reuses the loaded model.
         assert!(shared.lock().unwrap().model.is_some());
+    }
+
+    #[test]
+    fn detection_chooses_only_between_english_and_hindi() {
+        let mut probabilities = vec![0.0f32; 100];
+        let at = |code: &str| usize::try_from(whisper_rs::get_lang_id(code).unwrap()).unwrap();
+        probabilities[at("ur")] = 0.5;
+        probabilities[at("hi")] = 0.2;
+        probabilities[at("en")] = 0.3;
+        assert_eq!(
+            pick_english_or_hindi(&probabilities),
+            "hi",
+            "Urdu counts as Hindi"
+        );
+        probabilities[at("en")] = 0.8;
+        assert_eq!(pick_english_or_hindi(&probabilities), "en");
+        let mut chinese = vec![0.0f32; 100];
+        chinese[at("zh")] = 0.9;
+        chinese[at("hi")] = 0.06;
+        chinese[at("en")] = 0.04;
+        assert_eq!(pick_english_or_hindi(&chinese), "hi", "never Chinese");
     }
 
     #[test]

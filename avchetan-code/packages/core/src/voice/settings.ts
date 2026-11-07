@@ -8,8 +8,12 @@ import { z } from 'zod';
 export const WHISPER_LANGUAGES = ['auto', 'en', 'hi'] as const;
 export type WhisperLanguage = (typeof WHISPER_LANGUAGES)[number];
 
-/** Android recognizer locales; `phone` follows the phone's language. */
-export const SPEECH_LOCALES = ['hi-IN', 'en-IN', 'phone'] as const;
+/**
+ * Android recognizer languages. `mixed` starts in English (India) and lets the recognizer switch
+ * to Hindi (Android 14+): Google's Hindi recognizer writes English words in Devanagari too.
+ * `phone` follows the phone's language.
+ */
+export const SPEECH_LOCALES = ['mixed', 'en-IN', 'hi-IN', 'phone'] as const;
 export type SpeechLocale = (typeof SPEECH_LOCALES)[number];
 
 export const voiceSettingsSchema = z.object({
@@ -26,7 +30,7 @@ export const DEFAULT_VOICE_SETTINGS: VoiceSettings = {
   model: '',
   language: 'auto',
   device: '',
-  locale: 'hi-IN',
+  locale: 'mixed',
 };
 
 export const VOICE_SETTING_KEYS = {

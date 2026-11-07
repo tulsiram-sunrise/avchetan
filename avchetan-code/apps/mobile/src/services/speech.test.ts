@@ -3,7 +3,7 @@ import {
   localeReadiness,
   type SpeechRecognizer,
   speechErrorOutcome,
-  speechLanguage,
+  speechRequest,
   speechSupport,
 } from './speech';
 
@@ -34,10 +34,22 @@ describe('speechSupport', () => {
   });
 });
 
-describe('speechLanguage', () => {
+describe('speechRequest', () => {
   it('uses the chosen language, or the phone own for "phone"', () => {
-    expect(speechLanguage('hi-IN', 'en-GB')).toBe('hi-IN');
-    expect(speechLanguage('phone', 'en-GB')).toBe('en-GB');
+    expect(speechRequest('hi-IN', 'en-GB', 35)).toEqual({ lang: 'hi-IN', languages: ['hi-IN'] });
+    expect(speechRequest('phone', 'en-GB', 35)).toEqual({ lang: 'en-GB', languages: ['en-GB'] });
+  });
+
+  it('mixed starts in English and may switch to Hindi on Android 14+', () => {
+    expect(speechRequest('mixed', 'en-GB', 34)).toEqual({
+      lang: 'en-IN',
+      languages: ['en-IN', 'hi-IN'],
+      androidIntentOptions: {
+        EXTRA_ENABLE_LANGUAGE_SWITCH: 'balanced',
+        EXTRA_LANGUAGE_SWITCH_ALLOWED_LANGUAGES: ['en-IN', 'hi-IN'],
+      },
+    });
+    expect(speechRequest('mixed', 'en-GB', 33)).toEqual({ lang: 'en-IN', languages: ['en-IN'] });
   });
 });
 
