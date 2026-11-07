@@ -61,6 +61,37 @@ export const ERROR_HELP = {
   ),
   secret_invalid_name: at('other_errors', BUG),
   ipc_failed: at('other_errors', BUG),
+
+  // Voice capture (docs/product/voice-capture.md).
+  mic_unavailable: at(
+    'mic_unavailable',
+    'No microphone found. Plug one in, or pick one in Settings → Voice',
+  ),
+  mic_permission_denied: at('mic_permission_denied', 'The microphone is blocked for Avchetan'),
+  speech_model_missing: at(
+    'speech_model_missing',
+    'Voice needs a speech model. Download one in Settings → Voice',
+  ),
+  speech_model_download_failed: at(
+    'speech_model_download_failed',
+    'The speech model didn’t download. Check your connection and try again',
+  ),
+  speech_model_delete_failed: at(
+    'speech_model_download_failed',
+    'Couldn’t delete the speech model. Restart Avchetan and try again',
+  ),
+  speech_offline_unavailable: at(
+    'speech_offline_unavailable',
+    'This phone can’t recognise speech offline in that language yet',
+  ),
+  speech_unsupported_cpu: at(
+    'speech_unsupported_cpu',
+    'This PC’s processor is too old for voice. Typing still works',
+  ),
+  transcription_failed: at('transcription_failed', 'Couldn’t turn that into text. Try again'),
+  voice_unavailable: at('other_errors', BUG),
+  cancelled: own('Cancelled'),
+  invalid_input: at('other_errors', BUG),
   ipc_invalid_result: at('other_errors', BUG),
   unknown_action: at('other_errors', 'The app needs a restart'),
   invalid_view: at('other_errors', BUG),

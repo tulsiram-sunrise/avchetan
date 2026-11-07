@@ -26,6 +26,15 @@ describe('capture service', () => {
     expect(await store.sync.listOutbox()).not.toHaveLength(0);
   });
 
+  it('saves dictated text as a voice entry', async () => {
+    const { store } = await openTestStore();
+    const service = createCaptureService({ store, timeZone: () => 'UTC' });
+
+    const rawLog = await service.capture('आज gym गया', null, null, true);
+
+    expect(rawLog).toMatchObject({ source: 'desktop_voice', content: 'आज gym गया' });
+  });
+
   it('never touches the network', async () => {
     const fetchSpy = vi.fn();
     vi.stubGlobal('fetch', fetchSpy);

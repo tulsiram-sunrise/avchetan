@@ -7,6 +7,7 @@ const log = createLogger('settings');
 export const SETTINGS_TABS = [
   { id: 'ai', label: 'AI' },
   { id: 'capture', label: 'Capture box' },
+  { id: 'voice', label: 'Voice' },
   { id: 'brief', label: 'Daily brief' },
   { id: 'hub', label: 'Hub & sync' },
   { id: 'data', label: 'Your data' },

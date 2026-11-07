@@ -59,6 +59,9 @@ jobs:
     defaults:
       run:
         working-directory: avchetan-code
+    env:
+      # whisper-rs-sys generates its bindings with libclang (voice capture); the runner image has LLVM.
+      LIBCLANG_PATH: "C:/Program Files/LLVM/bin"
     steps:
       - uses: actions/checkout@v7
 

@@ -8,6 +8,7 @@ mod error;
 mod hotkey;
 mod notify;
 mod tray;
+mod voice;
 mod windows;
 
 use tauri::{Manager, RunEvent};
@@ -41,7 +42,9 @@ pub fn run() {
             let hub = commands::hub::HubState::load(data_dir.join("hub"));
             hub.start_if_enabled();
             app.manage(hub);
+            app.manage(voice::VoiceState::new(&data_dir));
             app.manage(hotkey::HotkeyState::default());
+            app.manage(hotkey::HoldState::default());
             hotkey::register_default(app.handle());
             tray::create(app)?;
             Ok(())
@@ -79,6 +82,14 @@ pub fn run() {
             tray::tray_set_context,
             context::context_recent_apps,
             notify::brief_notify,
+            voice::voice_start,
+            voice::voice_stop,
+            voice::voice_cancel,
+            voice::voice_devices,
+            voice::voice_model_status,
+            voice::voice_model_delete,
+            voice::voice_model_download,
+            voice::voice_model_download_cancel,
         ])
         .build(tauri::generate_context!())
         .expect("failed to start Avchetan")

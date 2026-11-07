@@ -39,11 +39,13 @@ export function useCaptureMutation() {
       text,
       window,
       clipboard,
+      spoken,
     }: {
       text: string;
       window: DockWindow | null;
       clipboard: DockClipboard | null;
-    }) => services.capture.capture(text, window, clipboard),
+      spoken: boolean;
+    }) => services.capture.capture(text, window, clipboard, spoken),
     // The row is committed by now: nothing here may fail the mutation or delay the input.
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: rawLogKeys.all });

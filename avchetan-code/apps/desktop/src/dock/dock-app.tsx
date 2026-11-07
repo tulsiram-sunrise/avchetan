@@ -9,6 +9,7 @@ import { DockFooter } from './dock-footer';
 import { HotkeyBanner } from './hotkey-banner';
 import { RecentCaptures } from './recent-captures';
 import { useDraftPersistence } from './use-draft-persistence';
+import { useVoice } from './use-voice';
 import { useWindowContext } from './use-window-context';
 
 const log = createLogger('dock');
@@ -19,6 +20,9 @@ export function DockApp() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const autosave = useDraftPersistence();
   const asking = useDockStore((state) => state.ask !== null);
+  const voice = useVoice(inputRef);
+  const recording = voice.phase === 'listening' || voice.phase === 'starting';
+  const cancelVoice = voice.cancel;
   useTableInvalidation();
 
   useWindowContext(() => inputRef.current?.focus());
@@ -29,6 +33,8 @@ export function DockApp() {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
       event.preventDefault();
+      // Esc while recording throws the recording away; the dock stays.
+      if (recording) return cancelVoice();
       void autosave.flush();
       platform.shell.hideDock().catch(() => log.warn('could not hide dock'));
     };
@@ -38,13 +44,13 @@ export function DockApp() {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('focus', focusInput);
     };
-  }, [autosave, platform]);
+  }, [autosave, platform, recording, cancelVoice]);
 
   return (
     <div className="h-screen p-2">
       <main className="flex h-full flex-col gap-2 rounded-[var(--radius-panel)] border border-line bg-surface/90 p-3 shadow-xl backdrop-blur-xl">
         <HotkeyBanner />
-        <CaptureInput inputRef={inputRef} onCaptured={() => void autosave.flush()} />
+        <CaptureInput inputRef={inputRef} onCaptured={() => void autosave.flush()} voice={voice} />
         <div className="min-h-0 flex-1 overflow-y-auto">
           {asking ? <AskPanel /> : <RecentCaptures />}
         </div>

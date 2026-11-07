@@ -10,12 +10,15 @@ import { useServices } from '../services-context';
 import { type AskState, useDockStore } from '../stores/dock-store';
 import { ClipboardLine } from './clipboard-line';
 import { useCommand } from './use-command';
+import type { VoiceUi } from './use-voice';
+import { MicButton, VoiceLine } from './voice-line';
 import { WindowContextLine } from './window-context-line';
 
 /** The dock's text box. One of Enter / Shift+Enter saves (a setting); the other adds a line. */
 export function CaptureInput(props: {
   inputRef: RefObject<HTMLTextAreaElement | null>;
   onCaptured: () => void;
+  voice: VoiceUi;
 }) {
   const submitKey = useSubmitKey().data ?? DEFAULT_SUBMIT_KEY;
   const draft = useDockStore((state) => state.draft);
@@ -25,6 +28,8 @@ export function CaptureInput(props: {
   const window = useDockStore((state) => state.window);
   const clipboard = useDockStore((state) => state.clipboard);
   const setClipboard = useDockStore((state) => state.setClipboard);
+  const spoken = useDockStore((state) => state.spoken);
+  const setSpoken = useDockStore((state) => state.setSpoken);
   const services = useServices();
   const captureMutation = useCaptureMutation();
   const [errorCode, setErrorCode] = useState<string | null>(null);
@@ -55,8 +60,9 @@ export function CaptureInput(props: {
     if (!draft.trim() || captureMutation.isPending) return;
     try {
       // "//note" is saved as "/note" (docs/product/command-mode.md).
-      await captureMutation.mutateAsync({ text: captureText(draft), window, clipboard });
+      await captureMutation.mutateAsync({ text: captureText(draft), window, clipboard, spoken });
       setDraft('');
+      setSpoken(false);
       // The window stays until the next shortcut; copied text belongs to this entry only.
       setClipboard(null);
       setErrorCode(null);
@@ -75,6 +81,9 @@ export function CaptureInput(props: {
         <span>
           {submitHint(submitKey, askMode ? 'ask' : command.active ? 'run' : 'save')} · Esc to close
         </span>
+        <span className="ml-auto">
+          <MicButton voice={props.voice} />
+        </span>
       </div>
       <textarea
         ref={props.inputRef}
@@ -82,7 +91,10 @@ export function CaptureInput(props: {
         placeholder="What's on your mind?  #tags  !private  ?question  /command"
         rows={3}
         value={draft}
-        onChange={(event) => setDraft(event.target.value)}
+        onChange={(event) => {
+          setDraft(event.target.value);
+          if (!event.target.value) setSpoken(false);
+        }}
         onKeyDown={(event) => {
           if (command.active && command.onKeyDown(event)) return;
           const { key, shiftKey, ctrlKey, altKey, metaKey } = event;
@@ -95,6 +107,7 @@ export function CaptureInput(props: {
         className="w-full resize-none rounded-lg border border-line bg-surface-raised px-3 py-2 text-[15px] outline-none focus:border-accent"
       />
       {command.panel}
+      <VoiceLine voice={props.voice} />
       {!askMode && !command.active ? (
         <>
           <WindowContextLine />

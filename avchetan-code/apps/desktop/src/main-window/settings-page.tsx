@@ -28,6 +28,7 @@ import { loadSettingsTab, SETTINGS_TABS, type SettingsTab, saveSettingsTab } fro
 import { SyncSetting } from './sync-setting';
 import { QuietButton } from './ui';
 import { UsageSetting } from './usage-setting';
+import { VoiceSetting } from './voice-setting';
 import { WindowContextSetting } from './window-context-setting';
 
 const log = createLogger('settings');
@@ -59,6 +60,8 @@ function TabContent({ tab }: { tab: SettingsTab }) {
           <ClipboardSnapSetting />
         </>
       );
+    case 'voice':
+      return <VoiceSetting />;
     case 'brief':
       return <DailyBriefSetting />;
     case 'hub':

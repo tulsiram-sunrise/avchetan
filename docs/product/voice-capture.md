@@ -100,7 +100,7 @@ Typing is the slowest part of capture when your hands are busy or the thought is
 - The `transcription` model slot in [llm-engine](../architecture/llm-engine.md#model-slots) changes meaning to "on-device speech". No cloud transcription in this version.
 - **Logs:** durations, sample counts, model id, and errors. Never the text (rule 11).
 - **Licenses:** whisper.cpp and the Whisper models (MIT), `whisper-rs` (Unlicense), `cpal` (Apache-2.0), `expo-speech-recognition` (MIT). All are AGPL-compatible. Pin the latest stable versions when building, and check `licenses:check`.
-- **CI:** whisper.cpp builds from source through `whisper-rs-sys` (CMake, MSVC). Add CMake to the Windows job if it's missing, and check that the release build time stays reasonable.
+- **Build:** whisper.cpp builds from source through `whisper-rs-sys` (CMake, MSVC, and libclang for its bindings: the bundled ones are generated on Linux and get Windows type sizes wrong). `src-tauri/.cargo/config.toml` builds it for AVX2 rather than the build machine's CPU, and sets `/O2` (cmake-rs leaves MSVC Release flags unoptimized, about 8× slower). `voice_start` refuses on a CPU without AVX2 (`speech_unsupported_cpu`). CI sets `LIBCLANG_PATH` to the runner's LLVM.
 
 ## Errors
 
@@ -113,6 +113,7 @@ Each gets an `ERROR_HELP` entry, a section in [troubleshooting](../user-guide/tr
 | `speech_model_missing` | Voice needs a speech model | Settings → Voice → Download |
 | `speech_model_download_failed` | The speech model didn't download | Check the connection and try again (a partial file is removed) |
 | `speech_offline_unavailable` | This phone can't recognise speech offline | Download the language in Android's speech settings |
+| `speech_unsupported_cpu` | This PC's processor is too old for voice | Use voice on the phone; typing still works (needs AVX2, about 2013 on) |
 | `transcription_failed` | Couldn't turn that into text | Try again. If it keeps failing, re-download the model |
 
 ## Data changes

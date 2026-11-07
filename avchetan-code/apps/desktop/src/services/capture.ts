@@ -26,15 +26,17 @@ export function createCaptureService(deps: CaptureServiceDeps) {
     /**
      * `window`: the window it was typed over, with the rules that matched (window-context.md).
      * `clipboard`: text attached with clipboard snap (clipboard-snap.md).
+     * `spoken`: some of the text was dictated (voice-capture.md).
      */
     async capture(
       text: string,
       window: DockWindow | null = null,
       clipboard: DockClipboard | null = null,
+      spoken = false,
     ): Promise<RawLog> {
       const started = perfNow();
       const input = buildCaptureInput(text, {
-        source: 'desktop_text',
+        source: spoken ? 'desktop_voice' : 'desktop_text',
         capturedTz: timeZone(),
         ...captureOptions(window, clipboard),
       });

@@ -1,0 +1,13 @@
+# whisper.cpp for voice capture (docs/product/voice-capture.md), passed to its CMake build by
+# whisper-rs-sys. Built for any x86-64 CPU with AVX2 (2013 on), never for the build machine's own
+# CPU: a CI-built installer must run on every PC. src/voice.rs checks AVX2 before loading a model.
+[env]
+GGML_NATIVE = "OFF"
+GGML_AVX = "ON"
+GGML_AVX2 = "ON"
+GGML_FMA = "ON"
+GGML_F16C = "ON"
+# cmake-rs sets the Release flags from Rust's own C flags, which on MSVC carry no optimization
+# level, leaving whisper.cpp unoptimized (several times slower). These replace them.
+CMAKE_C_FLAGS_RELEASE = "-nologo -MD -Brepro -W0 /O2 /Ob2 /DNDEBUG"
+CMAKE_CXX_FLAGS_RELEASE = "/utf-8 -nologo -MD -Brepro -W0 /O2 /Ob2 /DNDEBUG"

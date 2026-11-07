@@ -167,7 +167,15 @@ export {
   type DeviceModelUse,
   deviceModelRows,
 } from './models/device-check';
-export { MODEL_PRESETS, type ModelPreset, modelPresetSchema } from './models/presets';
+export {
+  findSpeechModel,
+  MODEL_PRESETS,
+  type ModelPreset,
+  modelPresetSchema,
+  SPEECH_MODELS,
+  type SpeechModel,
+  speechModelSchema,
+} from './models/presets';
 export {
   hasApiKey,
   loadSlotModel,
@@ -222,3 +230,16 @@ export {
   PROVIDER_ADAPTERS,
   type ProviderDeps,
 } from './providers/registry';
+export {
+  DEFAULT_VOICE_SETTINGS,
+  insertDictation,
+  loadVoiceSettings,
+  SPEECH_LOCALES,
+  type SpeechLocale,
+  saveVoiceSettings,
+  VOICE_SETTING_KEYS,
+  type VoiceSettings,
+  voiceSettingsSchema,
+  WHISPER_LANGUAGES,
+  type WhisperLanguage,
+} from './voice/settings';

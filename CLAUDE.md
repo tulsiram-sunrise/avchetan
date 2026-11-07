@@ -64,7 +64,7 @@ docs/                           all project documentation
 
 ## Commands
 
-Requirements: Node ≥ 24, pnpm (pinned via `packageManager`; `corepack enable`). Rust is needed from Phase 2 (desktop). **Run all pnpm commands inside `avchetan-code/`.**
+Requirements: Node ≥ 24, pnpm (pinned via `packageManager`; `corepack enable`). Rust is needed from Phase 2 (desktop), plus CMake and LLVM (libclang) for whisper.cpp from Phase 7 (see CONTRIBUTING.md). **Run all pnpm commands inside `avchetan-code/`.**
 
 | Command | What it does |
 |---|---|

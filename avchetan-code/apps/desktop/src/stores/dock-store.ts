@@ -23,6 +23,9 @@ export type DockState = {
   /** Clipboard snap: text to save with the next entry, or why there is none (clipboard-snap.md). */
   clipboard: DockClipboard | null;
   setClipboard(clipboard: DockClipboard | null): void;
+  /** Some of the draft was dictated: the entry is saved as `desktop_voice` (voice-capture.md). */
+  spoken: boolean;
+  setSpoken(spoken: boolean): void;
 };
 
 export const useDockStore = create<DockState>()((set) => ({
@@ -34,4 +37,6 @@ export const useDockStore = create<DockState>()((set) => ({
   setWindow: (window) => set({ window }),
   clipboard: null,
   setClipboard: (clipboard) => set({ clipboard }),
+  spoken: false,
+  setSpoken: (spoken) => set({ spoken }),
 }));

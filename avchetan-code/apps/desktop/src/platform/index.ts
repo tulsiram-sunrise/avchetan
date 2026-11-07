@@ -15,6 +15,7 @@ import { createHubNetwork, type HubNetworkControl } from '../native/network';
 import { TauriSecretStore } from '../native/secrets';
 import { createShell, type Shell } from '../native/shell';
 import { createTauriSqliteExecutor, openNativeDatabase } from '../native/sqlite';
+import { createVoice, type Voice } from '../native/voice';
 import { BrowserNetworkMonitor } from './browser-network';
 import { withoutOrigin } from './native-fetch';
 
@@ -32,6 +33,8 @@ export type Platform = {
   /** The Home Hub this app can run (ADR-0024). */
   hub: Hub;
   hubNetwork: HubNetworkControl;
+  /** Microphone, offline Whisper and speech models (voice-capture.md). */
+  voice: Voice;
 };
 
 export function createTauriPlatform(call: Invoke = invoke): Platform {
@@ -46,5 +49,6 @@ export function createTauriPlatform(call: Invoke = invoke): Platform {
     files: createDataFiles(call),
     hub: createHub(call),
     hubNetwork: createHubNetwork(call),
+    voice: createVoice(call),
   };
 }
