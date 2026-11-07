@@ -26,7 +26,7 @@ The timeline is one endless list, loaded 50 entries at a time and grouped by the
 └──────────────────────────────┘
 ```
 
-**Desktop** (the main window's first page, named **Days**): a month calendar on the left with the same dots, the selected day on the right. ← and → move a day, Page Up and Page Down a month, T goes to today. The capture dock is unchanged.
+**Desktop** (the main window's first page, named **Days**): the selected day's week as a strip pinned to the top of the page with the same dots, ‹ and › for a week, and the day below it. Clicking the month and year (or M) drops the whole month down over the page; picking a day or Esc closes it. ← and → move a day, Page Up and Page Down a month, T goes to today. *Changed 2026-11-07: the month calendar used to sit on the left and scrolled away with a long day.* The capture dock is unchanged.
 
 ## Rules
 
