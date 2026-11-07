@@ -51,6 +51,7 @@ export function captureFixture(store: ClientStore, fixture: Fixture): Promise<Ra
       source: 'desktop_text',
       capturedTz: FIXTURE_TIME_ZONE,
       capturedAt: fixture.at,
+      ...(fixture.clipboard ? { context: { clipboard: fixture.clipboard } } : {}),
     }),
   );
 }

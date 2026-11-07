@@ -1,4 +1,4 @@
-import type { AskSource } from '@avchetan/core';
+import type { AskSource, DockClipboard } from '@avchetan/core';
 import { create } from 'zustand';
 import type { DockWindow } from '../services/window-context';
 
@@ -20,6 +20,9 @@ export type DockState = {
   /** The window the dock was opened over; saved with each entry until the next hotkey. */
   window: DockWindow | null;
   setWindow(window: DockWindow | null): void;
+  /** Clipboard snap: text to save with the next entry, or why there is none (clipboard-snap.md). */
+  clipboard: DockClipboard | null;
+  setClipboard(clipboard: DockClipboard | null): void;
 };
 
 export const useDockStore = create<DockState>()((set) => ({
@@ -29,4 +32,6 @@ export const useDockStore = create<DockState>()((set) => ({
   setAsk: (ask) => set({ ask }),
   window: null,
   setWindow: (window) => set({ window }),
+  clipboard: null,
+  setClipboard: (clipboard) => set({ clipboard }),
 }));

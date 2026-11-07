@@ -42,12 +42,29 @@ From then on, an entry typed over a matching window gets the tags as if you had 
 
 For one rule that covers all your projects, tick **Pattern** and name a part of the title: `— (?<project>[^—]+) — Visual Studio Code` with the tag `{project}` tags every entry with the folder you have open.
 
+## Attach the clipboard
+
+Copied an error message, a link or a few lines of code? Press **Ctrl+Shift+Alt+Space** instead of the usual shortcut. The box opens with what you copied attached, shown on a second line: *Clipboard · TypeError: Cannot read…*. Type your entry and save as usual.
+
+- **See all of it:** click the line. At most 4 KB is kept; longer text is cut, and the entry says so.
+- **Don't keep it:** click **×** at the end of that line before you save. The window line stays.
+- **Box already open?** Press the same shortcut: the clipboard is attached, and what you typed stays.
+- **Text only.** Images and files are never attached. If there is nothing to attach, the line says why for a moment (*Clipboard has no text*, *Clipboard is empty*).
+- **Passwords:** password managers mark what they copy as private, and Avchetan never attaches it (*Not attached: the clipboard came from an app that marks it private*). Over an app under **Never note these apps**, nothing is attached either.
+- **Pausing window context doesn't stop it:** this shortcut is something you press on purpose.
+- **The AI sees the first 1 KB** as a hint, for example to name the error in a task. A `!private` entry's clipboard is never sent to any AI.
+- **Later:** **Days** shows *with clipboard* under the entry; click it to see the text and **Copy** it. On the phone, open the entry and long-press the text to copy it.
+- **Change or turn off the shortcut:** **Settings → Capture box → Clipboard snap**. It can't be the same as the capture box's own shortcut.
+
+The clipboard is read only at the moment you press this shortcut, never otherwise.
+
 ## Change the keys
 
 Open Avchetan (tray icon → **Open Avchetan**) → **Settings**. Settings has tabs across the top: **AI**, **Capture box**, **Daily brief**, **Hub & sync**, **Your data** and **General**. It opens on the tab you used last.
 
 On **Capture box**:
 - **Shortcut:** type a new one, for example `Ctrl+Alt+Space`, and click **Save**. If another app already uses it, Avchetan says so and keeps the old one.
+- **Clipboard snap:** the shortcut that [attaches the clipboard](#attach-the-clipboard), changed the same way, or turned off.
 - **Saving an entry:** choose whether **Enter** saves and **Shift+Enter** starts a new line (the default), or the other way round. Swap them if you often write entries longer than one line.
 
 On **General**:

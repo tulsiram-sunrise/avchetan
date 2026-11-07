@@ -2,12 +2,16 @@ import { type ClientStore, getSetting, setSetting } from '@avchetan/db/sqlite';
 import { z } from 'zod';
 import { type ContextSettings, DEFAULT_CONTEXT_SETTINGS } from './window-context';
 
-/** Client-local settings for window context (docs/product/window-context.md#data-changes). */
+/**
+ * Client-local settings for window context (docs/product/window-context.md#data-changes) and
+ * clipboard snap's switch (docs/product/clipboard-snap.md#data-changes).
+ */
 export const CONTEXT_SETTING_KEYS = {
   enabled: 'context.enabled',
   browserTitles: 'context.browser_titles',
   denyList: 'context.deny_list',
   pausedUntil: 'context.paused_until',
+  snapEnabled: 'clipboard.enabled',
 } as const satisfies Record<keyof ContextSettings, string>;
 
 export const CONTEXT_PAUSE_MINUTES = 60;
@@ -17,6 +21,7 @@ const fieldSchemas = {
   browserTitles: z.boolean(),
   denyList: z.array(z.string()),
   pausedUntil: z.string(),
+  snapEnabled: z.boolean(),
 } satisfies { [K in keyof ContextSettings]: z.ZodType<ContextSettings[K]> };
 
 export async function loadContextSettings(store: ClientStore): Promise<ContextSettings> {

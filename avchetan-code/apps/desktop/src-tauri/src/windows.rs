@@ -9,6 +9,7 @@ use tauri::{
 
 use serde::Serialize;
 
+use crate::clipboard::{self, ClipboardRead};
 use crate::context::{self, WindowContext};
 use crate::error::{warn_on_err, CommandError, CommandResult};
 
@@ -43,20 +44,58 @@ fn toggle<R: Runtime>(app: &AppHandle<R>, with_context: bool) {
         } else {
             None
         };
-        show(app, context);
+        show(app, DockShown::new(context));
     }
+}
+
+/// Clipboard snap: shows the dock with the clipboard's text, read now. Never hides it: pressed
+/// while the dock is open, the clipboard is attached to what is being typed
+/// (docs/product/clipboard-snap.md).
+pub fn show_dock_with_clipboard<R: Runtime>(app: &AppHandle<R>) {
+    let Some(dock) = app.get_webview_window(DOCK) else {
+        return;
+    };
+    let already_open = dock.is_visible().unwrap_or(false) && dock.is_focused().unwrap_or(false);
+    // The window first, while it is still in front; then the clipboard.
+    let context = if already_open {
+        None
+    } else {
+        context::previous_window_context()
+    };
+    show(
+        app,
+        DockShown {
+            context,
+            clipboard: Some(clipboard::read_clipboard_text()),
+            already_open,
+        },
+    );
 }
 
 #[derive(Clone, Serialize)]
 struct DockShown {
     context: Option<WindowContext>,
+    /// Only from the clipboard shortcut.
+    clipboard: Option<ClipboardRead>,
+    /// The dock was already in front: keep its window context and what is typed.
+    already_open: bool,
+}
+
+impl DockShown {
+    fn new(context: Option<WindowContext>) -> Self {
+        Self {
+            context,
+            clipboard: None,
+            already_open: false,
+        }
+    }
 }
 
 pub fn show_dock<R: Runtime>(app: &AppHandle<R>) {
-    show(app, None);
+    show(app, DockShown::new(None));
 }
 
-fn show<R: Runtime>(app: &AppHandle<R>, context: Option<WindowContext>) {
+fn show<R: Runtime>(app: &AppHandle<R>, shown: DockShown) {
     let Some(dock) = app.get_webview_window(DOCK) else {
         return;
     };
@@ -66,10 +105,7 @@ fn show<R: Runtime>(app: &AppHandle<R>, context: Option<WindowContext>) {
     }
     warn_on_err("show dock", dock.show());
     warn_on_err("focus dock", dock.set_focus());
-    warn_on_err(
-        "emit dock:shown",
-        app.emit_to(DOCK, "dock:shown", DockShown { context }),
-    );
+    warn_on_err("emit dock:shown", app.emit_to(DOCK, "dock:shown", shown));
 }
 
 /// Centered horizontally, in the upper third of the work area of the monitor the cursor is on.

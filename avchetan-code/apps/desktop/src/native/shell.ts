@@ -28,6 +28,11 @@ export function createShell(invoke: Invoke) {
     hotkeyStatus: () => callNative(invoke, 'hotkey_status', {}, hotkeyStatusSchema),
     setHotkey: (shortcut: string) =>
       callNative(invoke, 'hotkey_set', { shortcut }, hotkeyStatusSchema),
+    /** Clipboard snap's shortcut (src-tauri/src/hotkey.rs); empty when turned off. */
+    snapHotkeyStatus: () => callNative(invoke, 'snap_hotkey_status', {}, hotkeyStatusSchema),
+    /** `''` turns clipboard snap off. */
+    setSnapHotkey: (shortcut: string) =>
+      callNative(invoke, 'snap_hotkey_set', { shortcut }, hotkeyStatusSchema),
   };
 }
 

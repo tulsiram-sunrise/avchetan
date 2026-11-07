@@ -44,6 +44,8 @@ export const contextSettingsSchema = z.object({
   denyList: z.array(z.string()),
   /** UTC ISO time the pause ends, or '' when not paused (settings can't hold null). */
   pausedUntil: z.string(),
+  /** Clipboard snap's switch: off, its shortcut isn't registered (clipboard-snap.md). */
+  snapEnabled: z.boolean(),
 });
 export type ContextSettings = z.infer<typeof contextSettingsSchema>;
 
@@ -52,6 +54,7 @@ export const DEFAULT_CONTEXT_SETTINGS: ContextSettings = {
   browserTitles: false,
   denyList: DEFAULT_DENY_LIST,
   pausedUntil: '',
+  snapEnabled: true,
 };
 
 /** What an entry keeps: the window title is left out for browsers or when empty. */

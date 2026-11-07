@@ -10,7 +10,7 @@ import { startBackups } from '../services/data';
 import { loadDraft } from '../services/draft';
 import { announce } from '../services/extraction';
 import { needsSetup } from '../services/first-run';
-import { DEFAULT_HOTKEY, savedHotkey } from '../services/hotkey';
+import { applySnapHotkey, DEFAULT_HOTKEY, savedHotkey } from '../services/hotkey';
 import { useDockStore } from '../stores/dock-store';
 import { DockApp } from './dock-app';
 import { startTimerProbe } from './timer-probe';
@@ -22,10 +22,13 @@ async function settleNativeState({ store, platform }: AppServices): Promise<void
   const chores: [string, () => Promise<unknown>][] = [
     ['start at login', () => ensureAutostartDefault(store, { enable })],
     [
-      'saved shortcut',
+      'saved shortcuts',
       async () => {
         const shortcut = await savedHotkey(store);
         if (shortcut && shortcut !== DEFAULT_HOTKEY) await platform.shell.setHotkey(shortcut);
+        // After the dock's, so a clash is reported against the clipboard one.
+        const snap = await applySnapHotkey(store, platform.shell);
+        if (snap.error) log.warn('clipboard shortcut unavailable', { code: snap.error });
       },
     ],
     [

@@ -10,8 +10,9 @@ const vocabulary: ExtractionVocabulary = {
   corrections: [],
 };
 
-const rawLog = (context: Record<string, unknown>) => ({
+const rawLog = (context: Record<string, unknown>, privacy: 'normal' | 'local_only' = 'normal') => ({
   id: 'log-1',
+  privacy,
   content: 'fixed the login bug',
   context,
   capturedAt: '2026-11-07T10:00:00.000Z',
@@ -38,5 +39,30 @@ describe('buildExtractionInput', () => {
 
   it('gives no context when the entry has no window', () => {
     expect(buildExtractionInput(rawLog({ supersedes: 'log-0' }), vocabulary).context).toEqual({});
+  });
+});
+
+describe('clipboard in the extraction input', () => {
+  it('gives the model the first 1 KB of the copied text, apart from the window', () => {
+    const copied = `TypeError: x is undefined\n${'at frame\n'.repeat(300)}`;
+    const input = buildExtractionInput(
+      rawLog({ app: 'Code.exe', app_name: 'Visual Studio Code', clipboard: copied }),
+      vocabulary,
+    );
+    expect(input.clipboard?.startsWith('TypeError: x is undefined')).toBe(true);
+    expect(new TextEncoder().encode(input.clipboard ?? '').length).toBeLessThanOrEqual(1024);
+    expect(input.context).toEqual({ app: 'Visual Studio Code' });
+  });
+
+  it('never gives a private entry’s clipboard to the model', () => {
+    const input = buildExtractionInput(
+      rawLog({ clipboard: 'secret stuff' }, 'local_only'),
+      vocabulary,
+    );
+    expect(input.clipboard).toBeNull();
+  });
+
+  it('has no clipboard when none was attached', () => {
+    expect(buildExtractionInput(rawLog({}), vocabulary).clipboard).toBeNull();
   });
 });

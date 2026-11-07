@@ -20,6 +20,8 @@ export const fixtureSchema = z.object({
   id: z.string(),
   text: z.string(),
   at: z.string(),
+  /** Text attached with clipboard snap (docs/product/clipboard-snap.md). */
+  clipboard: z.string().optional(),
   expect: z.object({
     activities: z.array(expectedActivity).default([]),
     tasks: z.array(expectedTask).default([]),

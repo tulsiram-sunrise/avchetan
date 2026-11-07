@@ -1,4 +1,4 @@
-import { windowContextSchema } from '@avchetan/core';
+import { clipboardReadSchema, windowContextSchema } from '@avchetan/core';
 import { createLogger } from '@avchetan/shared';
 import { emit, listen } from '@tauri-apps/api/event';
 import { z } from 'zod';
@@ -25,8 +25,14 @@ const eventSchemas = {
   /**
    * Rust → dock: the dock was just shown. `context` is the window that was in front when the
    * hotkey fired (null from the tray), before any setting is applied (window-context.md).
+   * `clipboard` is set only by the clipboard shortcut; `already_open` means the dock was in
+   * front then, so its window and text stay (clipboard-snap.md).
    */
-  'dock:shown': z.object({ context: windowContextSchema.nullable() }),
+  'dock:shown': z.object({
+    context: windowContextSchema.nullable(),
+    clipboard: clipboardReadSchema.nullable().default(null),
+    already_open: z.boolean().default(false),
+  }),
   /** Rust (tray) → dock: pause window context for an hour, or resume it. */
   'context:toggle-pause': z.null(),
   /** Any window → all: these tables changed; refetch queries keyed by them. */

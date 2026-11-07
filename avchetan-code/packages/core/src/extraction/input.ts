@@ -1,5 +1,6 @@
 import type { ClientStore, CorrectedEntry, DataScope, RawLog } from '@avchetan/db/sqlite';
 import { addDays, type LocalDate, localDate, type Weekday, weekdayOf } from '@avchetan/shared';
+import { clipboardForPrompt } from '../context/clipboard';
 import { windowContextOf } from '../context/window-context';
 import { parseCaptureText } from '../normalize/capture-text';
 import { chooseExamples, loadCorrectionPool, renderExample } from './corrections';
@@ -55,6 +56,8 @@ export type ExtractionInput = {
   content: string;
   explicitTags: string[];
   context: Record<string, unknown>;
+  /** The first 1 KB of text copied with clipboard snap; null for none or a private entry. */
+  clipboard: string | null;
   /** Local date of capture, not of processing: "tomorrow" means tomorrow from then. */
   today: LocalDate;
   weekday: Weekday;
@@ -68,6 +71,7 @@ export type ExtractionInput = {
 /**
  * What the model may see of an entry's context: the window it was typed over, as a hint
  * (window-context.md). Not the rule matches (rules decide on their own) nor bookkeeping keys.
+ * Clipboard text goes separately, in its own section (clipboard-snap.md).
  */
 function promptContext(context: Record<string, unknown>): Record<string, unknown> {
   const window = windowContextOf(context);
@@ -79,7 +83,7 @@ function promptContext(context: Record<string, unknown>): Record<string, unknown
 }
 
 export function buildExtractionInput(
-  rawLog: Pick<RawLog, 'id' | 'content' | 'context' | 'capturedAt' | 'capturedTz'>,
+  rawLog: Pick<RawLog, 'id' | 'content' | 'context' | 'capturedAt' | 'capturedTz' | 'privacy'>,
   vocabulary: ExtractionVocabulary,
 ): ExtractionInput {
   const today = localDate(rawLog.capturedAt, rawLog.capturedTz);
@@ -91,6 +95,7 @@ export function buildExtractionInput(
     content: rawLog.content,
     explicitTags: parseCaptureText(rawLog.content).tagPaths,
     context: promptContext(rawLog.context),
+    clipboard: clipboardForPrompt(rawLog.context, rawLog.privacy),
     today,
     weekday: weekdayOf(today),
     upcoming,

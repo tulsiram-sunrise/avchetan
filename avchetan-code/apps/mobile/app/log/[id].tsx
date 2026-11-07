@@ -1,4 +1,4 @@
-import { exerciseLines, metricsText, windowContextOf } from '@avchetan/core';
+import { clipboardOf, exerciseLines, metricsText, windowContextOf } from '@avchetan/core';
 import type { Activity, RawLog } from '@avchetan/db/sqlite';
 import { describeError, formatDay, formatTime, parseLastError } from '@avchetan/shared';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -202,6 +202,7 @@ export default function LogScreen() {
       </View>
       <Text className="text-base text-ink">{rawLog.content}</Text>
       <WindowLine context={rawLog.context} />
+      <ClipboardText context={rawLog.context} />
       <LastError rawLog={rawLog} />
       <EntryActions rawLog={rawLog} />
       {activities.length > 0 ? (
@@ -234,5 +235,23 @@ function WindowLine({ context }: { context: Record<string, unknown> }) {
       Typed on the PC over {window.app_name}
       {window.window_title ? `: ${window.window_title}` : ''}
     </Text>
+  );
+}
+
+/** Text copied on the PC with clipboard snap; long-press to copy (docs/product/clipboard-snap.md). */
+function ClipboardText({ context }: { context: Record<string, unknown> }) {
+  const copied = clipboardOf(context);
+  if (!copied) return null;
+  return (
+    <View className="gap-1">
+      <Text className="text-xs text-inkMuted">With clipboard</Text>
+      <Text
+        selectable
+        className="rounded border border-line bg-surfaceRaised p-2 font-mono text-xs text-ink"
+      >
+        {copied.text}
+        {copied.cut ? '\n… (cut to 4 KB)' : ''}
+      </Text>
+    </View>
   );
 }
