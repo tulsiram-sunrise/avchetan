@@ -30,7 +30,7 @@ Besides real providers, a slot can be set to a **routing mode** for devices that
 | `extraction` | Raw log → structured result | Fast, cheap, reliable structured output | clients + server fallback |
 | `analysis` | Ask mode, daily brief, weekly review | Strong reasoning, tool use, long context | clients (+ server for brief fallback) |
 | `embedding` | Vectors for semantic search | Fixed dimension (ADR-0012) | server only |
-| `transcription` | Voice → text (Phase 7) | Whisper-class | desktop (local whisper.cpp or cloud), mobile (cloud) |
+| `transcription` | Voice → text (Phase 7, [voice-capture](../product/voice-capture.md)) | Whisper-class, on the device | desktop (whisper.cpp in the Rust shell), mobile (Android's on-device recognizer); no cloud transcription yet |
 
 Slot config (non-secret, stored in `settings`):
 ```json

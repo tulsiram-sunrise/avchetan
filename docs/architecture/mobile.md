@@ -56,7 +56,7 @@ An edit replaces the raw log with a new one, so the entry screen moves to the ne
 
 - A small native widget added by our own config plugin (`plugins/capture-widget.js`): a Kotlin `AppWidgetProvider`, its layout and XML; no widget library and no JavaScript for the widget ([android-widget](../product/android-widget.md)).
 - Phase 6: a *What's on your mind?* bar → deep link `avchetan://capture?from=widget` (source `mobile_widget`); **Save** sends the app to the background.
-- Phase 7: mic button → record → transcribe → save (source `mobile_widget` / `mobile_voice`), 3 s undo.
+- Phase 7: a mic button opens the capture screen already listening (`avchetan://capture?from=widget&voice=1`, Android's on-device recognizer); the text lands in the box for review, source `mobile_voice` ([voice-capture](../product/voice-capture.md)).
 
 ## Ollama on mobile
 

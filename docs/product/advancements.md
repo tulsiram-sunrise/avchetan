@@ -82,6 +82,8 @@ The dock is a launcher, not just a text box. One input, three modes by prefix:
 
 ## 4. Voice capture (Whisper)
 
+> Planned in detail in [voice-capture.md](voice-capture.md) (Phase 7). The outline below is the original idea; the plan keeps transcription on the device and leaves cloud transcription out.
+
 - **Desktop:** hold a push-to-talk hotkey (default `Ctrl+Shift+Space` long-press, or a dedicated key). Rust records the microphone; on release the audio is transcribed and the transcript is streamed into the input box for review — Enter saves as usual. `raw_logs.source = 'desktop_voice'`.
 - **Android:** home-screen widget with a mic button: tap → record → release → transcribe → saved directly (with a 3 s undo toast). `source = 'mobile_voice'`.
 - **Transcription slot** (configurable like the model slots): local `whisper.cpp` (desktop, via Rust sidecar, offline) or a cloud API (OpenAI/Groq Whisper, Gemini audio). Offline + cloud-only config → audio is kept locally (`pending_transcription`) and transcribed when online.

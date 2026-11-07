@@ -27,7 +27,7 @@ Primary target: **Windows 11**. macOS/Linux should work where Tauri does, but ar
 
 ## Dock UI
 
-- Single input with mode indicator (Capture · Ask `?` · Command `/`).
+- Single input with mode indicator (Capture · Ask `?` · Command `/`), and a mic for [voice capture](../product/voice-capture.md) (hold the shortcut, or press the mic).
 - Below: last ~5 captures with status badges (pending / processed / error), each expandable to show extracted children.
 - Ask answers stream into a panel with citation chips.
 - Footer: offline indicator, pending count, sync state.
