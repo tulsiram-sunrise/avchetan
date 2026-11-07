@@ -31,17 +31,24 @@ import { TaskRow } from './timeline-items';
 import { panelClass, QuietButton } from './ui';
 
 /**
- * One day at a time, with a month calendar beside it (docs/product/days-view.md). Opens on
- * today; ← and → move a day, Page Up and Page Down a month, T goes back to today.
+ * One day at a time under a pinned week strip; the month drops down from it
+ * (docs/product/days-view.md). Opens on today; ← and → move a day, Page Up and Page Down a
+ * month, T goes back to today, M opens or closes the month, Esc closes it.
  */
 export function DaysPage(props: { requestedDay?: string | null }) {
   const today = useToday();
   const [day, setDay] = useState(props.requestedDay ?? today);
   const [month, setMonth] = useState<LocalMonth>(monthOf(props.requestedDay ?? today));
+  const [monthOpen, setMonthOpen] = useState(false);
 
   const select = (next: string) => {
     setDay(next);
     setMonth(monthOf(next));
+  };
+  const toggleMonth = () => {
+    // Opens on the selected day's month, wherever it was left.
+    if (!monthOpen) setMonth(monthOf(day));
+    setMonthOpen(!monthOpen);
   };
 
   // A brief notification opens its day.
@@ -60,6 +67,16 @@ export function DaysPage(props: { requestedDay?: string | null }) {
         return;
       }
       if (event.ctrlKey || event.altKey || event.metaKey) return;
+      if (event.key === 'Escape' && monthOpen) {
+        event.preventDefault();
+        setMonthOpen(false);
+        return;
+      }
+      if (event.key === 'm' || event.key === 'M') {
+        event.preventDefault();
+        toggleMonth();
+        return;
+      }
       const next = dayForKey(event.key, day, today);
       if (!next) return;
       event.preventDefault();
@@ -70,8 +87,41 @@ export function DaysPage(props: { requestedDay?: string | null }) {
   });
 
   return (
-    <div className="flex flex-col gap-6 md:flex-row md:items-start">
-      <MonthCalendar month={month} day={day} today={today} onMonth={setMonth} onDay={select} />
+    <div className="flex flex-col">
+      {/* Pinned to the top of the page's scroll area (main has p-6): the week never scrolls away. */}
+      <div className="sticky -top-6 z-10 -mx-6 -mt-6 mb-4 border-b border-line bg-surface px-6 pt-6 pb-3">
+        <WeekStrip
+          day={day}
+          today={today}
+          monthOpen={monthOpen}
+          onToggleMonth={toggleMonth}
+          onDay={select}
+        />
+        {monthOpen ? (
+          <>
+            {/* A click outside closes the month. */}
+            <button
+              type="button"
+              aria-label="Close the month"
+              tabIndex={-1}
+              className="fixed inset-0 z-0 cursor-default"
+              onClick={() => setMonthOpen(false)}
+            />
+            <div className="absolute left-6 z-10 mt-2 w-80 rounded-xl border border-line bg-surface-raised p-3 shadow-lg">
+              <MonthCalendar
+                month={month}
+                day={day}
+                today={today}
+                onMonth={setMonth}
+                onDay={(next) => {
+                  select(next);
+                  setMonthOpen(false);
+                }}
+              />
+            </div>
+          </>
+        ) : null}
+      </div>
       <DayPanel day={day} today={today} onToday={() => select(today)} />
     </div>
   );
@@ -95,6 +145,79 @@ function dayForKey(key: string, day: string, today: string): string | null {
   }
 }
 
+/** The selected day's week, with the month and year that open the whole month. */
+function WeekStrip(props: {
+  day: string;
+  today: string;
+  monthOpen: boolean;
+  onToggleMonth: () => void;
+  onDay: (day: string) => void;
+}) {
+  const week = useMemo(() => weekOf(props.day), [props.day]);
+  const first = week[0] ?? props.day;
+  const last = week[6] ?? props.day;
+  // A week can cross two months.
+  const firstDots = useMonthDots(monthOf(first));
+  const lastDots = useMonthDots(monthOf(last));
+  const categories = useResolvedCategories();
+  const scheme = useColorScheme();
+  const dotsOf = (date: string) =>
+    (monthOf(date) === monthOf(first) ? firstDots : lastDots).data?.get(date);
+
+  return (
+    <section aria-label="Week" className="relative z-10 flex flex-col gap-2">
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          aria-expanded={props.monthOpen}
+          title="Show the whole month (M)"
+          className="rounded-lg px-2 py-1 font-medium hover:bg-surface-raised"
+          onClick={props.onToggleMonth}
+        >
+          {formatLocalDate(`${monthOf(props.day)}-01`, { month: 'long', year: 'numeric' })}{' '}
+          <span aria-hidden="true">{props.monthOpen ? '▴' : '▾'}</span>
+        </button>
+        <span className="flex-1" />
+        <button
+          type="button"
+          aria-label="Previous week"
+          className="rounded-lg px-2 py-1 hover:bg-surface-raised"
+          onClick={() => props.onDay(addDays(props.day, -7))}
+        >
+          ‹
+        </button>
+        <button
+          type="button"
+          aria-label="Next week"
+          className="rounded-lg px-2 py-1 hover:bg-surface-raised"
+          onClick={() => props.onDay(addDays(props.day, 7))}
+        >
+          ›
+        </button>
+      </div>
+      <div className="grid grid-cols-7 gap-1 text-center text-sm">
+        {week.map((date) => (
+          <div key={date} className="flex flex-col items-center">
+            <span className="text-xs text-ink-muted">
+              {formatLocalDate(date, { weekday: 'short' })}
+            </span>
+            <CalendarDay
+              date={date}
+              inMonth
+              selected={date === props.day}
+              isToday={date === props.today}
+              dots={dotsOf(date)}
+              categories={categories.data}
+              scheme={scheme}
+              onSelect={() => props.onDay(date)}
+            />
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function MonthCalendar(props: {
   month: LocalMonth;
   day: string;
@@ -109,7 +232,7 @@ function MonthCalendar(props: {
   const weekdays = weekOf(weeks[0]?.[0] ?? `${props.month}-01`);
 
   return (
-    <section aria-label="Calendar" className="w-full max-w-sm shrink-0 md:w-64">
+    <section aria-label="Calendar" className="w-full">
       <div className="mb-2 flex items-center justify-between">
         <button
           type="button"
