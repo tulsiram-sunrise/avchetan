@@ -584,3 +584,38 @@ describe('corrections across devices (ADR-0027)', () => {
     expect(await examplesFor(phone, 'swam 30 laps at the pool')).toEqual([]);
   });
 });
+
+describe('a column added in an update (private tags)', () => {
+  /** The phone holds the tag as an app without the column left it: not private. */
+  async function phoneWithOldRow() {
+    const desktop = await device();
+    const phone = await device();
+    const tag = await desktop.store.write((tx) =>
+      desktop.store.repos.tags.ensurePath(tx, 'health'),
+    );
+    await desktop.store.write((tx) => desktop.store.repos.tags.setMakesPrivate(tx, tag.id, true));
+    await converge(desktop, phone);
+    await phone.store.write((tx) =>
+      tx.run(`UPDATE tags SET makes_private = 0 WHERE id = '${tag.id}'`),
+    );
+    return { desktop, phone };
+  }
+
+  it('fills it in on the first pull after the update', async () => {
+    const { phone } = await phoneWithOldRow();
+    await phone.store.sync.setState('pulled_columns', 'columns of the older app');
+
+    await phone.engine.syncNow();
+
+    expect(await phone.store.repos.tags.privatePaths(phone.store.db)).toEqual(['health']);
+    expect(await phone.store.sync.listOutbox()).toEqual([]);
+  });
+
+  it('pulls everything only once', async () => {
+    const { phone } = await phoneWithOldRow();
+    // Already caught up: a row of the same version is left alone, as on every normal pull.
+    await phone.engine.syncNow();
+
+    expect(await phone.store.repos.tags.privatePaths(phone.store.db)).toEqual([]);
+  });
+});

@@ -276,3 +276,12 @@ export type TableName = keyof typeof TABLES;
 export const SYNCED_TABLE_NAMES = (Object.keys(TABLES) as TableName[]).filter(
   (name) => TABLES[name].scope === 'synced',
 );
+
+/**
+ * Every synced table and its columns. A device stores the one it last pulled with; when an
+ * update adds a column it pulls everything once more, so rows an older app pulled without that
+ * column get it (docs/architecture/sync-protocol.md).
+ */
+export const SYNCED_COLUMNS_FINGERPRINT = SYNCED_TABLE_NAMES.map(
+  (table) => `${table}:${Object.keys(TABLES[table].columns).sort().join(',')}`,
+).join(';');

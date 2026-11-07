@@ -1,4 +1,4 @@
-import type { DevicePlatform, ExtractionMode } from '@avchetan/db';
+import { type DevicePlatform, type ExtractionMode, SYNCED_COLUMNS_FINGERPRINT } from '@avchetan/db';
 import type { ClientStore, RemoteChange, SyncedTableName } from '@avchetan/db/sqlite';
 import {
   type Cancel,
@@ -163,15 +163,20 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
   }
 
   async function pull(api: ReturnType<typeof createApiClient>): Promise<void> {
-    let cursor = Number((await store.sync.getState('pull_cursor')) ?? 0);
+    // After an update that added synced columns, pull everything once and take rows of the same
+    // version too: an older app dropped the new columns when it pulled them.
+    const refill = (await store.sync.getState('pulled_columns')) !== SYNCED_COLUMNS_FINGERPRINT;
+    if (refill) log.info('pulling everything once for new columns');
+    let cursor = refill ? 0 : Number((await store.sync.getState('pull_cursor')) ?? 0);
     while (true) {
       const { changes, nextCursor, hasMore } = await api.pull(cursor);
       // A newer server may have tables this app doesn't know yet.
       const known = changes.filter(({ table }) => isSyncedTable(table)).map(toRemoteChange);
-      await store.sync.applyPage(known, nextCursor);
+      await store.sync.applyPage(known, nextCursor, { refill });
       cursor = nextCursor;
       if (!hasMore) break;
     }
+    if (refill) await store.sync.setState('pulled_columns', SYNCED_COLUMNS_FINGERPRINT);
     await store.sync.setState('last_pull_at', store.clock.now());
   }
 

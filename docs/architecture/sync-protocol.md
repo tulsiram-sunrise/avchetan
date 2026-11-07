@@ -117,7 +117,9 @@ Failures: exponential backoff 2 s → 5 min with jitter; reset on success or net
 ## Schema evolution
 
 - Wire payloads include only known columns; unknown incoming fields are dropped by Zod (`.strip()`), so an older client tolerates a newer server.
-- Additive changes only (new nullable columns, new tables). Renames/removals require a migration plan ADR.
+- Additive changes only (new nullable columns, new columns with a default such as `tags.makes_private`, new tables). Renames/removals require a migration plan ADR. A missing nullable field reads as null and a missing defaulted field as its default, so a newer server accepts an older client.
+- **Catch-up after an update:** an older app drops columns it doesn't know when it pulls, and Last-Write-Wins later skips the same version. So each device stores the synced columns it last pulled with (`SYNCED_COLUMNS_FINGERPRINT` in `sync_state.pulled_columns`); when they differ after an update it pulls from cursor 0 once and also takes rows of the same version (the same write, with the server's full columns). Normal pulls still skip them.
+- **Known gap:** an older app that changes a row pushes it without the new column, which then takes its default. Update every app before using a new synced field.
 - The protocol has a version header `X-Avchetan-Protocol: 1`; server rejects unsupported majors with 426.
 
 ## Tests required

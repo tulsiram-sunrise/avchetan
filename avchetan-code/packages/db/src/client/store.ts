@@ -119,9 +119,13 @@ export async function openClientStore(options: OpenClientStoreOptions) {
       applyRemote: (changes: readonly RemoteChange[]): Promise<ApplyResult> =>
         database.write((tx) => applyRemoteChanges(tx, changes)),
       /** One pulled page and its cursor, together: a crash can't skip or repeat part of a page. */
-      applyPage: (changes: readonly RemoteChange[], cursor: number): Promise<ApplyResult> =>
+      applyPage: (
+        changes: readonly RemoteChange[],
+        cursor: number,
+        options: { refill?: boolean } = {},
+      ): Promise<ApplyResult> =>
         write(async (tx) => {
-          const result = await applyRemoteChanges(tx, changes);
+          const result = await applyRemoteChanges(tx, changes, options);
           await setSyncState(tx, 'pull_cursor', String(cursor));
           for (const { row } of changes) clock.observe(row.updatedAt);
           return result;
