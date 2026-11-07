@@ -62,6 +62,18 @@ export {
 } from './commands/parse';
 export { COMMAND_NAMES, COMMANDS, type CommandName, isCommandName } from './commands/registry';
 export {
+  type ClipboardRead,
+  clipboardFields,
+  clipboardForPrompt,
+  clipboardOf,
+  clipboardReadSchema,
+  cutUtf8,
+  type DockClipboard,
+  filterClipboard,
+  MAX_CLIPBOARD_BYTES,
+  PROMPT_CLIPBOARD_BYTES,
+} from './context/clipboard';
+export {
   CONTEXT_PAUSE_MINUTES,
   CONTEXT_SETTING_KEYS,
   loadContextSettings,

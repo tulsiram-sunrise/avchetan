@@ -1,6 +1,7 @@
-//! Thin native shell (docs/architecture/desktop.md): windows, hotkey, tray, keychain and
+//! Thin native shell (docs/architecture/desktop.md): windows, hotkeys, tray, clipboard, keychain and
 //! SQLite access. All app logic lives in TypeScript in the webviews.
 
+mod clipboard;
 mod commands;
 mod context;
 mod error;
@@ -72,6 +73,8 @@ pub fn run() {
             windows::main_open,
             hotkey::hotkey_status,
             hotkey::hotkey_set,
+            hotkey::snap_hotkey_status,
+            hotkey::snap_hotkey_set,
             tray::tray_set_pending,
             tray::tray_set_context,
             context::context_recent_apps,

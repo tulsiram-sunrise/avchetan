@@ -1,6 +1,6 @@
 # Clipboard snap
 
-A second shortcut opens the capture box with the text on your clipboard attached: copy a stack trace, an address or a few lines of code, press **Ctrl+Shift+Alt+Space**, type `login fails on staging` and save. The entry keeps the copied text with it. It is the sixth and last item of [Phase 6](../roadmap.md#phase-6--advancements-a-ambient-intelligence) and replaces the clipboard line in [advancements §1](advancements.md#1-context-awareness-desktop-metadata-capture).
+A second shortcut opens the capture box with the text on your clipboard attached: copy a stack trace, an address or a few lines of code, press **Ctrl+Shift+Alt+Space**, type `login fails on staging` and save. The entry keeps the copied text with it. It is the sixth and last item of [Phase 6](../roadmap.md#phase-6--advancements-a-ambient-intelligence-) and replaces the clipboard line in [advancements §1](advancements.md#1-context-awareness-desktop-metadata-capture).
 
 ## Why
 
@@ -20,7 +20,7 @@ When something on the screen is worth logging, the useful part is often the exac
 - A second line under the box shows the clipboard's first line, cut to fit. Clicking it shows the whole attached text (as it will be saved, at most 4 KB). **×** drops it from this entry only; the window line stays.
 - Pressed while the box is already open, the clipboard shortcut attaches (or replaces) the clipboard text and keeps what you have typed. It never closes the box.
 - When nothing is attached, the line says why for a few seconds instead: *Clipboard has no text* (an image or files), *Clipboard is empty*, or *Not attached: the clipboard came from an app that marks it private*. The box opens either way.
-- On **Days** (both apps) an entry with clipboard text shows *with clipboard* next to *from …*. The entry's page shows the text in a box, in a fixed-width font, with **Copy**.
+- On **Days** (both apps) an entry with clipboard text shows *with clipboard* next to *from …*. On the PC, *with clipboard* opens to the text in a fixed-width font, with **Copy**; on the phone the entry's page shows it, and a long-press copies it.
 
 ## What is recorded
 
@@ -53,10 +53,10 @@ When something on the screen is worth logging, the useful part is often the exac
 
 ## How it's built
 
-- **Rust** `context.rs` `read_clipboard_text(max_bytes)`: `OpenClipboard` (a few short retries when another app holds it), check the two private formats, `GetClipboardData(CF_UNICODETEXT)`, convert and cut. Uses `windows-sys`, already a dependency; no new crate. Windows only; elsewhere it returns nothing.
+- **Rust** `clipboard.rs` `read_clipboard_text()`: `OpenClipboard` (a few short retries when another app holds it), check the two private formats, `GetClipboardData(CF_UNICODETEXT)`, convert and cut. Uses `windows-sys`, already a dependency; no new crate. Windows only; elsewhere it returns nothing.
 - **Hotkey** `hotkey.rs`: a second shortcut on the same plugin; the handler tells the two apart. The snap handler reads the window context and then the clipboard, before the dock takes focus, and shows the dock (never hides it). `dock:shown` carries `{ context, clipboard }`, where `clipboard` is `{ text, cut }` or `{ none: 'empty' | 'not_text' | 'private' }`. New commands `snap_hotkey_status` / `snap_hotkey_set`.
 - **Core** (pure, tested): `filterClipboard` (switch, deny-list), cutting and line endings checked again on the TS side, and `promptContext` adding the first 1 KB unless the entry is `!private`.
-- **Desktop UI:** the clipboard line in the dock (`useDockStore.clipboard`), the Clipboard snap section in Settings → Capture box, *with clipboard* on Days and the text box on the entry page. **Phone:** *with clipboard* on Days and the text box on the entry page (read only).
+- **Desktop UI:** the clipboard line in the dock (`useDockStore.clipboard`), the Clipboard snap section in Settings → Capture box, *with clipboard* on Days and the text box on the entry page. **Phone:** *with clipboard* on Days and the text on the entry page, selectable (long-press to copy; no clipboard library added).
 
 ## Errors
 

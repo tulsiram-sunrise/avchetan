@@ -500,7 +500,7 @@ describe('corrections across devices (ADR-0027)', () => {
     rawLogId,
     status: 'processed',
     model: 'mock:model',
-    version: 2,
+    version: 3,
     activities: [
       {
         categoryId: seedCategoryId('other'),
@@ -554,7 +554,7 @@ describe('corrections across devices (ADR-0027)', () => {
       { corrections: true },
     );
     const input = buildExtractionInput(
-      { id: 'new', content, context: {}, capturedAt: START, capturedTz: 'UTC' },
+      { id: 'new', content, context: {}, capturedAt: START, capturedTz: 'UTC', privacy: 'normal' },
       vocabulary,
     );
     return input.corrections;

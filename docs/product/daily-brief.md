@@ -1,6 +1,6 @@
 # Daily brief
 
-A short look back at one day, made by the analysis model in the evening and shown at the top of that day in the [Days view](days-view.md). It is the first item of [Phase 6](../roadmap.md#phase-6--advancements-a-ambient-intelligence) and replaces the outline in [advancements §2](advancements.md#daily-brief-phase-6).
+A short look back at one day, made by the analysis model in the evening and shown at the top of that day in the [Days view](days-view.md). It is the first item of [Phase 6](../roadmap.md#phase-6--advancements-a-ambient-intelligence-) and replaces the outline in [advancements §2](advancements.md#daily-brief-phase-6).
 
 ## Why
 

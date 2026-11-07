@@ -1,3 +1,4 @@
+import type { DockClipboard } from '@avchetan/core';
 import { createLogger } from '@avchetan/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { AppServices } from '../app-services';
@@ -34,8 +35,15 @@ export function useCaptureMutation() {
   const services = useServices();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ text, window }: { text: string; window: DockWindow | null }) =>
-      services.capture.capture(text, window),
+    mutationFn: ({
+      text,
+      window,
+      clipboard,
+    }: {
+      text: string;
+      window: DockWindow | null;
+      clipboard: DockClipboard | null;
+    }) => services.capture.capture(text, window, clipboard),
     // The row is committed by now: nothing here may fail the mutation or delay the input.
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: rawLogKeys.all });

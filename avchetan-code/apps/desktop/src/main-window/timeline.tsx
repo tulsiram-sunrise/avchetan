@@ -2,6 +2,7 @@ import { windowContextOf } from '@avchetan/core';
 import type { Activity, RawLog, Task } from '@avchetan/db/sqlite';
 import { formatTime } from '@avchetan/shared';
 import { StatusBadge } from '../dock/status-badge';
+import { EntryClipboard } from './entry-clipboard';
 import { ActivityRow, EntryActions, TaskRow } from './timeline-items';
 
 /**
@@ -29,6 +30,7 @@ export function TimelineEntry(props: {
             from {window.app_name}
           </p>
         ) : null}
+        <EntryClipboard rawLog={rawLog} />
         {activities.length + tasks.length > 0 ? (
           <ul className="flex flex-col gap-1.5 border-l-2 border-line pl-3">
             {activities.map((activity) => (

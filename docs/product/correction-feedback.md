@@ -1,6 +1,6 @@
 # Correction feedback
 
-When you fix something the model got wrong, the model sees that fix the next time a similar entry comes in. It is the second item of [Phase 6](../roadmap.md#phase-6--advancements-a-ambient-intelligence) and replaces the outline in [advancements §7](advancements.md#7-new-correction-feedback-loop). There is no fine-tuning: the fixes become a few examples in the extraction prompt.
+When you fix something the model got wrong, the model sees that fix the next time a similar entry comes in. It is the second item of [Phase 6](../roadmap.md#phase-6--advancements-a-ambient-intelligence-) and replaces the outline in [advancements §7](advancements.md#7-new-correction-feedback-loop). There is no fine-tuning: the fixes become a few examples in the extraction prompt.
 
 ## Why
 

@@ -8,6 +8,7 @@ import { askQuestion, isQuestion, questionText } from '../services/ask';
 import { DEFAULT_SUBMIT_KEY, isSubmitPress, submitHint } from '../services/submit-key';
 import { useServices } from '../services-context';
 import { type AskState, useDockStore } from '../stores/dock-store';
+import { ClipboardLine } from './clipboard-line';
 import { useCommand } from './use-command';
 import { WindowContextLine } from './window-context-line';
 
@@ -22,6 +23,8 @@ export function CaptureInput(props: {
   const setAsk = useDockStore((state) => state.setAsk);
   const asking = useDockStore((state) => state.ask?.status === 'asking');
   const window = useDockStore((state) => state.window);
+  const clipboard = useDockStore((state) => state.clipboard);
+  const setClipboard = useDockStore((state) => state.setClipboard);
   const services = useServices();
   const captureMutation = useCaptureMutation();
   const [errorCode, setErrorCode] = useState<string | null>(null);
@@ -52,8 +55,10 @@ export function CaptureInput(props: {
     if (!draft.trim() || captureMutation.isPending) return;
     try {
       // "//note" is saved as "/note" (docs/product/command-mode.md).
-      await captureMutation.mutateAsync({ text: captureText(draft), window });
+      await captureMutation.mutateAsync({ text: captureText(draft), window, clipboard });
       setDraft('');
+      // The window stays until the next shortcut; copied text belongs to this entry only.
+      setClipboard(null);
       setErrorCode(null);
       props.onCaptured();
     } catch (error) {
@@ -90,7 +95,12 @@ export function CaptureInput(props: {
         className="w-full resize-none rounded-lg border border-line bg-surface-raised px-3 py-2 text-[15px] outline-none focus:border-accent"
       />
       {command.panel}
-      {!askMode && !command.active ? <WindowContextLine /> : null}
+      {!askMode && !command.active ? (
+        <>
+          <WindowContextLine />
+          <ClipboardLine />
+        </>
+      ) : null}
       {errorCode ? (
         <p role="alert" className="px-1 pt-1 text-xs text-danger">
           Couldn't save this entry. Your text is still here; try again.{' '}

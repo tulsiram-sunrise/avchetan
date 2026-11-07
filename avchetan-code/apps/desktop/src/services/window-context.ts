@@ -1,6 +1,10 @@
 import {
+  type ClipboardRead,
   type ContextSettings,
+  clipboardFields,
+  type DockClipboard,
   type EntryWindowContext,
+  filterClipboard,
   filterContext,
   isPaused,
   loadContextSettings,
@@ -43,16 +47,44 @@ export async function readDockWindow(
   }
 }
 
-/** The capture options for an entry typed over `window`. */
-export function captureOptions(window: DockWindow | null): {
+/**
+ * Clipboard snap: applies the switch and the deny-list (against `raw`, the window in front) to
+ * what the shell read. Never throws; on a settings error nothing is attached.
+ */
+export async function readDockClipboard(
+  store: ClientStore,
+  read: ClipboardRead,
+  raw: WindowContext | null,
+): Promise<DockClipboard | null> {
+  try {
+    const clipboard = filterClipboard(read, raw, await loadContextSettings(store));
+    log.debug('clipboard read', {
+      attached: clipboard?.kind === 'attached',
+      reason: clipboard?.kind === 'none' ? clipboard.reason : null,
+      cut: clipboard?.kind === 'attached' && clipboard.cut,
+    });
+    return clipboard;
+  } catch {
+    log.warn('could not read clipboard snap settings');
+    return null;
+  }
+}
+
+/** The capture options for an entry typed over `window`, with any clipboard text attached. */
+export function captureOptions(
+  window: DockWindow | null,
+  clipboard: DockClipboard | null = null,
+): {
   context?: Record<string, unknown>;
   ruleTagPaths?: string[];
 } {
-  if (!window) return {};
+  const copied = clipboardFields(clipboard);
+  if (!window) return 'clipboard' in copied ? { context: copied } : {};
   return {
     context: {
       ...window.context,
       ...(window.matches.length > 0 ? { rule_matches: window.matches } : {}),
+      ...copied,
     },
     ruleTagPaths: ruleOutcome(window.matches).tagPaths,
   };

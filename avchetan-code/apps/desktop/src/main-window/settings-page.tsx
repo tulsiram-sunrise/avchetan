@@ -18,6 +18,7 @@ import type { SubmitKey } from '../services/submit-key';
 import { useServices } from '../services-context';
 import { useAppEvent } from '../use-app-event';
 import { AiModelsSetting } from './ai-models-setting';
+import { ClipboardSnapSetting } from './clipboard-snap-setting';
 import { CommandsSetting } from './commands-setting';
 import { DataSetting } from './data-setting';
 import { HubSetting } from './hub-setting';
@@ -53,6 +54,7 @@ function TabContent({ tab }: { tab: SettingsTab }) {
           <SubmitKeySetting />
           <CommandsSetting />
           <WindowContextSetting />
+          <ClipboardSnapSetting />
         </>
       );
     case 'brief':

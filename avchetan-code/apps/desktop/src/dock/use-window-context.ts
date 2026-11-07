@@ -1,8 +1,13 @@
-import { loadContextSettings } from '@avchetan/core';
+import { loadContextSettings, type WindowContext } from '@avchetan/core';
 import { createLogger } from '@avchetan/shared';
 import { useCallback, useEffect, useRef } from 'react';
 import { emitAppEvent } from '../native/events';
-import { readDockWindow, togglePause, trayContextState } from '../services/window-context';
+import {
+  readDockClipboard,
+  readDockWindow,
+  togglePause,
+  trayContextState,
+} from '../services/window-context';
 import { useServices } from '../services-context';
 import { useDockStore } from '../stores/dock-store';
 import { useAppEvent } from '../use-app-event';
@@ -11,11 +16,15 @@ const log = createLogger('dock');
 
 /**
  * Window context in the dock (docs/product/window-context.md): reads the window the hotkey was
- * pressed over, and keeps the tray's Pause / Resume item in step with the settings.
+ * pressed over, and keeps the tray's Pause / Resume item in step with the settings. With the
+ * clipboard shortcut, also the clipboard text (docs/product/clipboard-snap.md).
  */
 export function useWindowContext(onShown: () => void) {
   const { store, platform } = useServices();
   const setWindow = useDockStore((state) => state.setWindow);
+  const setClipboard = useDockStore((state) => state.setClipboard);
+  /** The window the dock was last opened over, unfiltered: the deny-list is checked against it. */
+  const lastRaw = useRef<WindowContext | null>(null);
   const resumeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const refreshTray = useCallback(async () => {
@@ -43,11 +52,17 @@ export function useWindowContext(onShown: () => void) {
     };
   }, [refreshTray]);
 
-  useAppEvent('dock:shown', ({ context }) => {
+  useAppEvent('dock:shown', ({ context, clipboard, already_open }) => {
     onShown();
-    // Shown at once without context; the line appears when it's read (a few ms).
-    setWindow(null);
-    void readDockWindow(store, context, store.clock.now()).then(setWindow);
+    // The clipboard shortcut pressed with the dock in front: keep its window, add the clipboard.
+    if (!already_open) {
+      lastRaw.current = context;
+      // Shown at once without context; the lines appear when they're read (a few ms).
+      setWindow(null);
+      setClipboard(null);
+      void readDockWindow(store, context, store.clock.now()).then(setWindow);
+    }
+    if (clipboard) void readDockClipboard(store, clipboard, lastRaw.current).then(setClipboard);
   });
 
   // Settings changed in the main window (switch, deny-list) or here.

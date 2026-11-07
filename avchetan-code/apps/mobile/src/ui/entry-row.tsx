@@ -1,4 +1,4 @@
-import { windowContextOf } from '@avchetan/core';
+import { clipboardOf, windowContextOf } from '@avchetan/core';
 import type { Activity, RawLog, Task } from '@avchetan/db/sqlite';
 import { describeError, formatTime, parseLastError } from '@avchetan/shared';
 import { router } from 'expo-router';
@@ -18,6 +18,7 @@ export function EntryRow(props: {
 }) {
   const { rawLog, activities, tasks } = props;
   const window = windowContextOf(rawLog.context);
+  const copied = clipboardOf(rawLog.context);
   return (
     <Pressable
       accessibilityRole="button"
@@ -32,7 +33,13 @@ export function EntryRow(props: {
         <StatusBadge status={rawLog.status} />
       </View>
       <Text className="text-sm text-ink">{rawLog.content}</Text>
-      {window ? <Text className="text-xs text-inkMuted">from {window.app_name}</Text> : null}
+      {window || copied ? (
+        <Text className="text-xs text-inkMuted">
+          {[window ? `from ${window.app_name}` : null, copied ? 'with clipboard' : null]
+            .filter(Boolean)
+            .join(' · ')}
+        </Text>
+      ) : null}
       {rawLog.lastError ? (
         <Text numberOfLines={2} className="text-xs text-danger">
           {describeError(parseLastError(rawLog.lastError)).message}

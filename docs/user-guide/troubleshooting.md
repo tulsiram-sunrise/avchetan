@@ -112,7 +112,7 @@ Problems come first, each with its fix and a **Help** link to its section below.
 **"The provider account has no credit left."** OpenAI and Anthropic charge per use, and your account's balance or monthly limit has run out. Add credit or raise the limit on the billing page of the provider's website, then click **Test** in **Settings → AI → AI models**. Until then your entries wait safely. To keep going for free, choose Groq or Ollama instead.
 
 ## hotkey_unavailable
-**"The shortcut is used by another app."** Choose another shortcut in **Settings → Capture box → Shortcut**.
+**"The shortcut is used by another app."** Choose another shortcut in **Settings → Capture box → Shortcut** (or, for the clipboard shortcut, **Settings → Capture box → Clipboard snap**).
 
 ## database_unavailable
 **"Avchetan couldn't open its database"**, **"Avchetan couldn't update its database"** or **"The database is busy. Try again in a moment."** Avchetan keeps your entries in a file in your user folder, and it couldn't open that file.
