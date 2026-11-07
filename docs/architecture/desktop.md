@@ -39,12 +39,12 @@ Primary target: **Windows 11**. macOS/Linux should work where Tauri does, but ar
 lib.rs            builder: plugins, setup, command list
 error.rs          CommandError { code, message }
 windows.rs        dock show/hide/toggle + positioning, blur → hide, main window (dock_hide, main_open)
-hotkey.rs         global shortcut registration (hotkey_status, hotkey_set)
+hotkey.rs         global shortcuts: dock + clipboard snap (hotkey_status, hotkey_set, snap_hotkey_status, snap_hotkey_set)
 tray.rs           tray icon + menu (tray_set_pending)
 commands/
   db.rs           db_open / db_run / db_values / db_batch / db_rollback  (rusqlite, one connection per window, ADR-0019)
   secrets.rs      secret_get / secret_set / secret_delete  (keyring crate)
-  context.rs      previous_window_context, read_clipboard_text   (Phase 6)
+  context.rs      previous_window_context, read_clipboard_text   (Phase 6, clipboard snap)
   audio.rs        start_recording / stop_recording → wav path    (Phase 7)
 ```
 - Commands return `Result<T, CommandError>` where `CommandError` serializes to `{ code, message }`; the TS side wraps them in typed functions in `apps/desktop/src/native/*.ts` and validates results with Zod.

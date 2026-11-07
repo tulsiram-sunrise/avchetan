@@ -48,7 +48,7 @@ The verbatim capture. Content is immutable after insert.
 | `captured_at` | UTC ISO, not null | Moment of capture |
 | `captured_tz` | text, not null | IANA zone at capture, e.g. `Asia/Kolkata` — used to resolve "yesterday", "Friday" |
 | `source` | enum | `desktop_text`, `desktop_voice`, `mobile_text`, `mobile_voice`, `mobile_widget`, `system` |
-| `context` | JSON, default `{}` | `{ app?, app_name?, window_title?, url?, clipboard?, rule_matches? }` (Phase 6, [window context](../product/window-context.md#what-is-recorded)) |
+| `context` | JSON, default `{}` | `{ app?, app_name?, window_title?, url?, clipboard?, clipboard_cut?, rule_matches? }` (Phase 6, [window context](../product/window-context.md#what-is-recorded), [clipboard snap](../product/clipboard-snap.md#what-is-recorded)) |
 | `privacy` | enum, default `normal` | `normal`, `local_only` (Phase 7) |
 | `status` | enum | `pending_llm`, `processed`, `error`, `skipped` (`skipped` = local_only with no local model, or user opted out) |
 | `origin_device_id` | text, not null | Device that captured it |
