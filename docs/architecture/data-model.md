@@ -131,6 +131,7 @@ Indexes: `(completed_at, due_date)`, `(raw_log_id)`.
 | `parent_id` | UUID, nullable | |
 | `color` | text, nullable | |
 | `merged_into_id` | UUID, nullable | Set when merged; readers follow it |
+| `makes_private` | boolean, default false | Entries with this tag, or one under it, are private at capture ([private entries](../product/private-entries.md#private-tags)) |
 
 Tag IDs are derived from the path (`derivedId('tag', path)`) so two devices creating `#running` offline converge on one row.
 

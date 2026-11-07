@@ -1,6 +1,6 @@
 # Roadmap
 
-**Current phase: none.** [Phase 7](#phase-7--advancements-b-voice-graph-patterns-privacy) is next and not started. Phase 6 completed 2026-11-07 (started 2026-11-06). v0.2.0 was released 2026-11-06 (PR #15). Phase 1 completed 2026-10-26 (PR #1). Phase 2 completed 2026-10-30 (PR #2). Phase 3 completed 2026-10-31. Phase 4 completed 2026-11-02. Phase 5 completed 2026-11-04 (PR #8). Phase 5b completed 2026-11-05 (PR #10). The Public release milestone completed 2026-11-05 with v0.1.0 (PR #12); applying to SignPath remains.
+**Current phase: [Phase 7](#phase-7--advancements-b-voice-graph-patterns-privacy)** (started 2026-11-07, private entries first). Phase 6 completed 2026-11-07 (started 2026-11-06). v0.2.0 was released 2026-11-06 (PR #15). Phase 1 completed 2026-10-26 (PR #1). Phase 2 completed 2026-10-30 (PR #2). Phase 3 completed 2026-10-31. Phase 4 completed 2026-11-02. Phase 5 completed 2026-11-04 (PR #8). Phase 5b completed 2026-11-05 (PR #10). The Public release milestone completed 2026-11-05 with v0.1.0 (PR #12); applying to SignPath remains.
 
 Each phase lists scope, deliverables and **done when** criteria (testable). Phases are sequential; a coding agent should finish a phase's criteria before starting the next. Advanced capabilities are specified in [product/advancements.md](product/advancements.md).
 
@@ -175,10 +175,12 @@ Built one item at a time, each on its own branch and PR, tried on real devices b
 
 ## Phase 7 — Advancements B (voice, graph, patterns, privacy)
 
+Built one item at a time like Phase 6, each with its own spec. Order chosen 2026-11-07: item 4 first.
+
 1. Voice: desktop push-to-talk (Rust recording, whisper.cpp or cloud transcription slot), Android widget mic ([§4](product/advancements.md#4-voice-capture-whisper)).
 2. Knowledge graph UI + `query_entities` / `query_commitments` tools ([§5](product/advancements.md#5-knowledge-graph-of-people--commitments)).
 3. Weekly pattern detection ([§2](product/advancements.md#weekly-pattern-detection-phase-7)).
-4. Privacy-local routing (`!private`) ([§6](product/advancements.md#6-new-privacy-local-routing)).
+4. **Private entries** ([product/private-entries.md](product/private-entries.md)), built first: private tags (synced, a tag covers its children) make an entry private at capture; without a local AI a private entry waits with *Private: waits for a local AI* instead of being skipped; a lock on Days and **Make private / Make normal** on both apps; one fetch-spy test across extraction, Ask, the daily brief and hub embeddings. Planned 2026-11-07.
 
 **Done when:** voice capture works offline on desktop with local Whisper; "what do I owe X" answers correctly from extracted commitments; weekly review shows numeric findings; private entries never appear in any cloud-provider call (test via fetch spy).
 
