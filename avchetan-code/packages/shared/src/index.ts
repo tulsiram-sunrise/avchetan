@@ -73,6 +73,7 @@ export {
 export {
   formatAgo,
   formatDay,
+  formatDueDate,
   formatLocalDate,
   formatMadeAt,
   formatMinutes,

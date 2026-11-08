@@ -1,5 +1,6 @@
 import { exerciseLines, metricsText, windowContextOf } from '@avchetan/core';
 import type { Activity, RawLog, Task } from '@avchetan/db/sqlite';
+import { formatDueDate } from '@avchetan/shared';
 import { useState } from 'react';
 import { useAction, useActiveCategories, useCategoryNames } from '../queries/organize';
 import { TaskPromises } from './task-promises';
@@ -18,7 +19,7 @@ export function ActivityRow({ activity }: { activity: Activity }) {
     <li className="flex flex-col gap-0.5">
       <div className="flex flex-wrap items-center gap-2">
         <select
-          aria-label="Category"
+          aria-label={`Category of ${activity.title}`}
           className={`${fieldClass} text-xs`}
           value={activity.categoryId}
           onChange={(event) => edit.mutate({ id: activity.id, categoryId: event.target.value })}
@@ -40,7 +41,11 @@ export function ActivityRow({ activity }: { activity: Activity }) {
           onSave={(title) => edit.mutate({ id: activity.id, title })}
         />
         {activity.isUserEdited ? <span className="text-xs text-ink-muted">edited</span> : null}
-        <QuietButton disabled={remove.isPending} onClick={() => remove.mutate({ id: activity.id })}>
+        <QuietButton
+          label={`Delete ${activity.title}`}
+          disabled={remove.isPending}
+          onClick={() => remove.mutate({ id: activity.id })}
+        >
           Delete
         </QuietButton>
       </div>
@@ -67,7 +72,9 @@ export function TaskRow({ task }: { task: Task }) {
         onChange={(event) => setDone.mutate({ id: task.id, done: event.target.checked })}
       />
       <span className={task.completedAt ? 'text-ink-muted line-through' : ''}>{task.title}</span>
-      {task.dueDate ? <span className="text-xs text-ink-muted">due {task.dueDate}</span> : null}
+      {task.dueDate ? (
+        <span className="text-xs text-ink-muted">due {formatDueDate(task.dueDate)}</span>
+      ) : null}
       <TaskPromises task={task} />
       <ActionError errors={[setDone.error]} />
     </li>

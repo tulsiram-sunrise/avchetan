@@ -1,5 +1,5 @@
 import type { CorrectedEntry } from '@avchetan/db/sqlite';
-import { createLogger, toAppError } from '@avchetan/shared';
+import { createLogger, formatDueDate, toAppError } from '@avchetan/shared';
 import { GUIDE_URL, openExternal } from '../help';
 import { HelpLink } from '../help-link';
 import {
@@ -94,7 +94,10 @@ function LearnedEntry(props: { entry: CorrectedEntry; forgetting: boolean; onFor
       .map((item) => `${item.title} · ${item.categorySlug ?? 'other'}`),
     ...entry.tasks
       .filter((item) => !item.deleted)
-      .map((item) => `To do: ${item.title}${item.dueDate ? ` · due ${item.dueDate}` : ''}`),
+      .map(
+        (item) =>
+          `To do: ${item.title}${item.dueDate ? ` · due ${formatDueDate(item.dueDate)}` : ''}`,
+      ),
   ];
   const removed = [...entry.activities, ...entry.tasks]
     .filter((item) => item.deleted)

@@ -42,6 +42,20 @@ export function formatLocalDate(date: string, options: Intl.DateTimeFormatOption
   return format.format(Date.parse(`${date}T00:00:00.000Z`));
 }
 
+/**
+ * A due date the way people read it, "Wed, 11 Nov", with the year when it isn't this one
+ * (feature audit bug 9). Display only; `today` defaults to this device's clock.
+ */
+export function formatDueDate(day: string, today?: string): string {
+  const year = today ? today.slice(0, 4) : String(new Date().getFullYear());
+  return formatLocalDate(day, {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    ...(day.slice(0, 4) === year ? {} : { year: 'numeric' }),
+  });
+}
+
 function minutesText(ms: number): string {
   const count = Math.max(1, Math.round(Math.abs(ms) / 60_000));
   return count === 1 ? '1 minute' : `${count} minutes`;

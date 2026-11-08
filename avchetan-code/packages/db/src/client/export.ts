@@ -1,3 +1,4 @@
+import { localDate, localTime, type UtcInstant } from '@avchetan/shared';
 import { type Column, getTableColumns, getTableName, isNull } from 'drizzle-orm';
 import type { SQLiteTable } from 'drizzle-orm/sqlite-core';
 import { askHistory, extractionCorrections } from '../schema/sqlite/tables';
@@ -52,6 +53,17 @@ export async function collectExport(
 }
 
 /** One JSON file with every table, and one CSV per non-empty table (opens in a spreadsheet). */
+/**
+ * The export folder's name in local time (feature audit bug 9): an export at 00:01 on 9 Nov
+ * is `avchetan-export-2026-11-09-000112`, not the UTC day before. Zone offsets are whole
+ * minutes, so the seconds are the same as in `exportedAt`.
+ */
+export function exportFolderName(exportedAt: string, timeZone: string): string {
+  const instant = exportedAt as UtcInstant;
+  const time = localTime(instant, timeZone).replace(':', '');
+  return `avchetan-export-${localDate(instant, timeZone)}-${time}${exportedAt.slice(17, 19)}`;
+}
+
 export function exportFiles(data: DataExport): ExportFile[] {
   const files: ExportFile[] = [
     { name: 'avchetan-export.json', content: `${JSON.stringify(data, null, 2)}\n` },

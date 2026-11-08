@@ -1,6 +1,6 @@
 import { entriesSinceBrief, parseBriefNotes } from '@avchetan/core';
 import type { Activity, PromiseItem, Task } from '@avchetan/db/sqlite';
-import { addDays, describeError, formatLocalDate, formatMadeAt } from '@avchetan/shared';
+import { addDays, describeError, formatDueDate, formatMadeAt } from '@avchetan/shared';
 import type { ReactNode } from 'react';
 import { HelpLink } from '../help-link';
 import {
@@ -157,7 +157,7 @@ function RolledOver(props: { tasks: Task[]; waiting: PromiseItem[]; today: strin
               key={item.task.id}
               task={item.task}
               tomorrow={tomorrow}
-              label={`Waiting on ${item.entity.name}: ${item.task.title}${item.task.dueDate ? ` (due ${formatLocalDate(item.task.dueDate, { weekday: 'short', day: 'numeric', month: 'short' })})` : ''}`}
+              label={`Waiting on ${item.entity.name}: ${item.task.title}${item.task.dueDate ? ` (due ${formatDueDate(item.task.dueDate, props.today)})` : ''}`}
               button="Remind me tomorrow"
             />
           ))}

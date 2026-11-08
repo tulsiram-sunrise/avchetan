@@ -10,12 +10,15 @@ export const fieldClass = 'rounded-lg border border-line bg-surface-raised px-2 
 export function QuietButton(props: {
   onClick: () => void;
   disabled?: boolean;
+  /** An accessible name when the visible text alone is ambiguous ("Delete" in a list). */
+  label?: string;
   children: ReactNode;
 }) {
   return (
     <button
       type="button"
       className="rounded-lg border border-line px-2 py-1 text-xs hover:bg-surface disabled:opacity-50"
+      aria-label={props.label}
       disabled={props.disabled}
       onClick={props.onClick}
     >

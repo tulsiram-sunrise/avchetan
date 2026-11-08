@@ -39,7 +39,7 @@ When you press the shortcut, Avchetan notes which app you were in and its window
 **Rules** file entries for you. A rule says: in this app, with a title like this, the entry belongs to this project and gets these tags. For example *App* `Code.exe`, *Title contains* `my-project`, *Project* Engineering, *Tags* `my-project`.
 
 1. Open an entry's **Options** on **Days** and click **Make a rule from this**. The app and the whole title are filled in.
-2. Shorten the title to the part that matters, choose a project and add tags. The form says whether the rule still matches that entry.
+2. Shorten the title to the part that matters, choose a project (or **New project…** to add one there) and add tags. The form says whether the rule still matches that entry.
 3. Click **Add rule**.
 
 From then on, an entry typed over a matching window gets the tags as if you had typed them, and everything found in it goes to that project, whatever the AI thinks. The line under the box says what a rule adds (*rule: Engineering · #my-project*). Rules are listed under **Settings → Capture box → Window context → Rules**, where you can turn one off, change it or delete it. Changing a rule doesn't change entries you've already saved.
