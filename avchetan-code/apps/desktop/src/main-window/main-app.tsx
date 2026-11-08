@@ -4,6 +4,7 @@ import { useAppEvent, useTableInvalidation } from '../use-app-event';
 import { CategoriesPage } from './categories-page';
 import { CheckPage } from './check-page';
 import { DaysPage } from './days-page';
+import { PeoplePage } from './people-page';
 import { ProjectsPage } from './projects-page';
 import { ReviewPage } from './review-page';
 import { SettingsPage } from './settings-page';
@@ -15,6 +16,7 @@ const VIEWS: { id: MainView; label: string }[] = [
   // The view id stays 'timeline': the tray and the Rust window code open it by that name.
   { id: 'timeline', label: 'Days' },
   { id: 'tasks', label: 'Tasks' },
+  { id: 'people', label: 'People' },
   { id: 'review', label: 'Review' },
   { id: 'categories', label: 'Categories' },
   { id: 'tags', label: 'Tags' },
@@ -29,6 +31,8 @@ function CurrentView(props: { view: MainView; day: string | null; onDone: () => 
       return <DaysPage requestedDay={props.day} />;
     case 'tasks':
       return <TasksPage />;
+    case 'people':
+      return <PeoplePage />;
     case 'review':
       return <ReviewPage />;
     case 'categories':

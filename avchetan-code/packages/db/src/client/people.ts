@@ -1,8 +1,10 @@
 import { type LocalDate, localDate } from '@avchetan/shared';
 import { and, eq, inArray, isNull, or } from 'drizzle-orm';
+import { z } from 'zod';
 import type { EntityKind, MentionRole } from '../schema/enums';
 import { activities, entities, entityMentions, rawLogs, tasks } from '../schema/sqlite/tables';
-import type { ClientDb } from './database';
+import type { ClientDb, Tx } from './database';
+import { getSetting, setSetting } from './local';
 import type { DataScope } from './privacy';
 import { type Entity, normalizeEntityName, PROMISE_ROLES } from './repos/entities';
 import type { RawLog } from './repos/raw-logs';
@@ -368,16 +370,18 @@ export async function promises(
   return options.limit ? items.slice(0, options.limit) : items;
 }
 
-/** Promise links of these tasks, for showing *Promise to Rahul* / *Waiting on Aman* on a task. */
+export type PromiseLink = { role: 'owed_to' | 'owed_by'; entity: Pick<Entity, 'id' | 'name'> };
+
+/**
+ * Promise links of these tasks (or of every task), for showing *Promise to Rahul* /
+ * *Waiting on Aman* on a task.
+ */
 export async function promiseLinks(
   db: ClientDb,
-  taskIds: readonly string[],
-): Promise<Map<string, { role: 'owed_to' | 'owed_by'; entity: Pick<Entity, 'id' | 'name'> }[]>> {
-  const links = new Map<
-    string,
-    { role: 'owed_to' | 'owed_by'; entity: Pick<Entity, 'id' | 'name'> }[]
-  >();
-  if (taskIds.length === 0) return links;
+  taskIds?: readonly string[],
+): Promise<Map<string, PromiseLink[]>> {
+  const links = new Map<string, PromiseLink[]>();
+  if (taskIds?.length === 0) return links;
   const rows = await db
     .select({
       taskId: entityMentions.targetId,
@@ -392,7 +396,7 @@ export async function promiseLinks(
         live(entityMentions),
         live(entities),
         eq(entityMentions.targetType, 'task'),
-        inArray(entityMentions.targetId, [...taskIds]),
+        taskIds ? inArray(entityMentions.targetId, [...taskIds]) : undefined,
         inArray(entityMentions.role, [...PROMISE_ROLES]),
       ),
     )
@@ -405,7 +409,24 @@ export async function promiseLinks(
   return links;
 }
 
-/** IDs of open tasks you are waiting on someone for (`owed_by`). */
+/**
+ * Open tasks you wait on someone for that were due on `day` or before: the daily brief lists
+ * them apart from your own rolled-over tasks.
+ */
+export async function waitingDue(
+  db: ClientDb,
+  options: DataScope & { day: LocalDate },
+): Promise<PromiseItem[]> {
+  const open = await promises(db, {
+    ...options,
+    today: options.day,
+    direction: 'owed_to_me',
+    status: 'open',
+  });
+  return open.filter((item) => item.task.dueDate !== null && item.task.dueDate <= options.day);
+}
+
+/** IDs of tasks you are waiting on someone for (`owed_by`), open or done. */
 export async function waitingTaskIds(db: ClientDb): Promise<Set<string>> {
   const rows = await db
     .selectDistinct({ id: entityMentions.targetId })
@@ -513,3 +534,17 @@ export function duplicateSuggestions(
 }
 
 export const duplicatePairKey = (a: string, b: string) => pairKey(a, b);
+
+/** Client-local, not synced: pairs the user said are different people ("No"). */
+export const DISMISSED_PAIRS_SETTING = 'people.dismissedPairs';
+const dismissedPairsSchema = z.array(z.string()).catch([]);
+
+export async function loadDismissedPairs(db: ClientDb): Promise<Set<string>> {
+  return new Set(dismissedPairsSchema.parse((await getSetting(db, DISMISSED_PAIRS_SETTING)) ?? []));
+}
+
+export async function dismissPair(tx: Tx, pair: { a: string; b: string }, now: string) {
+  const pairs = await loadDismissedPairs(tx);
+  pairs.add(pairKey(pair.a, pair.b));
+  await setSetting(tx, DISMISSED_PAIRS_SETTING, [...pairs], now);
+}

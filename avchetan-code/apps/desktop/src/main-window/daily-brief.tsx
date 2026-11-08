@@ -1,6 +1,6 @@
 import { parseBriefNotes } from '@avchetan/core';
-import type { Activity, Task } from '@avchetan/db/sqlite';
-import { addDays, describeError, formatTime } from '@avchetan/shared';
+import type { Activity, PromiseItem, Task } from '@avchetan/db/sqlite';
+import { addDays, describeError, formatLocalDate, formatTime } from '@avchetan/shared';
 import type { ReactNode } from 'react';
 import { HelpLink } from '../help-link';
 import {
@@ -12,6 +12,7 @@ import {
   useRolledOver,
 } from '../queries/brief';
 import { useAction } from '../queries/organize';
+import { useWaitingDue } from '../queries/people';
 import { ActionError, QuietButton } from './ui';
 
 /**
@@ -68,10 +69,12 @@ function NoBriefYet(props: { day: string; today: string; making: boolean }) {
 function BriefCard(props: { brief: Activity; day: string; today: string; making: boolean }) {
   const text = parseBriefNotes(props.brief.notes);
   const rolledOver = useRolledOver(props.day);
+  const waitingDue = useWaitingDue(props.day);
   const failure = useBriefFailure();
   const failed = failure.data?.day === props.day ? failure.data : null;
 
   const tasks = rolledOver.data ?? [];
+  const waiting = waitingDue.data ?? [];
   const bullets: { key: string; content: ReactNode }[] =
     'lines' in text
       ? text.lines.map((line, index) => ({ key: `line-${index}`, content: line }))
@@ -80,7 +83,10 @@ function BriefCard(props: { brief: Activity; day: string; today: string; making:
           { key: 'friction', content: text.friction },
           {
             key: 'rolled',
-            content: tasks.length > 0 ? <RolledOver tasks={tasks} today={props.today} /> : null,
+            content:
+              tasks.length > 0 || waiting.length > 0 ? (
+                <RolledOver tasks={tasks} waiting={waiting} today={props.today} />
+              ) : null,
           },
           { key: 'observation', content: text.observation },
         ];
@@ -114,33 +120,51 @@ function BriefCard(props: { brief: Activity; day: string; today: string; making:
   );
 }
 
-function RolledOver(props: { tasks: Task[]; today: string }) {
+function RolledOver(props: { tasks: Task[]; waiting: PromiseItem[]; today: string }) {
+  const tomorrow = addDays(props.today, 1);
   return (
     <div className="flex flex-col gap-1">
-      <span>
-        {props.tasks.length === 1
-          ? '1 task rolled over:'
-          : `${props.tasks.length} tasks rolled over:`}
-      </span>
-      <ul className="flex flex-col gap-1">
-        {props.tasks.map((task) => (
-          <MoveToTomorrow key={task.id} task={task} tomorrow={addDays(props.today, 1)} />
-        ))}
-      </ul>
+      {props.tasks.length > 0 ? (
+        <>
+          <span>
+            {props.tasks.length === 1
+              ? '1 task rolled over:'
+              : `${props.tasks.length} tasks rolled over:`}
+          </span>
+          <ul className="flex flex-col gap-1">
+            {props.tasks.map((task) => (
+              <MoveToTomorrow key={task.id} task={task} tomorrow={tomorrow} />
+            ))}
+          </ul>
+        </>
+      ) : null}
+      {props.waiting.length > 0 ? (
+        <ul className="flex flex-col gap-1">
+          {props.waiting.map((item) => (
+            <MoveToTomorrow
+              key={item.task.id}
+              task={item.task}
+              tomorrow={tomorrow}
+              label={`Waiting on ${item.entity.name}: ${item.task.title}${item.task.dueDate ? ` (due ${formatLocalDate(item.task.dueDate, { weekday: 'short', day: 'numeric', month: 'short' })})` : ''}`}
+              button="Remind me tomorrow"
+            />
+          ))}
+        </ul>
+      ) : null}
     </div>
   );
 }
 
-function MoveToTomorrow(props: { task: Task; tomorrow: string }) {
+function MoveToTomorrow(props: { task: Task; tomorrow: string; label?: string; button?: string }) {
   const edit = useAction('task.edit');
   return (
     <li className="flex flex-wrap items-center gap-2">
-      <span>{props.task.title}</span>
+      <span>{props.label ?? props.task.title}</span>
       <QuietButton
         disabled={edit.isPending}
         onClick={() => edit.mutate({ id: props.task.id, dueDate: props.tomorrow })}
       >
-        Move to tomorrow
+        {props.button ?? 'Move to tomorrow'}
       </QuietButton>
       <ActionError errors={[edit.error]} />
     </li>

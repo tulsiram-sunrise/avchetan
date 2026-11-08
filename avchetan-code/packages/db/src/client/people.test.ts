@@ -250,3 +250,21 @@ describe('duplicateSuggestions', () => {
     expect(duplicateSuggestions(people, new Set([duplicatePairKey('2', '1')]))).toHaveLength(1);
   });
 });
+
+describe('the daily brief', () => {
+  it('lists waiting-on tasks apart from your rolled-over ones', async () => {
+    const { store, entry, person, task, mention } = await setup();
+    const log = await entry('Farhan will send the photos by Monday; renew insurance by Monday');
+    const photos = await task(log.id, 'Get the photos from Farhan', '2026-10-26');
+    const insurance = await task(log.id, 'Renew the insurance', '2026-10-26');
+    const farhan = await person('Farhan');
+    await mention(farhan.id, 'task', photos.id, 'owed_by');
+
+    const day = { day: '2026-10-27', includePrivate: true };
+    const rolled = await store.queries.rolledOverTasks(store.db, day);
+    expect(rolled.map((t) => t.id)).toEqual([insurance.id]);
+    const waiting = await store.people.waitingDue(store.db, day);
+    expect(waiting.map((w) => [w.task.id, w.entity.name])).toEqual([[photos.id, 'Farhan']]);
+    expect(await store.people.waitingDue(store.db, { ...day, day: '2026-10-25' })).toEqual([]);
+  });
+});

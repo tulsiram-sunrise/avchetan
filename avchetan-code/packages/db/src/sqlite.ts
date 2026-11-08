@@ -40,6 +40,7 @@ export type {
   PersonDetail,
   PromiseDirection,
   PromiseItem,
+  PromiseLink,
   PromiseStatus,
 } from './client/people';
 export * as people from './client/people';

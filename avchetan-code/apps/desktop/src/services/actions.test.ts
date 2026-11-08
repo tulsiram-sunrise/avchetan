@@ -43,6 +43,30 @@ const newTask = (title = 'Call the plumber') =>
   store.write((tx) => store.repos.tasks.create(tx, { title }));
 
 describe('actions', () => {
+  it('links a promise to a new or known person, and removes it', async () => {
+    const task = await newTask('Send the schema');
+    await actions.run('promise.link', {
+      taskId: task.id,
+      role: 'owed_to',
+      person: { name: 'Rahul' },
+    });
+    const [rahul] = await store.people.listPeople(store.db, {
+      includePrivate: true,
+      today: '2026-10-26',
+    });
+    expect(rahul).toMatchObject({ entity: { name: 'Rahul' }, youOwe: 1 });
+
+    const other = await newTask('Get the invoice');
+    await actions.run('promise.link', {
+      taskId: other.id,
+      role: 'owed_by',
+      person: { id: rahul?.entity.id as string },
+    });
+    await actions.run('promise.unlink', { taskId: task.id });
+    const links = await store.people.promiseLinks(store.db);
+    expect([...links.keys()]).toEqual([other.id]);
+  });
+
   it('runs a write in the serving window and reports back', async () => {
     const task = await newTask();
 

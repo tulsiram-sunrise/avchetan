@@ -13,6 +13,7 @@ import {
   lt,
   lte,
   ne,
+  notInArray,
   or,
   sql,
 } from 'drizzle-orm';
@@ -20,6 +21,8 @@ import type { RawLogStatus } from '../schema/enums';
 import {
   activities,
   categories,
+  entities,
+  entityMentions,
   entityTags,
   llmRuns,
   rawLogs,
@@ -581,6 +584,7 @@ export async function monthDots(
 /**
  * Open tasks that were due on `day` or before: the daily brief's rolled-over tasks
  * (docs/product/daily-brief.md). Read live, so a task done or moved since leaves the list.
+ * Tasks you wait on someone for are not your work and stay out (people-and-promises.md).
  */
 export function rolledOverTasks(
   db: ClientDb,
@@ -594,10 +598,27 @@ export function rolledOverTasks(
         live(tasks),
         isNull(tasks.completedAt),
         lte(tasks.dueDate, options.day),
+        notInArray(tasks.id, waitingOnSomeone(db)),
         options.includePrivate ? undefined : notFromPrivateLog(db, tasks),
       ),
     )
     .orderBy(asc(tasks.dueDate), asc(tasks.createdAt));
+}
+
+/** IDs of tasks linked to a person as `owed_by`: you wait on them for it. */
+function waitingOnSomeone(db: ClientDb) {
+  return db
+    .select({ id: entityMentions.targetId })
+    .from(entityMentions)
+    .innerJoin(entities, eq(entities.id, entityMentions.entityId))
+    .where(
+      and(
+        live(entityMentions),
+        live(entities),
+        eq(entityMentions.targetType, 'task'),
+        eq(entityMentions.role, 'owed_by'),
+      ),
+    );
 }
 
 /** How often each tag is on these entries and activities, most used first. */

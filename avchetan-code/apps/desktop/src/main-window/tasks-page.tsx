@@ -1,7 +1,9 @@
 import type { Task } from '@avchetan/db/sqlite';
 import { localDate } from '@avchetan/shared';
 import { useAction, useCompletedTasks, useOpenTasks } from '../queries/organize';
+import { usePromiseLinks } from '../queries/people';
 import { useServices } from '../services-context';
+import { TaskPromises } from './task-promises';
 import { ActionError, EditableText, fieldClass, panelClass, QuietButton } from './ui';
 
 function TaskLine({ task }: { task: Task }) {
@@ -38,6 +40,9 @@ function TaskLine({ task }: { task: Task }) {
           Delete
         </QuietButton>
       </div>
+      <div className="pl-7">
+        <TaskPromises task={task} />
+      </div>
       <ActionError errors={[setDone.error, edit.error, remove.error]} />
     </li>
   );
@@ -67,10 +72,16 @@ export function TasksPage() {
   const { timeZone } = useServices();
   const open = useOpenTasks();
   const completed = useCompletedTasks();
-  const tasks = open.data ?? [];
+  const links = usePromiseLinks();
+  // Tasks you wait on someone for are not your work: they get their own group.
+  const waitingOn = (task: Task) =>
+    links.data?.get(task.id)?.some((link) => link.role === 'owed_by') ?? false;
+  const all = open.data ?? [];
+  const tasks = all.filter((task) => !waitingOn(task));
+  const waiting = all.filter(waitingOn);
   const today = localDate(new Date().toISOString(), timeZone.current());
 
-  if (open.isSuccess && tasks.length === 0 && completed.data?.length === 0) {
+  if (open.isSuccess && all.length === 0 && completed.data?.length === 0) {
     return (
       <p className="text-sm text-ink-muted">
         No tasks yet. Write something you need to do, like "call the plumber tomorrow".
@@ -84,6 +95,7 @@ export function TasksPage() {
       <Group title="Today" tasks={tasks.filter((t) => t.dueDate === today)} />
       <Group title="Coming up" tasks={tasks.filter((t) => t.dueDate && t.dueDate > today)} />
       <Group title="No date" tasks={tasks.filter((t) => !t.dueDate)} />
+      <Group title="Waiting on others" tasks={waiting} />
       <Group title="Done" tasks={completed.data ?? []} />
     </div>
   );
