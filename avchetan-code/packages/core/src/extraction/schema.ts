@@ -1,4 +1,4 @@
-import { ENTITY_KINDS, MENTION_ROLES } from '@avchetan/db';
+import { ENTITY_KINDS, type MentionRole } from '@avchetan/db';
 import { z } from 'zod';
 
 /**
@@ -40,13 +40,26 @@ const taskSchema = z.object({
   inferredTags: z.array(z.string()),
 });
 
+/**
+ * Mention roles as the model writes them. Promise directions get self-explaining names: small
+ * models read "owed_to" either way round (people-and-promises.md). `toMentionRole` maps them back.
+ */
+export const MODEL_MENTION_ROLES = ['with', 'about', 'at', 'i_owe', 'owes_me'] as const;
+export type ModelMentionRole = (typeof MODEL_MENTION_ROLES)[number];
+
+export function toMentionRole(role: ModelMentionRole): MentionRole {
+  if (role === 'i_owe') return 'owed_to';
+  if (role === 'owes_me') return 'owed_by';
+  return role;
+}
+
 const entitySchema = z.object({
   kind: z.enum(ENTITY_KINDS),
   name: z.string(),
   mentions: z.array(
     z.object({
       target: z.string().describe('"log", "activity:<index>" or "task:<index>"'),
-      role: z.enum(MENTION_ROLES),
+      role: z.enum(MODEL_MENTION_ROLES),
     }),
   ),
 });

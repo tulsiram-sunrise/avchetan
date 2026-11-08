@@ -23,10 +23,10 @@ Entry: yesterday deadlift 120kg 3x5, rows 60kg 3x8
 {"activities":[{"category":"workout","title":"Strength session","notes":null,"metrics":[],"exercises":[{"name":"Deadlift","sets":3,"reps":5,"weightKg":120,"durationMin":null},{"name":"Barbell row","sets":3,"reps":8,"weightKg":60,"durationMin":null}],"loggedDate":"2026-03-05","project":null,"inferredTags":["strength"]}],"tasks":[],"newCategory":null,"logTags":[],"entities":[],"skip":null}
 
 Entry: lunch with Priya at Cafe Lotus, dal rice, owe her 300 for the bill
-{"activities":[{"category":"diet","title":"Lunch: dal rice","notes":null,"metrics":[{"key":"meal","value":"lunch"}],"exercises":[],"loggedDate":"2026-03-06","project":null,"inferredTags":[]}],"tasks":[{"title":"Pay Priya 300 for lunch","notes":null,"dueDate":null,"category":null,"project":null,"inferredTags":[]}],"newCategory":null,"logTags":[],"entities":[{"kind":"person","name":"Priya","mentions":[{"target":"activity:0","role":"with"},{"target":"task:0","role":"owed_to"}]},{"kind":"place","name":"Cafe Lotus","mentions":[{"target":"activity:0","role":"at"}]}],"skip":null}
+{"activities":[{"category":"diet","title":"Lunch: dal rice","notes":null,"metrics":[{"key":"meal","value":"lunch"}],"exercises":[],"loggedDate":"2026-03-06","project":null,"inferredTags":[]}],"tasks":[{"title":"Pay Priya 300 for lunch","notes":null,"dueDate":null,"category":null,"project":null,"inferredTags":[]}],"newCategory":null,"logTags":[],"entities":[{"kind":"person","name":"Priya","mentions":[{"target":"activity:0","role":"with"},{"target":"task:0","role":"i_owe"}]},{"kind":"place","name":"Cafe Lotus","mentions":[{"target":"activity:0","role":"at"}]}],"skip":null}
 
 Entry: Dev said he'd return my drill by Sunday
-{"activities":[],"tasks":[{"title":"Get the drill back from Dev","notes":null,"dueDate":"2026-03-08","category":null,"project":null,"inferredTags":[]}],"newCategory":null,"logTags":[],"entities":[{"kind":"person","name":"Dev","mentions":[{"target":"task:0","role":"owed_by"}]}],"skip":null}
+{"activities":[],"tasks":[{"title":"Get the drill back from Dev","notes":null,"dueDate":"2026-03-08","category":null,"project":null,"inferredTags":[]}],"newCategory":null,"logTags":[],"entities":[{"kind":"person","name":"Dev","mentions":[{"target":"task:0","role":"owes_me"}]}],"skip":null}
 
 Entry: aaj 2 ghante deep work kiya, phir bhi thoda stress hai
 {"activities":[{"category":"work","title":"Deep work session","notes":"Still a little stressed","metrics":[{"key":"deep_work_min","value":"2 h"},{"key":"stress","value":"3"}],"exercises":[],"loggedDate":"2026-03-06","project":null,"inferredTags":[]}],"tasks":[],"newCategory":null,"logTags":[],"entities":[],"skip":null}
@@ -50,7 +50,7 @@ Metrics: use only values the entry states, except 1-5 scales (energy, mood, stre
 
 Tags: 0-5 lowercase kebab-case tags. Reuse known tags. Skip tags that repeat the category or the entry's explicit tags.
 
-Entities: list every named person, place and organization, and nothing else unless the entry dwells on a specific exercise or food. Roles: "with" (joined in or talked), "about" (the subject), "at" (a place), "owed_to" (on a task the person does for or gives to them: send, give, pay, return, reply, call back, so the person owes them), "owed_by" (on a task they said they would do for the person, so the person is waiting on them). Meeting someone is "with", not a promise. Target is "log", "activity:<index>" or "task:<index>".
+Entities: list every named person, place and organization, and nothing else unless the entry dwells on a specific exercise or food. Roles: "with" (joined in or talked), "about" (the subject), "at" (a place), "i_owe" (on a task the person does for or gives to them: send, give, pay, return, reply, call back), "owes_me" (on a task they said they would do for the person). Meeting someone is "with", not a promise. Target is "log", "activity:<index>" or "task:<index>".
 
 Project: only a project name from the list, otherwise null.
 

@@ -13,7 +13,7 @@ import { ruleMatchesOf, ruleOutcome } from '../context/window-context';
 import { normalizeMetrics, parseQuantity } from '../normalize/metrics';
 import { normalizeTagPath, normalizeTagSegment } from '../normalize/tags';
 import type { ExtractionVocabulary } from './input';
-import type { ExtractionResult } from './schema';
+import { type ExtractionResult, toMentionRole } from './schema';
 
 export const LLM_MAY_CREATE_SETTING = 'categories.llmMayCreate';
 export const llmMayCreateSchema = z.enum(['auto', 'suggest', 'off']);
@@ -171,7 +171,7 @@ export function normalizeExtraction(
     const mentions = entity.mentions.flatMap(({ target, role }) => {
       const parsed = parseTarget(target, result.activities.length, result.tasks.length);
       const mapped = parsed && remap(parsed);
-      return mapped ? [{ target: mapped, role }] : [];
+      return mapped ? [{ target: mapped, role: toMentionRole(role) }] : [];
     });
     entities.push({
       kind: entity.kind,

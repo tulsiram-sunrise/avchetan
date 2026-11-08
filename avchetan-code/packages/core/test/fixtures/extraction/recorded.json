@@ -514,7 +514,7 @@
         "mentions": [
           {
             "target": "task:0",
-            "role": "owed_by"
+            "role": "owes_me"
           }
         ]
       }
@@ -650,7 +650,7 @@
         "mentions": [
           {
             "target": "task:0",
-            "role": "owed_to"
+            "role": "i_owe"
           }
         ]
       }

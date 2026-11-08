@@ -60,7 +60,7 @@ const PRIVATE_ANSWER = JSON.stringify({
       name: 'Zorblax',
       mentions: [
         { target: 'log', role: 'with' },
-        { target: 'task:0', role: 'owed_to' },
+        { target: 'task:0', role: 'i_owe' },
       ],
     },
   ],
