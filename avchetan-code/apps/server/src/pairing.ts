@@ -3,6 +3,26 @@ import { networkInterfaces } from 'node:os';
 /** Adapters for virtual machines and containers, which a phone can never reach. */
 const VIRTUAL = /vethernet|wsl|docker|hyper-v|virtualbox|vmware|vboxnet|br-|veth|loopback/i;
 
+/**
+ * MAC prefixes of virtual adapters. Windows often names them plainly ("Ethernet 2" for
+ * VirtualBox's host-only adapter), so the name alone misses them (feature audit bug 6).
+ */
+const VIRTUAL_MACS = [
+  '0a:00:27', // VirtualBox host-only
+  '08:00:27', // VirtualBox
+  '00:15:5d', // Hyper-V, WSL
+  '00:05:69', // VMware
+  '00:0c:29', // VMware
+  '00:1c:14', // VMware
+  '00:50:56', // VMware
+  '02:42:', // Docker
+  '00:1c:42', // Parallels
+  '52:54:00', // QEMU/KVM
+];
+
+const isVirtualMac = (mac: string) =>
+  VIRTUAL_MACS.some((prefix) => mac.toLowerCase().startsWith(prefix));
+
 const isTailscale = (address: string) => {
   const [first, second] = address.split('.').map(Number) as [number, number];
   return first === 100 && second >= 64 && second <= 127;
@@ -39,8 +59,8 @@ export function pairingUrls(options: {
   const away: string[] = [];
   for (const [name, addresses] of Object.entries(options.interfaces ?? networkInterfaces())) {
     if (VIRTUAL.test(name)) continue;
-    for (const { family, address, internal } of addresses ?? []) {
-      if (family !== 'IPv4' || internal) continue;
+    for (const { family, address, internal, mac } of addresses ?? []) {
+      if (family !== 'IPv4' || internal || isVirtualMac(mac)) continue;
       const url = `http://${address}:${options.port}`;
       if (isTailscale(address)) away.push(url);
       else if (isPrivate(address)) home.push(url);
