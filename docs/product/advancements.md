@@ -59,6 +59,9 @@ Specified in [daily-brief.md](daily-brief.md). In short:
 - Desktop notification "Your daily brief is ready", phone reminder; rolled-over tasks get one-click "move to tomorrow".
 
 ### Weekly pattern detection (Phase 7)
+
+> Planned in detail in [weekly-review.md](weekly-review.md) (Phase 7). The outline below is the original idea; the plan looks at 28 days, never lets the model choose a number, and shows totals only for thin weeks.
+
 - Weekly job (Sunday evening). **SQL first**: compute co-occurrences between inferred tags and metrics across days (e.g. `low-energy` vs previous night's `sleep_h < 6.5`), streaks, and deltas vs. the prior 4 weeks.
 - The analysis model receives only the computed statistics + a few example logs and writes 3–5 findings, each with numbers ("4 of 5 days with < 6.5 h sleep had *low energy* logged").
 - Saved as a `reflection` activity with `metrics.kind = 'weekly_review'`.
