@@ -1,6 +1,6 @@
 # Voice capture
 
-Say an entry instead of typing it. On the PC, hold your shortcut (or press the mic in the dock) and talk. A Whisper model runs inside the app, offline, and the text lands in the dock for you to check before saving. On the phone, tap the mic in the app or on the widget. Android's own on-device recognizer writes the text into the capture box the same way. Audio never leaves the device and is deleted as soon as the text exists. This is item 1 of [Phase 7](../roadmap.md#phase-7--advancements-b-voice-graph-patterns-privacy), and it replaces the outline in [advancements §4](advancements.md#4-voice-capture-whisper).
+Say an entry instead of typing it. On the PC, hold your shortcut (or press the mic in the dock) and talk. A Whisper model runs inside the app, offline, and the text lands in the dock for you to check before saving. On the phone, tap the mic in the app or on the widget. Android's own on-device recognizer writes the text into the capture box the same way. Audio never leaves the device and is deleted as soon as the text exists. This is item 1 of [Phase 7](../roadmap.md#phase-7--advancements-b-voice-graph-patterns-privacy-), and it replaces the outline in [advancements §4](advancements.md#4-voice-capture-whisper).
 
 ## Why
 

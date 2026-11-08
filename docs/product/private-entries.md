@@ -1,6 +1,6 @@
 # Private entries
 
-An entry with `!private`, or with a tag you marked private, is read only by an AI on your own hardware (Ollama, on your PC or your Home Hub). Cloud AI never sees it: not to organize it, not to answer a question, not for a daily brief. Without a local AI it waits, says why, and is organized as soon as one is available. It is the first item of [Phase 7](../roadmap.md#phase-7--advancements-b-voice-graph-patterns-privacy) and replaces the outline in [advancements §6](advancements.md#6-new-privacy-local-routing).
+An entry with `!private`, or with a tag you marked private, is read only by an AI on your own hardware (Ollama, on your PC or your Home Hub). Cloud AI never sees it: not to organize it, not to answer a question, not for a daily brief. Without a local AI it waits, says why, and is organized as soon as one is available. It is the first item of [Phase 7](../roadmap.md#phase-7--advancements-b-voice-graph-patterns-privacy-) and replaces the outline in [advancements §6](advancements.md#6-new-privacy-local-routing).
 
 ## Why
 
@@ -48,7 +48,7 @@ A model whose provider runs on your own hardware: Ollama, directly or through th
 - **Core:** the pending processor no longer turns a private entry into *Skipped* when no allowed model is local: it leaves it `pending_llm` and its query skips such entries, so the loop doesn't spin on them. `isWaitingForLocalAi(rawLog, models)` for the badge. Making an entry normal wakes the processor.
 - **Hub:** unchanged: its fallback already takes private entries only when its own models are local.
 - **Old entries** marked *Skipped* only because they were private keep that status; **Organize again** on them now waits for a local AI instead of skipping again.
-- **The leak test:** one test with a fetch spy runs extraction, Ask, the daily brief and hub embeddings with a cloud model over a store holding a private entry, and fails if any request body contains its text, its tags or its names. The [Phase 7](../roadmap.md#phase-7--advancements-b-voice-graph-patterns-privacy) "Done when" names this test.
+- **The leak test:** one test with a fetch spy runs extraction, Ask, the daily brief and hub embeddings with a cloud model over a store holding a private entry, and fails if any request body contains its text, its tags or its names. The [Phase 7](../roadmap.md#phase-7--advancements-b-voice-graph-patterns-privacy-) "Done when" names this test.
 - **Logs:** counts of private entries waiting, never their text (rule 11).
 
 ## Errors

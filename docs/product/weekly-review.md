@@ -1,6 +1,6 @@
 # Weekly review
 
-Each Sunday evening Avchetan looks back at the week, Monday to Sunday. A **Your week** card at the top of Sunday in [Days](days-view.md) shows the week in numbers, compares it with recent weeks, and lists 3 to 5 patterns, each with its numbers ("4 of 5 days with under 6.5 h sleep had *low energy* logged"). The app counts everything; the AI only puts the strongest patterns into words. This is item 3 of [Phase 7](../roadmap.md#phase-7--advancements-b-voice-graph-patterns-privacy), and it replaces the outline in [advancements §2](advancements.md#weekly-pattern-detection-phase-7).
+Each Sunday evening Avchetan looks back at the week, Monday to Sunday. A **Your week** card at the top of Sunday in [Days](days-view.md) shows the week in numbers, compares it with recent weeks, and lists 3 to 5 patterns, each with its numbers ("4 of 5 days with under 6.5 h sleep had *low energy* logged"). The app counts everything; the AI only puts the strongest patterns into words. This is item 3 of [Phase 7](../roadmap.md#phase-7--advancements-b-voice-graph-patterns-privacy-), and it replaces the outline in [advancements §2](advancements.md#weekly-pattern-detection-phase-7).
 
 ## Why
 
