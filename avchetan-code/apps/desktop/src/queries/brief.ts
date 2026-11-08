@@ -1,11 +1,13 @@
 import {
   type BriefSettings,
   findDailyBrief,
+  findWeeklyReview,
   loadAnalysisMode,
   loadAnalysisModel,
   loadBriefFailure,
   loadBriefSettings,
   saveBriefSettings,
+  weekSummary,
 } from '@avchetan/core';
 import { createLogger } from '@avchetan/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -88,6 +90,27 @@ export function useSaveBriefSettings() {
       emitAppEvent('logs:changed', { tables: ['settings'] }).catch(() =>
         log.warn('could not announce setting change'),
       );
+    },
+  });
+}
+
+/** The numbers of the week ending `sunday`, read live (docs/product/weekly-review.md). */
+export function useWeekSummary(sunday: string) {
+  const { store, timeZone } = useServices();
+  return useQuery({
+    queryKey: ['days', 'week-summary', sunday],
+    queryFn: () => weekSummary(store, { sunday, timeZone: timeZone.current() }),
+  });
+}
+
+/** The saved review of that week, or null (none yet, a thin week, or deleted). */
+export function useWeeklyReview(sunday: string) {
+  const { store } = useServices();
+  return useQuery({
+    queryKey: ['days', 'weekly-review', sunday],
+    queryFn: async () => {
+      const review = await findWeeklyReview(store, sunday);
+      return review && review.deletedAt === null ? review : null;
     },
   });
 }

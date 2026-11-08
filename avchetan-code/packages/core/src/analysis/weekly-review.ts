@@ -11,6 +11,7 @@ import {
 } from '@avchetan/shared';
 import { z } from 'zod';
 import { generateStructured, type LlmDeps } from '../llm/generate-structured';
+import { durationText } from '../normalize/day-summary';
 import { buildPrompt, SYSTEM } from '../prompts/weekly-review.v1';
 import type { ModelConfig } from '../providers/config';
 import { isFrictionTag, mayReadPrivate } from './daily-brief';
@@ -321,4 +322,41 @@ export async function makeWeeklyReview(
     }),
   );
   return { status: 'made', review };
+}
+
+/** "6 of 7 days logged · Workout 4 days (3 h 10 min) · 9 tasks done". */
+export function weekTotalsText(summary: WeekSummary): string {
+  const { totals } = summary;
+  const parts = [`${totals.daysLogged} of 7 days logged`];
+  for (const category of totals.categories.slice(0, 3)) {
+    const name = summary.names[category.slug] ?? category.slug;
+    const days = `${category.days} ${category.days === 1 ? 'day' : 'days'}`;
+    parts.push(
+      category.minutes > 0
+        ? `${name} ${days} (${durationText(category.minutes)})`
+        : `${name} ${days}`,
+    );
+  }
+  if (summary.tasksDone > 0) {
+    parts.push(`${summary.tasksDone} ${summary.tasksDone === 1 ? 'task' : 'tasks'} done`);
+  }
+  if (summary.promisesKept > 0) {
+    parts.push(
+      `${summary.promisesKept} ${summary.promisesKept === 1 ? 'promise' : 'promises'} kept`,
+    );
+  }
+  return parts.join(' · ');
+}
+
+/** "vs your last weeks: Workout ↑ 4 days (2 a week) · time logged ↓ 1 h (2 h a week)". */
+export function weekChangesText(summary: WeekSummary): string | null {
+  if (summary.changes.length === 0) return null;
+  const value = (n: number, unit: 'days' | 'min') =>
+    unit === 'min' ? durationText(n) : `${n} ${n === 1 ? 'day' : 'days'}`;
+  return `vs your recent weeks: ${summary.changes
+    .map(
+      (c) =>
+        `${c.label} ${c.now > c.average ? '↑' : '↓'} ${value(c.now, c.unit)} (${value(c.average, c.unit)} a week)`,
+    )
+    .join(' · ')}`;
 }

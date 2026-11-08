@@ -48,8 +48,10 @@ export {
   WEEKLY_REVIEW_KIND,
   type WeekSummary,
   weekCandidates,
+  weekChangesText,
   weeklyReviewId,
   weekSummary,
+  weekTotalsText,
 } from './analysis/weekly-review';
 export { buildCaptureInput } from './capture';
 export { type CommandReading, interpretCommand } from './commands/interpret';

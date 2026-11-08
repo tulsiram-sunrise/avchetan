@@ -1,4 +1,4 @@
-import { loadBriefSettings } from '@avchetan/core';
+import { isSunday, loadBriefSettings } from '@avchetan/core';
 import { type ClientStore, getSetting, setSetting } from '@avchetan/db/sqlite';
 import {
   createLogger,
@@ -89,8 +89,11 @@ export async function scheduleBriefReminder(store: ClientStore): Promise<void> {
     await Notifications.scheduleNotificationAsync({
       identifier: id,
       content: {
-        title: 'Your day in brief',
-        body: 'Tap to see what today added up to.',
+        // Sunday's brief also reviews the week (docs/product/weekly-review.md).
+        title: isSunday(today) ? 'Your day and week in brief' : 'Your day in brief',
+        body: isSunday(today)
+          ? 'Tap to see what today and this week added up to.'
+          : 'Tap to see what today added up to.',
         data: { day: today },
       },
       trigger: {

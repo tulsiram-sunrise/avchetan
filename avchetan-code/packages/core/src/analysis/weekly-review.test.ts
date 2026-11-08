@@ -13,7 +13,9 @@ import {
   reviewFindings,
   sundayOf,
   weekCandidates,
+  weekChangesText,
   weekSummary,
+  weekTotalsText,
 } from './weekly-review';
 
 const SUNDAY = '2026-11-08';
@@ -205,5 +207,29 @@ describe('sundayOf', () => {
   it('finds the Sunday that ends the week', () => {
     expect(sundayOf('2026-11-02')).toBe(SUNDAY);
     expect(sundayOf(SUNDAY)).toBe(SUNDAY);
+  });
+});
+
+describe('the card’s lines', () => {
+  const summary = {
+    monday: '2026-11-02',
+    sunday: SUNDAY,
+    totals: {
+      daysLogged: 6,
+      categories: [{ slug: 'workout', days: 4, minutes: 190 }],
+      totalMinutes: 190,
+    },
+    names: { workout: 'Workout' },
+    tasksDone: 9,
+    promisesKept: 1,
+    changes: [{ label: 'Workout', now: 4, average: 2, unit: 'days' as const }],
+  };
+
+  it('reads the totals and the changes in words', () => {
+    expect(weekTotalsText(summary)).toBe(
+      '6 of 7 days logged · Workout 4 days (3 h 10 min) · 9 tasks done · 1 promise kept',
+    );
+    expect(weekChangesText(summary)).toBe('vs your recent weeks: Workout ↑ 4 days (2 days a week)');
+    expect(weekChangesText({ ...summary, changes: [] })).toBeNull();
   });
 });
