@@ -1,16 +1,24 @@
 //! The global shortcuts: one summons the dock (default Ctrl+Shift+Space), the other opens it
 //! with the clipboard attached (clipboard snap, default Ctrl+Shift+Alt+Space). Both are
-//! configurable; they can't be the same keys.
+//! configurable; they can't be the same keys. Holding the dock shortcut records voice
+//! (docs/product/voice-capture.md): a short press acts as before.
 
 use std::sync::Mutex;
+use std::thread;
+use std::time::Duration;
 
 use serde::Serialize;
 use tauri::plugin::TauriPlugin;
-use tauri::{AppHandle, Manager, Runtime, State};
+use tauri::{AppHandle, Emitter, Manager, Runtime, State};
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 
 use crate::error::{warn_on_err, CommandError, CommandResult};
 use crate::windows;
+
+/// Held this long, the dock shortcut starts recording instead of acting as a press.
+const HOLD_AFTER: Duration = Duration::from_millis(400);
+/// Sent to the dock: `{ phase: "start" | "end" }`.
+pub const EVENT_HOLD: &str = "voice:hold";
 
 /// Must match DEFAULT_HOTKEY in src/services/hotkey.ts.
 pub const DEFAULT_SHORTCUT: &str = "Ctrl+Shift+Space";
@@ -98,20 +106,122 @@ impl Default for HotkeyState {
 pub fn plugin<R: Runtime>() -> TauriPlugin<R> {
     tauri_plugin_global_shortcut::Builder::new()
         .with_handler(|app, shortcut, event| {
-            if event.state() != ShortcutState::Pressed {
-                return;
-            }
             // Decide under the lock, act after it: showing the dock reads other windows.
             let which = app
                 .try_state::<HotkeyState>()
                 .and_then(|state| state.0.lock().ok().map(|slots| slots.which(shortcut)))
                 .unwrap_or(Which::Dock);
-            match which {
-                Which::Dock => windows::toggle_dock_from_hotkey(app),
-                Which::Snap => windows::show_dock_with_clipboard(app),
+            match (which, event.state()) {
+                (Which::Dock, ShortcutState::Pressed) => dock_pressed(app),
+                (Which::Dock, ShortcutState::Released) => dock_released(app),
+                (Which::Snap, ShortcutState::Pressed) => windows::show_dock_with_clipboard(app),
+                (Which::Snap, ShortcutState::Released) => {}
             }
         })
         .build()
+}
+
+/// Opens the dock at once if it is closed. Whether a press on an open dock hides it is decided
+/// at release: held long enough, the press records voice instead.
+fn dock_pressed<R: Runtime>(app: &AppHandle<R>) {
+    let was_open = windows::dock_is_open(app);
+    if !was_open {
+        windows::toggle_dock_from_hotkey(app);
+    }
+    let Some(id) = with_hold(app, |hold| hold.pressed(was_open)) else {
+        return;
+    };
+    let app = app.clone();
+    thread::spawn(move || {
+        thread::sleep(HOLD_AFTER);
+        if with_hold(&app, |hold| hold.hold_due(id)) == Some(true) {
+            emit_hold(&app, "start");
+        }
+    });
+}
+
+fn dock_released<R: Runtime>(app: &AppHandle<R>) {
+    match with_hold(app, HoldTracker::released) {
+        Some(HoldAction::HoldEnd) => emit_hold(app, "end"),
+        Some(HoldAction::Hide) => windows::hide_dock(app),
+        Some(HoldAction::Nothing) | None => {}
+    }
+}
+
+fn with_hold<R: Runtime, T>(
+    app: &AppHandle<R>,
+    f: impl FnOnce(&mut HoldTracker) -> T,
+) -> Option<T> {
+    let state = app.try_state::<HoldState>()?;
+    let mut hold = state.0.lock().ok()?;
+    Some(f(&mut hold))
+}
+
+#[derive(Clone, Serialize)]
+struct HoldPayload {
+    phase: &'static str,
+}
+
+fn emit_hold<R: Runtime>(app: &AppHandle<R>, phase: &'static str) {
+    warn_on_err(
+        "voice hold event",
+        app.emit_to(windows::DOCK, EVENT_HOLD, HoldPayload { phase }),
+    );
+}
+
+#[derive(Default)]
+pub struct HoldState(Mutex<HoldTracker>);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct Press {
+    id: u64,
+    was_open: bool,
+    holding: bool,
+}
+
+/// The dock shortcut's press, hold and release, without the windows (so it can be tested).
+#[derive(Debug, Default)]
+struct HoldTracker {
+    presses: u64,
+    current: Option<Press>,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+enum HoldAction {
+    Nothing,
+    Hide,
+    HoldEnd,
+}
+
+impl HoldTracker {
+    fn pressed(&mut self, was_open: bool) -> u64 {
+        self.presses += 1;
+        self.current = Some(Press {
+            id: self.presses,
+            was_open,
+            holding: false,
+        });
+        self.presses
+    }
+
+    /// True once, when press `id` is still down after the hold delay.
+    fn hold_due(&mut self, id: u64) -> bool {
+        match &mut self.current {
+            Some(press) if press.id == id && !press.holding => {
+                press.holding = true;
+                true
+            }
+            _ => false,
+        }
+    }
+
+    fn released(&mut self) -> HoldAction {
+        match self.current.take() {
+            Some(press) if press.holding => HoldAction::HoldEnd,
+            Some(press) if press.was_open => HoldAction::Hide,
+            _ => HoldAction::Nothing,
+        }
+    }
 }
 
 /// Registers `accelerator` for `which`, replacing its current shortcut only if that succeeds,
@@ -235,6 +345,40 @@ mod tests {
             dock: slot(dock),
             snap: slot(snap),
         }
+    }
+
+    #[test]
+    fn a_short_press_opens_or_hides_the_dock_as_before() {
+        let mut hold = HoldTracker::default();
+        hold.pressed(false);
+        assert_eq!(hold.released(), HoldAction::Nothing, "opened on press");
+        hold.pressed(true);
+        assert_eq!(hold.released(), HoldAction::Hide);
+    }
+
+    #[test]
+    fn holding_records_and_never_hides() {
+        let mut hold = HoldTracker::default();
+        let id = hold.pressed(true);
+        assert!(hold.hold_due(id));
+        assert!(!hold.hold_due(id), "starts once");
+        assert_eq!(hold.released(), HoldAction::HoldEnd);
+    }
+
+    #[test]
+    fn a_late_timer_from_an_earlier_press_does_nothing() {
+        let mut hold = HoldTracker::default();
+        let first = hold.pressed(false);
+        hold.released();
+        assert!(!hold.hold_due(first), "released already");
+        let second = hold.pressed(false);
+        assert!(!hold.hold_due(first), "a different press");
+        assert!(hold.hold_due(second));
+    }
+
+    #[test]
+    fn a_release_without_a_press_does_nothing() {
+        assert_eq!(HoldTracker::default().released(), HoldAction::Nothing);
     }
 
     #[test]

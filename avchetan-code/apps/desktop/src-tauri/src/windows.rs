@@ -25,6 +25,19 @@ pub fn toggle_dock<R: Runtime>(app: &AppHandle<R>) {
     toggle(app, false);
 }
 
+/// The dock is showing and in front: a hotkey press would hide it.
+pub fn dock_is_open<R: Runtime>(app: &AppHandle<R>) -> bool {
+    app.get_webview_window(DOCK).is_some_and(|dock| {
+        dock.is_visible().unwrap_or(false) && dock.is_focused().unwrap_or(false)
+    })
+}
+
+pub fn hide_dock<R: Runtime>(app: &AppHandle<R>) {
+    if let Some(dock) = app.get_webview_window(DOCK) {
+        warn_on_err("hide dock", dock.hide());
+    }
+}
+
 /// Hotkey: as the tray, and notes the window that was in front before the dock takes focus.
 pub fn toggle_dock_from_hotkey<R: Runtime>(app: &AppHandle<R>) {
     toggle(app, true);

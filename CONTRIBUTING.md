@@ -11,7 +11,7 @@ Thanks for helping. Bug reports, fixes, documentation and ideas are all welcome.
 
 ## Set up
 
-You need Node.js 24 or newer, pnpm (`corepack enable` picks the version pinned in `avchetan-code/package.json`), and Git. The desktop shell also needs Rust and the [Tauri prerequisites](https://tauri.app/start/prerequisites/). The Android app needs a JDK and the Android SDK only to build an APK. `pnpm --filter @avchetan/mobile bundle` checks the JavaScript without them.
+You need Node.js 24 or newer, pnpm (`corepack enable` picks the version pinned in `avchetan-code/package.json`), and Git. The desktop shell also needs Rust and the [Tauri prerequisites](https://tauri.app/start/prerequisites/), plus CMake and LLVM to build whisper.cpp for voice capture (`winget install -e --id Kitware.CMake` and `winget install -e --id LLVM.LLVM`; set `LIBCLANG_PATH` to LLVM's `bin` folder if the build can't find libclang). The Android app needs a JDK and the Android SDK only to build an APK. `pnpm --filter @avchetan/mobile bundle` checks the JavaScript without them.
 
 ```sh
 git clone https://github.com/tulsiram-sunrise/avchetan.git

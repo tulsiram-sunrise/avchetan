@@ -25,4 +25,13 @@ describe('capture', () => {
 
     expect(rawLog.source).toBe('mobile_widget');
   });
+
+  it('marks dictated entries', async () => {
+    const { store } = await openTestStore();
+    const service = createCaptureService(store, () => 'UTC');
+
+    const rawLog = await service.capture('आज gym गया', 'mobile_voice');
+
+    expect(rawLog).toMatchObject({ source: 'mobile_voice', content: 'आज gym गया' });
+  });
 });

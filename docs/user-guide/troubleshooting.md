@@ -114,6 +114,29 @@ Problems come first, each with its fix and a **Help** link to its section below.
 ## hotkey_unavailable
 **"The shortcut is used by another app."** Choose another shortcut in **Settings → Capture box → Shortcut** (or, for the clipboard shortcut, **Settings → Capture box → Clipboard snap**).
 
+## mic_unavailable
+**"No microphone found. Plug one in, or pick one in Settings → Voice."** Avchetan couldn't open a microphone for [voice](voice.md). Plug one in (or turn on the laptop's), then try again. If you have several, pick the one you talk into in **Settings → Voice → Microphone** and press **Test**: the bar should move when you speak. On Windows, also check **Settings → System → Sound → Input**.
+
+## mic_permission_denied
+**"The microphone is blocked for Avchetan."**
+- **Windows:** open **Settings → Privacy & security → Microphone**, turn on **Microphone access** and **Let desktop apps access your microphone**, then try again.
+- **Android:** long-press the Avchetan icon → **App info → Permissions → Microphone → Allow only while using the app**.
+
+## speech_model_missing
+**"Voice needs a speech model. Download one in Settings → Voice."** The PC turns speech into text with a Whisper model that runs on your PC, and none is downloaded yet. Open **Settings → Voice**, choose a model and press **Download** (about 150 MB; once). See [Voice](voice.md#on-the-pc).
+
+## speech_model_download_failed
+**"The speech model didn't download. Check your connection and try again"** or **"Couldn't delete the speech model. Restart Avchetan and try again."** The download stopped, or the file didn't match its checksum, so Avchetan threw it away. Check your internet connection and press **Download** again; it starts from the beginning. If deleting failed, quit Avchetan from the tray, start it again and press **Delete** again.
+
+## speech_offline_unavailable
+**"This phone can't recognise speech offline in that language yet."** Avchetan uses your phone's own speech recognition and never sends your voice to Google's servers, so the language has to be on the phone. Open Android **Settings**, search for **On-device speech recognition** (or **Offline speech recognition**), and download **Hindi (India)** or **English (India)**, whichever you chose in **More → Voice**. Some phones have no on-device recognition at all; there, type instead. See [Voice](voice.md#on-the-phone).
+
+## speech_unsupported_cpu
+**"This PC's processor is too old for voice. Typing still works."** The PC's speech model needs a processor from about 2013 or later (one with AVX2, which nearly every Intel Core and AMD Ryzen has). Older and some low-power processors don't have it. Everything else in Avchetan works; on such a PC, use voice on your phone instead ([Voice](voice.md#on-the-phone)).
+
+## transcription_failed
+**"Couldn't turn that into text. Try again."** Your recording wasn't saved anywhere, so say it again. If it keeps failing, open **Settings → Voice**, press **Delete** and **Download** the model again (the file may be damaged), or try the other model.
+
 ## database_unavailable
 **"Avchetan couldn't open its database"**, **"Avchetan couldn't update its database"** or **"The database is busy. Try again in a moment."** Avchetan keeps your entries in a file in your user folder, and it couldn't open that file.
 - Right-click the tray icon → **Quit Avchetan**, then start it again from the Start menu.

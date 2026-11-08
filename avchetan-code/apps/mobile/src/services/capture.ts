@@ -2,8 +2,8 @@ import { buildCaptureInput } from '@avchetan/core';
 import type { ClientStore, RawLog } from '@avchetan/db/sqlite';
 import { systemTimeZone } from '@avchetan/shared';
 
-/** Where an entry was typed on the phone: the in-app capture box or the home-screen widget. */
-export type MobileSource = 'mobile_text' | 'mobile_widget';
+/** Where an entry came from on the phone: the in-app box, the home-screen widget, or dictation. */
+export type MobileSource = 'mobile_text' | 'mobile_widget' | 'mobile_voice';
 
 /**
  * The Android capture path: one local transaction, nothing awaited on the network

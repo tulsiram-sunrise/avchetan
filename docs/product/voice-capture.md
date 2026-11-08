@@ -53,13 +53,14 @@ Typing is the slowest part of capture when your hands are busy or the thought is
 
 ### Settings → Voice (PC)
 
-- **Speech model:** *Off* · *Multilingual, small download (base, about 150 MB)* · *Multilingual, more accurate (small, about 190 MB, slower)*. **Download** shows progress and can be cancelled. **Delete** frees the space.
-- **Language:** *Detect automatically* (default) · *English* · *Hindi*. Choose Hindi if mixed sentences come out wrong.
+- **Speech model:** *Off* · *Fast; good for English, weak for Hindi* (base, about 150 MB) · *Better for Hindi and Hinglish; a few seconds slower* (small q5_1, about 190 MB). **Download** shows progress and can be cancelled. **Delete** frees the space.
+- **Language:** *English or Hindi, detected* (default) · *English* · *Hindi*. Detection only chooses between English and Hindi (Urdu counts as Hindi): left to itself, Whisper wrote Hindi speech as Urdu or Chinese in the first real test. For Hindi, Whisper gets a short made-up Hinglish sentence as its initial prompt, so Hindi stays in Devanagari and English words in English letters.
+- Measured on a 14-core laptop CPU, 6.8 s of English: base 1.8 s, small 6.1 s, large-v3-turbo (q5_0) 32 s. Turbo is too slow on a CPU for dictation and isn't offered. Shrinking Whisper's 30 s window (`audio_ctx`) saved about 30% but made turbo repeat itself, so it isn't used.
 - **Microphone:** *Windows default* or a named device, with a **Test** button that shows the level.
 
 ### More → Voice (phone)
 
-- **Language:** *Hindi + English (India)* (default, `hi-IN`) · *English (India)* (`en-IN`) · *Phone language*. It shows whether that language is ready offline, and if it isn't, how to download it.
+- **Language:** *Hindi + English (switches as you speak)* (default, `mixed`) · *English (India)* (`en-IN`) · *Hindi* (`hi-IN`) · *Phone language*. Google's `hi-IN` recognizer writes English words in Devanagari too (first real test), so `mixed` starts in `en-IN` and allows a switch to `hi-IN` (`EXTRA_ENABLE_LANGUAGE_SWITCH`, Android 14+; below 14 it is `en-IN` only). It shows whether each language it needs is ready offline, with a Download button for each that isn't.
 
 ## How it's built
 
@@ -100,7 +101,7 @@ Typing is the slowest part of capture when your hands are busy or the thought is
 - The `transcription` model slot in [llm-engine](../architecture/llm-engine.md#model-slots) changes meaning to "on-device speech". No cloud transcription in this version.
 - **Logs:** durations, sample counts, model id, and errors. Never the text (rule 11).
 - **Licenses:** whisper.cpp and the Whisper models (MIT), `whisper-rs` (Unlicense), `cpal` (Apache-2.0), `expo-speech-recognition` (MIT). All are AGPL-compatible. Pin the latest stable versions when building, and check `licenses:check`.
-- **CI:** whisper.cpp builds from source through `whisper-rs-sys` (CMake, MSVC). Add CMake to the Windows job if it's missing, and check that the release build time stays reasonable.
+- **Build:** whisper.cpp builds from source through `whisper-rs-sys` (CMake, MSVC, and libclang for its bindings: the bundled ones are generated on Linux and get Windows type sizes wrong). `src-tauri/.cargo/config.toml` builds it for AVX2 rather than the build machine's CPU, and sets `/O2` (cmake-rs leaves MSVC Release flags unoptimized, about 8× slower). `voice_start` refuses on a CPU without AVX2 (`speech_unsupported_cpu`). CI sets `LIBCLANG_PATH` to the runner's LLVM.
 
 ## Errors
 
@@ -113,6 +114,7 @@ Each gets an `ERROR_HELP` entry, a section in [troubleshooting](../user-guide/tr
 | `speech_model_missing` | Voice needs a speech model | Settings → Voice → Download |
 | `speech_model_download_failed` | The speech model didn't download | Check the connection and try again (a partial file is removed) |
 | `speech_offline_unavailable` | This phone can't recognise speech offline | Download the language in Android's speech settings |
+| `speech_unsupported_cpu` | This PC's processor is too old for voice | Use voice on the phone; typing still works (needs AVX2, about 2013 on) |
 | `transcription_failed` | Couldn't turn that into text | Try again. If it keeps failing, re-download the model |
 
 ## Data changes

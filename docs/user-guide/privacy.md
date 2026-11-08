@@ -17,6 +17,8 @@ Avchetan is made to keep your entries yours. This page says what leaves your dev
 | Model downloads | ollama.com, through Ollama | When you click **Download them** in the hub checklist. |
 | Opening this guide or a bug report | Your browser, to GitHub | When you click **Help**, **User guide** or **Report a problem**. |
 
+**Your voice** never leaves the device you talk into. The PC turns it into text with a speech model running on the PC, and the phone uses its own on-device speech recognition (never Google's online one). The recording is deleted as soon as it is text; only the text is saved, like a typed entry. Downloading the PC's speech model fetches it from huggingface.co, once, when you press **Download** in **Settings → Voice** ([Voice](voice.md)).
+
 **Private entries** (`!private`, or a [private tag](ai-models.md#private-entries)) never go to a cloud AI provider, for any job. They do sync to your own hub or server.
 
 API keys and sync tokens are stored in Windows' Credential Manager or Android's secure storage, never in plain files. Avchetan's own logs record counts and durations, never what you wrote.

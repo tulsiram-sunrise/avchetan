@@ -16,6 +16,8 @@ Need more than one line? Press **Shift+Enter** to start a new line.
 
 Half-written text is kept, even if you close the box or restart your PC.
 
+**Rather talk?** Hold the shortcut instead of pressing it, or press 🎤 in the box, and say it. The text appears in the box for you to check. It works offline once you've downloaded a speech model in **Settings → Voice**: see [Voice](voice.md#on-the-pc).
+
 ## Add tags and keep entries private
 
 - Type `#` before a word to tag the entry: `#health`, or `#health/knee` for a tag inside another tag.
