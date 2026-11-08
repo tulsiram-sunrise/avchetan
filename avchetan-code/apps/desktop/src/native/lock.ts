@@ -27,6 +27,8 @@ export function createLock(invoke: Invoke) {
       callNative(invoke, 'lock_available', {}, z.enum(['available', 'unavailable'])).then(
         (answer) => answer === 'available',
       ),
+    /** Locks at once (`/lock`); does nothing while the lock is off. */
+    lockNow: () => callNative(invoke, 'lock_now', {}, lockStatusSchema),
     /** Shows Windows Hello over the calling window; `reason` is the line it shows. */
     unlock: (reason: string) => callNative(invoke, 'lock_unlock', { reason }, unlockOutcomeSchema),
   };

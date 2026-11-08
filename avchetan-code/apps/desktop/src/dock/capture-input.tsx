@@ -1,4 +1,4 @@
-import { captureText } from '@avchetan/core';
+import { captureText, LOCK_FREE_COMMANDS, parseCommand, suggestCommands } from '@avchetan/core';
 import { toAppError } from '@avchetan/shared';
 import { type RefObject, useState } from 'react';
 import { HelpLink } from '../help-link';
@@ -6,12 +6,13 @@ import { useCaptureMutation } from '../queries/raw-logs';
 import { useSubmitKey } from '../queries/settings';
 import { unlockMessage } from '../services/app-lock';
 import { askQuestion, isQuestion, questionText } from '../services/ask';
+import { commandDeps, rememberCapture } from '../services/commands';
 import { DEFAULT_SUBMIT_KEY, isSubmitPress, submitHint } from '../services/submit-key';
 import { useServices } from '../services-context';
 import { type AskState, useDockStore } from '../stores/dock-store';
 import { isHidden, useLockStatus, useUnlock } from '../use-lock';
 import { ClipboardLine } from './clipboard-line';
-import { useCommand } from './use-command';
+import { undoStack, useCommand } from './use-command';
 import type { VoiceUi } from './use-voice';
 import { MicButton, VoiceLine } from './voice-line';
 import { WindowContextLine } from './window-context-line';
@@ -40,8 +41,17 @@ export function CaptureInput(props: {
   const command = useCommand(draft, setDraft);
   const locked = isHidden(useLockStatus());
   const unlock = useUnlock();
-  /** Ask and commands show what was written before, so they wait for an unlock (app-lock.md). */
-  const needsUnlock = locked && (askMode || command.active);
+  // /lock, /unlock and /settings show nothing written before, nor does the list of commands
+  // while a name is being typed; they work while locked. Learned aliases aren't applied here, so
+  // an alias waits for an unlock like any other command.
+  const typed = command.active ? parseCommand(draft) : null;
+  const lockFree =
+    typed !== null &&
+    (typed.command
+      ? LOCK_FREE_COMMANDS.has(typed.command)
+      : !typed.text && suggestCommands(typed.word).length > 0);
+  /** Ask and the other commands show what was written before, so they wait for an unlock. */
+  const needsUnlock = locked && (askMode || (command.active && !lockFree));
 
   /** Never saved as an entry: a question leaves the log untouched. */
   async function submitQuestion() {
@@ -74,7 +84,14 @@ export function CaptureInput(props: {
     if (!draft.trim() || captureMutation.isPending) return;
     try {
       // "//note" is saved as "/note" (docs/product/command-mode.md).
-      await captureMutation.mutateAsync({ text: captureText(draft), window, clipboard, spoken });
+      const rawLog = await captureMutation.mutateAsync({
+        text: captureText(draft),
+        window,
+        clipboard,
+        spoken,
+      });
+      // /undo can take it back until Avchetan restarts.
+      rememberCapture(commandDeps(services, undoStack), rawLog);
       setDraft('');
       setSpoken(false);
       // The window stays until the next shortcut; copied text belongs to this entry only.
@@ -129,7 +146,7 @@ export function CaptureInput(props: {
             </p>
           ) : null}
         </div>
-      ) : locked ? null : (
+      ) : locked && !lockFree ? null : (
         command.panel
       )}
       <VoiceLine voice={props.voice} />

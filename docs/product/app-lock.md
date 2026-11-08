@@ -49,7 +49,7 @@ Phone, locked                    PC main window, locked
 
 | Open | Needs unlock |
 |---|---|
-| PC capture box: write, voice, window context, clipboard snap, Undo of what you just saved | `?` Ask and `/` commands in the capture box (they show your entries and task names) |
+| PC capture box: write, voice, window context, clipboard snap; the commands `/lock`, `/unlock` and `/settings` | `?` Ask and the other `/` commands in the capture box, `/undo` included (they show your entries and task names) |
 | Phone widget and its mic; the capture screen | Days, Tasks, Ask, People, an entry's page, More, Settings |
 | Background work: saving, organizing, sync, the daily brief and weekly review, backups, the hub | Main window and tray items that open it (Settings, Pair a phone, hub pages) |
 

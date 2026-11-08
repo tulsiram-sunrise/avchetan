@@ -58,6 +58,7 @@ pub fn run() {
             app_lock::lock_configure,
             app_lock::lock_available,
             app_lock::lock_unlock,
+            app_lock::lock_now,
             commands::data::backup_create,
             commands::data::backup_list,
             commands::data::data_folder_open,

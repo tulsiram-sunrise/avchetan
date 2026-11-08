@@ -237,7 +237,7 @@ pub fn dock_hidden<R: Runtime>(app: &AppHandle<R>) {
 }
 
 /// Windows locked or is going to sleep.
-pub fn lock_now<R: Runtime>(app: &AppHandle<R>) {
+pub fn lock_immediately<R: Runtime>(app: &AppHandle<R>) {
     if app.state::<LockState>().with(|lock| lock.lock_now()) {
         emit_status(app);
     }
@@ -246,6 +246,13 @@ pub fn lock_now<R: Runtime>(app: &AppHandle<R>) {
 #[tauri::command]
 pub fn lock_status(state: State<'_, LockState>) -> LockStatus {
     state.with(|lock| lock.status())
+}
+
+/// `/lock` in the capture box: locks at once. Does nothing while the lock is off.
+#[tauri::command]
+pub fn lock_now(app: AppHandle) -> LockStatus {
+    lock_immediately(&app);
+    app.state::<LockState>().with(|lock| lock.status())
 }
 
 #[tauri::command]
@@ -439,7 +446,10 @@ pub fn watch_session<R: Runtime>(app: &AppHandle<R>) {
     }
 
     let app = app.clone();
-    if ON_LOCK.set(Box::new(move || lock_now(&app))).is_err() {
+    if ON_LOCK
+        .set(Box::new(move || lock_immediately(&app)))
+        .is_err()
+    {
         return;
     }
     std::thread::spawn(|| unsafe {

@@ -77,7 +77,13 @@ export {
   parseCommand,
   suggestCommands,
 } from './commands/parse';
-export { COMMAND_NAMES, COMMANDS, type CommandName, isCommandName } from './commands/registry';
+export {
+  COMMAND_NAMES,
+  COMMANDS,
+  type CommandName,
+  isCommandName,
+  LOCK_FREE_COMMANDS,
+} from './commands/registry';
 export {
   type ClipboardRead,
   clipboardFields,

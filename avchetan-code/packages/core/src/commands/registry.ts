@@ -21,10 +21,28 @@ export const COMMANDS = {
   },
   undo: {
     usage: '/undo',
-    help: 'Undo the last command that changed something',
+    help: 'Undo the last entry saved here, or the last command that changed something',
+    takesText: false,
+  },
+  settings: {
+    usage: '/settings <tab>',
+    help: 'Open Settings, or one tab: ai, capture, voice, brief, privacy, hub, data, general',
+    takesText: true,
+  },
+  lock: {
+    usage: '/lock',
+    help: 'Lock Avchetan now (app lock)',
+    takesText: false,
+  },
+  unlock: {
+    usage: '/unlock',
+    help: 'Unlock Avchetan with Windows Hello',
     takesText: false,
   },
 } as const;
+
+/** Commands that work while the app is locked: they show nothing written before (app-lock.md). */
+export const LOCK_FREE_COMMANDS: ReadonlySet<CommandName> = new Set(['lock', 'unlock', 'settings']);
 
 export type CommandName = keyof typeof COMMANDS;
 export const COMMAND_NAMES = Object.keys(COMMANDS) as [CommandName, ...CommandName[]];

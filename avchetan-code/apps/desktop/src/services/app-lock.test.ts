@@ -10,6 +10,7 @@ function fakeLock(outcome: UnlockOutcome) {
     status: vi.fn(async () => status),
     configure: vi.fn(async () => status),
     available: vi.fn(async () => outcome !== 'unavailable'),
+    lockNow: vi.fn(async () => status),
     unlock: vi.fn(async () => outcome),
   } satisfies Lock;
 }

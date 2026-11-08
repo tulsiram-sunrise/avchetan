@@ -26,7 +26,7 @@ If the switch can't be turned on, the device has no lock to use:
 
 | Still works | Needs unlocking |
 |---|---|
-| Writing an entry: the PC's capture box (typing, voice, window context, clipboard snap), the phone's widget and **+ Write something** | Days, Tasks, People, Ask, Review, an entry's page, Settings and the hub pages |
+| Writing an entry: the PC's capture box (typing, voice, window context, clipboard snap) and its commands `/lock`, `/unlock` and `/settings`; the phone's widget and **+ Write something** | Days, Tasks, People, Ask, Review, an entry's page, Settings and the hub pages |
 | Organizing, sync, the daily brief and backups, in the background | `?` questions and `/` commands in the PC's capture box: press Enter and Windows Hello asks |
 
 Notifications never contain what you wrote. They only say things like *Your daily brief is ready*, and tapping one asks you to unlock first.
