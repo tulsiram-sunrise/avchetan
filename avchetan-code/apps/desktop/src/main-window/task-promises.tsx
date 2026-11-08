@@ -47,7 +47,8 @@ export function TaskPromises(props: { task: Task; onOpenPerson?: (id: string) =>
           </button>
         </span>
       ))}
-      {adding ? (
+      {/* A finished task keeps its links but isn't offered new ones. */}
+      {props.task.completedAt !== null ? null : adding ? (
         <AddPromise task={props.task} onDone={() => setAdding(false)} />
       ) : (
         <button

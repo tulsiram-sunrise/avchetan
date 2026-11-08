@@ -139,5 +139,7 @@ describe('weekTotals and compareWeeks', () => {
       { label: 'Workout', now: 4, average: 2, unit: 'days' },
     ]);
     expect(compareWeeks(now, [], options.categoryName)).toEqual([]);
+    // A log's first, partial week is no baseline.
+    expect(compareWeeks(now, [week(3, 0, 0)], options.categoryName)).toEqual([]);
   });
 });

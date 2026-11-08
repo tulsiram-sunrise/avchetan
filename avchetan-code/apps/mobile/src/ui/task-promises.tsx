@@ -82,7 +82,7 @@ export function PromiseEditor({ task }: { task: Task }) {
           />
         </View>
       ))}
-      {role === null ? (
+      {task.completedAt !== null ? null : role === null ? (
         <View className="flex-row flex-wrap gap-2">
           <Button label="Promise to…" onPress={() => setRole('owed_to')} />
           <Button label="Waiting on…" onPress={() => setRole('owed_by')} />

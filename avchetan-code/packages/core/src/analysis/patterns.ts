@@ -304,16 +304,19 @@ export function weekTotals(days: readonly DayFact[]): WeekTotals {
 
 export type WeekChange = { label: string; now: number; average: number; unit: 'days' | 'min' };
 
+/** An earlier week counts as a baseline only with this many logged days: a log's first, partial week doesn't. */
+const MIN_BASELINE_DAYS = 4;
+
 /**
- * This week against the average of up to 4 earlier weeks that had entries: changes of 25% or
- * more (1 or more for small counts), at most 3, biggest first.
+ * This week against the average of up to 4 earlier weeks with at least 4 logged days: changes of
+ * 25% or more (1 or more for small counts), at most 3, biggest first.
  */
 export function compareWeeks(
   thisWeek: WeekTotals,
   earlier: readonly WeekTotals[],
   categoryName: (slug: string) => string,
 ): WeekChange[] {
-  const weeks = earlier.filter((week) => week.daysLogged > 0).slice(0, 4);
+  const weeks = earlier.filter((week) => week.daysLogged >= MIN_BASELINE_DAYS).slice(0, 4);
   if (weeks.length === 0) return [];
   const avg = (pick: (week: WeekTotals) => number) =>
     weeks.reduce((sum, week) => sum + pick(week), 0) / weeks.length;
