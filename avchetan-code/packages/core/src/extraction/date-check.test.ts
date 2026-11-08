@@ -53,6 +53,14 @@ describe('checkDate for a due date', () => {
     expect(due('2026-11-11', entry, 'Buy milk tomorrow')).toBe('2026-11-09');
   });
 
+  it('takes the day from the part of the entry the task came from (found in the demo)', () => {
+    const entry =
+      'Need to send the quarterly report to Meera by Friday, and buy a birthday card tomorrow';
+    // The model gave the report tomorrow's date, which fits the other task's word.
+    expect(due('2026-11-09', entry, 'Send quarterly report to Meera')).toBe('2026-11-13');
+    expect(due('2026-11-09', entry, 'Buy a birthday card')).toBe('2026-11-09');
+  });
+
   it("leaves it alone when the entry names several days and the task doesn't say which", () => {
     expect(due('2026-11-11', 'Buy milk tomorrow and send the invoice on Friday')).toBe(
       '2026-11-11',

@@ -115,6 +115,31 @@ function fits(word: DayWord, date: LocalDate, today: LocalDate, ahead: boolean):
   );
 }
 
+/** Words of three letters or more, for matching an item to the part of the entry it came from. */
+const contentWords = (text: string) =>
+  new Set(((text.toLowerCase().match(WORD) ?? []) as string[]).filter((word) => word.length > 2));
+
+/**
+ * The part of the entry an item came from: the clause sharing the most words with its title
+ * ("Send quarterly report to Meera" ← "Need to send the quarterly report to Meera by Friday"),
+ * or '' when no clause clearly does. Lets "by Friday" and "tomorrow" in one entry each go to
+ * their own task.
+ */
+function clauseFor(own: string, entry: string): string {
+  const title = contentWords(own);
+  if (title.size === 0) return '';
+  const clauses = entry.split(/[,.;!?\n]+|\s(?:and|but|then|also)\s/i);
+  const scored = clauses
+    .map((clause) => {
+      const words = contentWords(clause);
+      return { clause, score: [...title].filter((word) => words.has(word)).length };
+    })
+    .sort((a, b) => b.score - a.score);
+  const [best, next] = scored;
+  if (!best || best.score < 2 || (next && next.score === best.score)) return '';
+  return best.clause;
+}
+
 /**
  * The date to keep for an item. `own` is the item's title and notes; `entry` the whole entry.
  * Words in the item decide first; otherwise the entry's, when they point to a single day.
@@ -136,7 +161,8 @@ export function checkDate(options: {
       .filter((word, index, all) => all.findIndex((other) => sameWord(other, word)) === index);
 
   const own = relevant(options.own);
-  const words = own.length > 0 ? own : relevant(options.entry);
+  const clause = own.length > 0 ? [] : relevant(clauseFor(options.own, options.entry));
+  const words = own.length > 0 ? own : clause.length > 0 ? clause : relevant(options.entry);
   if (words.length === 0) return date;
   if (words.some((word) => fits(word, date, today, ahead))) return date;
   // Several different days and none fits: the app can't tell which one the model meant.
