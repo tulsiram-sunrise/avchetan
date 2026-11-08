@@ -1,4 +1,4 @@
-import { calendarDots, dayCategories, dayCategoryText } from '@avchetan/core';
+import { calendarDots, dayCategories, dayCategoryText, isSunday } from '@avchetan/core';
 import type { Activity, Category, MonthDay, RawLog, Task } from '@avchetan/db/sqlite';
 import {
   addDays,
@@ -29,6 +29,7 @@ import { DailyBrief } from './daily-brief';
 import { TimelineEntry } from './timeline';
 import { TaskRow } from './timeline-items';
 import { panelClass, QuietButton } from './ui';
+import { WeekCard } from './week-card';
 
 /**
  * One day at a time under a pinned week strip; the month drops down from it
@@ -388,6 +389,8 @@ function DayPanel(props: { day: string; today: string; onToday: () => void }) {
           />
         }
       />
+
+      {isSunday(day) && day <= today ? <WeekCard sunday={day} /> : null}
 
       {nothing ? (
         <p className="text-sm text-ink-muted">

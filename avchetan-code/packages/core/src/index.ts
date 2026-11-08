@@ -35,7 +35,24 @@ export {
   mayReadPrivate,
   parseBriefNotes,
 } from './analysis/daily-brief';
+export type { Candidate, WeekChange, WeekTotals } from './analysis/patterns';
 export type { SearchHistory } from './analysis/tools';
+export {
+  findWeeklyReview,
+  isSunday,
+  isWeeklyReview,
+  type MakeReviewResult,
+  makeWeeklyReview,
+  reviewFindings,
+  sundayOf,
+  WEEKLY_REVIEW_KIND,
+  type WeekSummary,
+  weekCandidates,
+  weekChangesText,
+  weeklyReviewId,
+  weekSummary,
+  weekTotalsText,
+} from './analysis/weekly-review';
 export { buildCaptureInput } from './capture';
 export { type CommandReading, interpretCommand } from './commands/interpret';
 export {

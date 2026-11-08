@@ -1,4 +1,4 @@
-import type { ClientStore, RawLog } from '@avchetan/db/sqlite';
+import { type ClientStore, type RawLog, seedCategoryId } from '@avchetan/db/sqlite';
 import { openTestStore } from '@avchetan/db/testing';
 import { localDate } from '@avchetan/shared';
 import { FakeNetworkMonitor, ManualScheduler, MemorySecretStore } from '@avchetan/shared/testing';
@@ -7,6 +7,7 @@ import { MockLanguageModelV4 } from 'ai/test';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ask } from '../analysis/ask';
 import { makeDailyBrief } from '../analysis/daily-brief';
+import { makeWeeklyReview } from '../analysis/weekly-review';
 import { buildCaptureInput } from '../capture';
 import { createPendingProcessor } from '../extraction/pending-processor';
 import type { LlmDeps } from '../llm/generate-structured';
@@ -168,6 +169,32 @@ describe('with a cloud model, nothing from a private entry is sent', () => {
     expectNothingPrivate(sentBodies);
     const [stored] = await store.queries.logsById(store.db, [waiting.id], { includePrivate: true });
     expect(stored?.status).toBe('pending_llm');
+  });
+
+  it('when making the weekly review', async () => {
+    // Runs on five days of the private entry's week give the review a pattern to phrase.
+    for (const day of ['2026-10-27', '2026-10-28', '2026-10-29', '2026-10-30', '2026-10-31']) {
+      const log = await capture(`ran along the river on ${day}`);
+      await store.write((tx) =>
+        store.repos.activities.create(tx, {
+          rawLogId: log.id,
+          categoryId: seedCategoryId('workout'),
+          title: 'Run',
+          loggedDate: day,
+          metrics: { duration_min: 30 },
+        }),
+      );
+    }
+
+    const result = await makeWeeklyReview(
+      store,
+      { sunday: '2026-11-01', timeZone: 'UTC', models: [groq] },
+      llmDeps(),
+    );
+
+    expect(result.status).toBe('made');
+    expect(sentBodies.some((body) => body.includes('weekly review'))).toBe(true);
+    expectNothingPrivate(sentBodies);
   });
 
   it('when making the daily brief', async () => {

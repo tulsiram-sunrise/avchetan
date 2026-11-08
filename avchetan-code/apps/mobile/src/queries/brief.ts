@@ -1,12 +1,15 @@
 import {
   type BriefSettings,
   findDailyBrief,
+  findWeeklyReview,
   loadAnalysisMode,
   loadAnalysisModel,
   loadBriefFailure,
   loadBriefSettings,
   saveBriefSettings,
+  weekSummary,
 } from '@avchetan/core';
+import { systemTimeZone } from '@avchetan/shared';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { refreshAll } from '../query-client';
 import {
@@ -98,5 +101,26 @@ export function useChooseReminder() {
   return useMutation({
     mutationFn: (on: boolean) => chooseReminder(store, on),
     onSuccess: () => refreshAll(),
+  });
+}
+
+/** The numbers of the week ending `sunday`, read live (docs/product/weekly-review.md). */
+export function useWeekSummary(sunday: string) {
+  const { store } = useServices();
+  return useQuery({
+    queryKey: ['days', 'week-summary', sunday],
+    queryFn: () => weekSummary(store, { sunday, timeZone: systemTimeZone() }),
+  });
+}
+
+/** The saved review of that week, or null (none yet, a thin week, or deleted). */
+export function useWeeklyReview(sunday: string) {
+  const { store } = useServices();
+  return useQuery({
+    queryKey: ['days', 'weekly-review', sunday],
+    queryFn: async () => {
+      const review = await findWeeklyReview(store, sunday);
+      return review && review.deletedAt === null ? review : null;
+    },
   });
 }

@@ -13,8 +13,8 @@ The timeline is one endless list, loaded 50 entries at a time and grouped by the
 ```
 ┌──────────────────────────────┐
 │ Nov 2026              [Today]│   month and year; Today jumps back
-│  S   M   T   W   T   F   S   │
-│  1   2   3   4  (5)  6   7   │   week strip: swipe for the week before/after
+│  M   T   W   T   F   S   S   │
+│  2   3   4  (5)  6   7   8   │   week strip, Monday to Sunday: swipe for the week before/after
 │  ●   ●●  ●       ●●●         │   dots: up to 3 category colours
 │ ─────── pull down ───────    │   pull down (or tap the month) for the whole month
 │ Thursday, 5 November         │
@@ -26,7 +26,7 @@ The timeline is one endless list, loaded 50 entries at a time and grouped by the
 └──────────────────────────────┘
 ```
 
-**Desktop** (the main window's first page, named **Days**): the selected day's week as a strip pinned to the top of the page with the same dots, ‹ and › for a week, and the day below it. Clicking the month and year (or M) drops the whole month down over the page; picking a day or Esc closes it. ← and → move a day, Page Up and Page Down a month, T goes to today. *Changed 2026-11-07: the month calendar used to sit on the left and scrolled away with a long day.* The capture dock is unchanged.
+**Desktop** (the main window's first page, named **Days**): the selected day's week as a strip pinned to the top of the page with the same dots, ‹ and › for a week, and the day below it. Clicking the month and year (or M) drops the whole month down over the page; picking a day or Esc closes it. ← and → move a day, Page Up and Page Down a month, T goes to today. *Changed 2026-11-07: the month calendar used to sit on the left and scrolled away with a long day.* *Changed 2026-11-08: weeks run Monday to Sunday (they started on Sunday), so the [weekly review](weekly-review.md) on Sunday ends its own row.* The capture dock is unchanged.
 
 ## Rules
 

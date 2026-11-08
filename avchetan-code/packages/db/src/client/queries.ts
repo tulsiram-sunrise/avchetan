@@ -664,3 +664,52 @@ export async function pendingCount(db: ClientDb): Promise<number> {
     .where(and(live(rawLogs), eq(rawLogs.status, 'pending_llm')));
   return row?.value ?? 0;
 }
+
+/** The tag paths on each of these entries and activities (docs/product/weekly-review.md). */
+export async function tagPathsOf(
+  db: ClientDb,
+  targets: { rawLogIds: readonly string[]; activityIds: readonly string[] },
+): Promise<Map<string, string[]>> {
+  const paths = new Map<string, string[]>();
+  const onTargets = or(
+    targets.rawLogIds.length > 0
+      ? and(
+          eq(entityTags.targetType, 'raw_log'),
+          inArray(entityTags.targetId, [...targets.rawLogIds]),
+        )
+      : undefined,
+    targets.activityIds.length > 0
+      ? and(
+          eq(entityTags.targetType, 'activity'),
+          inArray(entityTags.targetId, [...targets.activityIds]),
+        )
+      : undefined,
+  );
+  if (!onTargets) return paths;
+  const rows = await db
+    .select({ targetId: entityTags.targetId, path: tags.path })
+    .from(entityTags)
+    .innerJoin(tags, eq(tags.id, entityTags.tagId))
+    .where(and(live(entityTags), live(tags), onTargets));
+  for (const row of rows) paths.set(row.targetId, [...(paths.get(row.targetId) ?? []), row.path]);
+  return paths;
+}
+
+/** Tasks finished in [from, to) (UTC instants), with private ones left out unless allowed. */
+export function tasksCompletedBetween(
+  db: ClientDb,
+  options: DataScope & { from: string; to: string },
+): Promise<Task[]> {
+  return db
+    .select()
+    .from(tasks)
+    .where(
+      and(
+        live(tasks),
+        gte(tasks.completedAt, options.from),
+        lt(tasks.completedAt, options.to),
+        options.includePrivate ? undefined : notFromPrivateLog(db, tasks),
+      ),
+    )
+    .orderBy(asc(tasks.completedAt));
+}

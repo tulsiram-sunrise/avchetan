@@ -1,4 +1,4 @@
-import { dayCategories, dayCategoryText } from '@avchetan/core';
+import { dayCategories, dayCategoryText, isSunday } from '@avchetan/core';
 import type { Task } from '@avchetan/db/sqlite';
 import { formatLocalDate, isValidLocalDate, localDate, systemTimeZone } from '@avchetan/shared';
 import { useQuery } from '@tanstack/react-query';
@@ -24,6 +24,7 @@ import { DayCalendar } from '../../src/ui/day-calendar';
 import { EntryRow } from '../../src/ui/entry-row';
 import { SectionTitle } from '../../src/ui/parts';
 import { TaskRow } from '../../src/ui/task-row';
+import { WeekCard } from '../../src/ui/week-card';
 
 /**
  * Shown until the phone can organize entries: with no hub and no model, entries only wait. The
@@ -147,6 +148,7 @@ function DayContent({ day, today }: { day: string; today: string }) {
             ) : null
           }
         />
+        {isSunday(day) && day <= today ? <WeekCard sunday={day} /> : null}
       </View>
       {empty ? (
         <Text className="p-6 text-center text-sm text-inkMuted">

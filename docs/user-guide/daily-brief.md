@@ -41,6 +41,26 @@ If you tapped **Not now**, or Android didn't allow notifications, turn **Remind 
 
 The brief is made from that day's entries, so they go to your answers model. Private entries go into the brief only when the model runs on the same computer as your data: an Ollama model on your PC, or on your hub for a brief the hub makes. A cloud model never sees them. See [Privacy](privacy.md).
 
+## Your week (Sundays)
+
+On Sundays, Days also shows a **Your week** card under the brief, for Monday to Sunday:
+
+```
+Your week · 2 Nov – 8 Nov
+6 of 7 days logged · Workout 4 days (3 h 10 min) · 9 tasks done
+vs your recent weeks: Workout ↑ 4 days (2 days a week)
+• On 3 of the 4 days with under 6.5 h sleep you logged low energy, and on 0 of the other 24 days.
+• …
+```
+
+- **The first lines** count the week: days with an entry, your main categories with their time, tasks done and promises kept. They also compare it with your last few weeks. They update as you add entries or tick tasks.
+- **The bullets** are patterns from your last 4 weeks: things that came together ("short sleep and low energy"), a change from recent weeks, or your longest streak of something. Avchetan counts them itself and only shows a pattern seen on at least 3 days. The AI just puts the strongest ones into words. If its sentence has a number Avchetan didn't count, or the AI isn't available, you see Avchetan's own plain sentence instead.
+- **A pattern is not a cause.** "Came together" means exactly that.
+- **Early on**, while your log has only a few days, you see *Not enough days yet to see patterns*. The bullets start once a few weeks have entries.
+- **Look for patterns** or **Make it again** looks at the week again. It also makes Sunday's brief again.
+- The week is reviewed together with Sunday's brief, so a Sunday with no entries gets no automatic review. Press **Look for patterns** on that Sunday instead.
+- Private entries count only for an AI on your own computer or hub, as for the brief.
+
 ## Check it worked
 
 1. Log something today, for example `Walked 30 min #walk`.

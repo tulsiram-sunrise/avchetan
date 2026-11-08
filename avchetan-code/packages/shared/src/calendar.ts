@@ -97,9 +97,12 @@ const WEEKDAY_INDEX = {
   saturday: 6,
 } as const;
 
-/** The seven days of the week containing `date`; weeks start on Sunday. */
+/**
+ * The seven days of the week containing `date`; weeks run Monday to Sunday, like the weekly
+ * review (docs/product/weekly-review.md).
+ */
 export function weekOf(date: LocalDate): LocalDate[] {
-  const start = addDays(date, -WEEKDAY_INDEX[weekdayOf(date)]);
+  const start = addDays(date, -((WEEKDAY_INDEX[weekdayOf(date)] + 6) % 7));
   return Array.from({ length: 7 }, (_, i) => addDays(start, i));
 }
 

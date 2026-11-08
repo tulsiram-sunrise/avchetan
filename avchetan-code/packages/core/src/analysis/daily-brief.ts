@@ -1,11 +1,13 @@
 import { type Activity, type ClientStore, seedCategoryId } from '@avchetan/db/sqlite';
 import {
   addDays,
+  createLogger,
   derivedId,
   type LocalDate,
   localDate,
   localTime,
   type TimeZone,
+  toAppError,
   weekdayOf,
 } from '@avchetan/shared';
 import { z } from 'zod';
@@ -14,6 +16,9 @@ import { dayCategories } from '../normalize/day-summary';
 import { type BriefFacts, buildPrompt, SYSTEM } from '../prompts/daily-brief.v1';
 import type { ModelConfig } from '../providers/config';
 import { PROVIDER_ADAPTERS } from '../providers/registry';
+import { isSunday, makeWeeklyReview } from './weekly-review';
+
+const log = createLogger('daily-brief');
 
 /** `metrics.kind` of the brief's activity row (docs/product/daily-brief.md). */
 export const DAILY_BRIEF_KIND = 'daily_brief';
@@ -205,5 +210,16 @@ export async function makeDailyBrief(
       metrics: { kind: DAILY_BRIEF_KIND },
     }),
   );
+  // Sunday's brief also reviews the week (docs/product/weekly-review.md). Its wording falls back
+  // to plain sentences on a model error, so only something unexpected lands here.
+  if (isSunday(request.day)) {
+    await makeWeeklyReview(
+      store,
+      { sunday: request.day, timeZone: request.timeZone, models: request.models },
+      llm,
+    ).catch((error: unknown) => {
+      log.warn('weekly review failed', { code: toAppError(error).code });
+    });
+  }
   return { status: 'made', brief };
 }

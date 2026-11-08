@@ -35,7 +35,7 @@ The [daily brief](daily-brief.md) hands back one day. Patterns only show across 
 - **Compared with recent weeks:** each total against the average of the previous 4 weeks that had entries. Only changes of at least 25% (or 1 for counts under 4) show, at most three.
 - **Findings:** 3 to 5 bullets, saved when the review is made. **Make it again** redoes them, for example after late entries.
 - **Thin week:** totals and comparison only, with *Not enough days yet to see patterns*. There is no **Make it again** until a pattern could exist.
-- **Notification:** desktop "Your week in review is ready" (opens Sunday in Days). On the phone, Sunday's brief reminder reads "Your day and week in brief".
+- **Notification:** on Sundays the desktop notification reads "Your day and week in brief" (opens Sunday in Days), and so does the phone's brief reminder.
 
 ## How patterns are found
 
@@ -43,10 +43,10 @@ All in code, in `@avchetan/core` (`analysis/weekly-review.ts`), on a `ClientStor
 
 1. **Day facts.** For each of the 28 days: the categories of its activities, its tags (inferred and explicit, with their parents: `health/knee` counts as `health` too), friction tags (as in the [brief](daily-brief.md#how-the-brief-is-made)), 1–5 scales (`energy`, `mood`, `stress`), and numeric metrics (`sleep_h`, `duration_min`, `weight_body_kg`, …). Sleep belongs to the day it was logged (the morning after the night).
 2. **Candidates**, each with its numbers and the days it rests on:
-   - **Together:** a condition (a tag, a category, a metric below or above a threshold) and an outcome (a friction tag, or a 1–5 scale at 2 or below). Shown when the condition held on at least **3 days**, the outcome followed on at least **3** of them, and the outcome's rate differs from the other days by at least **40 percentage points**. Metric thresholds come from the registry, for example `sleep_h < 6.5` and `duration_min >= 30`, never from the model.
-   - **Change:** a category's count or time, or a metric's average, this week against the previous 3 weeks. At least 25% and 3 data points on each side.
+   - **Together:** a condition (a tag, a category, a metric below or above a threshold) and an outcome (a friction tag; energy or mood at 2 or below; stress at 4 or above; pain at 3 or above). Shown when the condition held on at least **3 days**, the outcome followed on at least **3** of them, and the outcome's rate differs from the other days by at least **40 percentage points**. Metric thresholds come from the registry, for example `sleep_h < 6.5` and `duration_min >= 30`, never from the model.
+   - **Change:** the days with a category, or a metric's average, this week against the previous 3 weeks. At least 25%, and 3 data points on each side.
    - **Streak:** a category or tag on consecutive days, at least 4, noted when it's the longest in the 28 days.
-3. **Ranked** by strength (how far apart the rates are, times how many days support it). The top 8 go to the model. With none, the week is thin: no AI call.
+3. **Ranked** by strength (how far apart the rates are, times how many days support it). A streak never outranks a pattern: a daily habit is real but rarely news. The top 8 go to the model. With none, the week is thin: no AI call.
 
 ## How the review is made
 
@@ -59,11 +59,10 @@ System rows are not entries: like the brief, the review is left out of Days' dot
 
 ## Who makes it, and when
 
-Exactly as the [daily brief](daily-brief.md#when-and-where-it-is-made), in the same runner:
+**Making Sunday's [daily brief](daily-brief.md#when-and-where-it-is-made) makes the review too** (`makeDailyBrief` calls `makeWeeklyReview` on a Sunday). So it is made wherever and whenever that brief is: by this device with its own analysis model, by the hub for a device in `hub` mode or after the grace period, and again by **Make it again**. No new hub endpoint or runner was needed.
 
-- **Due:** the week's Sunday after the brief time, or the previous week's when it was never made. Older weeks only by hand (**Make the review** on that Sunday's card).
-- **This device** with its own analysis model, or **the hub** for a device in `hub` mode (`POST /v1/brief` gains `week: true`) and on its own after the grace period, like the brief.
-- **Before making it** a device syncs and looks for the row, as for the brief.
+- **Look for patterns** / **Make it again** on the card remakes Sunday's brief, and with it the review.
+- A Sunday with no entries gets no brief, so no automatic review. **Look for patterns** on that Sunday makes it.
 - **Brief off** (`brief.enabled = false`) turns the review off too. No separate setting in this version.
 
 ## Privacy
@@ -72,11 +71,11 @@ The same line as the brief: private entries count only when the model runs on th
 
 ## Errors
 
-The existing LLM codes and help, as for the brief. A failed review shows on the card as *Couldn't put the patterns into words* with the help link and **Try again**; the totals still show.
+None of its own. If the model fails, the findings are the patterns' own plain sentences, so the review never fails for want of wording. A failed Sunday brief shows as usual on the brief.
 
 ## Data changes
 
-None. The review is an `activities` row, `metrics.kind = 'weekly_review'` is already in the [registry](../architecture/data-model.md#metric-key-registry), and `week` joins it. The hub protocol's brief request gains an optional `week` flag.
+None. The review is an `activities` row, `metrics.kind = 'weekly_review'` is already in the [registry](../architecture/data-model.md#metric-key-registry), and `week` joins it. No protocol change.
 
 ## Done when
 

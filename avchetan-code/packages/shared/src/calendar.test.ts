@@ -32,21 +32,25 @@ describe('calendar', () => {
     expect(shiftMonth('2026-03-15', -1)).toBe('2026-02-15');
   });
 
-  it('lays out weeks from Sunday', () => {
-    expect(weekOf('2026-11-05')).toEqual([
-      '2026-11-01',
+  it('lays out weeks from Monday to Sunday', () => {
+    const week = [
       '2026-11-02',
       '2026-11-03',
       '2026-11-04',
       '2026-11-05',
       '2026-11-06',
       '2026-11-07',
-    ]);
+      '2026-11-08',
+    ];
+    expect(weekOf('2026-11-05')).toEqual(week);
+    // A Sunday ends its week; a Monday starts one.
+    expect(weekOf('2026-11-08')).toEqual(week);
+    expect(weekOf('2026-11-02')).toEqual(week);
     const weeks = monthWeeks('2026-11');
-    expect(weeks).toHaveLength(5);
-    expect(weeks[0]?.[0]).toBe('2026-11-01');
-    expect(weeks.at(-1)?.at(-1)).toBe('2026-12-05');
-    // February 2026 starts on a Sunday and has exactly four weeks.
-    expect(monthWeeks('2026-02')).toHaveLength(4);
+    // November 2026 starts on a Sunday and ends on a Monday.
+    expect(weeks).toHaveLength(6);
+    expect(weeks[0]?.[0]).toBe('2026-10-26');
+    expect(weeks.at(-1)?.at(-1)).toBe('2026-12-06');
+    expect(monthWeeks('2026-02')).toHaveLength(5);
   });
 });
