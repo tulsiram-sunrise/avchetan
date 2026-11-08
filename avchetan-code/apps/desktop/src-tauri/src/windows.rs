@@ -9,6 +9,7 @@ use tauri::{
 
 use serde::Serialize;
 
+use crate::app_lock::{self, LockState};
 use crate::clipboard::{self, ClipboardRead};
 use crate::context::{self, WindowContext};
 use crate::error::{warn_on_err, CommandError, CommandResult};
@@ -35,6 +36,8 @@ pub fn dock_is_open<R: Runtime>(app: &AppHandle<R>) -> bool {
 pub fn hide_dock<R: Runtime>(app: &AppHandle<R>) {
     if let Some(dock) = app.get_webview_window(DOCK) {
         warn_on_err("hide dock", dock.hide());
+        // Every place the dock hides tells the app lock, which counts time away from it.
+        app_lock::dock_hidden(app);
     }
 }
 
@@ -51,6 +54,7 @@ fn toggle<R: Runtime>(app: &AppHandle<R>, with_context: bool) {
     let focused = dock.is_focused().unwrap_or(false);
     if visible && focused {
         warn_on_err("hide dock", dock.hide());
+        app_lock::dock_hidden(app);
     } else {
         let context = if with_context {
             context::previous_window_context()
@@ -169,6 +173,8 @@ pub fn open_main<R: Runtime>(
     if day.is_some_and(|day| !is_local_date(day)) {
         return Err(CommandError::new("invalid_date", "Invalid date"));
     }
+    // Before showing, so a window left longer than the lock time never shows its pages again.
+    app_lock::mark_back(app);
     if let Some(main) = app.get_webview_window(MAIN) {
         warn_on_err("unminimize main", main.unminimize());
         warn_on_err("show main", main.show());
@@ -206,13 +212,30 @@ pub fn on_window_event<R: Runtime>(window: &Window<R>, event: &WindowEvent) {
         (DOCK | MAIN, WindowEvent::CloseRequested { api, .. }) => {
             api.prevent_close();
             warn_on_err("hide on close", window.hide());
+            if window.label() == MAIN {
+                app_lock::mark_away(window.app_handle());
+            } else {
+                app_lock::dock_hidden(window.app_handle());
+            }
         }
+        // The app lock counts time away from when the main window is hidden or minimized.
+        (MAIN, WindowEvent::Resized(_)) => {
+            if window.is_minimized().unwrap_or(false) {
+                app_lock::mark_away(window.app_handle());
+            }
+        }
+        (MAIN, WindowEvent::Focused(true)) => app_lock::mark_back(window.app_handle()),
         (DOCK, WindowEvent::Focused(false)) => {
+            // Windows Hello takes focus from the dock; the dock stays until it is done.
+            if window.state::<LockState>().is_prompting() {
+                return;
+            }
             let dock = window.clone();
             std::thread::spawn(move || {
                 std::thread::sleep(BLUR_HIDE_DELAY);
                 if !dock.is_focused().unwrap_or(false) {
                     warn_on_err("hide dock on blur", dock.hide());
+                    app_lock::dock_hidden(dock.app_handle());
                 }
             });
         }
@@ -225,6 +248,7 @@ pub fn dock_hide(app: AppHandle) -> CommandResult<()> {
     if let Some(dock) = app.get_webview_window(DOCK) {
         dock.hide()
             .map_err(|error| CommandError::new("window_failed", error.to_string()))?;
+        app_lock::dock_hidden(&app);
     }
     Ok(())
 }

@@ -30,11 +30,16 @@ The capture box is always one shortcut away, but doing anything other than loggi
 | `/done <words>` | Marks the open task that best matches the words as done | Only when two tasks match about equally: pick one with ↑↓ | Reopens it |
 | `/brief` | Makes today's [daily brief](daily-brief.md) now (or asks the hub, as **Make the brief now** does) and opens Days on today | No | None (delete the brief in Days) |
 | `/sync` | Syncs now and says the result | No | Nothing to undo |
-| `/undo` | Undoes the last command that changed something, from this session | No | — |
+| `/undo` | Undoes the newest of: the last entry saved from the capture box (a soft delete, with what the AI made from it) or the last command that changed something, from this session. The line says what it will undo: *Undo: delete “Bought milk…”*, *Undo: reopen “Call the plumber”* (added 2026-11-08) | Enter on that line | — |
+| `/settings <tab>` | Opens the main window on Settings, or on a tab: its id (`ai`, `capture`, `voice`, `brief`, `privacy`, `hub`, `data`, `general`), the start of a word in its name, or `lock`, `sync`, `shortcut`, `commands`, `models` (added 2026-11-08) | No | Nothing to undo |
+| `/lock` | Locks Avchetan at once ([app lock](app-lock.md)); with the lock off, says how to turn it on (added 2026-11-08) | No | Nothing to undo |
+| `/unlock` | Unlocks with Windows Hello; says so when it's already unlocked or the lock is off (added 2026-11-08) | No | Nothing to undo |
 
 - **Matching for `/done`:** open tasks scored by shared words with the text (lowercased, common words left out), then how recently they were due. No match: "No open task matches 'foam'", nothing changes.
-- **Undo:** after a command that changed something, **Undo** shows for 10 seconds; `/undo` works any time until the capture box is restarted. Undo goes through the same repository writes, so it syncs like any edit.
+- **Undo:** after a command that changed something, **Undo** shows for 10 seconds; `/undo` works any time until the capture box is restarted, for commands and for entries saved from the capture box (up to 20, newest first). Undo goes through the same repository writes, so it syncs like any edit.
 - **Confirm before several changes:** a command that would change more than one row first shows the list and waits for Enter (none of the v1 commands does this yet; the registry supports it for later ones such as `/move overdue`).
+
+- **While the app is locked** ([app lock](app-lock.md)): `/lock`, `/unlock`, `/settings` and the list of commands while a name is typed work as usual, since they show nothing written before. Every other command, `/undo` included, shows *Unlock to ask or run commands*; Enter brings up Windows Hello and then runs it.
 
 ## When the text isn't a command
 

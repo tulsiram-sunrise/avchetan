@@ -60,6 +60,13 @@ export const ERROR_HELP = {
     'Couldn’t reach this device’s password store, where Avchetan keeps keys and tokens',
   ),
   secret_invalid_name: at('other_errors', BUG),
+
+  // App lock (docs/product/app-lock.md).
+  app_locked: own('Unlock Avchetan first'),
+  app_lock_unavailable: at(
+    'app_lock_unavailable',
+    'This device has no screen lock Avchetan can use. Set one up first',
+  ),
   ipc_failed: at('other_errors', BUG),
 
   // Voice capture (docs/product/voice-capture.md).

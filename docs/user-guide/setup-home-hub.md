@@ -37,7 +37,7 @@ The checklist's last line says **No phone is paired with the hub yet**. Click **
 
 Can't scan the code? Click **Can't scan? Show the details** under it and type the address and token in instead ([Connect by hand](pair-your-phone.md#connect-by-hand)).
 
-Then click **Finish**. If you finish while the hub is still off, the button says **Finish without the hub**: turn it on later in **Settings → Hub & sync → Home Hub on this PC**.
+Optional: **Turn on the app lock** above **Finish** locks Avchetan with Windows Hello ([app lock](app-lock.md)). Then click **Finish**. If you finish while the hub is still off, the button says **Finish without the hub**: turn it on later in **Settings → Hub & sync → Home Hub on this PC**.
 
 ## Check it worked
 

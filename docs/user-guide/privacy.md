@@ -27,6 +27,10 @@ API keys and sync tokens are stored in Windows' Credential Manager or Android's 
 
 Your entries are stored on each device you use, and on your hub or server if you sync. You can [export everything or back it up](backup-and-restore.md) at any time, and [uninstalling](install-and-update.md#uninstall) explains how to remove it.
 
+## Locking the app
+
+The [app lock](app-lock.md) keeps people who use your unlocked phone or PC from reading your entries; it unlocks with the device's own fingerprint, face or PIN. It doesn't encrypt the files on the device: turn on Windows Device Encryption or BitLocker for that (Android phones encrypt by default).
+
 ## Questions
 
 Avchetan is open source, so anyone can check these statements in the [source code](https://github.com/tulsiram-sunrise/avchetan). How the app protects data is described for developers in [security and privacy](../conventions/security-and-privacy.md).

@@ -9,13 +9,18 @@ Type `/` in the capture box on Windows to do something instead of logging it. Th
 | `/done foam roll` | Marks the open task that best matches the words as done. The start of a word is enough: `/done plumb` finds "Call the plumber". If two tasks match equally, pick one with ↑ and ↓, then press Enter |
 | `/brief` | Makes today's [daily brief](daily-brief.md) now and opens Days on today |
 | `/sync` | Syncs with your hub or server now, and says how it went |
-| `/undo` | Undoes the last command that changed something |
+| `/undo` | Undoes the last thing you did in the capture box: deletes the entry you just saved (and what the AI made from it), or undoes the last command. The line under the box says which, for example *Undo: delete “Bought milk…”* |
+| `/settings` | Opens Settings. Add a tab to go straight there: `/settings privacy`, `/settings ai`, `/settings voice`, `/settings sync` |
+| `/lock` | Locks Avchetan now, if the [app lock](app-lock.md) is on |
+| `/unlock` | Unlocks Avchetan with Windows Hello |
 
 Type `/` alone to see this list in the box. Typing the start of a command and pressing Enter completes it: `/br` becomes `/brief`.
 
-After a command that changed something, an **Undo** button shows for 10 seconds. `/undo` works for longer, until Avchetan restarts. An undo syncs to your other devices like any other change.
+After a command that changed something, an **Undo** button shows for 10 seconds. `/undo` works for longer, until Avchetan restarts: it remembers your last 20 entries and commands from the capture box, and undoes the newest first. An undo syncs to your other devices like any other change.
 
 To save an entry that starts with `/`, begin it with `//`. For example, `//etc/hosts edited` is saved as `/etc/hosts edited`.
+
+While Avchetan is [locked](app-lock.md), `/lock`, `/unlock` and `/settings` work as usual. Other commands, `/undo` included, ask for Windows Hello first when you press Enter.
 
 ## When you type something else
 
@@ -26,7 +31,7 @@ To save an entry that starts with `/`, begin it with `//`. For example, `//etc/h
 
 It runs only when you press **Enter** again. **Esc** cancels.
 
-The AI sees only what you typed after `/` and the list of commands. It never sees your tasks or entries; finding the task happens on your PC. It uses your model for answering questions, or your model for organizing if you haven't chosen one ([AI models](ai-models.md)). Without a model on this PC, or offline with an online model, unknown commands don't work, but the four commands above always do.
+The AI sees only what you typed after `/` and the list of commands. It never sees your tasks or entries; finding the task happens on your PC. It uses your model for answering questions, or your model for organizing if you haven't chosen one ([AI models](ai-models.md)). Without a model on this PC, or offline with an online model, unknown commands don't work, but the commands above always do.
 
 ## It learns what you mean
 

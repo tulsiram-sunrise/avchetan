@@ -11,6 +11,7 @@ import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { createDataFiles, type DataFiles } from '../native/data-files';
 import { createHub, type Hub } from '../native/hub';
 import type { Invoke } from '../native/ipc';
+import { createLock, type Lock } from '../native/lock';
 import { createHubNetwork, type HubNetworkControl } from '../native/network';
 import { TauriSecretStore } from '../native/secrets';
 import { createShell, type Shell } from '../native/shell';
@@ -35,6 +36,8 @@ export type Platform = {
   hubNetwork: HubNetworkControl;
   /** Microphone, offline Whisper and speech models (voice-capture.md). */
   voice: Voice;
+  /** The app lock and Windows Hello (app-lock.md). */
+  lock: Lock;
 };
 
 export function createTauriPlatform(call: Invoke = invoke): Platform {
@@ -50,5 +53,6 @@ export function createTauriPlatform(call: Invoke = invoke): Platform {
     hub: createHub(call),
     hubNetwork: createHubNetwork(call),
     voice: createVoice(call),
+    lock: createLock(call),
   };
 }

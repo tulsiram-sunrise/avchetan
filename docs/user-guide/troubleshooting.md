@@ -114,6 +114,13 @@ Problems come first, each with its fix and a **Help** link to its section below.
 ## hotkey_unavailable
 **"The shortcut is used by another app."** Choose another shortcut in **Settings → Capture box → Shortcut** (or, for the clipboard shortcut, **Settings → Capture box → Clipboard snap**).
 
+## app_lock_unavailable
+**"This device has no screen lock Avchetan can use. Set one up first."** The [app lock](app-lock.md) unlocks with the device's own lock, and there is none.
+- **PC:** set up a Windows Hello PIN in **Windows Settings → Accounts → Sign-in options → PIN (Windows Hello)**, then turn the lock on in **Settings → Privacy → App lock**.
+- **Phone:** set a screen lock in Android's **Settings → Security → Screen lock**, then turn the lock on under **More → App lock**.
+
+If the lock was on and you removed the device's lock, Avchetan turned the app lock off and said so. Set the device's lock up again, then turn the app lock back on.
+
 ## mic_unavailable
 **"No microphone found. Plug one in, or pick one in Settings → Voice."** Avchetan couldn't open a microphone for [voice](voice.md). Plug one in (or turn on the laptop's), then try again. If you have several, pick the one you talk into in **Settings → Voice → Microphone** and press **Test**: the bar should move when you speak. On Windows, also check **Settings → System → Sound → Input**.
 

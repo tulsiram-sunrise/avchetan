@@ -8,12 +8,15 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, AppState, Text, View } from 'react-native';
 import { type AppServices, getAppServices } from '../src/app-services';
+import { expoDeviceLock } from '../src/platform/device-lock';
 import { queryClient, refreshAll } from '../src/query-client';
+import { appLeft, appReturned, startAppLock } from '../src/services/app-lock';
 import { registerBackgroundWork } from '../src/services/background';
 import { reminderDay, scheduleBriefReminder } from '../src/services/brief-reminder';
 import { watchAppState } from '../src/services/foreground';
 import { ServicesProvider } from '../src/services-context';
 import { AppTheme } from '../src/theme/theme';
+import { lockedScreenLayout } from '../src/ui/lock-screen';
 import { HelpLink } from '../src/ui/parts';
 
 const log = createLogger('app');
@@ -73,7 +76,7 @@ function AppRoutes({ startup }: { startup: Startup }) {
   return (
     <ServicesProvider services={startup.services}>
       <QueryClientProvider client={queryClient}>
-        <Stack>
+        <Stack screenLayout={lockedScreenLayout}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen
             name="capture"
@@ -93,6 +96,7 @@ function AppRoutes({ startup }: { startup: Startup }) {
           <Stack.Screen name="settings/brief" options={{ title: 'Daily brief' }} />
           <Stack.Screen name="settings/private-tags" options={{ title: 'Private tags' }} />
           <Stack.Screen name="settings/voice" options={{ title: 'Voice' }} />
+          <Stack.Screen name="settings/app-lock" options={{ title: 'App lock' }} />
           <Stack.Screen name="settings/learned" options={{ title: 'What Avchetan learned' }} />
           <Stack.Screen name="settings/pair" options={{ title: 'Scan pairing code' }} />
           <Stack.Screen name="settings/check" options={{ title: 'Setup check' }} />
@@ -109,33 +113,47 @@ export default function RootLayout() {
 
   useEffect(() => {
     let stopWatching = () => {};
-    getAppServices().then(
-      (services) => {
-        services.extraction.start();
-        services.sync.start();
-        services.brief.start();
-        void scheduleBriefReminder(services.store);
-        void registerBackgroundWork();
-        stopWatching = watchAppState(AppState, {
-          onActive: () => {
-            // Android may have stopped timers, and the background task may have changed rows.
-            refreshAll();
-            void services.extraction.wake();
-            void services.sync.syncNow();
-            void services.brief.wake();
-            void scheduleBriefReminder(services.store);
-          },
-          // Timers stop now, so a change waiting out the sync debounce would wait until the app
-          // came back. Requests still run, so send it before leaving.
-          onLeave: () => void services.sync.syncNow(),
-        });
-        setStartup({ status: 'ready', services });
-      },
-      (error) => {
-        log.error('startup failed', { code: toAppError(error).code });
-        setStartup({ status: 'failed' });
-      },
-    );
+    getAppServices()
+      .then(async (services) => {
+        // Before any screen shows: locked when the lock is on (docs/product/app-lock.md). If the
+        // setting can't be read, the app stays locked; unlocking still works.
+        await startAppLock(services.store, expoDeviceLock).catch(() =>
+          log.error('could not read the app lock setting'),
+        );
+        return services;
+      })
+      .then(
+        (services) => {
+          services.extraction.start();
+          services.sync.start();
+          services.brief.start();
+          void scheduleBriefReminder(services.store);
+          void registerBackgroundWork();
+          stopWatching = watchAppState(AppState, {
+            onActive: () => {
+              appReturned(Date.now());
+              // Android may have stopped timers, and the background task may have changed rows.
+              refreshAll();
+              void services.extraction.wake();
+              void services.sync.syncNow();
+              void services.brief.wake();
+              void scheduleBriefReminder(services.store);
+            },
+            // Timers stop now, so a change waiting out the sync debounce would wait until the app
+            // came back. Requests still run, so send it before leaving.
+            onLeave: () => {
+              // Memory only, never saved, so the wall clock is fine here (CLAUDE.md rule 5).
+              appLeft(Date.now());
+              void services.sync.syncNow();
+            },
+          });
+          setStartup({ status: 'ready', services });
+        },
+        (error) => {
+          log.error('startup failed', { code: toAppError(error).code });
+          setStartup({ status: 'failed' });
+        },
+      );
     return () => stopWatching();
   }, []);
 

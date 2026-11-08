@@ -26,8 +26,8 @@ import { useServices } from '../services-context';
 
 const log = createLogger('commands');
 
-/** One stack for the dock's whole life: its webview is never reloaded. */
-const undoStack = createUndoStack();
+/** One stack for the dock's whole life: its webview is never reloaded. Saved entries join it too. */
+export const undoStack = createUndoStack();
 
 const UNDO_SHOWN_MS = 10_000;
 

@@ -52,7 +52,15 @@ describe('parseCommand', () => {
   });
 
   it('suggests commands by what was typed so far', () => {
-    expect(suggestCommands('')).toEqual(['done', 'brief', 'sync', 'undo']);
+    expect(suggestCommands('')).toEqual([
+      'done',
+      'brief',
+      'sync',
+      'undo',
+      'settings',
+      'lock',
+      'unlock',
+    ]);
     expect(suggestCommands('b')).toEqual(['brief']);
     expect(suggestCommands('x')).toEqual([]);
   });

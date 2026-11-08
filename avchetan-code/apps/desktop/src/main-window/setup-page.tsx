@@ -4,6 +4,7 @@ import { type ReactNode, useState } from 'react';
 import { finishSetup, type SetupMode } from '../services/first-run';
 import { useServices } from '../services-context';
 import { AiModelsSetting } from './ai-models-setting';
+import { useAppLockSetting, useChangeAppLock, useHelloAvailable } from './app-lock-setting';
 import { HUB_STATUS_KEY, HubSetting } from './hub-setting';
 import { SyncSetting } from './sync-setting';
 import { ActionError, QuietButton } from './ui';
@@ -26,6 +27,36 @@ const CHOICES: { mode: SetupMode; title: string; consequence: string }[] = [
     consequence: 'This PC syncs with a hub on another PC, or a cloud server you set up.',
   },
 ];
+
+/** The optional app lock step: shown only when Windows Hello is set up (app-lock.md). */
+function LockOffer() {
+  const setting = useAppLockSetting();
+  const available = useHelloAvailable();
+  const { change, message } = useChangeAppLock();
+  if (available.data !== true || !setting.data) return null;
+  if (setting.data.enabled) {
+    return <p className="text-sm text-ink-muted">🔒 The app lock is on.</p>;
+  }
+  const current = setting.data;
+  return (
+    <div className="flex flex-col gap-1">
+      <p className="text-sm">
+        Lock Avchetan with Windows Hello? Your entries then need your PIN, fingerprint or face; the
+        capture box still works. Optional: you can change it later in Settings → Privacy.
+      </p>
+      <div>
+        <QuietButton
+          disabled={change.isPending}
+          onClick={() => change.mutate({ ...current, enabled: true })}
+        >
+          Turn on the app lock
+        </QuietButton>
+      </div>
+      {message ? <p className="text-sm text-danger">{message}</p> : null}
+      <ActionError errors={[change.error]} />
+    </div>
+  );
+}
 
 function Step(props: { title: string; intro: string; children: ReactNode }) {
   return (
@@ -67,6 +98,7 @@ export function SetupPage(props: { onDone: () => void }) {
           on later in Settings → Hub & sync → Home Hub on this PC.
         </p>
       ) : null}
+      <LockOffer />
       <div className="flex gap-2">
         <QuietButton onClick={() => setMode(null)}>Back</QuietButton>
         <QuietButton disabled={finish.isPending} onClick={() => finish.mutate(mode)}>

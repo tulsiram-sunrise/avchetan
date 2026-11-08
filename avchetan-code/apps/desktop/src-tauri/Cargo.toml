@@ -38,7 +38,10 @@ sha2 = "=0.11.1"
 # Windows notifications with a click handler (the daily brief opens Days on its day).
 tauri-winrt-notification = "=0.8.1"
 # The window in front when the hotkey fires (docs/product/window-context.md). Already in the tree.
-windows-sys = { version = "=0.61.2", features = ["Win32_Foundation", "Win32_Storage_FileSystem", "Win32_System_DataExchange", "Win32_System_Memory", "Win32_System_Threading", "Win32_UI_WindowsAndMessaging"] }
+windows-sys = { version = "=0.61.2", features = ["Win32_Foundation", "Win32_Storage_FileSystem", "Win32_System_DataExchange", "Win32_System_LibraryLoader", "Win32_System_Memory", "Win32_System_RemoteDesktop", "Win32_System_Threading", "Win32_UI_WindowsAndMessaging"] }
+# App lock (docs/product/app-lock.md): Windows Hello. Already in the tree through the notifications.
+windows = { version = "=0.62.2", features = ["Foundation", "Security_Credentials_UI", "Win32_Foundation", "Win32_System_WinRT"] }
+windows-future = "=0.3.2"
 
 [profile.release]
 codegen-units = 1

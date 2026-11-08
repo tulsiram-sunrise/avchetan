@@ -1,8 +1,10 @@
 import { createLogger } from '@avchetan/shared';
 import { useEffect, useRef } from 'react';
+import { DockLockedNotice } from '../lock-screen';
 import { useServices } from '../services-context';
 import { useDockStore } from '../stores/dock-store';
 import { useTableInvalidation } from '../use-app-event';
+import { isHidden, useLockStatus } from '../use-lock';
 import { AskPanel } from './ask-panel';
 import { CaptureInput } from './capture-input';
 import { DockFooter } from './dock-footer';
@@ -24,6 +26,7 @@ export function DockApp() {
   const recording = voice.phase === 'listening' || voice.phase === 'starting';
   const cancelVoice = voice.cancel;
   useTableInvalidation();
+  const locked = isHidden(useLockStatus());
 
   useWindowContext(() => inputRef.current?.focus());
 
@@ -52,7 +55,7 @@ export function DockApp() {
         <HotkeyBanner />
         <CaptureInput inputRef={inputRef} onCaptured={() => void autosave.flush()} voice={voice} />
         <div className="min-h-0 flex-1 overflow-y-auto">
-          {asking ? <AskPanel /> : <RecentCaptures />}
+          {locked ? <DockLockedNotice /> : asking ? <AskPanel /> : <RecentCaptures />}
         </div>
         <DockFooter />
       </main>

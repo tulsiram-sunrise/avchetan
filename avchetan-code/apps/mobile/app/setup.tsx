@@ -3,7 +3,9 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useSaveAnalysisMode, useSaveExtractionMode } from '../src/queries/ai-models';
+import { useChangeAppLock, useDeviceLockAvailable } from '../src/queries/app-lock';
 import { useConnection } from '../src/queries/sync';
+import { unlockMessage, useAppLock } from '../src/services/app-lock';
 import { finishSetup, type SetupMode } from '../src/services/first-run';
 import { useServices } from '../src/services-context';
 import { Button, Failure } from '../src/ui/parts';
@@ -18,6 +20,35 @@ function Choice(props: { title: string; consequence: string; onPress: () => void
       <Text className="text-base font-medium text-ink">{props.title}</Text>
       <Text className="text-sm text-inkMuted">{props.consequence}</Text>
     </Pressable>
+  );
+}
+
+/** The optional app lock step, when the phone has a lock to use (docs/product/app-lock.md). */
+function LockOffer() {
+  const settings = useAppLock((state) => state.settings);
+  const available = useDeviceLockAvailable();
+  const change = useChangeAppLock();
+  if (available.data !== true) return null;
+  if (settings.enabled)
+    return <Text className="text-sm text-inkMuted">🔒 The app lock is on.</Text>;
+  const message = unlockMessage(change.data ?? null);
+  return (
+    <View className="gap-2 rounded-lg border border-line p-4">
+      <Text className="text-base font-medium text-ink">
+        Lock Avchetan with your fingerprint, face or PIN?
+      </Text>
+      <Text className="text-sm text-inkMuted">
+        Optional. Writing from the widget still works while it’s locked. You can change this later
+        under More → App lock.
+      </Text>
+      <Button
+        label="Turn on the app lock"
+        disabled={change.isPending}
+        onPress={() => change.mutate({ ...settings, enabled: true })}
+      />
+      {message ? <Text className="text-sm text-danger">{message}</Text> : null}
+      <Failure error={change.error} />
+    </View>
   );
 }
 
@@ -109,6 +140,7 @@ export default function SetupScreen() {
       />
       <Button label="Skip, I’ll do it later" onPress={() => done(null, '/')} />
       <Failure error={finish.error} />
+      <LockOffer />
     </ScrollView>
   );
 }
