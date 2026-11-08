@@ -80,6 +80,8 @@ function AppRoutes({ startup }: { startup: Startup }) {
             }}
           />
           <Stack.Screen name="log/[id]" options={{ title: 'Entry' }} />
+          <Stack.Screen name="people/index" options={{ title: 'People' }} />
+          <Stack.Screen name="people/[id]" options={{ title: 'Person' }} />
           <Stack.Screen name="settings/ai-models" options={{ title: 'AI models' }} />
           <Stack.Screen name="settings/sync" options={{ title: 'Sync' }} />
           <Stack.Screen name="settings/data" options={{ title: 'Your data' }} />

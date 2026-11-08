@@ -15,6 +15,14 @@ export default function MoreScreen() {
         <Pressable
           accessibilityRole="button"
           className="border-b border-line bg-surfaceRaised p-4"
+          onPress={() => router.push('/people')}
+        >
+          <Text className="text-base text-ink">People</Text>
+          <Text className="text-sm text-inkMuted">Who you saw, and what you promised.</Text>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          className="border-b border-line bg-surfaceRaised p-4"
           onPress={() => router.push('/settings/ai-models')}
         >
           <Text className="text-base text-ink">AI models</Text>
