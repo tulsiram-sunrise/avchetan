@@ -54,6 +54,8 @@ const dentist: ExtractionResult['tasks'][number] = {
   category: null,
   project: null,
   inferredTags: [],
+  forPerson: null,
+  waitingOn: null,
 };
 
 function answer(result: ExtractionResult) {

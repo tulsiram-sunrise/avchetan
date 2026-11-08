@@ -402,7 +402,9 @@
         "dueDate": "2026-03-06",
         "category": "health",
         "project": null,
-        "inferredTags": []
+        "inferredTags": [],
+        "forPerson": null,
+        "waitingOn": null
       }
     ],
     "newCategory": null,
@@ -502,7 +504,9 @@
         "dueDate": "2026-03-05",
         "category": "work",
         "project": null,
-        "inferredTags": []
+        "inferredTags": [],
+        "forPerson": null,
+        "waitingOn": "Rahul"
       }
     ],
     "newCategory": null,
@@ -511,12 +515,7 @@
       {
         "kind": "person",
         "name": "Rahul",
-        "mentions": [
-          {
-            "target": "task:0",
-            "role": "owes_user"
-          }
-        ]
+        "mentions": []
       }
     ],
     "skip": null
@@ -587,7 +586,9 @@
         "dueDate": "2026-03-09",
         "category": null,
         "project": null,
-        "inferredTags": []
+        "inferredTags": [],
+        "forPerson": null,
+        "waitingOn": null
       }
     ],
     "newCategory": null,
@@ -604,7 +605,9 @@
         "dueDate": null,
         "category": "other",
         "project": null,
-        "inferredTags": []
+        "inferredTags": [],
+        "forPerson": null,
+        "waitingOn": null
       }
     ],
     "newCategory": null,
@@ -621,7 +624,9 @@
         "dueDate": "2026-03-05",
         "category": "other",
         "project": null,
-        "inferredTags": []
+        "inferredTags": [],
+        "forPerson": null,
+        "waitingOn": null
       }
     ],
     "newCategory": null,
@@ -638,7 +643,9 @@
         "dueDate": null,
         "category": null,
         "project": null,
-        "inferredTags": []
+        "inferredTags": [],
+        "forPerson": "Vikram",
+        "waitingOn": null
       }
     ],
     "newCategory": null,
@@ -647,12 +654,7 @@
       {
         "kind": "person",
         "name": "Vikram",
-        "mentions": [
-          {
-            "target": "task:0",
-            "role": "user_owes"
-          }
-        ]
+        "mentions": []
       }
     ],
     "skip": null
@@ -721,7 +723,9 @@
         "dueDate": "2026-03-08",
         "category": "workout",
         "project": null,
-        "inferredTags": []
+        "inferredTags": [],
+        "forPerson": null,
+        "waitingOn": null
       }
     ],
     "newCategory": null,

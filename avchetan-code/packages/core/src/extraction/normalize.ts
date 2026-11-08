@@ -4,6 +4,7 @@ import {
   isUnnamedPerson,
   type MentionTarget,
   NEW_CATEGORY,
+  normalizeEntityName,
   type PlannedEntity,
   type RawLog,
   seedCategoryId,
@@ -14,7 +15,7 @@ import { ruleMatchesOf, ruleOutcome } from '../context/window-context';
 import { normalizeMetrics, parseQuantity } from '../normalize/metrics';
 import { normalizeTagPath, normalizeTagSegment } from '../normalize/tags';
 import type { ExtractionVocabulary } from './input';
-import { type ExtractionResult, toMentionRole } from './schema';
+import type { ExtractionResult } from './schema';
 
 export const LLM_MAY_CREATE_SETTING = 'categories.llmMayCreate';
 export const llmMayCreateSchema = z.enum(['auto', 'suggest', 'off']);
@@ -172,7 +173,7 @@ export function normalizeExtraction(
     const mentions = entity.mentions.flatMap(({ target, role }) => {
       const parsed = parseTarget(target, result.activities.length, result.tasks.length);
       const mapped = parsed && remap(parsed);
-      return mapped ? [{ target: mapped, role: toMentionRole(role) }] : [];
+      return mapped ? [{ target: mapped, role }] : [];
     });
     entities.push({
       kind: entity.kind,
@@ -180,6 +181,27 @@ export function normalizeExtraction(
       mentions: mentions.length > 0 ? mentions : [{ target: { type: 'log' }, role: 'about' }],
     });
   }
+
+  // Promises: whom each task is for, and whom the user waits on.
+  tasks.forEach(({ item }, index) => {
+    for (const [field, role] of [
+      ['forPerson', 'owed_to'],
+      ['waitingOn', 'owed_by'],
+    ] as const) {
+      const name = clean(item[field] ?? null, MAX_TITLE);
+      if (!name || NOT_A_NAME.test(name) || isUnnamedPerson({ kind: 'person', name })) continue;
+      let person = entities.find(
+        (entity) =>
+          entity.kind === 'person' &&
+          normalizeEntityName(entity.name) === normalizeEntityName(name),
+      );
+      if (!person) {
+        person = { kind: 'person', name, mentions: [] };
+        entities.push(person);
+      }
+      person.mentions.push({ target: { type: 'task', index }, role });
+    }
+  });
 
   const skipped = result.skip !== null && activities.length === 0 && tasks.length === 0;
   return {

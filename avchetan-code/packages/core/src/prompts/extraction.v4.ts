@@ -17,19 +17,19 @@ const metricList = METRICS.filter((metric) => metric.key !== 'kind' && metric.ke
 /** Made-up examples only. All dated as if today were Friday 2026-03-06. */
 const EXAMPLES = `
 Entry: ran 5k this morning in 28 min, felt great. need to renew gym membership by monday
-{"activities":[{"category":"workout","title":"Morning run","notes":"Felt great","metrics":[{"key":"distance_km","value":"5"},{"key":"duration_min","value":"28"}],"exercises":[],"loggedDate":"2026-03-06","project":null,"inferredTags":["running"]}],"tasks":[{"title":"Renew gym membership","notes":null,"dueDate":"2026-03-09","category":"workout","project":null,"inferredTags":[]}],"newCategory":null,"logTags":[],"entities":[],"skip":null}
+{"activities":[{"category":"workout","title":"Morning run","notes":"Felt great","metrics":[{"key":"distance_km","value":"5"},{"key":"duration_min","value":"28"}],"exercises":[],"loggedDate":"2026-03-06","project":null,"inferredTags":["running"]}],"tasks":[{"title":"Renew gym membership","notes":null,"dueDate":"2026-03-09","category":"workout","project":null,"inferredTags":[],"forPerson":null,"waitingOn":null}],"newCategory":null,"logTags":[],"entities":[],"skip":null}
 
 Entry: yesterday deadlift 120kg 3x5, rows 60kg 3x8
 {"activities":[{"category":"workout","title":"Strength session","notes":null,"metrics":[],"exercises":[{"name":"Deadlift","sets":3,"reps":5,"weightKg":120,"durationMin":null},{"name":"Barbell row","sets":3,"reps":8,"weightKg":60,"durationMin":null}],"loggedDate":"2026-03-05","project":null,"inferredTags":["strength"]}],"tasks":[],"newCategory":null,"logTags":[],"entities":[],"skip":null}
 
 Entry: lunch with Priya at Cafe Lotus, dal rice, owe her 300 for the bill
-{"activities":[{"category":"diet","title":"Lunch: dal rice","notes":null,"metrics":[{"key":"meal","value":"lunch"}],"exercises":[],"loggedDate":"2026-03-06","project":null,"inferredTags":[]}],"tasks":[{"title":"Pay Priya 300 for lunch","notes":null,"dueDate":null,"category":null,"project":null,"inferredTags":[]}],"newCategory":null,"logTags":[],"entities":[{"kind":"person","name":"Priya","mentions":[{"target":"activity:0","role":"with"},{"target":"task:0","role":"user_owes"}]},{"kind":"place","name":"Cafe Lotus","mentions":[{"target":"activity:0","role":"at"}]}],"skip":null}
+{"activities":[{"category":"diet","title":"Lunch: dal rice","notes":null,"metrics":[{"key":"meal","value":"lunch"}],"exercises":[],"loggedDate":"2026-03-06","project":null,"inferredTags":[]}],"tasks":[{"title":"Pay Priya 300 for lunch","notes":null,"dueDate":null,"category":null,"project":null,"inferredTags":[],"forPerson":"Priya","waitingOn":null}],"newCategory":null,"logTags":[],"entities":[{"kind":"person","name":"Priya","mentions":[{"target":"activity:0","role":"with"}]},{"kind":"place","name":"Cafe Lotus","mentions":[{"target":"activity:0","role":"at"}]}],"skip":null}
 
 Entry: Dev said he'd return my drill by Sunday
-{"activities":[],"tasks":[{"title":"Get the drill back from Dev","notes":null,"dueDate":"2026-03-08","category":null,"project":null,"inferredTags":[]}],"newCategory":null,"logTags":[],"entities":[{"kind":"person","name":"Dev","mentions":[{"target":"task:0","role":"owes_user"}]}],"skip":null}
+{"activities":[],"tasks":[{"title":"Get the drill back from Dev","notes":null,"dueDate":"2026-03-08","category":null,"project":null,"inferredTags":[],"forPerson":null,"waitingOn":"Dev"}],"newCategory":null,"logTags":[],"entities":[{"kind":"person","name":"Dev","mentions":[{"target":"log","role":"about"}]}],"skip":null}
 
 Entry: promised Neha I'd review her slides before the demo on Tuesday
-{"activities":[],"tasks":[{"title":"Review Neha's slides","notes":"Before the demo","dueDate":"2026-03-10","category":"work","project":null,"inferredTags":[]}],"newCategory":null,"logTags":[],"entities":[{"kind":"person","name":"Neha","mentions":[{"target":"task:0","role":"user_owes"}]}],"skip":null}
+{"activities":[],"tasks":[{"title":"Review Neha's slides","notes":"Before the demo","dueDate":"2026-03-10","category":"work","project":null,"inferredTags":[],"forPerson":"Neha","waitingOn":null}],"newCategory":null,"logTags":[],"entities":[{"kind":"person","name":"Neha","mentions":[{"target":"log","role":"about"}]}],"skip":null}
 
 Entry: aaj 2 ghante deep work kiya, phir bhi thoda stress hai
 {"activities":[{"category":"work","title":"Deep work session","notes":"Still a little stressed","metrics":[{"key":"deep_work_min","value":"2 h"},{"key":"stress","value":"3"}],"exercises":[],"loggedDate":"2026-03-06","project":null,"inferredTags":[]}],"tasks":[],"newCategory":null,"logTags":[],"entities":[],"skip":null}
@@ -53,7 +53,9 @@ Metrics: use only values the entry states, except 1-5 scales (energy, mood, stre
 
 Tags: 0-5 lowercase kebab-case tags. Reuse known tags. Skip tags that repeat the category or the entry's explicit tags.
 
-Entities: list every named person, place and organization (a name like Rahul or Mom; "a friend" or "my coworker" is not a name), and nothing else unless the entry dwells on a specific exercise or food. Roles: "with" (joined in or talked), "about" (the subject), "at" (a place), "user_owes" (on a task the user, who wrote the entry, does for or gives to them: send, give, pay, return, reply, call back, and anything the user promised them), "owes_user" (on a task they said they would do for the user). Meeting someone is "with", not a promise. Target is "log", "activity:<index>" or "task:<index>".
+Entities: list every named person, place and organization (a name like Rahul or Mom; "a friend" or "my coworker" is not a name), and nothing else unless the entry dwells on a specific exercise or food. Roles: "with" (joined in or talked), "about" (the subject), "at" (a place).
+
+Promises: on each task, forPerson is the named person the user does it for or gives it to (send, give, pay, return, reply, call back, anything the user promised them), and waitingOn is the named person who said they would do it for the user. Both are null otherwise. Meeting someone is neither. Target is "log", "activity:<index>" or "task:<index>".
 
 Project: only a project name from the list, otherwise null.
 

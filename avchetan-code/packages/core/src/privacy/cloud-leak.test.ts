@@ -50,6 +50,8 @@ const PRIVATE_ANSWER = JSON.stringify({
       category: null,
       project: null,
       inferredTags: [],
+      forPerson: 'Zorblax',
+      waitingOn: null,
     },
   ],
   newCategory: null,
@@ -58,10 +60,7 @@ const PRIVATE_ANSWER = JSON.stringify({
     {
       kind: 'person',
       name: 'Zorblax',
-      mentions: [
-        { target: 'log', role: 'with' },
-        { target: 'task:0', role: 'user_owes' },
-      ],
+      mentions: [{ target: 'log', role: 'with' }],
     },
   ],
   skip: null,

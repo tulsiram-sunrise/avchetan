@@ -38,20 +38,27 @@ const taskSchema = z.object({
   category: z.string().nullable().describe('An existing category slug, or the name of newCategory'),
   project: z.string().nullable().describe('An existing project name'),
   inferredTags: z.array(z.string()),
+  forPerson: z
+    .string()
+    .nullable()
+    .describe('The named person the user does this for or gives it to, if any'),
+  waitingOn: z
+    .string()
+    .nullable()
+    .describe('The named person who said they would do this for the user, if any'),
 });
 
 /**
- * Mention roles as the model writes them. Promise directions get self-explaining names: small
- * models read "owed_to" either way round (people-and-promises.md). `toMentionRole` maps them back.
+ * Mention roles the model may write. Promises are not roles: models, Groq's included, read
+ * "owed_to" and every other direction label either way round. Each task instead says whom it is
+ * for and whom the user waits on, and normalize.ts makes the promise links
+ * (people-and-promises.md).
  */
-export const MODEL_MENTION_ROLES = ['with', 'about', 'at', 'user_owes', 'owes_user'] as const;
-export type ModelMentionRole = (typeof MODEL_MENTION_ROLES)[number];
-
-export function toMentionRole(role: ModelMentionRole): MentionRole {
-  if (role === 'user_owes') return 'owed_to';
-  if (role === 'owes_user') return 'owed_by';
-  return role;
-}
+export const MODEL_MENTION_ROLES = [
+  'with',
+  'about',
+  'at',
+] as const satisfies readonly MentionRole[];
 
 const entitySchema = z.object({
   kind: z.enum(ENTITY_KINDS),
