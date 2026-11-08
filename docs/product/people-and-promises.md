@@ -63,7 +63,7 @@ Extraction has stored people, places and organizations since Phase 3 (`entities`
 ### Tasks page and the daily brief
 
 - **Waiting on** tasks are not your work, so the Tasks page shows them in their own collapsed group, *Waiting on others*, after your open tasks. Days shows them with *Waiting on Aman*.
-- The daily brief's rolled-over list leaves out *Waiting on* tasks. A *Waiting on* task that becomes overdue shows once on that day as *Aman was to send: the photos (due Fri)*, with **Remind me tomorrow** (moves the due date by a day).
+- The daily brief's rolled-over list leaves out *Waiting on* tasks. A *Waiting on* task due that day or earlier is listed apart as *Waiting on Aman: Get the photos from Aman (due Fri 31 Oct)*, with **Remind me tomorrow**, which moves its due date to the day after today. The model's rolled-over count leaves them out too.
 
 ### Ask
 
