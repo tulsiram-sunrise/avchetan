@@ -17,6 +17,7 @@ import {
   setSyncState,
 } from './local';
 import { ackOutbox, enqueueEverything, listOutbox, rejectOutbox, stuckOutboxCount } from './outbox';
+import * as people from './people';
 import * as queries from './queries';
 import { activitiesRepo } from './repos/activities';
 import { categoriesRepo } from './repos/categories';
@@ -97,6 +98,7 @@ export async function openClientStore(options: OpenClientStoreOptions) {
     write,
     repos,
     queries,
+    people,
     recordLlmRun: (run: Omit<NewLlmRun, 'id' | 'createdAt'>): Promise<void> =>
       write((tx) => insertLlmRun(tx, { ...run, id: newId(), createdAt: clock.now() })),
     /** Everything for "Export my data" (see export.ts for what is left out). */

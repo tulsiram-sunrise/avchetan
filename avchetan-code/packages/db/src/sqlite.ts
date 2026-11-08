@@ -34,6 +34,15 @@ export {
 } from './client/local';
 export { compareVersions, type RowVersion } from './client/lww';
 export { ackOutbox, listOutbox, type OutboxEntry } from './client/outbox';
+export type {
+  DuplicatePair,
+  EntitySummary,
+  PersonDetail,
+  PromiseDirection,
+  PromiseItem,
+  PromiseStatus,
+} from './client/people';
+export * as people from './client/people';
 export type { DataScope } from './client/privacy';
 export type {
   CorrectedActivity,
@@ -54,7 +63,13 @@ export {
   seedCategoryId,
 } from './client/repos/categories';
 export type { ContextRule, ContextRuleFields } from './client/repos/context-rules';
-export { type Entity, type EntityMention, normalizeEntityName } from './client/repos/entities';
+export {
+  type Entity,
+  type EntityMention,
+  normalizeEntityName,
+  PROMISE_ROLES,
+  type PromiseRole,
+} from './client/repos/entities';
 export {
   CATEGORY_SUGGESTIONS_SETTING,
   type CategoryProposal,
