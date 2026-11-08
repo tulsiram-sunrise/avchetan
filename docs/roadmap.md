@@ -1,6 +1,6 @@
 # Roadmap
 
-**Current phase: none chosen.** Phase 7 completed 2026-11-08 (started 2026-11-07). Next under discussion: a hub-only mode for an always-on PC ([Q26](open-questions.md)). Phase 6 completed 2026-11-07 (started 2026-11-06). v0.2.0 was released 2026-11-06 (PR #15). Phase 1 completed 2026-10-26 (PR #1). Phase 2 completed 2026-10-30 (PR #2). Phase 3 completed 2026-10-31. Phase 4 completed 2026-11-02. Phase 5 completed 2026-11-04 (PR #8). Phase 5b completed 2026-11-05 (PR #10). The Public release milestone completed 2026-11-05 with v0.1.0 (PR #12); applying to SignPath remains.
+**Current phase: none chosen.** Phase 7 completed 2026-11-08 (started 2026-11-07). Next: the [app lock](#app-lock) (planned 2026-11-08), then a hub-only mode for an always-on PC, still under discussion ([Q26](open-questions.md), [draft plan](product/hub-only.md)). Phase 6 completed 2026-11-07 (started 2026-11-06). v0.2.0 was released 2026-11-06 (PR #15). Phase 1 completed 2026-10-26 (PR #1). Phase 2 completed 2026-10-30 (PR #2). Phase 3 completed 2026-10-31. Phase 4 completed 2026-11-02. Phase 5 completed 2026-11-04 (PR #8). Phase 5b completed 2026-11-05 (PR #10). The Public release milestone completed 2026-11-05 with v0.1.0 (PR #12); applying to SignPath remains.
 
 Each phase lists scope, deliverables and **done when** criteria (testable). Phases are sequential; a coding agent should finish a phase's criteria before starting the next. Advanced capabilities are specified in [product/advancements.md](product/advancements.md).
 
@@ -186,6 +186,12 @@ Built one item at a time like Phase 6, each with its own spec. Order chosen 2026
 
 **Result:** all four items built and tried on a real PC and phone, 2026-11-07 to 2026-11-08: private entries (PR #30), voice (#33), people and promises (#35), the weekly review (#38). Ask answers "what do I owe Rahul" from `query_commitments` with a citation; the weekly review keeps only numbers the app computed; the cloud leak test covers extraction, Ask (including the people tools), the daily brief and the weekly review. Along the way: weeks run Monday to Sunday, the phone has a proper splash screen, and release builds retry the Gradle and NSIS downloads (#36).
 
+## App lock
+
+Planned 2026-11-08 ([product/app-lock.md](product/app-lock.md), [ADR-0028](decisions/0028-app-lock-device-auth.md)), to be built before the hub-only PC. Lock Avchetan with the device's own lock, like WhatsApp: Android biometrics or screen lock, Windows Hello on the PC. Reading is locked; capture (the PC's capture box, the phone's widget and capture screen, voice) stays open and shows nothing written before. Ask and commands in the capture box need an unlock. It locks again after Immediately / 1 minute / 30 minutes away (default 1 minute), and at once when Windows locks or sleeps. Off by default, offered in setup, per device. Notifications carry no entry text; the phone's recent-apps preview is blank. A screen lock only: encrypting the database comes later.
+
+**Done when:** on a real phone and PC, the app opens locked, unlocks with biometrics and with the PIN fallback, locks again after the chosen time, and captures from the widget and the capture box while locked without showing any earlier entry.
+
 ---
 
 ## Later / unscheduled
@@ -196,4 +202,4 @@ Built one item at a time like Phase 6, each with its own spec. Order chosen 2026
 3. Add new fixtures before changing any prompt, so the prompts aren't fitted to these 37.
 4. Score Groq over three runs on separate days. Results move by about three entries between runs, so one run can't show a real change.
 
-Capture: in-memory tag lookup so tagged captures meet p95 < 10 ms (Phase 2 exception) · iOS build · local semantic search (`sqlite-vec`) · SQLCipher encryption · calendar integration · desktop updater + code signing · macOS/Linux polish.
+Capture: in-memory tag lookup so tagged captures meet p95 < 10 ms (Phase 2 exception) · iOS build · local semantic search (`sqlite-vec`) · SQLCipher encryption (wanted after the [app lock](#app-lock), 2026-11-08) · calendar integration · desktop updater + code signing · macOS/Linux polish.

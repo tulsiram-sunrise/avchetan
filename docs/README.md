@@ -28,6 +28,8 @@ The project started from an original discussion and first specification that are
 | [product/private-entries.md](product/private-entries.md) | Private entries: `!private` and private tags read only by a local AI, waiting without one, lock and Make private / normal |
 | [product/voice-capture.md](product/voice-capture.md) | Voice capture: hold the shortcut or tap a mic; offline Whisper on the PC, Android's on-device recognizer on the phone |
 | [product/weekly-review.md](product/weekly-review.md) | Weekly review: a Your week card on Sunday with totals, a comparison with recent weeks, and 3 to 5 patterns the app counted and the AI phrased |
+| [product/app-lock.md](product/app-lock.md) | App lock: unlock with fingerprint, face or the device PIN (Windows Hello on the PC); reading is locked, capture stays open |
+| [product/hub-only.md](product/hub-only.md) | Hub-only PC (draft plan, not decided): an always-on PC that runs only the hub, so phones sync while the main PC is off |
 | [product/people-and-promises.md](product/people-and-promises.md) | People and promises: a People page with last seen, *You owe* and *Waiting on*; rename and merge; Ask tools `query_entities` and `query_commitments` |
 | [product/clipboard-snap.md](product/clipboard-snap.md) | Clipboard snap: a second shortcut attaches the clipboard text (4 KB) to an entry on the PC |
 | [product/glossary.md](product/glossary.md) | Shared vocabulary |
