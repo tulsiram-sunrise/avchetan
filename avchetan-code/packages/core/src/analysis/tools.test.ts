@@ -245,3 +245,102 @@ describe('search_history', () => {
     expect(await run(tools.search_history, { query: 'knee' })).toEqual([]);
   });
 });
+
+describe('people and promises', () => {
+  async function promiseLog(
+    text: string,
+    title: string,
+    person: string,
+    role: 'owed_to' | 'owed_by',
+    dueDate: string | null,
+  ) {
+    const log = await store.write((tx) =>
+      store.repos.rawLogs.capture(
+        tx,
+        buildCaptureInput(text, { source: 'desktop_text', capturedTz: 'UTC' }),
+      ),
+    );
+    await store.write(async (tx) => {
+      const task = await store.repos.tasks.create(tx, { title, rawLogId: log.id, dueDate });
+      const entity = await store.repos.entities.ensure(tx, { kind: 'person', name: person });
+      await store.repos.entities.mention(tx, {
+        entityId: entity.id,
+        targetType: 'task',
+        targetId: task.id,
+        role,
+      });
+      await store.repos.entities.mention(tx, {
+        entityId: entity.id,
+        targetType: 'raw_log',
+        targetId: log.id,
+        role: 'with',
+      });
+    });
+    return log;
+  }
+
+  beforeEach(async () => {
+    await promiseLog(
+      'Promised Rahul the schema by Wednesday',
+      'Send Rahul the schema',
+      'Rahul',
+      'owed_to',
+      '2026-10-28',
+    );
+    await promiseLog(
+      'Rahul Sharma will send the invoice',
+      'Get the invoice from Rahul',
+      'Rahul Sharma',
+      'owed_by',
+      null,
+    );
+    await promiseLog('Call mom back about the migration', 'Call mom back', 'Mom', 'owed_to', null);
+  });
+
+  it('answers what I owe someone, matching part of a name', async () => {
+    const result = await run(toolsFor(false).query_commitments, {
+      person: 'rahul',
+      direction: 'i_owe',
+    });
+    expect(result).toMatchObject({
+      totalFound: 1,
+      promises: [
+        {
+          ref: 1,
+          title: 'Send Rahul the schema',
+          person: 'Rahul',
+          direction: 'i_owe',
+          dueDate: '2026-10-28',
+          done: false,
+        },
+      ],
+    });
+    const overdue = await run(toolsFor(false).query_commitments, { status: 'overdue' });
+    expect(overdue.promises.map((p: { title: string }) => p.title)).toEqual([
+      'Send Rahul the schema',
+    ]);
+    const both = await run(toolsFor(false).query_commitments, { person: 'rahul' });
+    expect(both.totalFound).toBe(2);
+  });
+
+  it('says so for someone it doesn’t know', async () => {
+    expect(await run(toolsFor(false).query_commitments, { person: 'Zed' })).toMatchObject({
+      totalFound: 0,
+      unknownPerson: 'Zed',
+    });
+  });
+
+  it('finds people by name and by topic, with last seen', async () => {
+    const [mom] = await run(toolsFor(false).query_entities, { topic: 'migration' });
+    expect(mom).toMatchObject({
+      name: 'Mom',
+      kind: 'person',
+      entries: 1,
+      openPromisesYouOwe: 1,
+      recentRefs: [1],
+    });
+    expect(mom.lastSeen).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    const rahuls = await run(toolsFor(false).query_entities, { name: 'rahul' });
+    expect(rahuls.map((r: { name: string }) => r.name).sort()).toEqual(['Rahul', 'Rahul Sharma']);
+  });
+});

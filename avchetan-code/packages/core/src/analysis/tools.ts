@@ -1,3 +1,4 @@
+import { ENTITY_KINDS } from '@avchetan/db';
 import type { Activity, ClientStore, DataScope, RawLog, Task } from '@avchetan/db/sqlite';
 import { type LocalDate, localDate } from '@avchetan/shared';
 import { tool } from 'ai';
@@ -84,7 +85,7 @@ export function createAnalysisTools(
   },
 ) {
   const { scope, today, citations, searchHistory } = context;
-  const { db, queries, repos } = store;
+  const { db, queries, people, repos } = store;
   const cite = (rawLogId: string | null) => (rawLogId ? citations.numberOf(rawLogId) : null);
 
   async function categoryName(): Promise<(id: string) => string> {
@@ -294,6 +295,96 @@ export function createAnalysisTools(
             notes: clip(row.notes),
             dueDate: row.dueDate,
             done: row.completedAt !== null,
+          })),
+        };
+      },
+    }),
+
+    query_entities: tool({
+      description:
+        'Find people (or places, organizations, …) by name or by a topic they came up with. Gives ' +
+        'each one the last day you were together (lastSeen), the last day they were mentioned, ' +
+        'open promises, and recent entry refs. Use for "when did I last see X" and "who did I ' +
+        'talk to about Y".',
+      inputSchema: z.object({
+        name: z.string().min(1).optional().describe('A name or part of one'),
+        kind: z.enum(ENTITY_KINDS).optional().describe('Default: any kind'),
+        topic: z
+          .string()
+          .min(1)
+          .optional()
+          .describe('A word from the entries, like migration: finds who those entries mention'),
+        limit: z.number().int().min(1).max(MAX_LIST).optional(),
+      }),
+      execute: async ({ name, kind, topic, limit }) => {
+        let ids: string[] | undefined;
+        if (topic) {
+          const logs = await queries.searchLogs(db, { ...scope, text: topic, limit: MAX_LIST });
+          ids = await people.entitiesInLogs(
+            db,
+            logs.map((log) => log.id),
+          );
+        }
+        const found = await people.findEntities(db, {
+          ...scope,
+          today,
+          name,
+          kind,
+          ids,
+          limit: limit ?? DEFAULT_LIST,
+        });
+        return found.map((row) => ({
+          name: row.entity.name,
+          kind: row.entity.kind,
+          otherNames: row.entity.aliases,
+          lastSeen: row.lastSeen,
+          lastMentioned: row.lastMentioned,
+          entries: row.rawLogIds.length,
+          openPromisesYouOwe: row.youOwe,
+          openPromisesOwedToYou: row.waitingOn,
+          recentRefs: row.rawLogIds.slice(0, 10).map((id) => cite(id)),
+        }));
+      },
+    }),
+
+    query_commitments: tool({
+      description:
+        'Promises: tasks you owe someone (i_owe) or that someone owes you (owed_to_me). Use for ' +
+        '"what do I owe X" and "what is X supposed to send me". Each has a ref to cite.',
+      inputSchema: z.object({
+        person: z.string().min(1).optional().describe('A name or part of one; default: everyone'),
+        direction: z.enum(['i_owe', 'owed_to_me', 'both']).optional().describe('Default: both'),
+        status: z.enum(['open', 'done', 'overdue']).optional().describe('Default: open'),
+        limit: z.number().int().min(1).max(MAX_LIST).optional(),
+      }),
+      execute: async ({ person, direction, status, limit }) => {
+        let entityIds: string[] | undefined;
+        if (person) {
+          const found = await people.findEntities(db, {
+            ...scope,
+            today,
+            name: person,
+            limit: MAX_LIST,
+          });
+          entityIds = found.map((row) => row.entity.id);
+          if (entityIds.length === 0) return { totalFound: 0, promises: [], unknownPerson: person };
+        }
+        const items = await people.promises(db, {
+          ...scope,
+          today,
+          entityIds,
+          direction: direction ?? 'both',
+          status: status ?? 'open',
+        });
+        return {
+          totalFound: items.length,
+          promises: items.slice(0, limit ?? DEFAULT_LIST).map((item) => ({
+            ref: cite(item.task.rawLogId),
+            title: item.task.title,
+            person: item.entity.name,
+            direction: item.role === 'owed_to' ? 'i_owe' : 'owed_to_me',
+            dueDate: item.task.dueDate,
+            done: item.task.completedAt !== null,
           })),
         };
       },
