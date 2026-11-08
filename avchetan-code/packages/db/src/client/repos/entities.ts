@@ -32,6 +32,14 @@ export function normalizeEntityName(name: string): string {
     .normalize('NFC');
 }
 
+/**
+ * A person "named" with a plain lowercase word ("friend", "coworker", "phone") is a description,
+ * not a name. Names in scripts without case (Devanagari) never match.
+ */
+export function isUnnamedPerson(entity: { kind: EntityKind; name: string }): boolean {
+  return entity.kind === 'person' && /^[a-z][a-zs'-]*$/.test(entity.name.trim());
+}
+
 function cleanName(name: string): { name: string; normalizedName: string } {
   const trimmed = name.trim().replace(/\s+/g, ' ');
   const normalizedName = normalizeEntityName(trimmed);

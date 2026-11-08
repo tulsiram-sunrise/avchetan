@@ -67,6 +67,7 @@ export type { ContextRule, ContextRuleFields } from './client/repos/context-rule
 export {
   type Entity,
   type EntityMention,
+  isUnnamedPerson,
   normalizeEntityName,
   PROMISE_ROLES,
   type PromiseRole,

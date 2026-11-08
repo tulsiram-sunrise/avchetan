@@ -251,6 +251,27 @@ describe('normalizeExtraction', () => {
     expect(entities).toEqual([]);
   });
 
+  it('drops people "named" with a plain word, and maps promise roles', () => {
+    const { entities } = normalizeExtraction(
+      {
+        ...empty,
+        tasks: [{ ...task, title: 'Send Rahul the deck' }],
+        entities: [
+          { kind: 'person', name: 'coworker', mentions: [] },
+          { kind: 'organization', name: 'acme', mentions: [] },
+          { kind: 'person', name: 'Rahul', mentions: [{ target: 'task:0', role: 'user_owes' }] },
+          { kind: 'person', name: 'मीना', mentions: [{ target: 'task:0', role: 'owes_user' }] },
+        ],
+      },
+      context,
+    );
+    expect(entities.map((e) => [e.name, e.mentions[0]?.role])).toEqual([
+      ['acme', 'about'],
+      ['Rahul', 'owed_to'],
+      ['मीना', 'owed_by'],
+    ]);
+  });
+
   it('ignores skip when the model also returned items', () => {
     const plan = normalizeExtraction(
       { ...empty, activities: [activity], skip: { reason: 'unsure' } },

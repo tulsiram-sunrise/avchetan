@@ -1,6 +1,7 @@
 import {
   type CategoryProposal,
   type ExtractionPlan,
+  isUnnamedPerson,
   type MentionTarget,
   NEW_CATEGORY,
   type PlannedEntity,
@@ -167,7 +168,7 @@ export function normalizeExtraction(
   const entities: PlannedEntity[] = [];
   for (const entity of result.entities) {
     const name = clean(entity.name, MAX_TITLE);
-    if (!name || NOT_A_NAME.test(name)) continue;
+    if (!name || NOT_A_NAME.test(name) || isUnnamedPerson({ kind: entity.kind, name })) continue;
     const mentions = entity.mentions.flatMap(({ target, role }) => {
       const parsed = parseTarget(target, result.activities.length, result.tasks.length);
       const mapped = parsed && remap(parsed);

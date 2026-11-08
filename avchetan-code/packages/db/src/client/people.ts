@@ -6,7 +6,7 @@ import { activities, entities, entityMentions, rawLogs, tasks } from '../schema/
 import type { ClientDb, Tx } from './database';
 import { getSetting, setSetting } from './local';
 import type { DataScope } from './privacy';
-import { type Entity, normalizeEntityName, PROMISE_ROLES } from './repos/entities';
+import { type Entity, isUnnamedPerson, normalizeEntityName, PROMISE_ROLES } from './repos/entities';
 import type { RawLog } from './repos/raw-logs';
 import type { Task } from './repos/tasks';
 import { live } from './synced';
@@ -214,7 +214,12 @@ export async function listPeople(
     .select()
     .from(entities)
     .where(and(live(entities), eq(entities.kind, 'person')));
-  const summaries = await summarize(db, people, options);
+  // Stored before extraction dropped them (`isUnnamedPerson`).
+  const summaries = await summarize(
+    db,
+    people.filter((entity) => !isUnnamedPerson(entity)),
+    options,
+  );
   const recent = (s: EntitySummary) => maxDay(s.lastSeen, s.lastMentioned) ?? '';
   return summaries.sort(
     (a, b) =>

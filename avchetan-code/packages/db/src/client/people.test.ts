@@ -296,3 +296,16 @@ describe('entriesToRecheckForPromises', () => {
     ]);
   });
 });
+
+describe('unnamed people', () => {
+  it('are left off the People list', async () => {
+    const { store, entry, person, mention } = await setup();
+    const log = await entry('talked to a friend and to Asha');
+    for (const name of ['friend', 'Asha', 'राहुल']) {
+      const p = await person(name);
+      await mention(p.id, 'raw_log', log.id, 'with');
+    }
+    const names = (await store.people.listPeople(store.db, local)).map((p) => p.entity.name);
+    expect(names.sort()).toEqual(['Asha', 'राहुल']);
+  });
+});
