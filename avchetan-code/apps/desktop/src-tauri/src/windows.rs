@@ -9,6 +9,7 @@ use tauri::{
 
 use serde::Serialize;
 
+use crate::app_lock::{self, LockState};
 use crate::clipboard::{self, ClipboardRead};
 use crate::context::{self, WindowContext};
 use crate::error::{warn_on_err, CommandError, CommandResult};
@@ -169,6 +170,8 @@ pub fn open_main<R: Runtime>(
     if day.is_some_and(|day| !is_local_date(day)) {
         return Err(CommandError::new("invalid_date", "Invalid date"));
     }
+    // Before showing, so a window left longer than the lock time never shows its pages again.
+    app_lock::mark_back(app);
     if let Some(main) = app.get_webview_window(MAIN) {
         warn_on_err("unminimize main", main.unminimize());
         warn_on_err("show main", main.show());
@@ -206,8 +209,22 @@ pub fn on_window_event<R: Runtime>(window: &Window<R>, event: &WindowEvent) {
         (DOCK | MAIN, WindowEvent::CloseRequested { api, .. }) => {
             api.prevent_close();
             warn_on_err("hide on close", window.hide());
+            if window.label() == MAIN {
+                app_lock::mark_away(window.app_handle());
+            }
         }
+        // The app lock counts time away from when the main window is hidden or minimized.
+        (MAIN, WindowEvent::Resized(_)) => {
+            if window.is_minimized().unwrap_or(false) {
+                app_lock::mark_away(window.app_handle());
+            }
+        }
+        (MAIN, WindowEvent::Focused(true)) => app_lock::mark_back(window.app_handle()),
         (DOCK, WindowEvent::Focused(false)) => {
+            // Windows Hello takes focus from the dock; the dock stays until it is done.
+            if window.state::<LockState>().is_prompting() {
+                return;
+            }
             let dock = window.clone();
             std::thread::spawn(move || {
                 std::thread::sleep(BLUR_HIDE_DELAY);

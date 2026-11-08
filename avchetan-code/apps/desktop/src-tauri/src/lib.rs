@@ -1,6 +1,7 @@
 //! Thin native shell (docs/architecture/desktop.md): windows, hotkeys, tray, clipboard, keychain and
 //! SQLite access. All app logic lives in TypeScript in the webviews.
 
+mod app_lock;
 mod clipboard;
 mod commands;
 mod context;
@@ -43,6 +44,8 @@ pub fn run() {
             hub.start_if_enabled();
             app.manage(hub);
             app.manage(voice::VoiceState::new(&data_dir));
+            app.manage(app_lock::LockState::default());
+            app_lock::watch_session(app.handle());
             app.manage(hotkey::HotkeyState::default());
             app.manage(hotkey::HoldState::default());
             hotkey::register_default(app.handle());
@@ -51,6 +54,10 @@ pub fn run() {
         })
         .on_window_event(windows::on_window_event)
         .invoke_handler(tauri::generate_handler![
+            app_lock::lock_status,
+            app_lock::lock_configure,
+            app_lock::lock_available,
+            app_lock::lock_unlock,
             commands::data::backup_create,
             commands::data::backup_list,
             commands::data::data_folder_open,

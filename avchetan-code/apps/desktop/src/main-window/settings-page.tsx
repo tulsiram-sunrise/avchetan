@@ -18,6 +18,7 @@ import type { SubmitKey } from '../services/submit-key';
 import { useServices } from '../services-context';
 import { useAppEvent } from '../use-app-event';
 import { AiModelsSetting } from './ai-models-setting';
+import { AppLockSetting } from './app-lock-setting';
 import { ClipboardSnapSetting } from './clipboard-snap-setting';
 import { CommandsSetting } from './commands-setting';
 import { DataSetting } from './data-setting';
@@ -64,6 +65,8 @@ function TabContent({ tab }: { tab: SettingsTab }) {
       return <VoiceSetting />;
     case 'brief':
       return <DailyBriefSetting />;
+    case 'privacy':
+      return <AppLockSetting />;
     case 'hub':
       return (
         <>

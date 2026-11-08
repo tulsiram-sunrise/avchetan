@@ -4,6 +4,7 @@ import { emit, listen } from '@tauri-apps/api/event';
 import { z } from 'zod';
 import { settingsTabSchema } from '../main-window/settings-tabs';
 import { actionRequestSchema, actionResultSchema } from '../services/actions';
+import { lockStatusSchema } from './lock';
 
 const log = createLogger('events');
 
@@ -58,6 +59,8 @@ const eventSchemas = {
   'action:request': actionRequestSchema,
   /** Dock → main: how it went. */
   'action:result': actionResultSchema,
+  /** Rust → all: the app lock was locked, unlocked or changed (src-tauri/src/app_lock.rs). */
+  'lock:changed': lockStatusSchema,
 };
 
 export type AppEvents = { [K in keyof typeof eventSchemas]: z.infer<(typeof eventSchemas)[K]> };

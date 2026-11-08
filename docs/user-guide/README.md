@@ -29,5 +29,6 @@ Avchetan is a personal logger and planner. Type (or say) anything — a workout,
 - [Use your phone away from home (Tailscale)](remote-access-tailscale.md)
 - [Back up and restore](backup-and-restore.md)
 - [Install, update and uninstall](install-and-update.md)
+- [App lock](app-lock.md): lock Avchetan with your fingerprint, face or PIN; capture still works
 - [Privacy](privacy.md): what leaves your devices
 - [Troubleshooting](troubleshooting.md)

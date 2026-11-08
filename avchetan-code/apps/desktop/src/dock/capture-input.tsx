@@ -4,10 +4,12 @@ import { type RefObject, useState } from 'react';
 import { HelpLink } from '../help-link';
 import { useCaptureMutation } from '../queries/raw-logs';
 import { useSubmitKey } from '../queries/settings';
+import { unlockMessage } from '../services/app-lock';
 import { askQuestion, isQuestion, questionText } from '../services/ask';
 import { DEFAULT_SUBMIT_KEY, isSubmitPress, submitHint } from '../services/submit-key';
 import { useServices } from '../services-context';
 import { type AskState, useDockStore } from '../stores/dock-store';
+import { isHidden, useLockStatus, useUnlock } from '../use-lock';
 import { ClipboardLine } from './clipboard-line';
 import { useCommand } from './use-command';
 import type { VoiceUi } from './use-voice';
@@ -36,6 +38,10 @@ export function CaptureInput(props: {
 
   const askMode = isQuestion(draft);
   const command = useCommand(draft, setDraft);
+  const locked = isHidden(useLockStatus());
+  const unlock = useUnlock();
+  /** Ask and commands show what was written before, so they wait for an unlock (app-lock.md). */
+  const needsUnlock = locked && (askMode || command.active);
 
   /** Never saved as an entry: a question leaves the log untouched. */
   async function submitQuestion() {
@@ -55,6 +61,14 @@ export function CaptureInput(props: {
   }
 
   async function submit() {
+    if (needsUnlock) {
+      if (unlock.isPending) return;
+      const outcome = await unlock.mutateAsync('Unlock Avchetan to ask or run commands');
+      // The question or command runs once unlocked, as if Enter had been pressed then.
+      if (outcome !== 'verified') return;
+      if (askMode) return submitQuestion();
+      return command.submit();
+    }
     if (askMode) return submitQuestion();
     if (command.active) return command.submit();
     if (!draft.trim() || captureMutation.isPending) return;
@@ -96,7 +110,7 @@ export function CaptureInput(props: {
           if (!event.target.value) setSpoken(false);
         }}
         onKeyDown={(event) => {
-          if (command.active && command.onKeyDown(event)) return;
+          if (command.active && !needsUnlock && command.onKeyDown(event)) return;
           const { key, shiftKey, ctrlKey, altKey, metaKey } = event;
           const press = { key, shiftKey, ctrlKey, altKey, metaKey };
           if (isSubmitPress({ ...press, isComposing: event.nativeEvent.isComposing }, submitKey)) {
@@ -106,7 +120,18 @@ export function CaptureInput(props: {
         }}
         className="w-full resize-none rounded-lg border border-line bg-surface-raised px-3 py-2 text-[15px] outline-none focus:border-accent"
       />
-      {command.panel}
+      {needsUnlock ? (
+        <div className="px-1 pt-1 text-xs text-ink-muted">
+          <p>🔒 Unlock to ask or run commands. Press Enter to unlock with Windows Hello.</p>
+          {unlockMessage(unlock.data ?? null) ? (
+            <p role="alert" className="text-danger">
+              {unlockMessage(unlock.data ?? null)} <HelpLink code="app_lock_unavailable" />
+            </p>
+          ) : null}
+        </div>
+      ) : locked ? null : (
+        command.panel
+      )}
       <VoiceLine voice={props.voice} />
       {!askMode && !command.active ? (
         <>

@@ -7,6 +7,19 @@ export type {
   SecretName,
   SecretStore,
 } from './adapters';
+export type { AppLockSettings, LockAfter, UnlockOutcome } from './app-lock';
+export {
+  APP_LOCK_SETTING,
+  appLockSettingsSchema,
+  DEFAULT_APP_LOCK,
+  LOCK_AFTER,
+  LOCK_AFTER_LABELS,
+  lockAfterMs,
+  parseAppLockSettings,
+  shouldLock,
+  UNLOCK_OUTCOMES,
+  unlockOutcomeSchema,
+} from './app-lock';
 export type { LocalMonth } from './calendar';
 export {
   addMonths,

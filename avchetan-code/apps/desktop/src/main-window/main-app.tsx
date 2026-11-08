@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { LockScreen } from '../lock-screen';
 import type { MainView } from '../native/events';
 import { useAppEvent, useTableInvalidation } from '../use-app-event';
+import { isHidden, useLockStatus } from '../use-lock';
 import { CategoriesPage } from './categories-page';
 import { CheckPage } from './check-page';
 import { DaysPage } from './days-page';
@@ -59,6 +61,10 @@ export function MainApp(props: { initialView: MainView; initialDay?: string | nu
     setView(payload.view);
     if (payload.day) setDay(payload.day);
   });
+  const lock = useLockStatus();
+
+  // Locked: no page is rendered at all, so nothing written before sits behind the lock screen.
+  if (isHidden(lock)) return <LockScreen ready={lock.configured} />;
 
   return (
     <div className="flex h-screen">

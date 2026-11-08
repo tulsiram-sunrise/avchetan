@@ -19,4 +19,5 @@ Users want to lock Avchetan the way WhatsApp can be locked, so someone holding t
 - Anyone with the device's own PIN can unlock Avchetan. That is the same trust as the device itself, as with WhatsApp.
 - Someone who reads the SQLite file directly isn't stopped. Disk encryption (Windows Device Encryption or BitLocker; Android by default) covers that until database encryption is built.
 - A thought can still be captured in one step on a locked device. An unknown person can therefore add entries, but can't read any.
-- One new desktop dependency (`windows`, MIT/Apache-2.0) and one mobile dependency (`expo-local-authentication`, MIT). No schema or sync change.
+- On the phone, the blank recent-apps preview uses `FLAG_SECURE` (`expo-screen-capture`), which also blocks screenshots of Avchetan while the lock is on. It is a setting, *Hide in recent apps*, on by default, so screenshots can be had back.
+- New dependencies: on the desktop `windows` and `windows-future` (MIT/Apache-2.0, already in the tree); on the phone `expo-local-authentication` and `expo-screen-capture` (MIT). No schema or sync change.

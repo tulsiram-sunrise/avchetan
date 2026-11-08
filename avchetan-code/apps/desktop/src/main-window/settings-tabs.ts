@@ -9,6 +9,7 @@ export const SETTINGS_TABS = [
   { id: 'capture', label: 'Capture box' },
   { id: 'voice', label: 'Voice' },
   { id: 'brief', label: 'Daily brief' },
+  { id: 'privacy', label: 'Privacy' },
   { id: 'hub', label: 'Hub & sync' },
   { id: 'data', label: 'Your data' },
   { id: 'general', label: 'General' },

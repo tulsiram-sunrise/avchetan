@@ -8,7 +8,8 @@
 1. Download the Avchetan installer (the file ending in `windows-x64-setup.exe`) from the [GitHub Releases page](https://github.com/tulsiram-sunrise/avchetan/releases/latest), and run it. If Windows says **Windows protected your PC**, click **More info**, then **Run anyway**: the installer isn't signed with a certificate yet ([why, and how to check the file](install-and-update.md#windows)).
 2. On the **Welcome to Avchetan** screen, choose **Just this PC**.
 3. Choose the AI that organizes your entries: Ollama on this PC if you have it, or a provider with an API key ([details](ai-models.md)).
-4. Click **Finish**. The shortcut is **Ctrl+Shift+Space**; you can change it in **Settings**.
+4. Optional: click **Turn on the app lock** to lock Avchetan with Windows Hello ([app lock](app-lock.md)).
+5. Click **Finish**. The shortcut is **Ctrl+Shift+Space**; you can change it in **Settings**.
 
 ## Check it worked
 
@@ -20,6 +21,8 @@ Press **Ctrl+Shift+Space**, type `Walked 30 minutes, remind me to buy milk tomor
 
 ![The phone's Welcome to Avchetan screen with Connect to my hub or server and Just this phone](images/capture-on-android-welcome.png)
 2. Choose a provider and paste your API key ([details](ai-models.md)).
+
+The Welcome screen also offers **Turn on the app lock**, to lock Avchetan with your fingerprint, face or PIN ([app lock](app-lock.md)). It is optional, and you can turn it on later under **More → App lock**.
 
 ## Later
 

@@ -42,6 +42,7 @@ windows.rs        dock show/hide/toggle + positioning, blur → hide, main windo
 clipboard.rs      read_clipboard_text: text only, cut to 4 KB, skips private-marked content (clipboard snap)
 hotkey.rs         global shortcuts: dock + clipboard snap (hotkey_status, hotkey_set, snap_hotkey_status, snap_hotkey_set)
 tray.rs           tray icon + menu (tray_set_pending)
+app_lock.rs       app lock state for both windows, Windows Hello, lock on session lock/sleep (lock_status, lock_configure, lock_available, lock_unlock)
 commands/
   db.rs           db_open / db_run / db_values / db_batch / db_rollback  (rusqlite, one connection per window, ADR-0019)
   secrets.rs      secret_get / secret_set / secret_delete  (keyring crate)

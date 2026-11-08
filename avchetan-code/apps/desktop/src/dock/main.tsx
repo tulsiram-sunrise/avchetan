@@ -5,6 +5,7 @@ import { bootstrap } from '../bootstrap';
 import { tauriActionBus } from '../native/action-bus';
 import { onAppEvent } from '../native/events';
 import { serveActions } from '../services/actions';
+import { applySavedAppLock } from '../services/app-lock';
 import { ensureAutostartDefault } from '../services/autostart';
 import { startBackups } from '../services/data';
 import { loadDraft } from '../services/draft';
@@ -56,6 +57,10 @@ async function settleNativeState({ store, platform }: AppServices): Promise<void
 void bootstrap(
   () => <DockApp />,
   async (services) => {
+    // First, so neither window shows anything before the lock is known (app-lock.md).
+    await applySavedAppLock(services.store, services.platform.lock).catch(() =>
+      log.error('could not apply the app lock setting'),
+    );
     useDockStore.getState().setDraft(await loadDraft(services.store));
     void settleNativeState(services);
     services.extraction.start();
