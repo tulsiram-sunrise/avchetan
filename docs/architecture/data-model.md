@@ -223,6 +223,6 @@ ID = `derivedId('mention', entity_id, target_type, target_id, role)`.
 | `deep_work_min` | number | minutes | |
 | `interruptions` | int | | |
 | `weight_body_kg` | number | kg | |
-| `kind` | string | system rows: `daily_brief`, `weekly_review` | |
+| `kind` | string | system rows: `daily_brief`, `weekly_review` (with `week`, the Monday it starts, [weekly review](../product/weekly-review.md)) | |
 
 Units are always metric in storage; the normalizer converts (lb→kg, mi→km). Display units are a UI setting.
