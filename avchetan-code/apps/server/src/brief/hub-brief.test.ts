@@ -52,7 +52,12 @@ let device: ServerDevice | null;
 let hub: ReturnType<typeof createHubBrief> | null;
 let phone: { store: ClientStore; engine: SyncEngine; secrets: MemorySecretStore };
 
-async function setUp(options: { model: boolean; phone?: Partial<SyncDevice> }) {
+async function setUp(options: {
+  model: boolean;
+  phone?: Partial<SyncDevice>;
+  /** Leave the phone's entry waiting to be organized. */
+  pending?: boolean;
+}) {
   const serverMs = Date.parse(START);
   const clock = createMonotonicClock({ source: () => serverMs });
   const identity = await loadServerIdentity(database.db, TOKEN);
@@ -101,7 +106,7 @@ async function setUp(options: { model: boolean; phone?: Partial<SyncDevice> }) {
     brief = hub.handle;
   }
 
-  const { store } = await openTestStore({ start: START, newId: () => crypto.randomUUID() });
+  const { store, raw } = await openTestStore({ start: START, newId: () => crypto.randomUUID() });
   const secrets = new MemorySecretStore();
   await saveConnection(store, secrets, { urls: [URL], token: TOKEN, trustLocalNetwork: false });
   const engine = createSyncEngine({
@@ -127,6 +132,8 @@ async function setUp(options: { model: boolean; phone?: Partial<SyncDevice> }) {
       capturedTz: 'UTC',
     }),
   );
+  // As if the phone had organized it before syncing.
+  if (!options.pending) raw.prepare("UPDATE raw_logs SET status = 'processed'").run();
   await phone.engine.syncNow();
 }
 
@@ -180,6 +187,14 @@ describe('the hub makes the daily brief', () => {
     await phone.engine.syncNow();
 
     expect(await findDailyBrief(phone.store, DAY)).toBeDefined();
+  });
+
+  it("waits while the day's entries are still waiting to be organized", async () => {
+    await setUp({ model: true, pending: true });
+
+    await hub?.runner.wake();
+
+    expect(doGenerate).not.toHaveBeenCalled();
   });
 
   it('makes none on its own when the device has the brief turned off', async () => {

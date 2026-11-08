@@ -1,6 +1,6 @@
-import { parseBriefNotes } from '@avchetan/core';
+import { entriesSinceBrief, parseBriefNotes } from '@avchetan/core';
 import type { Activity, PromiseItem, Task } from '@avchetan/db/sqlite';
-import { addDays, describeError, formatTime } from '@avchetan/shared';
+import { addDays, describeError, formatMadeAt, systemTimeZone } from '@avchetan/shared';
 import type { ReactNode } from 'react';
 import { Text, View } from 'react-native';
 import {
@@ -14,6 +14,7 @@ import {
   useReminderChoice,
   useRolledOver,
 } from '../queries/brief';
+import { useDayEntries } from '../queries/days';
 import { useWaitingDue } from '../queries/people';
 import { useEditTask } from '../queries/writes';
 import { Button, Failure, HelpLink } from './parts';
@@ -105,6 +106,8 @@ function BriefCard(props: { brief: Activity; day: string; today: string; making:
   const rolledOver = useRolledOver(props.day);
   const waitingDue = useWaitingDue(props.day);
   const make = useMakeBrief();
+  const entries = useDayEntries(props.day);
+  const since = entries.data ? entriesSinceBrief(entries.data, props.brief) : 0;
   const tasks = rolledOver.data ?? [];
   const waiting = waitingDue.data ?? [];
   const bullets: { key: string; content: ReactNode }[] =
@@ -129,7 +132,7 @@ function BriefCard(props: { brief: Activity; day: string; today: string; making:
       className="gap-2 rounded-lg border border-line bg-surfaceRaised p-3"
     >
       <Text className="text-xs font-semibold uppercase tracking-wide text-inkMuted">
-        Daily brief · made at {formatTime(props.brief.updatedAt)}
+        Daily brief · {formatMadeAt(props.brief.updatedAt, props.day, systemTimeZone())}
       </Text>
       {bullets.map(({ key, content }) =>
         content === null ? null : (
@@ -145,6 +148,13 @@ function BriefCard(props: { brief: Activity; day: string; today: string; making:
       )}
       <View className="items-start gap-2">
         <FailedBrief day={props.day} />
+        {since > 0 && !props.making && !make.isPending ? (
+          <Text className="text-sm text-inkMuted">
+            {since === 1
+              ? '1 new entry since this brief.'
+              : `${since} new entries since this brief.`}
+          </Text>
+        ) : null}
         {props.making || make.isPending ? (
           <Text className="text-sm text-inkMuted">Making it again…</Text>
         ) : (

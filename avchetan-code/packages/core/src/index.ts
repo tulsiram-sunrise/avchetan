@@ -26,6 +26,7 @@ export {
   DAILY_BRIEF_KIND,
   DAILY_BRIEF_TITLE,
   dailyBriefId,
+  entriesSinceBrief,
   findDailyBrief,
   isDailyBrief,
   isFrictionTag,

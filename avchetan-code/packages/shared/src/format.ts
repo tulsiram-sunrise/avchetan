@@ -1,3 +1,6 @@
+import type { UtcInstant } from './clock';
+import { localDate } from './dates';
+
 const timeFormat = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' });
 const dayFormat = new Intl.DateTimeFormat(undefined, {
   weekday: 'short',
@@ -12,6 +15,15 @@ export function formatTime(instant: string): string {
 
 export function formatDay(instant: string): string {
   return dayFormat.format(Date.parse(instant));
+}
+
+/**
+ * When a day's brief was made: "made at 21:04", or with the date when that was a later day
+ * ("made Mon 9 Nov, 00:03"), so a brief for Sunday made after midnight says so (audit bug 3).
+ */
+export function formatMadeAt(instant: string, day: string, timeZone: string): string {
+  if (localDate(instant as UtcInstant, timeZone) === day) return `made at ${formatTime(instant)}`;
+  return `made ${formatDay(instant)}, ${formatTime(instant)}`;
 }
 
 const localDateFormats = new Map<string, Intl.DateTimeFormat>();
