@@ -55,6 +55,6 @@ A user with a capable PC and an Android phone: install Avchetan desktop + Ollama
 |---|---|---|
 | *(none)* | Capture | Save as raw log → extraction |
 | `?` | Ask | Analysis model answers; nothing is saved (query history is local-only) |
-| `/` | Command | Deterministic or LLM-assisted actions: `/done foam roll`, `/sync`, `/brief`, `/settings` (Phase 6) |
+| `/` | Command | Desktop capture box only. Deterministic actions `/done <words>`, `/brief`, `/sync`, `/undo`, `/settings <tab>`, `/lock`, `/unlock`; anything else is read by the AI and confirmed ([command mode](command-mode.md)) |
 | `#tag` anywhere | Explicit tag | Parsed deterministically (not by the LLM) |
 | `!private` anywhere | Privacy | Entry is never sent to a cloud model (Phase 7; see advancements) |

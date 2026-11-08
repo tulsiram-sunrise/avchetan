@@ -23,9 +23,13 @@ Avchetan is a personal logger and planner. Type (or say) anything — a workout,
 
 ## More
 
-- [Daily brief](daily-brief.md): a short look back at each day, and the evening reminder
+- [Daily brief](daily-brief.md): a short look back at each day, the evening reminder, and the [Your week](daily-brief.md#your-week-sundays) card on Sundays
+- [Private entries](ai-models.md#private-entries): `!private` and private tags keep an entry away from cloud AI
+- [Window context and rules](capture-on-windows.md#window-context-and-rules) and [clipboard snap](capture-on-windows.md#attach-the-clipboard) on the PC
+- [The Android widget](capture-on-android.md#add-the-widget): a capture bar on your home screen
 - [Teach Avchetan with your fixes](corrections.md): how your fixes become examples for the AI, and how to forget them
-- [Commands in the capture box](commands.md): `/done`, `/brief`, `/sync`, `/undo`, and what the AI learns from your phrasing
+- [Commands in the capture box](commands.md): `/done`, `/brief`, `/sync`, `/undo`, `/settings`, `/lock`, `/unlock`, and what the AI learns from your phrasing
+- [Setup check](troubleshooting.md#setup-check): tests your setup and says what to fix
 - [Use your phone away from home (Tailscale)](remote-access-tailscale.md)
 - [Back up and restore](backup-and-restore.md)
 - [Install, update and uninstall](install-and-update.md)
