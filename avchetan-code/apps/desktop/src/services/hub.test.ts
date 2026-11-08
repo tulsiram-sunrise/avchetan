@@ -1,7 +1,9 @@
 import {
   loadAnalysisMode,
   loadExtractionMode,
+  loadExtractionSettings,
   type ModelPreset,
+  saveExtractionMode,
   saveSlotModel,
 } from '@avchetan/core';
 import { openTestStore } from '@avchetan/db/testing';
@@ -59,6 +61,20 @@ describe('turnOnHub', () => {
 
     expect(await loadExtractionMode(store)).toBe('delegate');
     expect(await loadAnalysisMode(store)).toBe('hub');
+  });
+
+  it("organizes with this PC's own model once switched back to This PC", async () => {
+    const { store } = await openTestStore();
+    const secrets = new MemorySecretStore();
+    await turnOnHub({ hub: fakeHub(), secrets, store }, { preset });
+    const config = { provider: 'ollama', model: 'own-model' } as const;
+    await saveSlotModel(store, secrets, 'extraction', { config, apiKey: '' });
+
+    // Saving a model alone leaves the hub organizing (the choice is explicit)…
+    expect((await loadExtractionSettings(store)).models).toEqual([]);
+    // …until This PC is chosen.
+    await saveExtractionMode(store, 'self');
+    expect((await loadExtractionSettings(store)).models).toEqual([config]);
   });
 
   it('keeps the model a user chose for this PC', async () => {

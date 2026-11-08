@@ -29,7 +29,7 @@ No terminal is needed: Avchetan runs the hub itself and walks you through the re
 
 The hub runs whenever Avchetan is open, including when only its tray icon is showing, and starts again with it. If it stops unexpectedly, Avchetan starts it again.
 
-The hub also organizes the entries you type on this PC and answers its questions, unless you chose a model for this PC itself in **Settings → AI → AI models**.
+The hub also organizes the entries you type on this PC and answers its questions, unless you chose a model for this PC itself before turning it on. To change it later, open **Settings → AI → AI models** and choose **This PC** or **My hub** under **Who organizes your entries?** and **Who answers your questions?** ([AI models](ai-models.md#let-your-hub-organize-a-phones-entries)).
 
 ## Part 2 — Connect your phone
 
@@ -70,7 +70,7 @@ The first start goes through all your existing entries, about 0.2 seconds each o
 | **Ollama isn't running on this PC** | Open the Ollama app once, then click **Check again**. |
 | Phone can't connect | Both devices must be on the same Wi-Fi. Check that every line of the hub's checklist has a ✓, or run **Settings → General → Setup check**. For a hub run from a terminal, see [Let your phone reach the PC](#let-your-phone-reach-the-pc). |
 | Entries stay "pending" on the phone | The phone can't reach the hub. They are processed automatically once it can. |
-| Answers are slow | Choose a smaller model set for the hub, or a model for this device in **Settings → AI → AI models**. |
+| Answers are slow | Choose a smaller model set for the hub, or choose **This PC** and a model for this device in **Settings → AI → AI models**. |
 
 More: [Troubleshooting](troubleshooting.md).
 
