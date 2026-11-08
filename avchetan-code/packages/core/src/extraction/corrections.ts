@@ -146,6 +146,14 @@ function metricText(metrics: Record<string, unknown>): string {
     .join(', ');
 }
 
+/** " (for: Priya)" or " (waiting on: Farhan)" after a task that is a promise. */
+function promiseText(task: CorrectedEntry['tasks'][number]): string {
+  const parts = (task.promises ?? []).map((promise) =>
+    promise.role === 'owed_to' ? `for: ${promise.person}` : `waiting on: ${promise.person}`,
+  );
+  return parts.length > 0 ? ` (${parts.join('; ')})` : '';
+}
+
 /**
  * One example as compact text: the entry and its capture date, the items as the user left them
  * (tasks without due dates), then `not:` lines for items the user deleted.
@@ -163,7 +171,8 @@ export function renderExample(entry: CorrectedEntry): string {
   }
   // No due dates: changing one is usually moving the task to another day, not fixing what the
   // model read, and would teach it wrong dates.
-  for (const task of kept(entry.tasks)) lines.push(`task: ${task.title}`);
+  // Promises go with their task (feature audit bug 8): whom it is for or waited on.
+  for (const task of kept(entry.tasks)) lines.push(`task: ${task.title}${promiseText(task)}`);
   if (kept(entry.activities).length + kept(entry.tasks).length === 0)
     lines.push('(nothing to record)');
   for (const activity of entry.activities.filter((item) => item.deleted)) {
@@ -171,6 +180,9 @@ export function renderExample(entry: CorrectedEntry): string {
   }
   for (const task of entry.tasks.filter((item) => item.deleted)) {
     lines.push(`not task: ${task.title}`);
+  }
+  for (const task of kept(entry.tasks).filter((item) => item.notPromise)) {
+    lines.push(`not a promise: ${task.title}`);
   }
   return clip(lines.join('\n'), MAX_EXAMPLE_CHARS);
 }

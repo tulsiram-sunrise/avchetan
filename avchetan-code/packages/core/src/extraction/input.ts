@@ -7,7 +7,9 @@ import { chooseExamples, loadCorrectionPool, renderExample } from './corrections
 
 const MAX_TAGS = 150;
 const MAX_ENTITIES = 100;
-const DAYS_AHEAD = 7;
+/** The date table: the coming two weeks and the past week (prompt v5, feature audit bug 5). */
+const DAYS_AHEAD = 14;
+const DAYS_PAST = 6;
 
 /** What the user's data already contains. Lets the model reuse names instead of inventing them. */
 export type ExtractionVocabulary = {
@@ -63,6 +65,8 @@ export type ExtractionInput = {
   weekday: Weekday;
   /** The coming days, so the model looks dates up instead of calculating them. */
   upcoming: { date: LocalDate; weekday: Weekday }[];
+  /** The days before yesterday, newest first, so "on Thursday I ran" has its line too. */
+  recent: { date: LocalDate; weekday: Weekday }[];
   vocabulary: ExtractionVocabulary;
   /** The user's past corrections most like this entry, as prompt text. */
   corrections: string[];
@@ -91,6 +95,10 @@ export function buildExtractionInput(
     const date = addDays(today, index + 1);
     return { date, weekday: weekdayOf(date) };
   });
+  const recent = Array.from({ length: DAYS_PAST - 1 }, (_, index) => {
+    const date = addDays(today, -(index + 2));
+    return { date, weekday: weekdayOf(date) };
+  });
   return {
     content: rawLog.content,
     explicitTags: parseCaptureText(rawLog.content).tagPaths,
@@ -99,6 +107,7 @@ export function buildExtractionInput(
     today,
     weekday: weekdayOf(today),
     upcoming,
+    recent,
     vocabulary,
     corrections: chooseExamples(rawLog.content, rawLog.id, vocabulary.corrections).map(
       renderExample,

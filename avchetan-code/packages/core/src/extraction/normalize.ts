@@ -14,6 +14,7 @@ import { z } from 'zod';
 import { ruleMatchesOf, ruleOutcome } from '../context/window-context';
 import { normalizeMetrics, parseQuantity } from '../normalize/metrics';
 import { normalizeTagPath, normalizeTagSegment } from '../normalize/tags';
+import { checkDate } from './date-check';
 import type { ExtractionVocabulary } from './input';
 import type { ExtractionResult } from './schema';
 
@@ -32,7 +33,11 @@ const NOT_A_NAME = /^\(?(none|null|n\/?a|unknown)\)?$/i;
 
 export type NormalizeContext = {
   /** `context.rule_matches` (window context rules) sets the project of every item. */
-  rawLog: Pick<RawLog, 'id' | 'capturedAt' | 'capturedTz'> & { context?: Record<string, unknown> };
+  rawLog: Pick<RawLog, 'id' | 'capturedAt' | 'capturedTz'> & {
+    context?: Record<string, unknown>;
+    /** The entry's words, for the date check (date-check.ts). */
+    content?: string;
+  };
   vocabulary: ExtractionVocabulary;
   llmMayCreate: LlmMayCreate;
   model: string;
@@ -214,7 +219,14 @@ export function normalizeExtraction(
       title: clean(item.title, MAX_TITLE) as string,
       notes: clean(item.notes, MAX_NOTES),
       metrics: foldMetrics(item),
-      loggedDate: plausibleDate(item.loggedDate, today) ?? today,
+      loggedDate:
+        checkDate({
+          date: plausibleDate(item.loggedDate, today),
+          own: `${item.title} ${item.notes ?? ''}`,
+          entry: rawLog.content ?? '',
+          today,
+          ahead: false,
+        }) ?? today,
       projectId: projectId(item.project),
       tagPaths: tagPaths(item.inferredTags, categorySlugs),
     })),
@@ -222,7 +234,13 @@ export function normalizeExtraction(
       categoryId: item.category ? (categories.resolve(item.category) ?? null) : null,
       title: clean(item.title, MAX_TITLE) as string,
       notes: clean(item.notes, MAX_NOTES),
-      dueDate: plausibleDate(item.dueDate, today),
+      dueDate: checkDate({
+        date: plausibleDate(item.dueDate, today),
+        own: `${item.title} ${item.notes ?? ''}`,
+        entry: rawLog.content ?? '',
+        today,
+        ahead: true,
+      }),
       projectId: projectId(item.project),
       tagPaths: tagPaths(item.inferredTags, categorySlugs),
     })),

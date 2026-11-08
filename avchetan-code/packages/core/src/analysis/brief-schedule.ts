@@ -145,10 +145,12 @@ export function createBriefRunner(deps: BriefRunnerDeps): BriefRunner {
     const waiting = entries.filter((entry) => entry.status === 'pending_llm');
     if (waiting.length === 0) return true;
     const now = deps.store.clock.now();
-    const newest = waiting.reduce(
-      (latest, entry) => (entry.capturedAt > latest ? entry.capturedAt : latest),
-      waiting[0]?.capturedAt ?? now,
-    );
+    // ISO instants sort as text.
+    const newest =
+      waiting
+        .map((entry) => entry.capturedAt)
+        .sort()
+        .at(-1) ?? now;
     const waited =
       addMs(newest, BRIEF_WAIT_MS) <= now &&
       dueBriefDays({

@@ -327,6 +327,8 @@ describe('dropCopiedItems', () => {
   });
 });
 
+const noPromise = { promises: [], notPromise: false };
+
 describe('renderExample', () => {
   it('shows the entry, its items as corrected (tasks without due dates), and what was wrong', () => {
     const text = renderExample(
@@ -342,13 +344,21 @@ describe('renderExample', () => {
           },
         ],
         tasks: [
-          { id: '2', title: 'Stretch', deleted: false, userEdited: false, dueDate: '2026-10-31' },
+          {
+            id: '2',
+            title: 'Stretch',
+            deleted: false,
+            userEdited: false,
+            dueDate: '2026-10-31',
+            ...noPromise,
+          },
           {
             id: '3',
             title: 'Think about stretching',
             deleted: true,
             userEdited: true,
             dueDate: null,
+            ...noPromise,
           },
         ],
       }),
@@ -366,10 +376,40 @@ describe('renderExample', () => {
   it('says when nothing should have been recorded', () => {
     const text = renderExample(
       entry('a', 'testing', '2026-10-30T10:00:00.000Z', {
-        tasks: [{ id: '1', title: 'Test', deleted: true, userEdited: true, dueDate: null }],
+        tasks: [
+          { id: '1', title: 'Test', deleted: true, userEdited: true, dueDate: null, ...noPromise },
+        ],
       }),
     );
     expect(text).toContain('(nothing to record)\nnot task: Test');
+  });
+
+  it('carries promises: whom a task is for or waits on, and promises removed (audit bug 8)', () => {
+    const task = { deleted: false, userEdited: true, dueDate: null };
+    const text = renderExample(
+      entry('a', 'lunch with Priya, Farhan has my drill', '2026-10-30T10:00:00.000Z', {
+        tasks: [
+          {
+            id: '1',
+            title: 'Send Priya the photos',
+            ...task,
+            promises: [{ person: 'Priya', role: 'owed_to' }],
+            notPromise: false,
+          },
+          {
+            id: '2',
+            title: 'Get the drill back',
+            ...task,
+            promises: [{ person: 'Farhan', role: 'owed_by' }],
+            notPromise: false,
+          },
+          { id: '3', title: 'Meet Arvind at 5', ...task, promises: [], notPromise: true },
+        ],
+      }),
+    );
+    expect(text).toContain('task: Send Priya the photos (for: Priya)');
+    expect(text).toContain('task: Get the drill back (waiting on: Farhan)');
+    expect(text).toContain('not a promise: Meet Arvind at 5');
   });
 
   it('keeps ten of the longest examples small enough for a small local model', () => {

@@ -32,6 +32,7 @@ import {
 import type { ClientDb } from './database';
 import { type DataScope, notFromPrivateLog } from './privacy';
 import type { Activity } from './repos/activities';
+import { PROMISE_ROLES, type PromiseRole } from './repos/entities';
 import type { RawLog } from './repos/raw-logs';
 import type { Task } from './repos/tasks';
 import { live } from './synced';
@@ -106,7 +107,13 @@ export type CorrectedActivity = CorrectedItem & {
   categorySlug: string | null;
   metrics: Record<string, unknown>;
 };
-export type CorrectedTask = CorrectedItem & { dueDate: string | null };
+export type CorrectedTask = CorrectedItem & {
+  dueDate: string | null;
+  /** Live promise links: the user owes `owed_to` people, waits on `owed_by` ones. */
+  promises: { person: string; role: PromiseRole }[];
+  /** The user removed its promise links by hand ("Not a promise"). */
+  notPromise: boolean;
+};
 
 /** An entry whose extracted items the user edited or deleted: one correction example. */
 export type CorrectedEntry = {
@@ -186,6 +193,30 @@ export async function correctedEntries(
       .orderBy(asc(activities.ordinal), asc(activities.createdAt)),
     db.select().from(tasks).where(shown(tasks)).orderBy(asc(tasks.ordinal), asc(tasks.createdAt)),
   ]);
+  // Promise links teach too (feature audit bug 8): live ones, and those removed by hand.
+  const promiseRows =
+    taskRows.length === 0
+      ? []
+      : await db
+          .select({
+            taskId: entityMentions.targetId,
+            role: entityMentions.role,
+            deleted: entityMentions.deletedAt,
+            person: entities.name,
+          })
+          .from(entityMentions)
+          .innerJoin(entities, eq(entities.id, entityMentions.entityId))
+          .where(
+            and(
+              eq(entityMentions.targetType, 'task'),
+              inArray(
+                entityMentions.targetId,
+                taskRows.map((task) => task.id),
+              ),
+              inArray(entityMentions.role, [...PROMISE_ROLES]),
+              live(entities),
+            ),
+          );
 
   return chosen.map(({ rawLog, correctedAt }) => ({
     rawLog,
@@ -208,8 +239,21 @@ export async function correctedEntries(
         deleted: task.deletedAt !== null,
         userEdited: task.isUserEdited,
         dueDate: task.dueDate,
+        ...promisesOf(task, promiseRows),
       })),
   }));
+}
+
+function promisesOf(
+  task: Task,
+  rows: readonly { taskId: string; role: string; deleted: string | null; person: string }[],
+): Pick<CorrectedTask, 'promises' | 'notPromise'> {
+  const own = rows.filter((row) => row.taskId === task.id);
+  const promises = own
+    .filter((row) => row.deleted === null)
+    .map((row) => ({ person: row.person, role: row.role as PromiseRole }));
+  const removed = own.some((row) => row.deleted !== null);
+  return { promises, notPromise: task.isUserEdited && promises.length === 0 && removed };
 }
 
 /** Activities whose local date is `loggedDate`. */
