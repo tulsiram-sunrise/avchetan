@@ -1,5 +1,5 @@
 import { type LocalDate, localDate } from '@avchetan/shared';
-import { and, eq, inArray, isNull, or } from 'drizzle-orm';
+import { and, eq, inArray, isNotNull, isNull, lt, or, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import type { EntityKind, MentionRole } from '../schema/enums';
 import { activities, entities, entityMentions, rawLogs, tasks } from '../schema/sqlite/tables';
@@ -547,4 +547,64 @@ export async function dismissPair(tx: Tx, pair: { a: string; b: string }, now: s
   const pairs = await loadDismissedPairs(tx);
   pairs.add(pairKey(pair.a, pair.b));
   await setSetting(tx, DISMISSED_PAIRS_SETTING, [...pairs], now);
+}
+
+/**
+ * Entries organized by an older prompt (`extraction_version` below `version`) that have a task
+ * and name a person: organizing them again may find promises (people-and-promises.md). Oldest
+ * first.
+ */
+export async function entriesToRecheckForPromises(
+  db: ClientDb,
+  options: { version: number },
+): Promise<string[]> {
+  const people = db
+    .select({ id: entities.id })
+    .from(entities)
+    .where(and(live(entities), eq(entities.kind, 'person')));
+  const mentioned = await db
+    .selectDistinct({ targetType: entityMentions.targetType, targetId: entityMentions.targetId })
+    .from(entityMentions)
+    .where(and(live(entityMentions), inArray(entityMentions.entityId, people)));
+  const ids = (type: string) =>
+    mentioned.filter((row) => row.targetType === type).map((row) => row.targetId);
+  const [fromActivities, fromTasks] = await Promise.all([
+    ids('activity').length
+      ? db
+          .select({ rawLogId: activities.rawLogId })
+          .from(activities)
+          .where(and(live(activities), inArray(activities.id, ids('activity'))))
+      : [],
+    ids('task').length
+      ? db
+          .select({ rawLogId: tasks.rawLogId })
+          .from(tasks)
+          .where(and(live(tasks), inArray(tasks.id, ids('task'))))
+      : [],
+  ]);
+  const naming = new Set([
+    ...ids('raw_log'),
+    ...[...fromActivities, ...fromTasks].flatMap((row) => (row.rawLogId ? [row.rawLogId] : [])),
+  ]);
+  if (naming.size === 0) return [];
+  const rows = await db
+    .select({ id: rawLogs.id })
+    .from(rawLogs)
+    .where(
+      and(
+        live(rawLogs),
+        eq(rawLogs.status, 'processed'),
+        or(isNull(rawLogs.extractionVersion), lt(rawLogs.extractionVersion, options.version)),
+        inArray(rawLogs.id, [...naming]),
+        inArray(
+          rawLogs.id,
+          db
+            .select({ id: sql<string>`${tasks.rawLogId}` })
+            .from(tasks)
+            .where(and(live(tasks), isNotNull(tasks.rawLogId))),
+        ),
+      ),
+    )
+    .orderBy(rawLogs.capturedAt, rawLogs.id);
+  return rows.map((row) => row.id);
 }

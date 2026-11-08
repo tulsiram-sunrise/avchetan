@@ -1,3 +1,4 @@
+import { EXTRACTION_PROMPT_VERSION } from '@avchetan/core';
 import { useQuery } from '@tanstack/react-query';
 import { useServices } from '../services-context';
 import { useToday } from './days';
@@ -113,4 +114,25 @@ export const useLinkPromise = () =>
 export const useUnlinkPromise = () =>
   useWrite((store, input: { taskId: string; entityId: string }) =>
     store.write((tx) => store.repos.entities.unlinkPromise(tx, input)),
+  );
+
+/** Older entries that may hold promises the old prompt didn't mark. */
+export function useEntriesToRecheck() {
+  const { store } = useServices();
+  return useQuery({
+    queryKey: ['entities', 'recheck'],
+    queryFn: () =>
+      store.people.entriesToRecheckForPromises(store.db, { version: EXTRACTION_PROMPT_VERSION }),
+  });
+}
+
+/** Organizes them again with the current prompt, in the background. */
+export const useRecheckPromises = () =>
+  useWrite((store, _: undefined) =>
+    store.write(async (tx) => {
+      const ids = await store.people.entriesToRecheckForPromises(tx, {
+        version: EXTRACTION_PROMPT_VERSION,
+      });
+      for (const id of ids) await store.repos.rawLogs.requeue(tx, id);
+    }),
   );

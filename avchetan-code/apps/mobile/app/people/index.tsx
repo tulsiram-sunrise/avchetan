@@ -6,8 +6,10 @@ import { useToday } from '../../src/queries/days';
 import {
   useDismissPair,
   useDuplicateSuggestions,
+  useEntriesToRecheck,
   useMergePerson,
   usePeople,
+  useRecheckPromises,
 } from '../../src/queries/people';
 import { usePalette } from '../../src/theme/theme';
 import { Button, Failure } from '../../src/ui/parts';
@@ -52,6 +54,7 @@ export default function PeopleScreen() {
               onChangeText={setSearch}
             />
             {needle ? null : <Suggestions />}
+            {needle ? null : <Recheck />}
           </View>
         }
         renderItem={({ item }) => (
@@ -78,6 +81,41 @@ export default function PeopleScreen() {
           ) : undefined
         }
       />
+    </View>
+  );
+}
+
+function Recheck() {
+  const toRecheck = useEntriesToRecheck();
+  const recheck = useRecheckPromises();
+  const count = toRecheck.data?.length ?? 0;
+  if (count === 0 && !recheck.isSuccess) return null;
+  return (
+    <View className="gap-2 rounded-lg border border-line p-3">
+      {recheck.isSuccess ? (
+        <Text className="text-sm text-inkMuted">
+          Looking for promises in older entries. They are organized again in the background.
+        </Text>
+      ) : (
+        <>
+          <Text className="text-sm text-ink">
+            {count === 1 ? '1 older entry' : `${count} older entries`} name someone and have a task.
+            Organize them again to find promises?
+          </Text>
+          <Text className="text-xs text-inkMuted">
+            Uses your AI for each one. Private entries wait for a local AI, and tasks you edited
+            stay as they are.
+          </Text>
+          <View className="flex-row">
+            <Button
+              label="Look for promises"
+              disabled={recheck.isPending}
+              onPress={() => recheck.mutate(undefined)}
+            />
+          </View>
+        </>
+      )}
+      <Failure error={recheck.error} />
     </View>
   );
 }

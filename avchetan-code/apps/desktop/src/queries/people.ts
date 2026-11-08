@@ -1,3 +1,4 @@
+import { EXTRACTION_PROMPT_VERSION } from '@avchetan/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useServices } from '../services-context';
 import { useToday } from './days';
@@ -80,5 +81,15 @@ export function useDismissPair() {
     mutationFn: (pair: { a: string; b: string }) =>
       store.write((tx) => store.people.dismissPair(tx, pair, store.clock.now())),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: dismissedKey }),
+  });
+}
+
+/** Older entries that may hold promises the old prompt didn't mark. */
+export function useEntriesToRecheck() {
+  const { store } = useServices();
+  return useQuery({
+    queryKey: ['entities', 'recheck'],
+    queryFn: () =>
+      store.people.entriesToRecheckForPromises(store.db, { version: EXTRACTION_PROMPT_VERSION }),
   });
 }

@@ -7,6 +7,7 @@ import { useAction } from '../queries/organize';
 import {
   useDismissPair,
   useDuplicateSuggestions,
+  useEntriesToRecheck,
   usePeople,
   usePerson,
   usePersonEntries,
@@ -71,6 +72,7 @@ function PeopleList(props: { onOpen: (id: string) => void }) {
         onChange={(event) => setSearch(event.target.value)}
       />
       {suggestions.length > 0 && !search ? <Suggestions /> : null}
+      {search ? null : <Recheck />}
       <ul className={panelClass}>
         {rows.map((row) => (
           <li key={row.entity.id}>
@@ -91,6 +93,39 @@ function PeopleList(props: { onOpen: (id: string) => void }) {
         ))}
       </ul>
     </div>
+  );
+}
+
+function Recheck() {
+  const toRecheck = useEntriesToRecheck();
+  const recheck = useAction('people.recheckPromises');
+  const count = toRecheck.data?.length ?? 0;
+  if (count === 0 && !recheck.isSuccess) return null;
+  return (
+    <section className="flex flex-col gap-1 rounded-lg border border-line px-3 py-2 text-sm">
+      {recheck.isSuccess ? (
+        <span className="text-ink-muted">
+          Looking for promises in older entries. They are organized again in the background.
+        </span>
+      ) : (
+        <>
+          <span>
+            {count === 1 ? '1 older entry' : `${count} older entries`} name someone and have a task.
+            Organize them again to find promises?
+          </span>
+          <span className="text-xs text-ink-muted">
+            Uses your AI for each one. Private entries wait for a local AI, and tasks you edited
+            stay as they are.
+          </span>
+          <div>
+            <QuietButton disabled={recheck.isPending} onClick={() => recheck.mutate({})}>
+              Look for promises in older entries
+            </QuietButton>
+          </div>
+        </>
+      )}
+      <ActionError errors={[recheck.error]} />
+    </section>
   );
 }
 

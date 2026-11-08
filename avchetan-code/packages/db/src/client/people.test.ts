@@ -2,7 +2,7 @@ import { derivedId } from '@avchetan/shared';
 import { and, eq, isNull } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 import { openTestStore } from '../../testing';
-import { entityMentions, tasks } from '../schema/sqlite/tables';
+import { entityMentions, rawLogs, tasks } from '../schema/sqlite/tables';
 import { duplicatePairKey, duplicateSuggestions } from './people';
 import { seedCategoryId } from './repos/categories';
 import type { Entity } from './repos/entities';
@@ -266,5 +266,33 @@ describe('the daily brief', () => {
     const waiting = await store.people.waitingDue(store.db, day);
     expect(waiting.map((w) => [w.task.id, w.entity.name])).toEqual([[photos.id, 'Farhan']]);
     expect(await store.people.waitingDue(store.db, { ...day, day: '2026-10-25' })).toEqual([]);
+  });
+});
+
+describe('entriesToRecheckForPromises', () => {
+  it('finds older entries with a task that name a person, oldest first', async () => {
+    const { store, entry, person, task, mention } = await setup();
+    const organized = async (content: string, version: number) => {
+      const log = await entry(content);
+      // Test-only: as if the processor had organized it with that prompt version.
+      await store.db
+        .update(rawLogs)
+        .set({ status: 'processed', extractionVersion: version })
+        .where(eq(rawLogs.id, log.id));
+      return log;
+    };
+    const old = await organized('send Rahul the deck', 3);
+    const noTask = await organized('lunch with Rahul', 3);
+    const current = await organized('send Rahul the notes', 4);
+    const noPerson = await organized('buy milk', 3);
+    const rahul = await person('Rahul');
+    for (const log of [old, current, noPerson]) await task(log.id, 'A task');
+    await mention(rahul.id, 'raw_log', old.id, 'about');
+    await mention(rahul.id, 'raw_log', noTask.id, 'with');
+    await mention(rahul.id, 'raw_log', current.id, 'about');
+
+    expect(await store.people.entriesToRecheckForPromises(store.db, { version: 4 })).toEqual([
+      old.id,
+    ]);
   });
 });

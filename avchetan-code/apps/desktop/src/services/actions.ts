@@ -1,4 +1,4 @@
-import { buildCaptureInput, normalizeTagPath } from '@avchetan/core';
+import { buildCaptureInput, EXTRACTION_PROMPT_VERSION, normalizeTagPath } from '@avchetan/core';
 import type { ClientStore } from '@avchetan/db/sqlite';
 import { AppError, createLogger, newId, toAppError } from '@avchetan/shared';
 import { z } from 'zod';
@@ -164,6 +164,15 @@ const ACTIONS = {
             : (await store.repos.entities.ensure(tx, { kind: 'person', name: person.name })).id;
         return store.repos.entities.linkPromise(tx, { taskId, entityId, role });
       }),
+  ),
+  // Organizes older entries again with the current prompt, which knows promise roles.
+  'people.recheckPromises': action(z.object({}), (store) =>
+    store.write(async (tx) => {
+      const ids = await store.people.entriesToRecheckForPromises(tx, {
+        version: EXTRACTION_PROMPT_VERSION,
+      });
+      for (const id of ids) await store.repos.rawLogs.requeue(tx, id);
+    }),
   ),
   // "Not a promise": the task stays.
   'promise.unlink': action(
