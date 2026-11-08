@@ -1,3 +1,6 @@
+import type { UtcInstant } from './clock';
+import { localDate } from './dates';
+
 const timeFormat = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' });
 const dayFormat = new Intl.DateTimeFormat(undefined, {
   weekday: 'short',
@@ -14,6 +17,15 @@ export function formatDay(instant: string): string {
   return dayFormat.format(Date.parse(instant));
 }
 
+/**
+ * When a day's brief was made: "made at 21:04", or with the date when that was a later day
+ * ("made Mon 9 Nov, 00:03"), so a brief for Sunday made after midnight says so (audit bug 3).
+ */
+export function formatMadeAt(instant: string, day: string, timeZone: string): string {
+  if (localDate(instant as UtcInstant, timeZone) === day) return `made at ${formatTime(instant)}`;
+  return `made ${formatDay(instant)}, ${formatTime(instant)}`;
+}
+
 const localDateFormats = new Map<string, Intl.DateTimeFormat>();
 
 /**
@@ -28,6 +40,20 @@ export function formatLocalDate(date: string, options: Intl.DateTimeFormatOption
     localDateFormats.set(key, format);
   }
   return format.format(Date.parse(`${date}T00:00:00.000Z`));
+}
+
+/**
+ * A due date the way people read it, "Wed, 11 Nov", with the year when it isn't this one
+ * (feature audit bug 9). Display only; `today` defaults to this device's clock.
+ */
+export function formatDueDate(day: string, today?: string): string {
+  const year = today ? today.slice(0, 4) : String(new Date().getFullYear());
+  return formatLocalDate(day, {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    ...(day.slice(0, 4) === year ? {} : { year: 'numeric' }),
+  });
 }
 
 function minutesText(ms: number): string {

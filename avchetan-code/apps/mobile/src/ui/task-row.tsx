@@ -1,5 +1,5 @@
 import type { Task } from '@avchetan/db/sqlite';
-import { isValidLocalDate } from '@avchetan/shared';
+import { formatDueDate, isValidLocalDate } from '@avchetan/shared';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
@@ -97,7 +97,9 @@ export function TaskRow({ task }: { task: Task }) {
           <Text className={`text-sm ${done ? 'text-inkMuted line-through' : 'text-ink'}`}>
             {task.title}
           </Text>
-          {task.dueDate ? <Text className="text-xs text-inkMuted">due {task.dueDate}</Text> : null}
+          {task.dueDate ? (
+            <Text className="text-xs text-inkMuted">due {formatDueDate(task.dueDate)}</Text>
+          ) : null}
           <PromiseLabels task={task} />
         </Pressable>
       </View>

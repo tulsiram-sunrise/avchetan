@@ -21,6 +21,7 @@ export {
   EXPORT_VERSION,
   type ExportFile,
   exportFiles,
+  exportFolderName,
   toCsv,
 } from './client/export';
 export {

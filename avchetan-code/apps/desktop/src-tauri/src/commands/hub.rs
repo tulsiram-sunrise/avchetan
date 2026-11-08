@@ -679,6 +679,21 @@ pub fn hub_restore(state: State<'_, HubState>, name: String) -> CommandResult<Hu
     Ok(state.status())
 }
 
+/// The first port from `from` up that nothing listens on, for **Use another port** (feature
+/// audit bug 7). It binds the way the hub does, on every address.
+#[tauri::command]
+pub fn hub_free_port(from: u16) -> CommandResult<u16> {
+    free_port(from, |port| {
+        std::net::TcpListener::bind(("0.0.0.0", port)).is_ok()
+    })
+    .ok_or_else(|| CommandError::new("hub_port_in_use", "No free port near this one"))
+}
+
+fn free_port(from: u16, is_free: impl Fn(u16) -> bool) -> Option<u16> {
+    let start = from.max(1024);
+    (start..=start.saturating_add(100)).find(|&port| is_free(port))
+}
+
 /// `data` or `backups`, in the system file manager.
 #[tauri::command]
 pub fn hub_folder_open(
@@ -803,6 +818,13 @@ mod tests {
         );
         assert_eq!(failure_code(&logs), "hub_port_in_use");
         assert_eq!(failure_code(&VecDeque::new()), "hub_crashed");
+    }
+
+    #[test]
+    fn finds_the_next_free_port() {
+        assert_eq!(free_port(8787, |port| port > 8789), Some(8790));
+        assert_eq!(free_port(80, |_| true), Some(1024));
+        assert_eq!(free_port(8787, |_| false), None);
     }
 
     #[test]

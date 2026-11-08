@@ -73,6 +73,9 @@ Problems come first, each with its fix and a **Help** link to its section below.
 ## ask_unavailable
 **"Your hub can't answer questions right now."** The hub has just started, or has no model for answering. Wait a minute and ask again. If it keeps failing, open the Setup check: it shows whether the hub's Ollama runs and has its models. You can also let this device answer with its own model in **AI models**.
 
+## hub_outdated
+**"Your hub needs an update to do this."** This device is newer than the hub it syncs with, and the hub doesn't know this feature yet (for example reading a command for a PC set to **My hub**). Update Avchetan on the PC that runs the hub, the same way as any device ([Install, update and uninstall](install-and-update.md#update)); a hub you run from a terminal or Docker needs its new version too. Until then, choose **This PC** under **Who answers your questions?** in **Settings → AI → AI models**.
+
 ## command_unknown
 **"Couldn't read this as a command."** You typed something after `/` that isn't one of the commands (`/done`, `/brief`, `/sync`, `/undo`), and the AI couldn't map it to one either. Type `/` alone to see the list. To save an entry that starts with `/`, begin it with `//` ([Commands](commands.md)).
 
@@ -182,7 +185,7 @@ If the lock was on and you removed the device's lock, Avchetan turned the app lo
 **"The data folder is not empty."** A hub restore never overwrites data. Stop the hub, rename the `pglite-data` folder, and run the restore again ([Back up and restore](backup-and-restore.md#restore)).
 
 ## hub_port_in_use
-**"Couldn't start: another program is using port 8787."** Usually a hub you started by hand in a terminal (`start:hub`) or with Docker is still running. Stop it: press **Ctrl+C** in its window, or run `docker compose -f deploy/home-hub/compose.yml down`. Then click **Turn on the hub** again. If another kind of program needs port 8787, stop it while the hub runs: the hub inside Avchetan always uses 8787 for now, and its port can't be changed in the app yet.
+**"Couldn't start: another program is using port 8787."** Usually a hub you started by hand in a terminal (`start:hub`) or with Docker is still running. Stop it: press **Ctrl+C** in its window, or run `docker compose -f deploy/home-hub/compose.yml down`. Then click **Turn on the hub** again. If another program needs port 8787, click **Use another port** under the message instead: Avchetan picks a free port, restarts the hub on it and moves this PC over. You can also choose one yourself under **Port** in the same section. Either way, phones and other PCs must [scan the pairing code](pair-your-phone.md) again, because the address changes, and the firewall line in the checklist asks once more for the new port.
 
 ## hub_crashed
 **"Couldn't start the hub."** The hub stopped five times in a row soon after starting. Open **Settings → Hub & sync → Home Hub on this PC → Recent hub log** and look at the last lines:

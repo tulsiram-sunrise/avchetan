@@ -19,7 +19,11 @@ The brief is made at **21:00**, or at the time you choose. Your answers model ma
 - **Answers from your hub:** the hub makes it, and your devices get it with the next sync.
 - **A hub with an answers model** also makes a brief if no device has made one 30 minutes after the brief time.
 
-The brief is made once, whichever device makes it. **Make it again** replaces it, for example after you added entries late. If you delete a brief, Avchetan doesn't make it again by itself.
+If some of the day's entries are still waiting to be organized at the brief time, the brief waits for them, for up to an hour. Entries organized or written after the brief was made show *2 new entries since this brief* under it.
+
+The brief is made once, whichever device makes it. **Make it again** replaces it, for example after those new entries. If you delete a brief, Avchetan doesn't make it again by itself.
+
+An entry written later about an earlier day ("yesterday I swam") shows on that day but doesn't make that day's brief; use **Make a brief** there if you want one. A brief made after midnight says so: *made Mon 9 Nov, 00:03*.
 
 Before 21:00, today shows its usual summary with **Make the brief now**. An older day without a brief has **Make a brief**.
 

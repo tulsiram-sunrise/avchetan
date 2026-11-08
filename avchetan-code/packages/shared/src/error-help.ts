@@ -25,6 +25,7 @@ export const ERROR_HELP = {
   invalid_date: own('That date is not valid'),
   invalid_merge: own(),
   invalid_name: own(),
+  invalid_port: own(),
   invalid_tag: own(),
   invalid_title: own(),
   invalid_time_zone: own('Unknown time zone. Choose one from the list'),
@@ -169,6 +170,7 @@ export const ERROR_HELP = {
   unavailable: at('server_error', 'Your hub or server can’t reach its database'),
   token_from_env: at('token_from_env'),
   ask_unavailable: at('ask_unavailable', 'Your hub can’t answer questions right now'),
+  hub_outdated: at('hub_outdated', 'Your hub needs an update to do this'),
 
   // Command mode in the capture box (docs/product/command-mode.md).
   command_unknown: at('command_unknown', 'Couldn’t read this as a command'),

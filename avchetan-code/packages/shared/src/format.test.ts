@@ -1,0 +1,27 @@
+import { describe, expect, it } from 'vitest';
+import { formatDueDate, formatLocalDate, formatMadeAt, formatTime } from './format';
+
+describe('formatMadeAt', () => {
+  it('gives only the time when the brief was made on its own day', () => {
+    const made = '2026-11-08T15:34:00.000Z';
+    expect(formatMadeAt(made, '2026-11-08', 'UTC')).toBe(`made at ${formatTime(made)}`);
+  });
+
+  it('adds the date when it was made on a later day (audit bug 3)', () => {
+    const made = '2026-11-09T00:03:00.000Z';
+    const label = formatMadeAt(made, '2026-11-08', 'UTC');
+    expect(label).not.toBe(`made at ${formatTime(made)}`);
+    expect(label).toMatch(/^made .+, /);
+  });
+});
+
+describe('formatDueDate', () => {
+  it('reads like a day, with the year only when it is another year (audit bug 9)', () => {
+    const short = { weekday: 'short', day: 'numeric', month: 'short' } as const;
+    expect(formatDueDate('2026-11-11', '2026-11-08')).toBe(formatLocalDate('2026-11-11', short));
+    expect(formatDueDate('2027-01-04', '2026-11-08')).toBe(
+      formatLocalDate('2027-01-04', { ...short, year: 'numeric' }),
+    );
+    expect(formatDueDate('2026-11-11', '2026-11-08')).not.toContain('2026-11-11');
+  });
+});

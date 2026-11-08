@@ -1,5 +1,5 @@
 import type { EntitySummary, PromiseItem } from '@avchetan/db/sqlite';
-import { createLogger, formatLocalDate, localDate } from '@avchetan/shared';
+import { createLogger, formatDueDate, localDate } from '@avchetan/shared';
 import { useState } from 'react';
 import { emitAppEvent } from '../native/events';
 import { useToday } from '../queries/days';
@@ -17,13 +17,7 @@ import { ActionError, EditableText, MergeSelect, panelClass, QuietButton } from 
 
 const log = createLogger('people');
 
-const shortDay = (day: string, today: string) =>
-  formatLocalDate(day, {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-    ...(day.slice(0, 4) === today.slice(0, 4) ? {} : { year: 'numeric' }),
-  });
+const shortDay = formatDueDate;
 
 /** The People page: everyone your entries name, and what you and they promised. */
 export function PeoplePage() {

@@ -3,7 +3,9 @@ import {
   type CommandReading,
   createModel,
   interpretCommand,
+  isCommandName,
   learnFromReading,
+  loadAnalysisMode,
   loadAnalysisModel,
   loadCommandLearning,
   matchOpenTask,
@@ -19,7 +21,7 @@ import {
   localDate,
   type UnlockOutcome,
 } from '@avchetan/shared';
-import { loadSyncStatus, type SyncState } from '@avchetan/sync';
+import { loadSyncStatus, requestHubCommand, type SyncState } from '@avchetan/sync';
 import type { AppServices } from '../app-services';
 import { SETTINGS_TABS, type SettingsTab, saveSettingsTab } from '../main-window/settings-tabs';
 import { emitAppEvent } from '../native/events';
@@ -330,11 +332,13 @@ export function planCommand(
 }
 
 /**
- * Asks this PC's answers model (else its organizing model) which command the text means. Only
- * the text, the command list and past confirmed readings are sent (docs/product/command-mode.md).
+ * Asks which command the text means: the hub's model when the hub answers this PC's questions,
+ * else this PC's answers model (or its organizing model). Only the text, the command list and
+ * past confirmed readings are sent (docs/product/command-mode.md).
  */
 export async function readCommand(services: AppServices, input: string): Promise<CommandReading> {
   const { store, platform } = services;
+  if ((await loadAnalysisMode(store)) === 'hub') return readCommandOnHub(services, input);
   const model = await loadAnalysisModel(store);
   if (!model) {
     throw new LlmError('llm_auth', 'Reading commands needs a model in Settings → AI → AI models');
@@ -354,6 +358,27 @@ export async function readCommand(services: AppServices, input: string): Promise
   log.info('command read', { command: reading?.command ?? 'none' });
   if (!reading) throw new AppError('command_unknown', 'Couldn’t read this as a command');
   return reading;
+}
+
+/** The hub reads it (feature audit bug 4); a command this PC doesn't know counts as none. */
+async function readCommandOnHub(services: AppServices, input: string): Promise<CommandReading> {
+  const { store, platform } = services;
+  if (!platform.network.isOnline()) {
+    throw new LlmError(
+      'llm_unavailable',
+      'This PC is offline, so your hub can’t read this command',
+    );
+  }
+  const { examples } = await loadCommandLearning(store);
+  const { command, text } = await requestHubCommand(
+    { store, fetch: platform.fetch, secrets: platform.secrets },
+    { input, examples },
+  );
+  log.info('command read by the hub', { command: command ?? 'none' });
+  if (command === null || !isCommandName(command)) {
+    throw new AppError('command_unknown', 'Couldn’t read this as a command');
+  }
+  return { command, text: text.trim() };
 }
 
 /** Runs a confirmed AI reading's plan, then learns from it. */

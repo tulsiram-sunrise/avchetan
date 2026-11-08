@@ -10,7 +10,7 @@ import {
 import type { ContextRule } from '@avchetan/db/sqlite';
 import { createLogger } from '@avchetan/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { GUIDE_URL, openExternal } from '../help';
 import { emitAppEvent } from '../native/events';
 import { useAction, useProjects } from '../queries/organize';
@@ -261,7 +261,6 @@ export function RuleForm(props: {
   onDone: () => void;
 }) {
   const { rule, sample } = props;
-  const projects = useProjects().data ?? [];
   const create = useAction('contextRule.create');
   const update = useAction('contextRule.update');
   const initialTitle = rule?.titlePattern ?? '';
@@ -334,21 +333,7 @@ export function RuleForm(props: {
           This pattern doesn't work: {parsed.message}
         </p>
       ) : null}
-      <label className="flex flex-col gap-1">
-        Project
-        <select
-          className={fieldClass}
-          value={projectId}
-          onChange={(e) => setProjectId(e.target.value)}
-        >
-          <option value="">None</option>
-          {projects.map((project) => (
-            <option key={project.id} value={project.id}>
-              {project.name}
-            </option>
-          ))}
-        </select>
-      </label>
+      <ProjectPicker value={projectId} onChange={setProjectId} />
       <label className="flex flex-col gap-1">
         Tags, separated by commas
         <input
@@ -375,5 +360,86 @@ export function RuleForm(props: {
       </div>
       <ActionError errors={[create.error, update.error]} />
     </form>
+  );
+}
+
+const NEW_PROJECT = '__new__';
+
+/** The rule's project, with New project… so a rule doesn't wait for the Projects page (audit bug 9). */
+function ProjectPicker(props: { value: string; onChange: (id: string) => void }) {
+  const projects = useProjects().data ?? [];
+  const create = useAction('project.create');
+  const [adding, setAdding] = useState(false);
+  const [name, setName] = useState('');
+  const [waitingFor, setWaitingFor] = useState<string | null>(null);
+  const { onChange } = props;
+
+  // The dock writes the project; pick it once it shows up in the list.
+  useEffect(() => {
+    if (!waitingFor) return;
+    const made = projects.find((project) => project.name.toLowerCase() === waitingFor);
+    if (made) {
+      onChange(made.id);
+      setWaitingFor(null);
+      setAdding(false);
+      setName('');
+    }
+  }, [projects, waitingFor, onChange]);
+
+  const add = () => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    create.mutate(
+      { name: trimmed, description: null },
+      { onSuccess: () => setWaitingFor(trimmed.toLowerCase()) },
+    );
+  };
+
+  return (
+    <div className="flex flex-col gap-1">
+      <label className="flex flex-col gap-1">
+        Project
+        <select
+          className={fieldClass}
+          value={adding ? NEW_PROJECT : props.value}
+          onChange={(e) => {
+            if (e.target.value === NEW_PROJECT) setAdding(true);
+            else {
+              setAdding(false);
+              props.onChange(e.target.value);
+            }
+          }}
+        >
+          <option value="">None</option>
+          {projects.map((project) => (
+            <option key={project.id} value={project.id}>
+              {project.name}
+            </option>
+          ))}
+          <option value={NEW_PROJECT}>New project…</option>
+        </select>
+      </label>
+      {adding ? (
+        <div className="flex items-center gap-2">
+          <input
+            className={`${fieldClass} flex-1`}
+            aria-label="New project name"
+            placeholder="Name, like Engineering"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                add();
+              }
+            }}
+          />
+          <QuietButton disabled={!name.trim() || create.isPending} onClick={add}>
+            Add project
+          </QuietButton>
+        </div>
+      ) : null}
+      <ActionError errors={[create.error]} />
+    </div>
   );
 }

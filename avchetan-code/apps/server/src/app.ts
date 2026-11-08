@@ -4,6 +4,8 @@ import { type Clock, createLogger, type ModelCheck } from '@avchetan/shared';
 import {
   type ErrorResponse,
   HEADERS,
+  type HubCommandRequestParsed,
+  type HubCommandResponse,
   PROTOCOL_VERSION,
   type ServerProfile,
 } from '@avchetan/sync/protocol';
@@ -19,6 +21,7 @@ import type { ServerDb } from './db/client';
 import { createRateLimiter } from './rate-limit';
 import { askRoutes } from './routes/ask';
 import { briefRoutes } from './routes/brief';
+import { commandRoutes } from './routes/command';
 import { deviceRoutes } from './routes/devices';
 import { healthRoutes } from './routes/health';
 import { pairingRoutes } from './routes/pairing';
@@ -52,6 +55,8 @@ export type AppDeps = {
   ask?: HubAsk;
   /** Makes a day's daily brief with the hub's model; absent when it has none. */
   brief?: HubBrief;
+  /** Reads an unknown `/` command with the hub's model; absent when it has none. */
+  command?: (request: HubCommandRequestParsed) => Promise<HubCommandResponse>;
   /** Whether the server's own models can be used, for the Setup check. */
   checkAi?: () => Promise<ModelCheck[]>;
 };
@@ -138,6 +143,7 @@ export function createApp(deps: AppDeps) {
   app.route('/v1', searchRoutes(deps));
   app.route('/v1', askRoutes(deps));
   app.route('/v1', briefRoutes(deps));
+  app.route('/v1', commandRoutes(deps));
   app.route('/v1', pairingRoutes(deps));
 
   app.notFound((c) => c.json(errorBody(c, 'not_found', 'No such endpoint'), 404));

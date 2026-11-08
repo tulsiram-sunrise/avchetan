@@ -30,6 +30,8 @@ New entries show **Pending** until they sync, then come back organized a few sec
 
 If the screen says the phone isn't connected to a hub, set up [Sync](pair-your-phone.md#connect-by-hand) first. Entries wait on the phone until it can reach the hub.
 
+**On a PC** that syncs with a hub, **Settings → AI → AI models** has the same two choices, **Who organizes your entries?** and **Who answers your questions?**, each **This PC** or **My hub**. **My hub** says which of the hub's models does the job; **This PC** shows the model form. Turning on the [hub on this PC](setup-home-hub.md) starts on **My hub** when the PC has no model of its own. Choose **This PC** to use a different model on the PC, for example a fast cloud model while the hub keeps Ollama for your phone. Saving a model alone doesn't switch.
+
 ## Let your hub answer a phone's questions
 
 The hub can answer the **Ask** tab's questions too, so the phone needs no AI key at all.

@@ -3,6 +3,7 @@ import {
   backupFileName,
   type ClientStore,
   exportFiles,
+  exportFolderName,
   startDailyBackups,
 } from '@avchetan/db/sqlite';
 import { type Cancel, localDate, systemTimeZone } from '@avchetan/shared';
@@ -30,7 +31,6 @@ export function backUpNow(deps: DataDeps): Promise<BackupList> {
 /** Writes JSON + CSV into a new dated folder the person picks; null when they cancel. */
 export async function exportEverything({ store, platform }: DataDeps): Promise<string | null> {
   const data = await store.exportData();
-  // 2026-11-03T14:03:11.402Z → avchetan-export-2026-11-03-140311 (UTC, like exportedAt).
-  const stamp = data.exportedAt.slice(0, 19).replace('T', '-').replaceAll(':', '');
-  return platform.files.writeExport(`avchetan-export-${stamp}`, exportFiles(data));
+  const folderName = exportFolderName(data.exportedAt, systemTimeZone());
+  return platform.files.writeExport(folderName, exportFiles(data));
 }

@@ -1,4 +1,4 @@
-import { type Activity, type ClientStore, seedCategoryId } from '@avchetan/db/sqlite';
+import { type Activity, type ClientStore, type RawLog, seedCategoryId } from '@avchetan/db/sqlite';
 import {
   addDays,
   createLogger,
@@ -80,6 +80,21 @@ export function isDailyBrief(activity: Pick<Activity, 'origin' | 'metrics'>): bo
 }
 
 /** The brief's row, deleted or not, or undefined if the day never had one. */
+/**
+ * Entries of the brief's day written or organized after it was made, for Days to offer Make it
+ * again (audit bug 2). The brief is not remade by itself.
+ */
+export function entriesSinceBrief(
+  entries: readonly Pick<RawLog, 'capturedAt' | 'processedAt'>[],
+  brief: Pick<Activity, 'updatedAt'>,
+): number {
+  return entries.filter(
+    (entry) =>
+      entry.capturedAt > brief.updatedAt ||
+      (entry.processedAt !== null && entry.processedAt > brief.updatedAt),
+  ).length;
+}
+
 export function findDailyBrief(store: ClientStore, day: LocalDate): Promise<Activity | undefined> {
   return store.queries.activityById(store.db, dailyBriefId(day));
 }
@@ -142,6 +157,10 @@ export async function collectBriefFacts(
     weekday: weekdayOf(day),
     entries: entries.slice(-MAX_ENTRIES).map((entry) => ({
       time: localTime(entry.capturedAt, timeZone),
+      writtenOn:
+        localDate(entry.capturedAt, timeZone) === day
+          ? null
+          : localDate(entry.capturedAt, timeZone),
       text: entry.content.replace(/\s+/g, ' ').trim().slice(0, MAX_ENTRY_CHARS),
     })),
     categories: byCategory.map((category) => ({

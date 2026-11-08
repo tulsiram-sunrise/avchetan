@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { openTestStore } from '../../testing';
-import { collectExport, EXPORT_FORMAT, exportFiles, toCsv } from './export';
+import { collectExport, EXPORT_FORMAT, exportFiles, exportFolderName, toCsv } from './export';
 
 const meta = { exportedAt: '2026-10-26T12:00:00.000Z', deviceId: 'device-a' };
 
@@ -54,5 +54,17 @@ describe('toCsv', () => {
 
   it('is empty for no rows', () => {
     expect(toCsv([])).toBe('');
+  });
+});
+
+describe('exportFolderName', () => {
+  it('names the folder in local time, not UTC (audit bug 9)', () => {
+    // 00:01:32 on 9 Nov in India is still 8 Nov in UTC.
+    expect(exportFolderName('2026-11-08T18:31:32.807Z', 'Asia/Kolkata')).toBe(
+      'avchetan-export-2026-11-09-000132',
+    );
+    expect(exportFolderName('2026-11-08T18:31:32.807Z', 'UTC')).toBe(
+      'avchetan-export-2026-11-08-183132',
+    );
   });
 });

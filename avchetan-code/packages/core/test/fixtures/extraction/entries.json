@@ -708,5 +708,59 @@
       "entities": ["Kabir", "Lata"],
       "promises": []
     }
+  },
+  {
+    "id": "date-weekday-from-sunday",
+    "text": "need to send Priya the slides by Friday",
+    "at": "2026-03-08T06:00:00.000Z",
+    "expect": {
+      "tasks": [
+        {
+          "dueDate": "2026-03-13",
+          "titleHas": "slides"
+        }
+      ],
+      "entities": ["Priya"],
+      "promises": [
+        {
+          "person": "Priya",
+          "role": "owed_to",
+          "titleHas": "slides"
+        }
+      ]
+    }
+  },
+  {
+    "id": "date-past-weekday",
+    "text": "On Wednesday I did a 45 minute yoga class",
+    "at": "2026-03-06T12:00:00.000Z",
+    "expect": {
+      "activities": [
+        {
+          "category": "workout",
+          "date": "2026-03-04",
+          "metrics": {
+            "duration_min": 45
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "date-two-tasks-two-days",
+    "text": "Buy milk tomorrow and submit the tax form on Monday",
+    "at": "2026-03-06T12:00:00.000Z",
+    "expect": {
+      "tasks": [
+        {
+          "dueDate": "2026-03-07",
+          "titleHas": "milk"
+        },
+        {
+          "dueDate": "2026-03-09",
+          "titleHas": "tax"
+        }
+      ]
+    }
   }
 ]

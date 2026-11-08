@@ -1,14 +1,21 @@
 import {
+  type AnalysisMode,
   hasApiKey,
   type LlmProvider,
+  loadAnalysisMode,
+  loadExtractionMode,
   loadSlotModel,
   type ModelConfig,
   type ModelSlot,
   removeApiKey,
+  saveAnalysisMode,
+  saveExtractionMode,
   saveSlotModel,
   testDraftModel,
 } from '@avchetan/core';
+import type { ExtractionMode } from '@avchetan/db';
 import { createLogger } from '@avchetan/shared';
+import { loadServerStatus } from '@avchetan/sync';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { emitAppEvent } from '../native/events';
 import { useServices } from '../services-context';
@@ -52,6 +59,65 @@ export function useSaveModel(slot: ModelSlot) {
         log.warn('could not announce setting change'),
       );
     },
+  });
+}
+
+const extractionModeQuery = ['settings', 'extraction.mode'] as const;
+const analysisModeQuery = ['settings', 'analysis.mode'] as const;
+
+/** Who organizes this PC's entries: this PC (`self`) or the hub it syncs with (`delegate`). */
+export function useExtractionMode() {
+  const { store } = useServices();
+  return useQuery({ queryKey: extractionModeQuery, queryFn: () => loadExtractionMode(store) });
+}
+
+/** Who answers this PC's questions: its own model (`self`) or the hub (`hub`). */
+export function useAnalysisMode() {
+  const { store } = useServices();
+  return useQuery({ queryKey: analysisModeQuery, queryFn: () => loadAnalysisMode(store) });
+}
+
+/** The dock re-reads settings, tells the hub at its next sync (now), and organizes again. */
+const announceSettings = () =>
+  emitAppEvent('logs:changed', { tables: ['settings'] }).catch(() =>
+    log.warn('could not announce setting change'),
+  );
+
+export function useSaveExtractionMode() {
+  const { store } = useServices();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (mode: ExtractionMode) => saveExtractionMode(store, mode),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: extractionModeQuery });
+      void announceSettings();
+    },
+  });
+}
+
+export function useSaveAnalysisMode() {
+  const { store } = useServices();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (mode: AnalysisMode) => saveAnalysisMode(store, mode),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: analysisModeQuery });
+      void announceSettings();
+    },
+  });
+}
+
+/** The hub's own models, to name them; empty when the hub can't be reached or is older. */
+export function useHubModels(enabled: boolean) {
+  const { store, platform } = useServices();
+  return useQuery({
+    queryKey: ['server', 'ai'] as const,
+    enabled,
+    staleTime: 60_000,
+    retry: false,
+    queryFn: async () =>
+      (await loadServerStatus({ store, fetch: platform.fetch, secrets: platform.secrets })).ai ??
+      [],
   });
 }
 

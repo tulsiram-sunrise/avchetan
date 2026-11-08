@@ -9,6 +9,7 @@ import { hubModels, hubOllamaModels, turnOffHub, turnOnHub } from '../services/h
 import { useServices } from '../services-context';
 import { HubBackups } from './hub-backups';
 import { HubChecklist } from './hub-checklist';
+import { HubPort } from './hub-port';
 import { ActionError, fieldClass, QuietButton } from './ui';
 
 export const HUB_STATUS_KEY = ['native', 'hub'] as const;
@@ -103,6 +104,7 @@ export function HubSetting() {
           {current.phase === 'failed' && current.error ? <HelpLink code={current.error} /> : null}
         </p>
       ) : null}
+      {current ? <HubPort status={current} onChanged={onChanged} /> : null}
       {current ? (
         <HubChecklist
           port={current.config.port}

@@ -1,5 +1,5 @@
 import type { PromiseLink, Task } from '@avchetan/db/sqlite';
-import { formatLocalDate } from '@avchetan/shared';
+import { formatDueDate } from '@avchetan/shared';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
@@ -7,13 +7,7 @@ import { useLinkPromise, usePeople, usePromiseLinks, useUnlinkPromise } from '..
 import { Button, Failure, Field } from './parts';
 
 /** "Tue 4 Nov", with the year when it isn't this year's. */
-export const shortDay = (day: string, today: string) =>
-  formatLocalDate(day, {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-    ...(day.slice(0, 4) === today.slice(0, 4) ? {} : { year: 'numeric' }),
-  });
+export const shortDay = formatDueDate;
 
 export const promiseLabel = (link: PromiseLink) =>
   link.role === 'owed_to' ? `Promise to ${link.entity.name}` : `Waiting on ${link.entity.name}`;

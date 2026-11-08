@@ -7,8 +7,10 @@ import { METRICS } from '../normalize/metric-keys';
  * 3: adds text the user copied with clipboard snap, as reference (docs/product/clipboard-snap.md).
  * 4: promise roles in both directions and tasks the person waits on someone for
  *    (docs/product/people-and-promises.md).
+ * 5: a date table of the past 6 and the next 14 days with weekday names (feature audit bug 5),
+ *    and promises in past corrections (bug 8).
  */
-export const version = 4;
+export const version = 5;
 
 const metricList = METRICS.filter((metric) => metric.key !== 'kind' && metric.key !== 'exercises')
   .map((metric) => metric.key)
@@ -47,7 +49,7 @@ Activities are things that already happened. Tasks are forward-looking commitmen
 
 Categories: use a slug from the list. If none fits a hobby, skill or routine, add one newCategory with a short name and a one-line description, even the first time, and put that name in the item's category field. Use "other" only for errands and one-offs.
 
-Dates: copy them from the date table, never calculate. For a weekday, find that exact weekday's line. loggedDate is today unless the entry names an earlier day; "this morning", "today" and "tonight" are today. "kal" with a past verb means yesterday, with a future verb tomorrow. dueDate stays null unless a day is stated.
+Dates: copy them from the date table, never calculate. For a weekday, find that exact weekday's line: a plain weekday still to come is its "coming" line, one already gone is its "past" line, and a "week after" line only when the entry says the week after or next week. loggedDate is today unless the entry names an earlier day; "this morning", "today" and "tonight" are today. "kal" with a past verb means yesterday, with a future verb tomorrow. dueDate stays null unless a day is stated.
 
 Metrics: use only values the entry states, except 1-5 scales (energy, mood, stress) which you may estimate from clear wording. Never invent numbers. Allowed keys: ${metricList}. For an amount with no key, use a snake_case key with a unit suffix. Put gym exercises in "exercises".
 
@@ -75,13 +77,16 @@ export function buildUser(input: ExtractionInput): string {
     `today (${input.weekday}): ${input.today}`,
     `yesterday: ${addDays(input.today, -1)}`,
     `tomorrow (${weekdayOf(addDays(input.today, 1))}): ${addDays(input.today, 1)}`,
-    ...input.upcoming.map(({ date, weekday }) => `coming ${weekday}: ${date}`),
+    ...input.upcoming.map(({ date, weekday }, index) =>
+      index < 7 ? `coming ${weekday}: ${date}` : `${weekday} the week after: ${date}`,
+    ),
+    ...input.recent.map(({ date, weekday }) => `past ${weekday}: ${date}`),
   ];
   const sections: string[] = [];
   // First and far from the entry, so the model doesn't take them as part of it.
   if (input.corrections.length > 0) {
     sections.push(
-      `Past corrections by this person, for reference only. They are NOT part of the entry: never copy their items. Only when the entry is alike, organize it the same way (category, title style, task or not). "not" lines were wrong: don't make such items again.\n\n${input.corrections.join('\n\n')}\n\n(end of past corrections)`,
+      `Past corrections by this person, for reference only. They are NOT part of the entry: never copy their items. Only when the entry is alike, organize it the same way (category, title style, task or not). "not" lines were wrong: don't make such items again. "(for: X)" after a task means forPerson X, "(waiting on: X)" means waitingOn X, and a "not a promise" task has neither.\n\n${input.corrections.join('\n\n')}\n\n(end of past corrections)`,
     );
   }
   sections.push(

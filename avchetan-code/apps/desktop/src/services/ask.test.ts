@@ -59,6 +59,17 @@ describe('askQuestion', () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 
+  it("uses this PC's model again once answers are switched back to This PC", async () => {
+    const { app } = await services(groq, true);
+    await saveAnalysisMode(app.store, 'hub');
+    await saveAnalysisMode(app.store, 'self');
+
+    // The provider stage, not the hub: the hub would need sync set up.
+    await expect(askQuestion(app, 'anything', () => {})).rejects.toMatchObject({
+      message: 'No API key is set for this provider',
+    });
+  });
+
   it('falls back to the organizing model', async () => {
     const { app } = await services(groq, true);
 

@@ -1,21 +1,29 @@
 import {
+  type AnalysisMode,
   type LlmMayCreate,
   type LlmProvider,
   MODEL_PRESETS,
   type ModelSlot,
   PROVIDER_ADAPTERS,
 } from '@avchetan/core';
+import type { ExtractionMode } from '@avchetan/db';
 import { describeError, toAppError } from '@avchetan/shared';
 import { useState } from 'react';
 import { HelpLink } from '../help-link';
 import {
+  useAnalysisMode,
+  useExtractionMode,
   useHasApiKey,
+  useHubModels,
   useRemoveApiKey,
+  useSaveAnalysisMode,
+  useSaveExtractionMode,
   useSaveModel,
   useSlotModel,
   useTestModel,
 } from '../queries/ai-models';
 import { useMayCreate, useSetMayCreate } from '../queries/settings';
+import { useConnection } from '../queries/sync';
 
 /** Offered in this order: free and private-friendly first. */
 const PROVIDERS: readonly LlmProvider[] = [
@@ -47,14 +55,159 @@ const suggestedModel = (provider: LlmProvider, slot: ModelSlot) =>
 
 const fieldClass = 'rounded-lg border border-line bg-surface-raised px-3 py-1.5 text-sm';
 
+type Choice<M extends string> = { mode: M; label: string; hint: string };
+
+const ORGANIZE: readonly Choice<ExtractionMode>[] = [
+  {
+    mode: 'self',
+    label: 'This PC',
+    hint: 'This PC sends each entry to the model you choose below.',
+  },
+  {
+    mode: 'delegate',
+    label: 'My hub',
+    hint: "Your hub organizes this PC's entries a few seconds after they sync. This PC needs no model for this.",
+  },
+];
+
+const ANSWER: readonly Choice<AnalysisMode>[] = [
+  {
+    mode: 'self',
+    label: 'This PC',
+    hint: 'This PC asks the model you choose below, using the entries on this PC.',
+  },
+  {
+    mode: 'hub',
+    label: 'My hub',
+    hint: 'Your hub answers with its own model, and makes the daily brief. This PC needs to reach the hub.',
+  },
+];
+
 export function AiModelsSetting() {
+  const connection = useConnection();
+  const organize = useExtractionMode();
+  const answer = useAnalysisMode();
+  const saveOrganize = useSaveExtractionMode();
+  const saveAnswer = useSaveAnalysisMode();
+  if (!connection.isSuccess || !organize.isSuccess || !answer.isSuccess) return null;
+  const connected = connection.data.urls.length > 0;
+  // The choice is shown once there is a hub, or while this PC is still set to use one.
+  const showChoice = connected || organize.data !== 'self' || answer.data !== 'self';
+
   return (
     <section className="flex flex-col gap-5">
       <h2 className="font-medium">AI models</h2>
-      <SlotSetting slot="extraction" />
-      <SlotSetting slot="analysis" />
+      {showChoice ? (
+        <HubChoice
+          name="organize"
+          title="Who organizes your entries?"
+          choices={ORGANIZE}
+          mode={organize.data}
+          connected={connected}
+          saving={saveOrganize.isPending}
+          error={saveOrganize.error}
+          onChoose={(mode) => saveOrganize.mutate(mode)}
+        />
+      ) : null}
+      {organize.data === 'self' ? (
+        <SlotSetting slot="extraction" />
+      ) : (
+        <HubModelLine job="organizing" connected={connected} />
+      )}
+      {showChoice ? (
+        <HubChoice
+          name="answer"
+          title="Who answers your questions?"
+          choices={ANSWER}
+          mode={answer.data}
+          connected={connected}
+          saving={saveAnswer.isPending}
+          error={saveAnswer.error}
+          onChoose={(mode) => saveAnswer.mutate(mode)}
+        />
+      ) : null}
+      {answer.data === 'self' ? (
+        <SlotSetting slot="analysis" />
+      ) : (
+        <HubModelLine job="answers" connected={connected} />
+      )}
       <NewCategoriesSetting />
     </section>
+  );
+}
+
+/** "This PC" or "My hub", for one kind of AI work (as on the phone). */
+function HubChoice<M extends string>(props: {
+  name: string;
+  title: string;
+  choices: readonly Choice<M>[];
+  mode: M;
+  connected: boolean;
+  saving: boolean;
+  error: unknown;
+  onChoose: (mode: M) => void;
+}) {
+  return (
+    <fieldset className="flex flex-col gap-2">
+      <legend className="pb-1 text-sm font-medium">{props.title}</legend>
+      {props.choices.map((choice) => (
+        <label key={choice.mode} className="flex items-start gap-2 text-sm">
+          <input
+            type="radio"
+            className="mt-1"
+            name={`ai-mode-${props.name}`}
+            value={choice.mode}
+            checked={props.mode === choice.mode}
+            disabled={props.saving}
+            onChange={() => props.onChoose(choice.mode)}
+          />
+          <span>
+            {choice.label}
+            <span className="block text-ink-muted">{choice.hint}</span>
+          </span>
+        </label>
+      ))}
+      {props.mode !== 'self' && !props.connected ? (
+        <p role="alert" className="text-sm text-danger">
+          This PC isn't connected to a hub. Set one up in Settings → Hub & sync, or choose This PC.
+        </p>
+      ) : null}
+      {props.error ? (
+        <p role="alert" className="text-sm text-danger">
+          Couldn't save this choice. Try again. <HelpLink code={toAppError(props.error).code} />
+        </p>
+      ) : null}
+    </fieldset>
+  );
+}
+
+const PROVIDER_NAMES: Record<string, string> = {
+  groq: 'Groq',
+  ollama: 'Ollama',
+  google: 'Google Gemini',
+  openai: 'OpenAI',
+  anthropic: 'Anthropic',
+  openai_compatible: 'an OpenAI-compatible service',
+};
+
+/** Which of the hub's models does this job, when the hub says so. */
+function HubModelLine({ job, connected }: { job: 'organizing' | 'answers'; connected: boolean }) {
+  const models = useHubModels(connected);
+  const model = models.data?.find((check) => check.job === job);
+  if (!model) {
+    return (
+      <p className="text-sm text-ink-muted">
+        {models.isError
+          ? "Your hub's model does this. The hub can't be reached right now."
+          : "Your hub's model does this."}
+      </p>
+    );
+  }
+  const provider = PROVIDER_NAMES[model.provider] ?? model.provider;
+  return (
+    <p className="text-sm text-ink-muted">
+      Your hub does this with {model.model} ({provider}).
+    </p>
   );
 }
 

@@ -97,6 +97,8 @@ export type BriefRunner = {
 };
 
 const FIVE_MINUTES = 5 * 60_000;
+/** How long a due brief waits for its day's entries to be organized (audit bug 2). */
+export const BRIEF_WAIT_MS = 60 * 60_000;
 
 /**
  * Makes each due brief once (background jobs pattern): a brief that exists, even deleted, is
@@ -115,25 +117,50 @@ export function createBriefRunner(deps: BriefRunnerDeps): BriefRunner {
     return kept;
   }
 
-  async function dueDays(): Promise<LocalDate[]> {
+  async function dueDays(): Promise<{ days: LocalDate[]; settings: BriefSettings | null }> {
     const settings = deps.settings ? await deps.settings() : await loadBriefSettings(deps.store);
-    if (!settings?.enabled || !(await deps.canMake())) return [];
-    return dueBriefDays({
+    if (!settings?.enabled || !(await deps.canMake())) return { days: [], settings: null };
+    const days = dueBriefDays({
       now: deps.store.clock.now(),
       timeZone: deps.timeZone(),
       time: settings.time,
       graceMinutes: deps.graceMinutes ?? 0,
     });
+    return { days, settings };
   }
 
-  async function needsBrief(day: LocalDate): Promise<boolean> {
+  /**
+   * Whether a due day gets its brief now. A past day counts only entries written by its end, so
+   * "yesterday I…" written later doesn't make one (audit bug 3). Entries still waiting to be
+   * organized hold it back, for at most an hour after the brief time or the newest of them
+   * (audit bug 2); Days then offers Make it again for any that come later.
+   */
+  async function needsBrief(day: LocalDate, settings: BriefSettings): Promise<boolean> {
     if (await findDailyBrief(deps.store, day)) return false;
-    const entries = await deps.store.queries.dayEntries(deps.store.db, {
-      day,
-      timeZone: deps.timeZone(),
-    });
-    if (entries.length === 0) return false;
-    return emptyDays.get(day) !== entries.length;
+    const timeZone = deps.timeZone();
+    const entries = await deps.store.queries.dayEntries(deps.store.db, { day, timeZone });
+    const writtenByThen = entries.filter((entry) => localDate(entry.capturedAt, timeZone) <= day);
+    if (writtenByThen.length === 0) return false;
+    if (emptyDays.get(day) === entries.length) return false;
+    const waiting = entries.filter((entry) => entry.status === 'pending_llm');
+    if (waiting.length === 0) return true;
+    const now = deps.store.clock.now();
+    // ISO instants sort as text.
+    const newest =
+      waiting
+        .map((entry) => entry.capturedAt)
+        .sort()
+        .at(-1) ?? now;
+    const waited =
+      addMs(newest, BRIEF_WAIT_MS) <= now &&
+      dueBriefDays({
+        now: addMs(now, -BRIEF_WAIT_MS),
+        timeZone,
+        time: settings.time,
+        graceMinutes: deps.graceMinutes ?? 0,
+      }).includes(day);
+    if (!waited) log.debug('brief waits for entries', { day, waiting: waiting.length });
+    return waited;
   }
 
   async function makeNow(day: LocalDate): Promise<'made' | 'empty'> {
@@ -158,14 +185,14 @@ export function createBriefRunner(deps: BriefRunnerDeps): BriefRunner {
     scheduler: deps.scheduler,
     log,
     run: async () => {
-      const missing = await keep(
-        await dueDays(),
-        async (day) => !(await findDailyBrief(deps.store, day)),
-      );
+      const due = await dueDays();
+      const settings = due.settings;
+      if (!settings) return 'idle';
+      const missing = await keep(due.days, async (day) => !(await findDailyBrief(deps.store, day)));
       if (missing.length === 0) return 'idle';
       // Brings in a brief another device made, and entries this copy hasn't seen yet.
       await deps.beforeCheck?.();
-      for (const day of await keep(missing, needsBrief)) {
+      for (const day of await keep(missing, (day) => needsBrief(day, settings))) {
         log.info('making daily brief', { day });
         await makeNow(day);
       }

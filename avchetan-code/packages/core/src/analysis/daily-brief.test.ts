@@ -17,6 +17,7 @@ import {
   type BriefText,
   briefNotes,
   dailyBriefId,
+  entriesSinceBrief,
   findDailyBrief,
   isFrictionTag,
   makeDailyBrief,
@@ -56,9 +57,10 @@ function fakeLlm(answer: BriefText = text) {
 
 let store: ClientStore;
 let raw: Awaited<ReturnType<typeof openTestStore>>['raw'];
+let advance: (ms: number) => void;
 
 beforeEach(async () => {
-  ({ store, raw } = await openTestStore({ start: `${DAY}T10:00:00.000Z` }));
+  ({ store, raw, advance } = await openTestStore({ start: `${DAY}T10:00:00.000Z` }));
 });
 
 const capture = (content: string) =>
@@ -68,6 +70,9 @@ const capture = (content: string) =>
       buildCaptureInput(content, { source: 'desktop_text', capturedTz: TZ }),
     ),
   );
+
+/** As if every entry so far had been organized. */
+const organizeAll = () => raw.prepare("UPDATE raw_logs SET status = 'processed'").run();
 
 async function workout(rawLogId: string, minutes: number) {
   await store.write((tx) =>
@@ -233,6 +238,7 @@ describe('createBriefRunner', () => {
   it('makes a due brief once', async () => {
     await saveBriefSettings(store, { time: '09:00' });
     await capture('a day');
+    organizeAll();
     const made: string[] = [];
     const brief = runner(made);
 
@@ -245,6 +251,7 @@ describe('createBriefRunner', () => {
   it('leaves a deleted brief deleted', async () => {
     await saveBriefSettings(store, { time: '09:00' });
     await capture('a day');
+    organizeAll();
     const made: string[] = [];
     await runner(made).wake();
     await store.write((tx) => store.repos.activities.softDelete(tx, dailyBriefId(DAY)));
@@ -256,6 +263,7 @@ describe('createBriefRunner', () => {
 
   it('does nothing before the brief time, when turned off, or without a model', async () => {
     await capture('a day');
+    organizeAll();
     const made: string[] = [];
     await saveBriefSettings(store, { time: '22:00' });
     await runner(made).wake();
@@ -265,6 +273,85 @@ describe('createBriefRunner', () => {
     await runner(made, false).wake();
 
     expect(made).toEqual([]);
+  });
+
+  it("waits for the day's entries to be organized, for at most an hour", async () => {
+    await saveBriefSettings(store, { time: '09:00' });
+    await capture('first');
+    organizeAll();
+    await capture('second, still waiting');
+    const made: string[] = [];
+
+    await runner(made).wake();
+    expect(made).toEqual([]);
+
+    advance(59 * 60_000);
+    await runner(made).wake();
+    expect(made).toEqual([]);
+
+    advance(2 * 60_000);
+    await runner(made).wake();
+    expect(made).toEqual([DAY]);
+  });
+
+  it('makes it as soon as nothing is waiting', async () => {
+    await saveBriefSettings(store, { time: '09:00' });
+    await capture('first');
+    await capture('second');
+    const made: string[] = [];
+    await runner(made).wake();
+    expect(made).toEqual([]);
+
+    organizeAll();
+    await runner(made).wake();
+
+    expect(made).toEqual([DAY]);
+  });
+
+  it("doesn't make a past day's brief for an entry written about it later", async () => {
+    await saveBriefSettings(store, { time: '09:00' });
+    const { id } = await capture('yesterday I swam 20 laps');
+    await store.write((tx) =>
+      store.repos.activities.create(tx, {
+        rawLogId: id,
+        categoryId: seedCategoryId('workout'),
+        title: 'Swim',
+        loggedDate: '2026-10-25',
+      }),
+    );
+    organizeAll();
+    const made: string[] = [];
+
+    await runner(made).wake();
+
+    // Only today's brief: the entry was written on the 26th.
+    expect(made).toEqual([DAY]);
+  });
+
+  it('still makes a missed brief for yesterday the next morning', async () => {
+    await saveBriefSettings(store, { time: '21:00' });
+    await capture('a day');
+    organizeAll();
+    advance(14 * 60 * 60_000); // 00:00 the next day, before its brief time
+    const made: string[] = [];
+
+    await runner(made).wake();
+
+    expect(made).toEqual([DAY]);
+  });
+});
+
+describe('entriesSinceBrief', () => {
+  it('counts entries written or organized after the brief was made', () => {
+    const brief = { updatedAt: '2026-11-08T18:20:00.000Z' };
+    const entries = [
+      { capturedAt: '2026-11-08T18:00:00.000Z', processedAt: '2026-11-08T18:10:00.000Z' },
+      { capturedAt: '2026-11-08T18:00:00.000Z', processedAt: '2026-11-08T18:30:00.000Z' },
+      { capturedAt: '2026-11-08T18:25:00.000Z', processedAt: null },
+      { capturedAt: '2026-11-08T18:05:00.000Z', processedAt: null },
+    ];
+
+    expect(entriesSinceBrief(entries, brief)).toBe(2);
   });
 });
 

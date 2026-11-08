@@ -178,6 +178,33 @@ export const briefResponseSchema = z.object({
 });
 export type HubBriefResponse = z.infer<typeof briefResponseSchema>;
 
+/**
+ * `POST /v1/command`: the hub's answers model reads what was typed after `/` as a command.
+ * Only the typed words and earlier confirmed readings travel, never entries (command-mode.md).
+ */
+export const commandRequestSchema = z.object({
+  input: z.string().trim().min(1).max(500),
+  examples: z
+    .array(
+      z.object({
+        input: z.string().max(500),
+        command: z.string().max(40),
+        text: z.string().max(500),
+      }),
+    )
+    .max(20)
+    .default([]),
+});
+export type HubCommandRequest = z.input<typeof commandRequestSchema>;
+export type HubCommandRequestParsed = z.output<typeof commandRequestSchema>;
+
+/** `command` is null when the words mean no command; the device checks it against its list. */
+export const commandResponseSchema = z.object({
+  command: z.string().max(40).nullable(),
+  text: z.string().max(500),
+});
+export type HubCommandResponse = z.infer<typeof commandResponseSchema>;
+
 /** Sent as server-sent events, one JSON object per `data:` line. */
 export const askEventSchema = z.discriminatedUnion('type', [
   /** The whole answer so far, citations already numbered. */

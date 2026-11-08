@@ -44,6 +44,8 @@ export function createHub(invoke: Invoke) {
     listBackups: () => callNative(invoke, 'hub_backup_list', {}, hubBackupsSchema),
     /** Puts a snapshot back, keeping the current data beside it, and starts the hub again. */
     restore: (name: string) => callNative(invoke, 'hub_restore', { name }, hubStatusSchema),
+    /** The first port from `from` up that nothing listens on. */
+    freePort: (from: number) => callNative(invoke, 'hub_free_port', { from }, z.number().int()),
     openFolder: (folder: 'data' | 'backups') =>
       callNative(invoke, 'hub_folder_open', { folder }, z.null()),
   };

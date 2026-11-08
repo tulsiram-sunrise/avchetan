@@ -9,6 +9,7 @@ When Avchetan organizes an entry wrongly and you fix it, it remembers. Next time
 | Change an activity's title or category | "Entries like this one get this title and this category" |
 | Change a task's title | "Entries like this one make this task" |
 | Delete an activity or task that Avchetan made | "This isn't an activity" or "This isn't a task" |
+| Add a promise with **Person…**, or remove one with **Not a promise** ([People and promises](people.md#fix-a-promise)) | "Tasks like this one are for this person" (or waited on them), or "this isn't a promise" |
 
 Moving a task to another day isn't a fix. Changing only its due date, for example with **Move to tomorrow** in the [daily brief](daily-brief.md), teaches nothing and doesn't put the entry in the list. If you later press **Organize again** on that entry, the AI sets the date again from what you wrote.
 

@@ -1,6 +1,6 @@
 import { clipboardOf, windowContextOf } from '@avchetan/core';
 import type { Activity, RawLog, Task } from '@avchetan/db/sqlite';
-import { describeError, formatTime, parseLastError } from '@avchetan/shared';
+import { describeError, formatDueDate, formatTime, parseLastError } from '@avchetan/shared';
 import { router } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
 import { privatePrefix, WaitsForLocalAi } from './private-mark';
@@ -62,7 +62,7 @@ export function EntryRow(props: {
             className={`flex-1 text-xs ${task.completedAt ? 'text-inkMuted line-through' : 'text-ink'}`}
           >
             {task.title}
-            {task.dueDate ? ` · due ${task.dueDate}` : ''}
+            {task.dueDate ? ` · due ${formatDueDate(task.dueDate)}` : ''}
           </Text>
         </View>
       ))}

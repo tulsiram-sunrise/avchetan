@@ -17,6 +17,7 @@ import { loadServerIdentity } from './auth';
 import { restoreSnapshot } from './backups/restore';
 import { startHubSnapshots } from './backups/snapshots';
 import { createHubBrief, type HubBrief } from './brief/hub-brief';
+import { createHubCommand } from './commands/hub-command';
 import { openPglite, openPostgres, type ServerDatabase } from './db/client';
 import { databaseStartupHint } from './db/startup-hint';
 import { createEmbedder, type Embedder, embeddingModelId } from './embeddings/embedder';
@@ -148,6 +149,7 @@ async function main(): Promise<void> {
             if (!hubAsk) throw new ApiError(503, 'ask_unavailable', 'The server is still starting');
             return hubAsk(request, onText, abortSignal);
           },
+          command: createHubCommand({ model: analysis, llm: llmFromEnv(env) }),
           brief: (request) => {
             if (!hubBrief)
               throw new ApiError(503, 'ask_unavailable', 'The server is still starting');

@@ -1,15 +1,24 @@
 import {
   loadAnalysisMode,
   loadExtractionMode,
+  loadExtractionSettings,
   type ModelPreset,
+  saveExtractionMode,
   saveSlotModel,
 } from '@avchetan/core';
 import { openTestStore } from '@avchetan/db/testing';
 import { MemorySecretStore } from '@avchetan/shared/testing';
-import { loadServerUrls, SYNC_TOKEN_SECRET } from '@avchetan/sync';
+import { loadServerUrls, SYNC_TOKEN_SECRET, saveConnection } from '@avchetan/sync';
 import { describe, expect, it, vi } from 'vitest';
 import type { Hub, HubConfig, HubStatus } from '../native/hub';
-import { changeOwnHubToken, HUB_TOKEN_SECRET, syncsWithOwnHub, turnOffHub, turnOnHub } from './hub';
+import {
+  changeHubPort,
+  changeOwnHubToken,
+  HUB_TOKEN_SECRET,
+  syncsWithOwnHub,
+  turnOffHub,
+  turnOnHub,
+} from './hub';
 
 const preset: ModelPreset = {
   id: 'ollama-small',
@@ -47,6 +56,7 @@ function fakeHub() {
     listBackups: vi.fn(async () => []),
     restore: vi.fn(async () => status()),
     openFolder: vi.fn(async () => null),
+    freePort: vi.fn(async (from: number) => from + 1),
   };
   return hub satisfies Hub;
 }
@@ -59,6 +69,20 @@ describe('turnOnHub', () => {
 
     expect(await loadExtractionMode(store)).toBe('delegate');
     expect(await loadAnalysisMode(store)).toBe('hub');
+  });
+
+  it("organizes with this PC's own model once switched back to This PC", async () => {
+    const { store } = await openTestStore();
+    const secrets = new MemorySecretStore();
+    await turnOnHub({ hub: fakeHub(), secrets, store }, { preset });
+    const config = { provider: 'ollama', model: 'own-model' } as const;
+    await saveSlotModel(store, secrets, 'extraction', { config, apiKey: '' });
+
+    // Saving a model alone leaves the hub organizing (the choice is explicit)…
+    expect((await loadExtractionSettings(store)).models).toEqual([]);
+    // …until This PC is chosen.
+    await saveExtractionMode(store, 'self');
+    expect((await loadExtractionSettings(store)).models).toEqual([config]);
   });
 
   it('keeps the model a user chose for this PC', async () => {
@@ -160,6 +184,56 @@ describe('syncsWithOwnHub', () => {
     expect(syncsWithOwnHub(on, ['http://127.0.0.1:8787'])).toBe(true);
     expect(syncsWithOwnHub(on, ['https://avchetan.example.org'])).toBe(false);
     expect(syncsWithOwnHub(on, ['http://127.0.0.1:8787', 'http://100.64.0.1:8787'])).toBe(false);
+  });
+});
+
+describe('changeHubPort', () => {
+  it("moves the hub and this PC's own connection to the new port", async () => {
+    const { store } = await openTestStore();
+    const secrets = new MemorySecretStore();
+    const hub = fakeHub();
+    await turnOnHub({ hub, secrets, store }, { preset });
+
+    const status = await changeHubPort({ hub, secrets, store }, 8790);
+
+    expect(status.config.port).toBe(8790);
+    expect(status.config.enabled).toBe(true);
+    expect(await loadServerUrls(store)).toEqual(['http://127.0.0.1:8790']);
+    expect(await secrets.get(SYNC_TOKEN_SECRET)).toBe(await secrets.get(HUB_TOKEN_SECRET));
+  });
+
+  it('keeps the chosen port when the hub is turned on again', async () => {
+    const { store } = await openTestStore();
+    const secrets = new MemorySecretStore();
+    const hub = fakeHub();
+    await changeHubPort({ hub, secrets, store }, 8790);
+
+    const status = await turnOnHub({ hub, secrets, store }, { preset });
+
+    expect(status.config.port).toBe(8790);
+    expect(await loadServerUrls(store)).toEqual(['http://127.0.0.1:8790']);
+  });
+
+  it('leaves a connection to another server alone', async () => {
+    const { store } = await openTestStore();
+    const secrets = new MemorySecretStore();
+    await saveConnection(store, secrets, {
+      urls: ['https://cloud.example.org'],
+      token: 'a-cloud-token-that-is-long-enough-to-pass',
+      trustLocalNetwork: false,
+    });
+
+    await changeHubPort({ hub: fakeHub(), secrets, store }, 8790);
+
+    expect(await loadServerUrls(store)).toEqual(['https://cloud.example.org']);
+  });
+
+  it('refuses a port below 1024', async () => {
+    const { store } = await openTestStore();
+
+    await expect(
+      changeHubPort({ hub: fakeHub(), secrets: new MemorySecretStore(), store }, 80),
+    ).rejects.toMatchObject({ code: 'invalid_port' });
   });
 });
 

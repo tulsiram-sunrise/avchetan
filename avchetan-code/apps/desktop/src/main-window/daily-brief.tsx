@@ -1,6 +1,6 @@
-import { parseBriefNotes } from '@avchetan/core';
+import { entriesSinceBrief, parseBriefNotes } from '@avchetan/core';
 import type { Activity, PromiseItem, Task } from '@avchetan/db/sqlite';
-import { addDays, describeError, formatLocalDate, formatTime } from '@avchetan/shared';
+import { addDays, describeError, formatDueDate, formatMadeAt } from '@avchetan/shared';
 import type { ReactNode } from 'react';
 import { HelpLink } from '../help-link';
 import {
@@ -11,8 +11,10 @@ import {
   useDailyBrief,
   useRolledOver,
 } from '../queries/brief';
+import { useDayEntries } from '../queries/days';
 import { useAction } from '../queries/organize';
 import { useWaitingDue } from '../queries/people';
+import { useServices } from '../services-context';
 import { ActionError, QuietButton } from './ui';
 
 /**
@@ -72,6 +74,9 @@ function BriefCard(props: { brief: Activity; day: string; today: string; making:
   const waitingDue = useWaitingDue(props.day);
   const failure = useBriefFailure();
   const failed = failure.data?.day === props.day ? failure.data : null;
+  const { timeZone } = useServices();
+  const entries = useDayEntries(props.day);
+  const since = entries.data ? entriesSinceBrief(entries.data, props.brief) : 0;
 
   const tasks = rolledOver.data ?? [];
   const waiting = waitingDue.data ?? [];
@@ -97,7 +102,7 @@ function BriefCard(props: { brief: Activity; day: string; today: string; making:
       className="flex flex-col gap-2 rounded-[var(--radius-panel)] border border-line bg-surface-raised p-4"
     >
       <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-muted">
-        Daily brief · made at {formatTime(props.brief.updatedAt)}
+        Daily brief · {formatMadeAt(props.brief.updatedAt, props.day, timeZone.current())}
       </h2>
       <ul className="flex list-disc flex-col gap-1.5 pl-5 text-sm">
         {bullets.map(({ key, content }) =>
@@ -108,6 +113,13 @@ function BriefCard(props: { brief: Activity; day: string; today: string; making:
         {failed ? (
           <span role="alert" className="text-danger">
             Couldn't make it again: {describeError(failed).message}. <HelpLink code={failed.code} />
+          </span>
+        ) : null}
+        {since > 0 && !props.making ? (
+          <span className="text-ink-muted">
+            {since === 1
+              ? '1 new entry since this brief.'
+              : `${since} new entries since this brief.`}
           </span>
         ) : null}
         {props.making ? (
@@ -145,7 +157,7 @@ function RolledOver(props: { tasks: Task[]; waiting: PromiseItem[]; today: strin
               key={item.task.id}
               task={item.task}
               tomorrow={tomorrow}
-              label={`Waiting on ${item.entity.name}: ${item.task.title}${item.task.dueDate ? ` (due ${formatLocalDate(item.task.dueDate, { weekday: 'short', day: 'numeric', month: 'short' })})` : ''}`}
+              label={`Waiting on ${item.entity.name}: ${item.task.title}${item.task.dueDate ? ` (due ${formatDueDate(item.task.dueDate, props.today)})` : ''}`}
               button="Remind me tomorrow"
             />
           ))}
