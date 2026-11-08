@@ -200,6 +200,8 @@ Planned 2026-11-09 from the [feature audit](product/feature-audit-2026-11.md), t
 
 Built 2026-11-09 on `fixes/pre-release` and tried on the desktop demo copy with the built-in hub and Ollama: with port 8787 held by another hub, **Use another port (8788)** moved the hub and this PC; pairing listed only the Wi-Fi and Tailscale addresses; the AI tab's **This PC / My hub** switched both ways and named the hub's models; the hub read `/wrap up the notes thing` as `/done notes`; the brief waited until both of the day's entries were organized, then showed *1 new entry since this brief*; Saturday's brief said *made Sun, 8 Nov*; dates, picker names, **New project…** and the local-time export name worked. Trying it found one more case, fixed: in "send the report to Meera by Friday, and buy a card tomorrow" the report took tomorrow's date, so a task without its own day word now uses the clause it came from. Eval with `extraction.v5` on `granite4.2:3b`: 28/48 (58.3%), against 25/45 (55.6%) for v4; the three new date fixtures had the right dates.
 
+Test build 1 (`release/pre-release-android`, 2026-11-09) passed on the real PC and phone: the AI choices, a Friday deadline next to a tomorrow one, a command read by the hub, the pairing addresses, the Port line and the friendly dates. The evening brief (bugs 2 and 3) was not yet seen on a real device; it is covered by tests and the demo.
+
 **Done when:** each bug's steps in the audit no longer show it, on the desktop demo and in the test build on a real PC and phone; new tests cover bugs 1–8; the extraction eval with the new prompt is no worse than `extraction.v4` on `granite4.2:3b` and the date fixtures pass; the user guide is updated for every visible change.
 
 ---
