@@ -1,6 +1,6 @@
 # Feature audit, November 2026
 
-> **Status: for discussion.** A check of every shipped feature against its documentation and the running app, done 2026-11-08/09 after Phase 7 and the app lock. Bugs and ideas below are topics for planning; nothing here is scheduled. Decisions go to [open questions](../open-questions.md), ADRs and the [roadmap](../roadmap.md) as usual.
+> **Status: for discussion.** A check of every shipped feature against its documentation and the running app, done 2026-11-08/09 after Phase 7 and the app lock. The bugs were decided on 2026-11-09 and are planned as the [pre-release fixes](../roadmap.md#pre-release-fixes) ([decisions](#decisions-2026-11-09)); the ideas are still to be discussed. Decisions go to [open questions](../open-questions.md), ADRs and the [roadmap](../roadmap.md) as usual.
 
 ## How it was checked
 
@@ -64,6 +64,22 @@ Ordered by how much they affect a user. Each has the steps that showed it.
    - Due dates show as `2026-11-11` on Days, Tasks and the learned list, but as *Wed, 11 Nov* on People.
    - Every category picker on Days has the same accessible name, *Category*, so a screen reader can't tell which activity it belongs to.
    - The rule form offers only existing projects; a new project has to be made on the Projects page first.
+
+## Decisions (2026-11-09)
+
+All nine bugs are fixed **before the next public release**, in one branch (`fixes/pre-release`, one commit per bug), tried on the desktop demo as each is built, then one test build for the PC and the phone ([roadmap](../roadmap.md#pre-release-fixes)).
+
+| Bug | Decision |
+|---|---|
+| 1. Hub PC ignores its own model | The desktop's **Settings → AI** gets the phone's choices, **Who organizes your entries?** and **Who answers your questions?**, each *This PC* or *My hub*, shown when the PC syncs with a hub. *My hub* hides that job's model form and names the hub's model; *This PC* uses the model saved there. A PC that turns on its own hub still starts on *My hub* when it has no model of its own. |
+| 2. Brief made too early | After the brief time, wait until the day has no entries waiting to be organized, at most 1 hour, then make it. When more entries from that day are organized after it was made, the brief shows *N new entries since this brief* with **Make it again**; it is not remade by itself. |
+| 3. Brief for a past day, wrong time | A past day gets an automatic brief only when it had entries written by its brief time and the brief was missed (PC asleep, phone closed). An entry written later about that day doesn't make one; the day offers **Make a brief**. The brief's input no longer presents the capture time as when something happened, and *Made at* shows the date when the brief was made on a later day. |
+| 4. Commands need a local model | With *My hub* answering, the hub reads unknown `/` commands through a new `POST /v1/command` ([server](../architecture/server.md)) that receives only the typed words and the command list, never entries. A hub without it gives an "update your hub" message. |
+| 5. Wrong weekday dates | The extraction prompt gets a calendar of the next 14 days with weekday names (a new prompt version, with fixtures), and after extraction the app checks dates: when the entry names a weekday, *today* or *tomorrow* and the date doesn't match, the app sets the right one. Same on the PC, phone and hub. |
+| 6. Unreachable pairing addresses | Pairing leaves out virtual adapters (VirtualBox, Hyper-V vEthernet, WSL, Docker, VMware) and lists Wi-Fi/Ethernet first, then Tailscale, in the code and in **Can't scan? Show the details**. |
+| 7. Fixed hub port | A **Port** setting under **Home Hub on this PC** (default 8787). When the port is taken, the error offers **Use another port** with a free one filled in. Changing it restarts the hub, updates this PC's connection and the firewall check, and says that phones must scan the code again. |
+| 8. Promise fixes teach nothing | Examples carry promises: `task: … (for: Priya)`, `task: … (waiting on: Farhan)`, and `not a promise: …` for one removed by hand. Measured with the extraction eval before and after; the [corrections guide](../user-guide/corrections.md) lists promises as fixes. |
+| 9. Small things | All four: the export folder named in local time; dates shown as *Wed, 11 Nov* everywhere (with the year when it isn't this year; date pickers keep their own format); each category picker named after its activity; **New project…** in the rule form's project list. |
 
 ### Organizing accuracy seen (Ollama `granite4.2:8b`, processor)
 

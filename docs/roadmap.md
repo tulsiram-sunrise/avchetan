@@ -1,6 +1,6 @@
 # Roadmap
 
-**Current phase: none chosen.** Phase 7 completed 2026-11-08 (started 2026-11-07). The [app lock](#app-lock) was built 2026-11-08. Next: a hub-only mode for an always-on PC, still under discussion ([Q26](open-questions.md), [draft plan](product/hub-only.md)). Phase 6 completed 2026-11-07 (started 2026-11-06). v0.2.0 was released 2026-11-06 (PR #15). Phase 1 completed 2026-10-26 (PR #1). Phase 2 completed 2026-10-30 (PR #2). Phase 3 completed 2026-10-31. Phase 4 completed 2026-11-02. Phase 5 completed 2026-11-04 (PR #8). Phase 5b completed 2026-11-05 (PR #10). The Public release milestone completed 2026-11-05 with v0.1.0 (PR #12); applying to SignPath remains.
+**Current phase: none chosen; [pre-release fixes](#pre-release-fixes) planned before the next public release.** Phase 7 completed 2026-11-08 (started 2026-11-07). The [app lock](#app-lock) was built 2026-11-08. Next: a hub-only mode for an always-on PC, still under discussion ([Q26](open-questions.md), [draft plan](product/hub-only.md)). Phase 6 completed 2026-11-07 (started 2026-11-06). v0.2.0 was released 2026-11-06 (PR #15). Phase 1 completed 2026-10-26 (PR #1). Phase 2 completed 2026-10-30 (PR #2). Phase 3 completed 2026-10-31. Phase 4 completed 2026-11-02. Phase 5 completed 2026-11-04 (PR #8). Phase 5b completed 2026-11-05 (PR #10). The Public release milestone completed 2026-11-05 with v0.1.0 (PR #12); applying to SignPath remains.
 
 Each phase lists scope, deliverables and **done when** criteria (testable). Phases are sequential; a coding agent should finish a phase's criteria before starting the next. Advanced capabilities are specified in [product/advancements.md](product/advancements.md).
 
@@ -193,6 +193,12 @@ Planned 2026-11-08 ([product/app-lock.md](product/app-lock.md), [ADR-0028](decis
 Built 2026-11-08 on both apps (`src-tauri/src/app_lock.rs` with Windows Hello; `expo-local-authentication` on the phone). Tried on a real PC and phone 2026-11-08. The first test build worked except one case: unlocking from the capture box with *Immediately* relocked at once, because the time away started at the unlock while the main window was closed. Fixed by starting it when the capture box hides. The tests also asked for more: `/undo` now also deletes the last entry saved from the capture box (it had covered commands only), and `/settings [tab]`, `/lock` and `/unlock` were added; those three work while locked. The third build passed on the PC.
 
 **Done when:** on a real phone and PC, the app opens locked, unlocks with biometrics and with the PIN fallback, locks again after the chosen time, and captures from the widget and the capture box while locked without showing any earlier entry.
+
+## Pre-release fixes
+
+Planned 2026-11-09 from the [feature audit](product/feature-audit-2026-11.md), to be finished before the next public release. Nine bugs, each with its decision in the [audit](product/feature-audit-2026-11.md#decisions-2026-11-09): the desktop gets the phone's **This PC / My hub** choice for organizing and answering; the hub reads unknown `/` commands (`POST /v1/command`); the daily brief waits for the day's entries and offers **Make it again** for later ones; past days get automatic briefs only when one was missed; weekday deadlines are checked by the app; pairing leaves out virtual adapters; the built-in hub's port can be changed; promise fixes become examples; and four small fixes (local-time export folder, friendly dates, named category pickers, **New project…** in the rule form). One branch, `fixes/pre-release`, with one commit per bug, then one test build for the PC and the phone.
+
+**Done when:** each bug's steps in the audit no longer show it, on the desktop demo and in the test build on a real PC and phone; new tests cover bugs 1–8; the extraction eval with the new prompt is no worse than `extraction.v4` on `granite4.2:3b` and the date fixtures pass; the user guide is updated for every visible change.
 
 ---
 
