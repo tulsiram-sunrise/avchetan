@@ -6,6 +6,7 @@ import { Pressable, Text, View } from 'react-native';
 import { useDeleteTask, useEditTask, useSetTaskDone } from '../queries/writes';
 import { usePalette } from '../theme/theme';
 import { Button, Failure, Field } from './parts';
+import { PromiseEditor, PromiseLabels } from './task-promises';
 
 export function TaskCheck({ task }: { task: Task }) {
   const palette = usePalette();
@@ -74,6 +75,7 @@ function TaskEditor({ task, onClose }: { task: Task; onClose: () => void }) {
         />
       </View>
       <Failure error={edit.error ?? remove.error} />
+      <PromiseEditor task={task} />
     </View>
   );
 }
@@ -96,6 +98,7 @@ export function TaskRow({ task }: { task: Task }) {
             {task.title}
           </Text>
           {task.dueDate ? <Text className="text-xs text-inkMuted">due {task.dueDate}</Text> : null}
+          <PromiseLabels task={task} />
         </Pressable>
       </View>
       {editing ? <TaskEditor task={task} onClose={() => setEditing(false)} /> : null}

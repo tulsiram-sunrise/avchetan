@@ -4,6 +4,7 @@ import type { Fixture } from './fixtures';
 const NUMERIC_TOLERANCE = 0.01;
 
 type ExpectedActivity = Fixture['expect']['activities'][number];
+type ExpectedPromise = NonNullable<Fixture['expect']['promises']>[number];
 
 export type MatchContext = {
   /** Category ID to slug. */
@@ -118,6 +119,38 @@ export function matchFixture(
     if (!names.includes(entity.toLowerCase())) misses.push(`entity ${entity} missing`);
   }
 
+  if (expected.promises) misses.push(...promiseMisses(plan, expected.promises));
+
   if (expected.newCategory && !plan.newCategory) misses.push('no new category proposed');
+  return misses;
+}
+
+/** Promise links must be exactly the expected ones: a missed or an invented promise is an error. */
+function promiseMisses(plan: ExtractionPlan, expected: ExpectedPromise[]): string[] {
+  const actual = plan.entities.flatMap((entity) =>
+    entity.mentions.flatMap(({ target, role }) =>
+      target.type === 'task' && (role === 'owed_to' || role === 'owed_by')
+        ? [
+            {
+              person: entity.name.toLowerCase(),
+              role,
+              title: plan.tasks[target.index]?.title ?? '',
+            },
+          ]
+        : [],
+    ),
+  );
+  const misses: string[] = [];
+  for (const item of expected) {
+    const index = actual.findIndex(
+      (link) =>
+        link.person === item.person.toLowerCase() &&
+        link.role === item.role &&
+        (!item.titleHas || link.title.toLowerCase().includes(item.titleHas.toLowerCase())),
+    );
+    if (index < 0) misses.push(`no ${item.role} ${item.person}`);
+    else actual.splice(index, 1);
+  }
+  for (const link of actual) misses.push(`extra ${link.role} ${link.person}`);
   return misses;
 }

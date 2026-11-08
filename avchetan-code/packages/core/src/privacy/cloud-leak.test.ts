@@ -37,15 +37,32 @@ const PRIVATE_ANSWER = JSON.stringify({
       notes: null,
       metrics: [],
       exercises: [],
-      loggedDate: null,
+      loggedDate: '2026-10-26',
       project: null,
       inferredTags: ['kneecap'],
     },
   ],
-  tasks: [],
+  tasks: [
+    {
+      title: 'Pay Dr Zorblax',
+      notes: null,
+      dueDate: '2026-10-01',
+      category: null,
+      project: null,
+      inferredTags: [],
+      forPerson: 'Zorblax',
+      waitingOn: null,
+    },
+  ],
   newCategory: null,
   logTags: [],
-  entities: [{ kind: 'person', name: 'Zorblax', mentions: [{ target: 'log', role: 'about' }] }],
+  entities: [
+    {
+      kind: 'person',
+      name: 'Zorblax',
+      mentions: [{ target: 'log', role: 'with' }],
+    },
+  ],
   skip: null,
 });
 const BRIEF = '{"movedForward":"A run.","friction":null,"observation":"Keep going."}';
@@ -131,6 +148,14 @@ beforeEach(async () => {
   const first = await capture('saw Dr Zorblax, kneecap hurt on the stairs again #health/knee');
   expect(first.privacy).toBe('local_only');
   await processorWith([ollama]).wake();
+  const [organized] = await store.queries.recentRawLogs(store.db, { limit: 1 });
+  expect(organized?.status).toBe('processed');
+  // On this device the secret person and the promise to them exist.
+  const people = await store.people.listPeople(store.db, {
+    includePrivate: true,
+    today: '2026-10-30',
+  });
+  expect(people.map((p) => [p.entity.name, p.youOwe])).toEqual([['Zorblax', 1]]);
 });
 
 describe('with a cloud model, nothing from a private entry is sent', () => {
@@ -155,14 +180,29 @@ describe('with a cloud model, nothing from a private entry is sent', () => {
     expectNothingPrivate(sentBodies);
   });
 
-  it('when answering a question, whatever tools the model calls', async () => {
+  // At most five tool calls: the sixth step must answer.
+  it.each<[string, [string, object][]]>([
+    [
+      'entries and tasks',
+      [
+        ['search_entries', { query: 'knee' }],
+        ['list_tags', {}],
+        ['query_activities', {}],
+        ['query_tasks', {}],
+      ],
+    ],
+    [
+      'people and promises',
+      [
+        ['query_entities', {}],
+        ['query_entities', { name: 'zorb' }],
+        ['query_entities', { topic: 'stairs' }],
+        ['query_commitments', {}],
+        ['query_commitments', { status: 'overdue' }],
+      ],
+    ],
+  ])('when answering a question, whatever tools the model calls (%s)', async (_, calls) => {
     await capture('ran 5k along the river');
-    const calls: [string, object][] = [
-      ['search_entries', { query: 'knee' }],
-      ['list_tags', {}],
-      ['query_activities', {}],
-      ['query_tasks', {}],
-    ];
     const prompts: string[] = [];
     let step = 0;
     const usage = {

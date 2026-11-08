@@ -10,6 +10,7 @@ const log = createLogger('events');
 const mainViewSchema = z.enum([
   'timeline',
   'tasks',
+  'people',
   'review',
   'categories',
   'tags',

@@ -14,6 +14,7 @@ const DATA_TABLES = [
   'tags',
   'projects',
   'context_rules',
+  'entities',
 ];
 
 /** Other windows refetch; the tray shows the new pending count. */

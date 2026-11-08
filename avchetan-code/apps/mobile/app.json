@@ -24,6 +24,19 @@
       "expo-secure-store",
       "expo-sqlite",
       [
+        "expo-splash-screen",
+        {
+          "image": "./assets/icon.png",
+          "imageWidth": 120,
+          "resizeMode": "contain",
+          "backgroundColor": "#f6f9fc",
+          "dark": {
+            "image": "./assets/icon.png",
+            "backgroundColor": "#171b22"
+          }
+        }
+      ],
+      [
         "expo-notifications",
         {
           "icon": "./assets/adaptive-monochrome.png"

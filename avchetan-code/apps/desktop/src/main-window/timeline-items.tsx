@@ -2,6 +2,7 @@ import { exerciseLines, metricsText, windowContextOf } from '@avchetan/core';
 import type { Activity, RawLog, Task } from '@avchetan/db/sqlite';
 import { useState } from 'react';
 import { useAction, useActiveCategories, useCategoryNames } from '../queries/organize';
+import { TaskPromises } from './task-promises';
 import { ActionError, EditableText, fieldClass, QuietButton } from './ui';
 import { RuleForm } from './window-context-setting';
 
@@ -67,6 +68,7 @@ export function TaskRow({ task }: { task: Task }) {
       />
       <span className={task.completedAt ? 'text-ink-muted line-through' : ''}>{task.title}</span>
       {task.dueDate ? <span className="text-xs text-ink-muted">due {task.dueDate}</span> : null}
+      <TaskPromises task={task} />
       <ActionError errors={[setDone.error]} />
     </li>
   );

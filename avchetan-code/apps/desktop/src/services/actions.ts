@@ -1,4 +1,4 @@
-import { buildCaptureInput, normalizeTagPath } from '@avchetan/core';
+import { buildCaptureInput, EXTRACTION_PROMPT_VERSION, normalizeTagPath } from '@avchetan/core';
 import type { ClientStore } from '@avchetan/db/sqlite';
 import { AppError, createLogger, newId, toAppError } from '@avchetan/shared';
 import { z } from 'zod';
@@ -143,6 +143,46 @@ const ACTIONS = {
   ),
 
   // Window context rules (docs/product/window-context.md#rules).
+  'entity.rename': action(nameArgs, (store, { id, name }) =>
+    store.write((tx) => store.repos.entities.rename(tx, id, name)),
+  ),
+  'entity.merge': action(mergeArgs, (store, { id, intoId }) =>
+    store.write((tx) => store.repos.entities.merge(tx, id, intoId)),
+  ),
+  // "Promise to…" / "Waiting on…": a known person by ID, or a new name.
+  'promise.link': action(
+    z.object({
+      taskId: z.string().min(1),
+      role: z.enum(['owed_to', 'owed_by']),
+      person: z.union([z.object({ id: z.string().min(1) }), z.object({ name: z.string() })]),
+    }),
+    (store, { taskId, role, person }) =>
+      store.write(async (tx) => {
+        const entityId =
+          'id' in person
+            ? person.id
+            : (await store.repos.entities.ensure(tx, { kind: 'person', name: person.name })).id;
+        return store.repos.entities.linkPromise(tx, { taskId, entityId, role });
+      }),
+  ),
+  // Organizes older entries again with the current prompt, which knows promise roles.
+  'people.recheckPromises': action(z.object({}), (store) =>
+    store.write(async (tx) => {
+      const ids = await store.people.entriesToRecheckForPromises(tx, {
+        version: EXTRACTION_PROMPT_VERSION,
+      });
+      for (const id of ids) await store.repos.rawLogs.requeue(tx, id);
+    }),
+  ),
+  // "Not a promise": the task stays.
+  'promise.unlink': action(
+    z.object({ taskId: z.string().min(1), entityId: z.string().min(1).optional() }),
+    (store, { taskId, entityId }) =>
+      store.write((tx) =>
+        store.repos.entities.unlinkPromise(tx, { taskId, ...(entityId ? { entityId } : {}) }),
+      ),
+  ),
+
   'contextRule.create': action(ruleFields, (store, fields) =>
     store.write((tx) => store.repos.contextRules.create(tx, fields)),
   ),

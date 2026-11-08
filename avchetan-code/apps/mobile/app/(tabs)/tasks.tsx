@@ -1,6 +1,7 @@
 import { localDate, systemTimeZone } from '@avchetan/shared';
 import { SectionList, Text, View } from 'react-native';
 import { useCompletedTasks, useOpenTasks } from '../../src/queries/entries';
+import { usePromiseLinks } from '../../src/queries/people';
 import { groupTasks } from '../../src/services/grouping';
 import { useServices } from '../../src/services-context';
 import { CaptureButton } from '../../src/ui/capture-button';
@@ -12,9 +13,19 @@ export default function TasksScreen() {
   const open = useOpenTasks();
   const completed = useCompletedTasks();
   const today = localDate(store.clock.now(), systemTimeZone());
+  const links = usePromiseLinks();
   const done = completed.data ?? [];
+  // Tasks you wait on someone for are not your work: they get their own group.
+  const waitingOn = (task: { id: string }) =>
+    links.data?.get(task.id)?.some((link) => link.role === 'owed_by') ?? false;
+  const all = open.data ?? [];
+  const waiting = all.filter(waitingOn);
   const sections = [
-    ...groupTasks(open.data ?? [], today),
+    ...groupTasks(
+      all.filter((task) => !waitingOn(task)),
+      today,
+    ),
+    ...(waiting.length > 0 ? [{ title: 'Waiting on others', data: waiting }] : []),
     ...(done.length > 0 ? [{ title: 'Done', data: done }] : []),
   ];
 

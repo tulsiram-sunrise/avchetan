@@ -49,6 +49,8 @@ const swim: ExtractionResult = {
       category: null,
       project: null,
       inferredTags: [],
+      forPerson: null,
+      waitingOn: null,
     },
   ],
 };

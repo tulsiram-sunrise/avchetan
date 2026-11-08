@@ -144,6 +144,41 @@ describe('matchFixture', () => {
 
     expect(misses).toEqual(['tag health/knee missing', 'entity Priya missing']);
   });
+
+  it('wants exactly the promise links the fixture names', () => {
+    const rahul = (role: 'owed_to' | 'owed_by' | 'with') => ({
+      kind: 'person' as const,
+      name: 'Rahul',
+      mentions: [{ target: { type: 'task' as const, index: 0 }, role }],
+    });
+    const owed = fixture({
+      tasks: [{}],
+      promises: [{ person: 'rahul', role: 'owed_to', titleHas: 'invoice' }],
+    });
+    const sendInvoice = [task({ title: 'Send the invoice to Rahul' })];
+
+    expect(
+      matchFixture(plan({ tasks: sendInvoice, entities: [rahul('owed_to')] }), owed, context),
+    ).toEqual([]);
+    expect(
+      matchFixture(plan({ tasks: sendInvoice, entities: [rahul('owed_by')] }), owed, context),
+    ).toEqual(['no owed_to rahul', 'extra owed_by rahul']);
+    expect(
+      matchFixture(
+        plan({ tasks: sendInvoice, entities: [rahul('owed_to')] }),
+        fixture({ tasks: [{}], promises: [] }),
+        context,
+      ),
+    ).toEqual(['extra owed_to rahul']);
+    // Without a promises list, links aren't judged.
+    expect(
+      matchFixture(
+        plan({ tasks: sendInvoice, entities: [rahul('with')] }),
+        fixture({ tasks: [{}] }),
+        context,
+      ),
+    ).toEqual([]);
+  });
 });
 
 describe('fixtures', () => {

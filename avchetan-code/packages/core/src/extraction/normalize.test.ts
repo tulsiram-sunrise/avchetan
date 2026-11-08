@@ -51,6 +51,8 @@ const task: ExtractionResult['tasks'][number] = {
   category: null,
   project: null,
   inferredTags: [],
+  forPerson: null,
+  waitingOn: null,
 };
 
 describe('normalizeExtraction', () => {
@@ -249,6 +251,50 @@ describe('normalizeExtraction', () => {
       context,
     );
     expect(entities).toEqual([]);
+  });
+
+  it('drops people "named" with a plain word', () => {
+    const { entities } = normalizeExtraction(
+      {
+        ...empty,
+        entities: [
+          { kind: 'person', name: 'coworker', mentions: [] },
+          { kind: 'organization', name: 'acme', mentions: [] },
+        ],
+      },
+      context,
+    );
+    expect(entities.map((e) => e.name)).toEqual(['acme']);
+  });
+
+  it('links promises from whom a task is for and whom the user waits on', () => {
+    const { entities } = normalizeExtraction(
+      {
+        ...empty,
+        tasks: [
+          { ...task, title: 'Send Rahul the deck', forPerson: 'Rahul' },
+          { ...task, title: 'Get the budget from Meena', waitingOn: 'मीना' },
+          { ...task, title: 'Call a friend', forPerson: 'friend' },
+        ],
+        entities: [{ kind: 'person', name: 'RAHUL', mentions: [{ target: 'log', role: 'about' }] }],
+      },
+      context,
+    );
+    expect(entities).toEqual([
+      {
+        kind: 'person',
+        name: 'RAHUL',
+        mentions: [
+          { target: { type: 'log' }, role: 'about' },
+          { target: { type: 'task', index: 0 }, role: 'owed_to' },
+        ],
+      },
+      {
+        kind: 'person',
+        name: 'मीना',
+        mentions: [{ target: { type: 'task', index: 1 }, role: 'owed_by' }],
+      },
+    ]);
   });
 
   it('ignores skip when the model also returned items', () => {

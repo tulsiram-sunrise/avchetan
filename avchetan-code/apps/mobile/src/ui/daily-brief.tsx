@@ -1,5 +1,5 @@
 import { parseBriefNotes } from '@avchetan/core';
-import type { Activity, Task } from '@avchetan/db/sqlite';
+import type { Activity, PromiseItem, Task } from '@avchetan/db/sqlite';
 import { addDays, describeError, formatTime } from '@avchetan/shared';
 import type { ReactNode } from 'react';
 import { Text, View } from 'react-native';
@@ -14,8 +14,10 @@ import {
   useReminderChoice,
   useRolledOver,
 } from '../queries/brief';
+import { useWaitingDue } from '../queries/people';
 import { useEditTask } from '../queries/writes';
 import { Button, Failure, HelpLink } from './parts';
+import { shortDay } from './task-promises';
 
 /**
  * The daily brief at the top of a day (docs/product/daily-brief.md), or the summary line with a
@@ -101,8 +103,10 @@ function ReminderOffer() {
 function BriefCard(props: { brief: Activity; day: string; today: string; making: boolean }) {
   const text = parseBriefNotes(props.brief.notes);
   const rolledOver = useRolledOver(props.day);
+  const waitingDue = useWaitingDue(props.day);
   const make = useMakeBrief();
   const tasks = rolledOver.data ?? [];
+  const waiting = waitingDue.data ?? [];
   const bullets: { key: string; content: ReactNode }[] =
     'lines' in text
       ? text.lines.map((line, index) => ({ key: `line-${index}`, content: line }))
@@ -111,7 +115,10 @@ function BriefCard(props: { brief: Activity; day: string; today: string; making:
           { key: 'friction', content: text.friction },
           {
             key: 'rolled',
-            content: tasks.length > 0 ? <RolledOver tasks={tasks} today={props.today} /> : null,
+            content:
+              tasks.length > 0 || waiting.length > 0 ? (
+                <RolledOver tasks={tasks} waiting={waiting} today={props.today} />
+              ) : null,
           },
           { key: 'observation', content: text.observation },
         ];
@@ -148,21 +155,36 @@ function BriefCard(props: { brief: Activity; day: string; today: string; making:
   );
 }
 
-function RolledOver(props: { tasks: Task[]; today: string }) {
+function RolledOver(props: { tasks: Task[]; waiting: PromiseItem[]; today: string }) {
   const edit = useEditTask();
   const tomorrow = addDays(props.today, 1);
   return (
     <View className="gap-2">
-      <Text className="text-sm text-ink">
-        {props.tasks.length === 1
-          ? '1 task rolled over:'
-          : `${props.tasks.length} tasks rolled over:`}
-      </Text>
+      {props.tasks.length > 0 ? (
+        <Text className="text-sm text-ink">
+          {props.tasks.length === 1
+            ? '1 task rolled over:'
+            : `${props.tasks.length} tasks rolled over:`}
+        </Text>
+      ) : null}
       {props.tasks.map((task) => (
         <View key={task.id} className="flex-row flex-wrap items-center gap-2">
           <Text className="text-sm text-ink">{task.title}</Text>
           <Button
             label="Move to tomorrow"
+            disabled={edit.isPending}
+            onPress={() => edit.mutate({ id: task.id, title: task.title, dueDate: tomorrow })}
+          />
+        </View>
+      ))}
+      {props.waiting.map(({ task, entity }) => (
+        <View key={task.id} className="flex-row flex-wrap items-center gap-2">
+          <Text className="text-sm text-ink">
+            Waiting on {entity.name}: {task.title}
+            {task.dueDate ? ` (due ${shortDay(task.dueDate, props.today)})` : ''}
+          </Text>
+          <Button
+            label="Remind me tomorrow"
             disabled={edit.isPending}
             onPress={() => edit.mutate({ id: task.id, title: task.title, dueDate: tomorrow })}
           />
