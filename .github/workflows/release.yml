@@ -84,10 +84,28 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # Tauri downloads its installer tool (NSIS) on every build, and a GitHub download outage
+      # failed the release on 2026-11-08. The cache helps a re-run on the same branch (caches
+      # from other release branches aren't shared); the retries below ride out short outages.
+      - uses: actions/cache@v6
+        with:
+          path: ~/AppData/Local/tauri
+          key: tauri-tools-${{ runner.os }}-${{ hashFiles('avchetan-code/apps/desktop/package.json') }}
+          restore-keys: tauri-tools-${{ runner.os }}-
+
       # The server as one executable, with PGlite beside it (ADR-0024).
       - run: pnpm --filter @avchetan/server build:sidecar
 
-      - run: pnpm --filter @avchetan/desktop build:release
+      - name: Build the app and installer
+        shell: bash
+        run: |
+          # A retry only redoes what failed: Rust and the web build are already done.
+          for attempt in 1 2 3; do
+            pnpm --filter @avchetan/desktop build:release && exit 0
+            echo "::warning::Build attempt $attempt failed; retrying in 2 minutes"
+            sleep 120
+          done
+          exit 1
 
       - name: Name the installer
         shell: bash
@@ -132,6 +150,13 @@ jobs:
           distribution: temurin
           java-version: 21
 
+      # Keeps Gradle and its dependencies for a re-run on the same branch: a gradle.org outage
+      # failed the release on 2026-11-08. Release branches and tags aren't the default branch,
+      # so writing the cache has to be allowed. The APK step also retries the download.
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: false
+
       - run: pnpm install --frozen-lockfile
 
       - name: Generate the Android project
@@ -163,6 +188,13 @@ jobs:
           AVCHETAN_VERSION_CODE: ${{ github.run_number }}
         run: |
           export NODE_PATH="$GITHUB_WORKSPACE/avchetan-code/node_modules/.pnpm/node_modules"
+          # Fetch Gradle itself first, with retries: gradle.org can time out.
+          for attempt in 1 2 3 4 5; do
+            ./android/gradlew -p android --version > /dev/null && break
+            if [ "$attempt" = 5 ]; then exit 1; fi
+            echo "::warning::Downloading Gradle failed (attempt $attempt); retrying in 2 minutes"
+            sleep 120
+          done
           ./android/gradlew -p android assembleRelease
 
       - name: Check the signature, and name the APK
