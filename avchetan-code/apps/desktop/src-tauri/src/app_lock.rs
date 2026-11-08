@@ -228,6 +228,14 @@ pub fn mark_back<R: Runtime>(app: &AppHandle<R>) {
     }
 }
 
+/// The capture box hid. With the main window not on screen, nothing of Avchetan is in front any
+/// more, so time away starts (after an unlock from the capture box, say).
+pub fn dock_hidden<R: Runtime>(app: &AppHandle<R>) {
+    if !main_showing(app) {
+        mark_away(app);
+    }
+}
+
 /// Windows locked or is going to sleep.
 pub fn lock_now<R: Runtime>(app: &AppHandle<R>) {
     if app.state::<LockState>().with(|lock| lock.lock_now()) {
@@ -278,11 +286,11 @@ pub fn lock_unlock(app: AppHandle, window: WebviewWindow, reason: String) -> Str
     warn_on_err("focus after unlock", window.set_focus());
     match outcome {
         hello::Outcome::Verified => {
+            // Time away starts when the window that unlocked goes: the main window's close or
+            // minimize, or the capture box hiding (`dock_hidden`). Starting it here relocked at
+            // once with Immediately when unlocking from the capture box.
             state.with(Lock::unlocked);
             emit_status(&app);
-            if !main_showing(&app) {
-                mark_away(&app);
-            }
             "verified".into()
         }
         hello::Outcome::Cancelled => "cancelled".into(),

@@ -41,7 +41,7 @@ Phone, locked                    PC main window, locked
 ### When it locks
 
 - **On start**, when the lock is on.
-- **After being away** for the chosen time. *Away* on the phone: the app is in the background. On the PC: the main window is hidden or minimized. The capture box opening and closing doesn't count.
+- **After being away** for the chosen time. *Away* on the phone: the app is in the background. On the PC: the main window is hidden or minimized. The capture box opening and closing doesn't count, except after an unlock from the capture box: then time away starts when it closes (with *Immediately* the first test build relocked at once, before the answer could show).
 - **At once when Windows locks or the PC sleeps**, whatever the setting.
 - Time is counted from when you left, so with *After 1 minute* a quick switch to another app doesn't ask again.
 

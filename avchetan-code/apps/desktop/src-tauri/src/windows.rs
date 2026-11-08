@@ -36,6 +36,8 @@ pub fn dock_is_open<R: Runtime>(app: &AppHandle<R>) -> bool {
 pub fn hide_dock<R: Runtime>(app: &AppHandle<R>) {
     if let Some(dock) = app.get_webview_window(DOCK) {
         warn_on_err("hide dock", dock.hide());
+        // Every place the dock hides tells the app lock, which counts time away from it.
+        app_lock::dock_hidden(app);
     }
 }
 
@@ -52,6 +54,7 @@ fn toggle<R: Runtime>(app: &AppHandle<R>, with_context: bool) {
     let focused = dock.is_focused().unwrap_or(false);
     if visible && focused {
         warn_on_err("hide dock", dock.hide());
+        app_lock::dock_hidden(app);
     } else {
         let context = if with_context {
             context::previous_window_context()
@@ -211,6 +214,8 @@ pub fn on_window_event<R: Runtime>(window: &Window<R>, event: &WindowEvent) {
             warn_on_err("hide on close", window.hide());
             if window.label() == MAIN {
                 app_lock::mark_away(window.app_handle());
+            } else {
+                app_lock::dock_hidden(window.app_handle());
             }
         }
         // The app lock counts time away from when the main window is hidden or minimized.
@@ -230,6 +235,7 @@ pub fn on_window_event<R: Runtime>(window: &Window<R>, event: &WindowEvent) {
                 std::thread::sleep(BLUR_HIDE_DELAY);
                 if !dock.is_focused().unwrap_or(false) {
                     warn_on_err("hide dock on blur", dock.hide());
+                    app_lock::dock_hidden(dock.app_handle());
                 }
             });
         }
@@ -242,6 +248,7 @@ pub fn dock_hide(app: AppHandle) -> CommandResult<()> {
     if let Some(dock) = app.get_webview_window(DOCK) {
         dock.hide()
             .map_err(|error| CommandError::new("window_failed", error.to_string()))?;
+        app_lock::dock_hidden(&app);
     }
     Ok(())
 }

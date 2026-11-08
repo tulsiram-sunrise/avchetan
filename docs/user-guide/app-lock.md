@@ -19,7 +19,7 @@ If the switch can't be turned on, the device has no lock to use:
 ## When it locks
 
 - When Avchetan starts.
-- After you've been away for the time you choose: **Immediately**, **After 1 minute** (the default) or **After 30 minutes**. On the phone, *away* means Avchetan was in the background. On the PC, it means the main window was closed or minimized; using the capture box doesn't count.
+- After you've been away for the time you choose: **Immediately**, **After 1 minute** (the default) or **After 30 minutes**. On the phone, *away* means Avchetan was in the background. On the PC, it means the main window was closed or minimized; using the capture box doesn't count. If you unlocked from the capture box, the time starts when the capture box closes.
 - On the PC, at once when Windows locks or the PC goes to sleep.
 
 ## While it's locked
