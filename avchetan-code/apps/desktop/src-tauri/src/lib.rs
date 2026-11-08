@@ -74,6 +74,7 @@ pub fn run() {
             commands::hub::hub_backup_list,
             commands::hub::hub_restore,
             commands::hub::hub_folder_open,
+            commands::hub::hub_free_port,
             commands::network::hub_network_status,
             commands::network::hub_network_allow,
             commands::network::network_settings_open,

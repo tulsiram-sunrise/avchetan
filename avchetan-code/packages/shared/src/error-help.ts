@@ -25,6 +25,7 @@ export const ERROR_HELP = {
   invalid_date: own('That date is not valid'),
   invalid_merge: own(),
   invalid_name: own(),
+  invalid_port: own(),
   invalid_tag: own(),
   invalid_title: own(),
   invalid_time_zone: own('Unknown time zone. Choose one from the list'),

@@ -5,8 +5,8 @@ import {
   saveExtractionMode,
 } from '@avchetan/core';
 import type { ClientStore } from '@avchetan/db/sqlite';
-import type { SecretName, SecretStore } from '@avchetan/shared';
-import { SYNC_TOKEN_SECRET, saveConnection } from '@avchetan/sync';
+import { AppError, type SecretName, type SecretStore } from '@avchetan/shared';
+import { loadServerUrls, SYNC_TOKEN_SECRET, saveConnection } from '@avchetan/sync';
 import type { Hub, HubConfig, HubStatus } from '../native/hub';
 
 /** Read by Rust and handed to the hub process (src-tauri/src/commands/hub.rs). */
@@ -49,7 +49,8 @@ export async function turnOnHub(
     token = (options.importFrom ? await secrets.get(SYNC_TOKEN_SECRET) : null) ?? newToken();
     await secrets.set(HUB_TOKEN_SECRET, token);
   }
-  const port = options.port ?? DEFAULT_HUB_PORT;
+  // A port chosen before (Port, Use another port) is kept.
+  const port = options.port ?? (await hub.status()).config.port ?? DEFAULT_HUB_PORT;
   const status = await hub.configure({ enabled: true, port, ...hubModels(options.preset) });
   await saveConnection(store, secrets, { urls: [hubUrl(port)], token, trustLocalNetwork: false });
   await letOwnHubDoAi(store);
@@ -86,6 +87,33 @@ export async function changeOwnHubToken({
   await secrets.set(SYNC_TOKEN_SECRET, token);
   const { config } = await hub.status();
   return hub.configure(config);
+}
+
+/**
+ * Moves the hub to another port (feature audit bug 7) and restarts it if it is on. This PC's
+ * own connection follows; phones keep the old address until they scan the code again.
+ */
+export async function changeHubPort(
+  { hub, secrets, store }: HubDeps,
+  port: number,
+): Promise<HubStatus> {
+  if (!Number.isInteger(port) || port < 1024 || port > 65_535) {
+    throw new AppError('invalid_port', 'Choose a port from 1024 to 65535');
+  }
+  const before = await hub.status();
+  const urls = await loadServerUrls(store);
+  const status = await hub.configure({ ...before.config, port });
+  if (urls.length === 1 && urls[0] === hubUrl(before.config.port)) {
+    const token = (await secrets.get(SYNC_TOKEN_SECRET)) ?? (await secrets.get(HUB_TOKEN_SECRET));
+    if (token) {
+      await saveConnection(store, secrets, {
+        urls: [hubUrl(port)],
+        token,
+        trustLocalNetwork: false,
+      });
+    }
+  }
+  return status;
 }
 
 /** Stops the hub and keeps it off. This PC's sync still points at it, so sync waits. */

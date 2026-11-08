@@ -18,7 +18,7 @@ No terminal is needed: Avchetan runs the hub itself and walks you through the re
 
 ![Home Hub on this PC, off, with its checklist, the AI models for the hub and the Turn on the hub button](images/setup-home-hub-turn-on.png)
 5. If you ran a hub before (from a terminal or Docker) and want to keep its entries, click **Use data from a hub I ran before…** and choose its `pglite-data` folder. Phones paired with it keep syncing.
-6. Click **Turn on the hub**. The first start takes about 15 seconds while it sets up its database; then it says **Running on port 8787**.
+6. Click **Turn on the hub**. The first start takes about 15 seconds while it sets up its database; then it says **Running on port 8787**. If another program already uses that port, click **Use another port** ([hub_port_in_use](troubleshooting.md#hub_port_in_use)); **Port** under the status changes it later.
 7. Work down the checklist until every line has a ✓:
    - **Ollama needs models** — click **Download them** and wait. It's a few GB.
    - **Your network is set as Public** — click **Open network settings** and set your home network to **Private**.
