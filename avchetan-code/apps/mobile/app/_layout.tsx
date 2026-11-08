@@ -3,6 +3,7 @@ import { createLogger, toAppError } from '@avchetan/shared';
 import { QueryClientProvider } from '@tanstack/react-query';
 import * as Notifications from 'expo-notifications';
 import { router, Stack } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, AppState, Text, View } from 'react-native';
@@ -16,6 +17,10 @@ import { AppTheme } from '../src/theme/theme';
 import { HelpLink } from '../src/ui/parts';
 
 const log = createLogger('app');
+
+// The splash (the icon on the app's background) stays until the database is open, so there is no
+// blank frame or spinner between it and the first screen.
+SplashScreen.preventAutoHideAsync().catch(() => log.warn('could not keep the splash screen'));
 
 /** A link straight to a screen (the widget opens `/capture`) still has the tabs beneath it. */
 export const unstable_settings = { initialRouteName: '(tabs)' };
@@ -133,6 +138,11 @@ export default function RootLayout() {
     );
     return () => stopWatching();
   }, []);
+
+  useEffect(() => {
+    if (startup.status === 'opening') return;
+    SplashScreen.hideAsync().catch(() => log.warn('could not hide the splash screen'));
+  }, [startup.status]);
 
   return (
     <AppTheme>
