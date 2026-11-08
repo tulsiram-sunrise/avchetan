@@ -83,7 +83,7 @@ Entries saved before this version have people, but few promise links. On the Peo
 ### Extraction (`packages/core`)
 
 - **Prompt `extraction.v4`:**
-  - Roles. `owed_to`: the task is done for or given to that person (*send, give, return, pay, call back, reply to*). `owed_by`: the person said they would do something for the user.
+  - Promises are two fields on each task, not mention roles: `forPerson` (whom the user does it for or gives it to: *send, give, return, pay, call back, reply to*) and `waitingOn` (who said they would do it for the user). Extraction turns them into `owed_to` / `owed_by` mentions. Models, Groq's included, read direction labels such as `owed_to` either way round.
   - A task the user is waiting on is written from the user's side, starting with a verb (*"Get the photos from Aman"*), with its due date and an `owed_by` mention.
   - New fixtures: promise wording in English, Hindi and Hinglish; a task naming someone who is not owed anything (*"Meet Rahul at 5"* is `with`, not `owed_to`); a waiting-on item with a date; a reported promise that isn't the user's (*"Aman promised Priya…"* makes no task).
   - Eval on Gemini, Groq and Ollama `granite4.2:8b` before switching, and note the results in [open-questions R20](../open-questions.md). v3 stays until v4 is at least as accurate on the old fixtures.
