@@ -91,6 +91,8 @@ The dock is a launcher, not just a text box. One input, three modes by prefix:
 
 ## 5. Knowledge graph of people & commitments
 
+> Planned in detail in [people-and-promises.md](people-and-promises.md) (Phase 7). The outline below is the original idea. The plan counts any task done for a named person as a promise, tracks both directions, and merges duplicates by hand.
+
 - Extraction returns `entities[]` (`person`, `place`, `organization`, `project_ref`, `exercise`, `food`) and `mentions` linking them to the raw log, activities and tasks with a role (`with`, `about`, `owed_to`, `at`).
 - Entity resolution: normalized name + aliases; the prompt includes known entity names; ambiguous matches create a new entity flagged `needs_review`.
 - Commitments: a task with an `owed_to` person mention, e.g. *"Promised Rahul the schema design by Wednesday"* → task "Send schema design to Rahul", due Wednesday, mention Rahul (`owed_to`).

@@ -155,7 +155,7 @@ ID = `derivedId('entity_tag', tag_id, target_type, target_id)`. Gains the common
 | `aliases` | JSON array | Other spellings seen |
 | `needs_review` | bool | Ambiguous auto-created entity |
 
-ID = `derivedId('entity', kind, normalized_name)`.
+ID = `derivedId('entity', kind, normalized_name)` when created. A rename changes `name` and `normalized_name` and keeps the old name in `aliases`, so the ID no longer matches the name. Lookups go by `normalized_name` and aliases, never by recomputing the ID ([people and promises](../product/people-and-promises.md#data-packagesdb)).
 
 ### `entity_mentions`
 | Column | Type | Notes |
@@ -163,7 +163,7 @@ ID = `derivedId('entity', kind, normalized_name)`.
 | `entity_id` | UUID | |
 | `target_type` | enum | `raw_log`, `activity`, `task` |
 | `target_id` | UUID | |
-| `role` | enum | `with`, `about`, `at`, `owed_to`, `owed_by` |
+| `role` | enum | `with`, `about`, `at`, `owed_to` (a task done for that person: you owe them), `owed_by` (that person said they would do it: you are waiting on them) |
 
 ID = `derivedId('mention', entity_id, target_type, target_id, role)`.
 
