@@ -16,6 +16,14 @@ const expectedTask = z.object({
   titleHas: z.string().optional(),
 });
 
+/** A task linked to a person as a promise (docs/product/people-and-promises.md). */
+const expectedPromise = z.object({
+  person: z.string(),
+  /** owed_to: the user owes the person; owed_by: the person owes the user. */
+  role: z.enum(['owed_to', 'owed_by']),
+  titleHas: z.string().optional(),
+});
+
 export const fixtureSchema = z.object({
   id: z.string(),
   text: z.string(),
@@ -27,6 +35,8 @@ export const fixtureSchema = z.object({
     tasks: z.array(expectedTask).default([]),
     tags: z.array(z.string()).default([]),
     entities: z.array(z.string()).default([]),
+    /** When given, exactly these promise links (an empty list: none). */
+    promises: z.array(expectedPromise).optional(),
     newCategory: z.boolean().default(false),
     skip: z.boolean().default(false),
   }),

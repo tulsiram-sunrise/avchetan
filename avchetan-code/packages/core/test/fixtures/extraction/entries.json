@@ -76,7 +76,8 @@
           }
         }
       ],
-      "entities": ["Arjun"]
+      "entities": ["Arjun"],
+      "promises": []
     }
   },
   {
@@ -172,7 +173,8 @@
           }
         }
       ],
-      "entities": ["Kavya", "Blue Door"]
+      "entities": ["Kavya", "Blue Door"],
+      "promises": []
     }
   },
   {
@@ -278,7 +280,8 @@
           "date": "2026-03-04"
         }
       ],
-      "entities": ["Neha", "Omar"]
+      "entities": ["Neha", "Omar"],
+      "promises": []
     }
   },
   {
@@ -304,7 +307,14 @@
           "titleHas": "invoice"
         }
       ],
-      "entities": ["Rahul"]
+      "entities": ["Rahul"],
+      "promises": [
+        {
+          "person": "Rahul",
+          "role": "owed_to",
+          "titleHas": "invoice"
+        }
+      ]
     }
   },
   {
@@ -409,7 +419,13 @@
           "titleHas": "Vikram"
         }
       ],
-      "entities": ["Vikram"]
+      "entities": ["Vikram"],
+      "promises": [
+        {
+          "person": "Vikram",
+          "role": "owed_to"
+        }
+      ]
     }
   },
   {
@@ -429,7 +445,14 @@
           "titleHas": "contract"
         }
       ],
-      "entities": ["Tara", "Roast House"]
+      "entities": ["Tara", "Roast House"],
+      "promises": [
+        {
+          "person": "Tara",
+          "role": "owed_to",
+          "titleHas": "contract"
+        }
+      ]
     }
   },
   {
@@ -571,6 +594,119 @@
           "titleHas": "article"
         }
       ]
+    }
+  },
+  {
+    "id": "promise-hinglish",
+    "text": "Rohan ko promise kiya ki Saturday tak notes bhej dunga",
+    "at": "2026-03-04T06:00:00.000Z",
+    "expect": {
+      "tasks": [
+        {
+          "dueDate": "2026-03-07",
+          "titleHas": "notes"
+        }
+      ],
+      "entities": ["Rohan"],
+      "promises": [
+        {
+          "person": "Rohan",
+          "role": "owed_to",
+          "titleHas": "notes"
+        }
+      ]
+    }
+  },
+  {
+    "id": "promise-call-back",
+    "text": "need to call Sunita back tonight about the flat",
+    "at": "2026-03-04T07:00:00.000Z",
+    "expect": {
+      "tasks": [
+        {
+          "dueDate": "2026-03-04",
+          "titleHas": "Sunita"
+        }
+      ],
+      "entities": ["Sunita"],
+      "promises": [
+        {
+          "person": "Sunita",
+          "role": "owed_to"
+        }
+      ]
+    }
+  },
+  {
+    "id": "promise-waiting-on",
+    "text": "Farhan said he will send the trip photos by Friday",
+    "at": "2026-03-04T12:00:00.000Z",
+    "expect": {
+      "tasks": [
+        {
+          "dueDate": "2026-03-06",
+          "titleHas": "photos"
+        }
+      ],
+      "entities": ["Farhan"],
+      "promises": [
+        {
+          "person": "Farhan",
+          "role": "owed_by",
+          "titleHas": "photos"
+        }
+      ]
+    }
+  },
+  {
+    "id": "promise-waiting-hinglish",
+    "text": "Meena kal tak budget sheet bhej degi",
+    "at": "2026-03-04T09:00:00.000Z",
+    "expect": {
+      "tasks": [
+        {
+          "dueDate": "2026-03-05",
+          "titleHas": "budget"
+        }
+      ],
+      "entities": ["Meena"],
+      "promises": [
+        {
+          "person": "Meena",
+          "role": "owed_by",
+          "titleHas": "budget"
+        }
+      ]
+    }
+  },
+  {
+    "id": "promise-meeting-is-not",
+    "text": "meet Arvind tomorrow at 5 for chai",
+    "at": "2026-03-04T10:00:00.000Z",
+    "expect": {
+      "tasks": [
+        {
+          "dueDate": "2026-03-05",
+          "titleHas": "Arvind"
+        }
+      ],
+      "entities": ["Arvind"],
+      "promises": []
+    }
+  },
+  {
+    "id": "promise-someone-elses",
+    "text": "helped Kabir buy bike parts today, he promised Lata he would fix her bike",
+    "at": "2026-03-04T14:00:00.000Z",
+    "expect": {
+      "activities": [
+        {
+          "date": "2026-03-04"
+        }
+      ],
+      "tasks": [],
+      "entities": ["Kabir", "Lata"],
+      "promises": []
     }
   }
 ]
