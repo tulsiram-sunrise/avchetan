@@ -66,6 +66,7 @@ Its entries stay on the hub and on every device; capture on that PC stops. Setti
 - Whether a hub-only PC can be switched back to a full PC, and what that does.
 - The wording of the version message, and whether a phone that's older than the hub also gets a message.
 - When to build it, and which phase it becomes.
+- Found in the [feature audit](feature-audit-2026-11.md#bugs-found): the hub's port is fixed at 8787 with no setting (bug 7), pairing lists virtual-adapter addresses first (bug 6), and a PC that uses its hub's AI can't switch back from Settings (bug 1). A hub-only PC makes all three more visible.
 
 When it's decided: an ADR (the next free number; ADR-0028 went to the [app lock](app-lock.md)), a roadmap entry, an update to [deployment modes](../architecture/deployment-modes.md#2-home-hub) and the [user guide](../user-guide/README.md).
 

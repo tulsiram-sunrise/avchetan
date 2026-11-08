@@ -64,7 +64,7 @@ The clipboard is read only at the moment you press this shortcut, never otherwis
 
 ## Change the keys
 
-Open Avchetan (tray icon → **Open Avchetan**) → **Settings**. Settings has tabs across the top: **AI**, **Capture box**, **Daily brief**, **Hub & sync**, **Your data** and **General**. It opens on the tab you used last.
+Open Avchetan (tray icon → **Open Avchetan**) → **Settings**. Settings has tabs across the top: **AI**, **Capture box**, **Voice**, **Daily brief**, **Privacy**, **Hub & sync**, **Your data** and **General**. It opens on the tab you used last. Typing `/settings voice` (or any tab's name) in the capture box opens a tab directly.
 
 On **Capture box**:
 - **Shortcut:** type a new one, for example `Ctrl+Alt+Space`, and click **Save**. If another app already uses it, Avchetan says so and keeps the old one.
@@ -95,14 +95,15 @@ When you're offline with a cloud model, Avchetan shows a short count from your P
 
 ## Run a command
 
-Start with `/` to act instead of log: `/done foam roll` marks a task done, `/brief` makes today's brief, `/sync` syncs, `/undo` takes the last command back. See [Commands in the capture box](commands.md).
+Start with `/` to act instead of log: `/done foam roll` marks a task done, `/brief` makes today's brief, `/sync` syncs, `/undo` takes back the last entry you saved or the last command, `/settings` opens Settings, and `/lock` and `/unlock` work the [app lock](app-lock.md). See [Commands in the capture box](commands.md).
 
 ## See what was organized
 
 Open Avchetan (tray icon → **Open Avchetan**):
 
-- **Days:** one day at a time, under its week, which stays at the top while you scroll. Click the month and year above the week (or press M) to see the whole month; pick a day or press Esc to close it. Each date has dots in its categories' colours (grey: not organized yet). The day shows its [daily brief](daily-brief.md), or until there is one a summary such as *3 entries · Workout 45 min*, its tasks (due, done, and on today the overdue ones), and its entries with the activities and tasks found in them. Use ← and → for the day before or after, ‹ and › for a week, Page Up and Page Down for a month, and T for today. An entry about another day ("yesterday I ran") shows on that day too, marked *added on*. Click a title to change it, or change the category next to it. Avchetan never overwrites what you changed, and learns from it for similar entries ([Teach Avchetan with your fixes](corrections.md)). **Options** under an entry lets you organize it again, edit its text, or delete it.
-- **Tasks:** tick things off and set due dates.
+- **Days:** one day at a time, under its week, which stays at the top while you scroll. Click the month and year above the week (or press M) to see the whole month; pick a day or press Esc to close it. Each date has dots in its categories' colours (grey: not organized yet). The day shows its [daily brief](daily-brief.md) (on Sundays also the [Your week](daily-brief.md#your-week-sundays) card), or until there is one a summary such as *3 entries · Workout 45 min*, its tasks (due, done, and on today the overdue ones), and its entries with the activities and tasks found in them. Use ← and → for the day before or after, ‹ and › for a week, Page Up and Page Down for a month, and T for today. An entry about another day ("yesterday I ran") shows on that day too, marked *added on*. Click a title to change it, or change the category next to it. Avchetan never overwrites what you changed, and learns from it for similar entries ([Teach Avchetan with your fixes](corrections.md)). **Options** under an entry lets you organize it again, edit its text, or delete it.
+- **Tasks:** tick things off and set due dates. **Person…** on a task marks it as a promise to someone, or something you're waiting on them for.
+- **People:** everyone your entries name, with what you owe them and what they owe you ([People and promises](people.md)).
 - **Review:** entries that couldn't be organized, and why. Press **Organize now** to try again.
 - **Categories:** rename, merge or archive them. The AI adds a category, marked **New**, only when nothing fits; press **Keep** or merge it into another.
 - **Tags:** rename, nest (`health/knee`), merge or recolor them.

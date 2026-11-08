@@ -32,6 +32,7 @@ The project started from an original discussion and first specification that are
 | [product/hub-only.md](product/hub-only.md) | Hub-only PC (draft plan, not decided): an always-on PC that runs only the hub, so phones sync while the main PC is off |
 | [product/people-and-promises.md](product/people-and-promises.md) | People and promises: a People page with last seen, *You owe* and *Waiting on*; rename and merge; Ask tools `query_entities` and `query_commitments` |
 | [product/clipboard-snap.md](product/clipboard-snap.md) | Clipboard snap: a second shortcut attaches the clipboard text (4 KB) to an entry on the PC |
+| [product/feature-audit-2026-11.md](product/feature-audit-2026-11.md) | Feature audit (November 2026, for discussion): what was tested, bugs found, gaps and ideas |
 | [product/glossary.md](product/glossary.md) | Shared vocabulary |
 
 ### Architecture
