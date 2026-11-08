@@ -1,6 +1,6 @@
 # Roadmap
 
-**Current phase: [Phase 7](#phase-7--advancements-b-voice-graph-patterns-privacy)** (started 2026-11-07, private entries first). Phase 6 completed 2026-11-07 (started 2026-11-06). v0.2.0 was released 2026-11-06 (PR #15). Phase 1 completed 2026-10-26 (PR #1). Phase 2 completed 2026-10-30 (PR #2). Phase 3 completed 2026-10-31. Phase 4 completed 2026-11-02. Phase 5 completed 2026-11-04 (PR #8). Phase 5b completed 2026-11-05 (PR #10). The Public release milestone completed 2026-11-05 with v0.1.0 (PR #12); applying to SignPath remains.
+**Current phase: none chosen.** Phase 7 completed 2026-11-08 (started 2026-11-07). Next under discussion: a hub-only mode for an always-on PC ([Q26](open-questions.md)). Phase 6 completed 2026-11-07 (started 2026-11-06). v0.2.0 was released 2026-11-06 (PR #15). Phase 1 completed 2026-10-26 (PR #1). Phase 2 completed 2026-10-30 (PR #2). Phase 3 completed 2026-10-31. Phase 4 completed 2026-11-02. Phase 5 completed 2026-11-04 (PR #8). Phase 5b completed 2026-11-05 (PR #10). The Public release milestone completed 2026-11-05 with v0.1.0 (PR #12); applying to SignPath remains.
 
 Each phase lists scope, deliverables and **done when** criteria (testable). Phases are sequential; a coding agent should finish a phase's criteria before starting the next. Advanced capabilities are specified in [product/advancements.md](product/advancements.md).
 
@@ -173,7 +173,7 @@ Built one item at a time, each on its own branch and PR, tried on real devices b
 
 **Result:** all six items built and tried on real devices, 2026-11-06 to 2026-11-07 (PRs #17–#28). The daily brief's single row across devices is covered by its deterministic ID test.
 
-## Phase 7 — Advancements B (voice, graph, patterns, privacy)
+## Phase 7 — Advancements B (voice, graph, patterns, privacy) ✅
 
 Built one item at a time like Phase 6, each with its own spec. Order chosen 2026-11-07: item 4 first, then item 1; item 2 chosen next on 2026-11-08, then item 3.
 
@@ -183,6 +183,8 @@ Built one item at a time like Phase 6, each with its own spec. Order chosen 2026
 4. **Private entries** ([product/private-entries.md](product/private-entries.md)), built first: private tags (synced, a tag covers its children) make an entry private at capture; without a local AI a private entry waits with *Private: waits for a local AI* instead of being skipped; a lock on Days and **Make private / Make normal** on both apps; one fetch-spy test across extraction, Ask, the daily brief and hub embeddings. Planned 2026-11-07. Built 2026-11-07 and tried on the desktop demo copy: `Health` added in Settings became `#health`, an entry tagged `#health/knee` was private with the lock on Days, **Make normal** and **Make private** (with its confirmation) worked, and with only a cloud model set up the entry showed *Private: waits for a local AI*. The leak test checks extraction and the daily brief through the real Groq adapter and a recording fetch, and Ask at the model boundary while it calls four tools; it failed as it should when each of the three was made to leak on purpose. Hub embeddings keep their own test. A tag row from an app without the column reads as not private. Tried on a real PC and phone the same day: the first test build worked on the PC (the hub's Ollama organized a private entry), but a private tag made on the PC never reached the phone, because the old phone app had pulled that tag row before the update and dropped the unknown column. Fixed by pulling everything once when an update adds synced columns ([sync-protocol.md](architecture/sync-protocol.md#schema-evolution)); with the second build the phone showed `#health` after updating, kept every entry, and a private tag added later on the PC arrived too.
 
 **Done when:** voice capture works offline on desktop with local Whisper; "what do I owe X" answers correctly from extracted commitments; weekly review shows numeric findings; private entries never appear in any cloud-provider call (test via fetch spy).
+
+**Result:** all four items built and tried on a real PC and phone, 2026-11-07 to 2026-11-08: private entries (PR #30), voice (#33), people and promises (#35), the weekly review (#38). Ask answers "what do I owe Rahul" from `query_commitments` with a citation; the weekly review keeps only numbers the app computed; the cloud leak test covers extraction, Ask (including the people tools), the daily brief and the weekly review. Along the way: weeks run Monday to Sunday, the phone has a proper splash screen, and release builds retry the Gradle and NSIS downloads (#36).
 
 ---
 

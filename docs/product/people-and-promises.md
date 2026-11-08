@@ -1,6 +1,6 @@
 # People and promises
 
-See the people in your log, and what you and they promised. A **People** page lists everyone your entries name. Each person's page shows when you last saw them, what you owe them, what they owe you, and every entry that mentions them. Ask can answer *"What do I owe Rahul?"*, *"When did I last see Aman?"* and *"Who did I talk to about the migration?"*. This is item 2 of [Phase 7](../roadmap.md#phase-7--advancements-b-voice-graph-patterns-privacy), and it replaces the outline in [advancements §5](advancements.md#5-knowledge-graph-of-people--commitments).
+See the people in your log, and what you and they promised. A **People** page lists everyone your entries name. Each person's page shows when you last saw them, what you owe them, what they owe you, and every entry that mentions them. Ask can answer *"What do I owe Rahul?"*, *"When did I last see Aman?"* and *"Who did I talk to about the migration?"*. This is item 2 of [Phase 7](../roadmap.md#phase-7--advancements-b-voice-graph-patterns-privacy-), and it replaces the outline in [advancements §5](advancements.md#5-knowledge-graph-of-people--commitments).
 
 ## Why
 
