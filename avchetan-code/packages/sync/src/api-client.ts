@@ -3,6 +3,7 @@ import type { z } from 'zod';
 import { readAnswer } from './ask-stream';
 import {
   briefResponseSchema,
+  commandResponseSchema,
   errorResponseSchema,
   HEADERS,
   type HealthResponse,
@@ -10,6 +11,8 @@ import {
   type HubAskResult,
   type HubBriefRequest,
   type HubBriefResponse,
+  type HubCommandRequest,
+  type HubCommandResponse,
   healthResponseSchema,
   type PairingResponse,
   PROTOCOL_VERSION,
@@ -143,6 +146,14 @@ export function createApiClient({ fetch, baseUrl, token, deviceId }: ApiClientOp
         `${baseUrl}/v1/brief`,
         { ...post(request), signal: AbortSignal.timeout(ASK_TIMEOUT_MS) },
         briefResponseSchema,
+      );
+    },
+    command(request: HubCommandRequest): Promise<HubCommandResponse> {
+      return send(
+        fetch,
+        `${baseUrl}/v1/command`,
+        { ...post(request), signal: AbortSignal.timeout(ASK_TIMEOUT_MS) },
+        commandResponseSchema,
       );
     },
     pairing(): Promise<PairingResponse> {

@@ -31,7 +31,7 @@ While Avchetan is [locked](app-lock.md), `/lock`, `/unlock` and `/settings` work
 
 It runs only when you press **Enter** again. **Esc** cancels.
 
-The AI sees only what you typed after `/` and the list of commands. It never sees your tasks or entries; finding the task happens on your PC. It uses your model for answering questions, or your model for organizing if you haven't chosen one ([AI models](ai-models.md)). Without a model on this PC, or offline with an online model, unknown commands don't work, but the commands above always do.
+The AI sees only what you typed after `/` and the list of commands. It never sees your tasks or entries; finding the task happens on your PC. It uses the model that answers your questions: your hub's, when **Who answers your questions?** is **My hub**, otherwise this PC's (or its model for organizing if you haven't chosen one) ([AI models](ai-models.md)). Your earlier confirmed readings go with it, but never your tasks or entries. Without a model, offline, or when the hub can't be reached, unknown commands don't work, but the commands above always do. A hub older than this version says *Your hub needs an update to do this* ([hub_outdated](troubleshooting.md#hub_outdated)).
 
 ## It learns what you mean
 

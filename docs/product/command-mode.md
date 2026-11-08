@@ -53,7 +53,7 @@ The capture box is always one shortcut away, but doing anything other than loggi
 
 - **Always confirmed:** an AI reading runs only after a second Enter.
 - **What the AI sees:** the text after `/` and the list of commands with their help. Never your tasks or entries: finding the task stays on the PC.
-- **Which model:** this PC's answers model, else its organizing model ([AI models](../user-guide/ai-models.md)). With neither (a PC that leaves AI to its hub), or offline with a cloud model, the box says so and shows the list of commands instead, with a help link.
+- **Which model:** with `analysis.mode = hub`, the hub's answers model through `POST /v1/command` ([server](../architecture/server.md)), which receives only the typed words and earlier confirmed readings; a hub without it gives `hub_outdated`. Otherwise this PC's answers model, else its organizing model ([AI models](../user-guide/ai-models.md)). With neither, offline, or with the hub out of reach, the box says so and shows the list of commands instead, with a help link.
 - **One small structured call** (`generateStructured`, schema `{ command, args } | { none: reason }`, prompt `prompts/command.v1.ts`), so small models manage it. A reading of "none" says "Couldn't read this as a command" with the list.
 
 ### Learning from confirmations
