@@ -1,6 +1,6 @@
 # Feature audit, November 2026
 
-> **Status: for discussion.** A check of every shipped feature against its documentation and the running app, done 2026-11-08/09 after Phase 7 and the app lock. The bugs were decided on 2026-11-09 and were fixed in v0.3.0, released 2026-11-09, as the [pre-release fixes](../roadmap.md#pre-release-fixes) ([decisions](#decisions-2026-11-09)); the ideas are still to be discussed. Decisions go to [open questions](../open-questions.md), ADRs and the [roadmap](../roadmap.md) as usual.
+> **Status: for discussion.** A check of every shipped feature against its documentation and the running app, done 2026-11-08/09 after Phase 7 and the app lock. The bugs were decided on 2026-11-09 and were fixed in v0.3.0, released 2026-11-09, as the [pre-release fixes](../roadmap.md#pre-release-fixes) ([decisions](#decisions-2026-11-09)); the ideas were decided on 2026-11-10 ([Q27](../open-questions.md), [roadmap Phase 8](../roadmap.md#phase-8--finding-and-using-data-v040)). Decisions go to [open questions](../open-questions.md), ADRs and the [roadmap](../roadmap.md) as usual.
 
 ## How it was checked
 
