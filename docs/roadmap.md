@@ -1,12 +1,12 @@
 # Roadmap
 
-**Current phase: none chosen.** v0.3.0 (Phases 6 and 7, the [app lock](#app-lock) and the [pre-release fixes](#pre-release-fixes)) was released 2026-11-09 ([v0.3.0](https://github.com/tulsiram-sunrise/avchetan/releases/tag/v0.3.0), PR #45). Phase 7 completed 2026-11-08 (started 2026-11-07). The [app lock](#app-lock) was built 2026-11-08. Next: a hub-only mode for an always-on PC, still under discussion ([Q26](open-questions.md), [draft plan](product/hub-only.md)). Phase 6 completed 2026-11-07 (started 2026-11-06). v0.2.0 was released 2026-11-06 (PR #15). Phase 1 completed 2026-10-26 (PR #1). Phase 2 completed 2026-10-30 (PR #2). Phase 3 completed 2026-10-31. Phase 4 completed 2026-11-02. Phase 5 completed 2026-11-04 (PR #8). Phase 5b completed 2026-11-05 (PR #10). The Public release milestone completed 2026-11-05 with v0.1.0 (PR #12); applying to SignPath remains.
+**Current phase: [Phase 8 — Finding and using data (v0.4.0)](#phase-8--finding-and-using-data-v040)**, planned 2026-11-10, then [v0.5.0 tasks and reminders](#v050--tasks-and-reminders) and [v0.6.0 security](#v060--security). v0.3.0 (Phases 6 and 7, the [app lock](#app-lock) and the [pre-release fixes](#pre-release-fixes)) was released 2026-11-09 ([v0.3.0](https://github.com/tulsiram-sunrise/avchetan/releases/tag/v0.3.0), PR #45). Phase 7 completed 2026-11-08 (started 2026-11-07). The [app lock](#app-lock) was built 2026-11-08. A hub-only mode for an always-on PC is still under discussion ([Q26](open-questions.md), [draft plan](product/hub-only.md)). Phase 6 completed 2026-11-07 (started 2026-11-06). v0.2.0 was released 2026-11-06 (PR #15). Phase 1 completed 2026-10-26 (PR #1). Phase 2 completed 2026-10-30 (PR #2). Phase 3 completed 2026-10-31. Phase 4 completed 2026-11-02. Phase 5 completed 2026-11-04 (PR #8). Phase 5b completed 2026-11-05 (PR #10). The Public release milestone completed 2026-11-05 with v0.1.0 (PR #12); applying to SignPath remains.
 
 Each phase lists scope, deliverables and **done when** criteria (testable). Phases are sequential; a coding agent should finish a phase's criteria before starting the next. Advanced capabilities are specified in [product/advancements.md](product/advancements.md).
 
 **Applies to every phase:** a phase that adds or changes user-visible behavior is done only when the matching [user-guide](user-guide/README.md) pages are updated ([onboarding & user docs conventions](conventions/onboarding-and-user-docs.md)).
 
-**Order:** 1 → 2 → 3 → 4 → 5 → **5b (built-in Home Hub, directly after 5)** → *Public release milestone (when shipping to others)* → **v0.2.0 (Days view, more AI providers)** → 6 → 7.
+**Order:** 1 → 2 → 3 → 4 → 5 → **5b (built-in Home Hub, directly after 5)** → *Public release milestone (when shipping to others)* → **v0.2.0 (Days view, more AI providers)** → 6 → 7 → **8 (v0.4.0)** → v0.5.0 → v0.6.0.
 
 ---
 
@@ -206,6 +206,43 @@ Released in v0.3.0 on 2026-11-09 (PR #44, version PR #45).
 
 **Done when:** each bug's steps in the audit no longer show it, on the desktop demo and in the test build on a real PC and phone; new tests cover bugs 1–8; the extraction eval with the new prompt is no worse than `extraction.v4` on `granite4.2:3b` and the date fixtures pass; the user guide is updated for every visible change.
 
+## Phase 8 — Finding and using data (v0.4.0)
+
+Planned 2026-11-10 from the [feature audit](product/feature-audit-2026-11.md#gaps-and-ideas-for-discussion) ideas ([Q27](open-questions.md)) and the user's own findings, decided one question at a time. Specs: [finding and using data](product/finding-and-using-data.md), [capture box redesign](product/capture-box-redesign.md), [ADR-0029](decisions/0029-local-search-index.md).
+
+**One item per day**, each on its own branch from `master`, tried on the desktop demo copy (and the phone where it applies), with its own PR; the user guide is updated in the same PR. One test build for the PC and phone at the end, then the release.
+
+| Day | Item | Spec |
+|---|---|---|
+| 1 | **Performance baseline:** a dev script with ~50,000 made-up entries in the demo data folder; measure the capture box, pages, sync and hub memory; check FTS5 and Devanagari on both apps | [§7](product/finding-and-using-data.md#7-performance-baseline) |
+| 2 | **Capture box keyboard + fuzzy commands:** focus on every show and after clicks, the key map, letter-order command matching in `packages/core` | [§1–2](product/capture-box-redesign.md#1-the-keyboard-always-works) |
+| 3 | **Hub-unreachable warning** on Days, both apps | [§5](product/finding-and-using-data.md#5-hub-unreachable-warning) |
+| 4 | **Search, PC:** the FTS5 index (SQLite migration, triggers), queries, the Search page, Ctrl+F, the hub's *Similar entries*; `searchLogs` moves onto the index | [§1](product/finding-and-using-data.md#1-plain-search) |
+| 5 | **Search, phone + filters:** the search icon on Days and Tasks, filters on both apps | [§1](product/finding-and-using-data.md#1-plain-search) |
+| 6 | **Tag and project pages**, both apps | [§2](product/finding-and-using-data.md#2-tag-and-project-pages) |
+| 7 | **Editing an activity's numbers**, both apps, as correction examples | [§3](product/finding-and-using-data.md#3-editing-an-activitys-numbers) |
+| 8 | **Trends:** registry `aggregate`, bucketing in `packages/core`, SVG charts on both apps | [§4](product/finding-and-using-data.md#4-trends) |
+| 9 | **Capture box look:** Mica/Acrylic, the floating bar, the mode badge, live hints | [§3–5](product/capture-box-redesign.md#3-the-new-look) |
+| 10 | **Capture box feedback:** saved message and Ctrl+Z, the status line, `/find` in the box | [§6–7](product/capture-box-redesign.md#6-save-feedback) |
+| 11 | **Phone:** the grouped More menu, the battery check | [§6, §8](product/finding-and-using-data.md#6-grouped-more-menu-phone) |
+| 12 | **Test build** (`release/<name>` with `android`, pushed by the user), fixes, docs, version PR, v0.4.0 | — |
+
+**Done when:** every *Done when* in the two specs holds on the desktop demo and in the test build on a real PC and phone; `pnpm check`, `docs:check-links` and `errors:check` pass; the performance baseline and battery result are recorded here.
+
+## v0.5.0 — Tasks and reminders
+
+Agreed 2026-11-10 as the release after v0.4.0; to be planned in detail before it starts ([Q28](open-questions.md)). Reminders at a time and repeating tasks, on the phone first:
+- Reminders are scheduled with Android's alarm system as local notifications (as the brief reminder is), so nothing runs in the background to wait for them.
+- Tasks get a reminder time and a repeat rule (daily, weekly on chosen days, monthly): a schema change in both dialects and sync. Finishing a repeating task makes the next one with a derived ID, so two devices make it once.
+- "Remind me at 4 pm to call the dentist" is read by extraction (a new prompt version with fixtures); a reminder can also be set by hand.
+- Also from the audit: `/done` and `/undo` on the phone, reusing the fuzzy command matching.
+
+## v0.6.0 — Security
+
+Agreed 2026-11-10 as the release after v0.5.0; to be planned in detail before it starts ([Q29](open-questions.md), [Q6](open-questions.md)):
+- **Encrypted hub traffic on home Wi-Fi**, where today plain HTTP is allowed after the *trust this home network* warning. Standard, audited cryptography only (no home-made protocol). Leaning: request bodies encrypted with a key exchanged through the pairing QR (XChaCha20-Poly1305, `@noble/ciphers`), signed requests so the token never travels; a new protocol version and re-pairing. Alternative: HTTPS on the LAN with the hub's certificate pinned through the QR. An ADR decides.
+- **Encrypted backups and exports** first, then the **PC's database** with SQLCipher (rusqlite's SQLCipher build, key in the Windows Credential Manager, a one-time conversion). The phone's storage is already encrypted by Android; the hub's PGlite can't be, so the guide keeps recommending BitLocker there.
+
 ---
 
 ## Later / unscheduled
@@ -216,4 +253,4 @@ Released in v0.3.0 on 2026-11-09 (PR #44, version PR #45).
 3. Add new fixtures before changing any prompt, so the prompts aren't fitted to these 37.
 4. Score Groq over three runs on separate days. Results move by about three entries between runs, so one run can't show a real change.
 
-Capture: in-memory tag lookup so tagged captures meet p95 < 10 ms (Phase 2 exception) · iOS build · local semantic search (`sqlite-vec`) · SQLCipher encryption (wanted after the [app lock](#app-lock), 2026-11-08) · calendar integration · desktop updater + code signing · macOS/Linux polish.
+Capture: in-memory tag lookup so tagged captures meet p95 < 10 ms (Phase 2 exception) · iOS build · local semantic search (`sqlite-vec`) · SQLCipher encryption (now in [v0.6.0](#v060--security)) · calendar integration · desktop updater + code signing · macOS/Linux polish.

@@ -32,6 +32,7 @@ Short records of significant decisions: context, decision, consequences. Accepte
 | [0026](0026-github-releases-unsigned-windows-first.md) | Releases on GitHub only; the Windows installer starts unsigned | Accepted |
 | [0027](0027-corrections-from-synced-edits.md) | Correction examples come from synced edits | Accepted |
 | [0028](0028-app-lock-device-auth.md) | App lock uses the device's own lock and leaves capture open | Accepted |
+| [0029](0029-local-search-index.md) | Plain search uses a local full-text index that isn't synced | Accepted |
 
 ## Template
 

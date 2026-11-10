@@ -32,6 +32,8 @@ The project started from an original discussion and first specification that are
 | [product/hub-only.md](product/hub-only.md) | Hub-only PC (draft plan, not decided): an always-on PC that runs only the hub, so phones sync while the main PC is off |
 | [product/people-and-promises.md](product/people-and-promises.md) | People and promises: a People page with last seen, *You owe* and *Waiting on*; rename and merge; Ask tools `query_entities` and `query_commitments` |
 | [product/clipboard-snap.md](product/clipboard-snap.md) | Clipboard snap: a second shortcut attaches the clipboard text (4 KB) to an entry on the PC |
+| [product/finding-and-using-data.md](product/finding-and-using-data.md) | Finding and using your data (v0.4.0): plain search, tag and project pages, editing numbers, trends, the hub-unreachable warning |
+| [product/capture-box-redesign.md](product/capture-box-redesign.md) | Capture box redesign (v0.4.0): a keyboard that always works, fuzzy commands, a floating search-bar look, mode badge, live hints, status line |
 | [product/feature-audit-2026-11.md](product/feature-audit-2026-11.md) | Feature audit (November 2026, for discussion): what was tested, bugs found, gaps and ideas |
 | [product/glossary.md](product/glossary.md) | Shared vocabulary |
 
