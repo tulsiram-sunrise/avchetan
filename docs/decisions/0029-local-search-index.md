@@ -10,7 +10,7 @@ Users need to find what they wrote without a model ([finding and using data](../
 ## Decision
 - Each client (PC and phone) keeps a **SQLite FTS5 index** over entry text, task titles and people's names. It is client-only: not synced, not on the server, rebuilt from the synced tables at any time.
 - The index is kept in step by **SQLite triggers** on `raw_logs`, `tasks` and `entities`, so rows written by repositories and rows applied by sync are both covered, and a soft delete (`deleted_at`) removes the row from the index. It is created and filled from existing rows by a SQLite-only migration.
-- Tokenizer: `unicode61` with prefix queries. If the performance baseline shows Hindi in Devanagari isn't found word by word, `trigram` is used instead; the choice is recorded in the roadmap.
+- Tokenizer: `unicode61 categories 'L* N* Co M*'` with prefix queries. Settled by the performance baseline (2026-11-11): plain `unicode61` splits Devanagari words at every vowel sign (category M), so "दिल्ली में दौड़" is indexed as `द`, `ल`, `ड`… and the single letter `ल` matches almost every Hindi entry. Adding `M*` to the token categories keeps the words whole (`दिल्ली`, `में`, `दौड़`), with no false matches and none of `trigram`'s larger index or three-letter minimum. A Rust test in the desktop app (`fts5_keeps_devanagari_words_whole`) holds this for the bundled SQLite.
 - The hub's meaning search stays as an optional second section, never awaited by the word results.
 - `searchLogs` (used by Ask's `search_entries` tool) moves onto the index.
 

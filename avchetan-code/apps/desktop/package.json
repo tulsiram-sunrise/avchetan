@@ -13,7 +13,9 @@
     "vite:dev": "vite",
     "vite:build": "vite build",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --passWithNoTests",
+    "demo:seed": "tsx scripts/seed-demo.ts",
+    "demo:bench": "tsx scripts/bench-demo.ts"
   },
   "dependencies": {
     "@avchetan/core": "workspace:*",
@@ -39,6 +41,7 @@
     "@types/react-dom": "19.3.0",
     "@vitejs/plugin-react": "6.1.2",
     "tailwindcss": "4.3.3",
+    "tsx": "4.23.15",
     "vite": "8.3.5"
   }
 }
