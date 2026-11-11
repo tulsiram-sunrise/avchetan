@@ -219,13 +219,14 @@ Planned 2026-11-10 from the [feature audit](product/feature-audit-2026-11.md#gap
 | 3 | **Hub-unreachable warning** on Days, both apps | [§5](product/finding-and-using-data.md#5-hub-unreachable-warning) |
 | 4 | **Search, PC:** the FTS5 index (SQLite migration, triggers), queries, the Search page, Ctrl+F, the hub's *Similar entries*; `searchLogs` moves onto the index | [§1](product/finding-and-using-data.md#1-plain-search) |
 | 5 | **Search, phone + filters:** the search icon on Days and Tasks, filters on both apps | [§1](product/finding-and-using-data.md#1-plain-search) |
-| 6 | **Tag and project pages**, both apps | [§2](product/finding-and-using-data.md#2-tag-and-project-pages) |
+| 6 | **Tag and project pages**, both apps; the People page's query becomes one join (346 ms in the baseline) | [§2](product/finding-and-using-data.md#2-tag-and-project-pages) |
 | 7 | **Editing an activity's numbers**, both apps, as correction examples | [§3](product/finding-and-using-data.md#3-editing-an-activitys-numbers) |
 | 8 | **Trends:** registry `aggregate`, bucketing in `packages/core`, SVG charts on both apps | [§4](product/finding-and-using-data.md#4-trends) |
 | 9 | **Capture box look:** Mica/Acrylic, the floating bar, the mode badge, live hints | [§3–5](product/capture-box-redesign.md#3-the-new-look) |
 | 10 | **Capture box feedback:** saved message and Ctrl+Z, the status line, `/find` in the box | [§6–7](product/capture-box-redesign.md#6-save-feedback) |
 | 11 | **Phone:** the grouped More menu, the battery check | [§6, §8](product/finding-and-using-data.md#6-grouped-more-menu-phone) |
-| 12 | **Test build** (`release/<name>` with `android`, pushed by the user), fixes, docs, version PR, v0.4.0 | — |
+| 12 | **Phone: first download of a large history** without freezing: pulled pages applied in small transactions that let the screen respond, with *Downloading your history… 12,000 of 50,000* (added after the baseline) | — |
+| 13 | **Test build** (`release/<name>` with `android`, pushed by the user), fixes, docs, version PR, v0.4.0 | — |
 
 **Done when:** every *Done when* in the two specs holds on the desktop demo and in the test build on a real PC and phone; `pnpm check`, `docs:check-links` and `errors:check` pass; the performance baseline and battery result are recorded here.
 
