@@ -210,23 +210,27 @@ Released in v0.3.0 on 2026-11-09 (PR #44, version PR #45).
 
 Planned 2026-11-10 from the [feature audit](product/feature-audit-2026-11.md#gaps-and-ideas-for-discussion) ideas ([Q27](open-questions.md)) and the user's own findings, decided one question at a time. Specs: [finding and using data](product/finding-and-using-data.md), [capture box redesign](product/capture-box-redesign.md), [ADR-0029](decisions/0029-local-search-index.md).
 
-**One item per day**, each on its own branch from `master`, tried on the desktop demo copy (and the phone where it applies), with its own PR; the user guide is updated in the same PR. One test build for the PC and phone at the end, then the release.
+**One item per day**, re-sliced on 2026-11-11 so that every day is about the same size and is one improvement you can try that evening: big items are split into an engine day and a screen day, and small fixes go with the day that already opens their screen. Each day on its own branch from `master`, tried on the desktop demo copy (and the phone where it applies), with its own PR; the user guide is updated in the same PR. One test build for the PC and phone at the end, then the release.
 
 | Day | Item | Spec |
 |---|---|---|
-| 1 | **Performance baseline:** a dev script with ~50,000 made-up entries in the demo data folder; measure the capture box, pages, sync and hub memory; check FTS5 and Devanagari on both apps | [§7](product/finding-and-using-data.md#7-performance-baseline) |
-| 2 | **Capture box keyboard + fuzzy commands:** focus on every show and after clicks, the key map, letter-order command matching in `packages/core` | [§1–2](product/capture-box-redesign.md#1-the-keyboard-always-works) |
-| 3 | **Hub-unreachable warning** on Days, both apps | [§5](product/finding-and-using-data.md#5-hub-unreachable-warning) |
-| 4 | **Search, PC:** the FTS5 index (SQLite migration, triggers), queries, the Search page, Ctrl+F, the hub's *Similar entries*; `searchLogs` moves onto the index | [§1](product/finding-and-using-data.md#1-plain-search) |
-| 5 | **Search, phone + filters:** the search icon on Days and Tasks, filters on both apps | [§1](product/finding-and-using-data.md#1-plain-search) |
-| 6 | **Tag and project pages**, both apps; the People page's query becomes one join (346 ms in the baseline) | [§2](product/finding-and-using-data.md#2-tag-and-project-pages) |
-| 7 | **Editing an activity's numbers**, both apps, as correction examples | [§3](product/finding-and-using-data.md#3-editing-an-activitys-numbers) |
-| 8 | **Trends:** registry `aggregate`, bucketing in `packages/core`, SVG charts on both apps | [§4](product/finding-and-using-data.md#4-trends) |
-| 9 | **Capture box look:** Mica/Acrylic, the floating bar, the mode badge, live hints | [§3–5](product/capture-box-redesign.md#3-the-new-look) |
-| 10 | **Capture box feedback:** saved message and Ctrl+Z, the status line, `/find` in the box | [§6–7](product/capture-box-redesign.md#6-save-feedback) |
-| 11 | **Phone:** the grouped More menu, the battery check | [§6, §8](product/finding-and-using-data.md#6-grouped-more-menu-phone) |
-| 12 | **Phone: first download of a large history** without freezing: pulled pages applied in small transactions that let the screen respond, with *Downloading your history… 12,000 of 50,000* (added after the baseline) | — |
-| 13 | **Test build** (`release/<name>` with `android`, pushed by the user), fixes, docs, version PR, v0.4.0 | — |
+| 1 | **Performance baseline** ✅ (PR #49, results below) | [§7](product/finding-and-using-data.md#7-performance-baseline) |
+| 2 | **Capture box keyboard:** focus on every show and after clicks, ↑/↓ into the list, Esc one step back, Ctrl+Z takes back the last entry. The user starts the two-day battery measurement on their phone | [§1](product/capture-box-redesign.md#1-the-keyboard-always-works), [§8](product/finding-and-using-data.md#8-battery-check-phone) |
+| 3 | **Fuzzy commands:** letter-order matching in `packages/core`, ranking, Tab completes, best match highlighted | [§2](product/capture-box-redesign.md#2-fuzzy-commands) |
+| 4 | **Top of Days, both apps:** the hub-unreachable banner; overdue tasks collapsed to one line; pull-to-refresh on the phone's Days; desktop Settings tabs on one line | [§5, §9](product/finding-and-using-data.md#5-hub-unreachable-warning) |
+| 5 | **Search engine:** the FTS5 index (SQLite migration, triggers, tokenizer), search queries in `packages/db`, `searchLogs` (Ask) moves onto it; the Devanagari test run on the phone emulator | [§1](product/finding-and-using-data.md#1-plain-search), [ADR-0029](decisions/0029-local-search-index.md) |
+| 6 | **Search page, PC:** the page, grouped results with the words highlighted, an entry opens its day; Ctrl+F; the main window's keys (←/→, T, `?`) | [§1, §9](product/finding-and-using-data.md#1-plain-search) |
+| 7 | **Search on the phone + filters:** the search icon on Days and Tasks; date, tag, category, project and person filters on both apps; the hub's *Similar entries* | [§1](product/finding-and-using-data.md#1-plain-search) |
+| 8 | **Long lists:** the People page's query becomes one join (346 ms in the baseline); **Show more** (50 at a time) on Tasks, People and a person's entries, both apps | [§9](product/finding-and-using-data.md#9-added-after-the-baseline) |
+| 9 | **Tag and project pages**, both apps | [§2](product/finding-and-using-data.md#2-tag-and-project-pages) |
+| 10 | **Editing an activity's numbers**, both apps, as correction examples | [§3](product/finding-and-using-data.md#3-editing-an-activitys-numbers) |
+| 11 | **Trends, PC:** registry `aggregate`, bucketing and axes in `packages/core`, the SVG chart and page | [§4](product/finding-and-using-data.md#4-trends) |
+| 12 | **Phone navigation:** Trends on the phone (`react-native-svg`); the grouped More menu, with Tags, Projects and Trends in it | [§4, §6](product/finding-and-using-data.md#6-grouped-more-menu-phone) |
+| 13 | **Capture box look:** the floating bar with Mica/Acrylic, the mode badge | [§3–4](product/capture-box-redesign.md#3-the-new-look) |
+| 14 | **Capture box hints:** live chips (tags, day words, window context), *Saved · Ctrl+Z to take back* | [§5–6](product/capture-box-redesign.md#5-live-hints-while-typing) |
+| 15 | **Capture box status:** the status line, `/find` in the box | [§7](product/capture-box-redesign.md#7-status-line) |
+| 16 | **Phone: first download of a large history** without freezing (pulled pages in small transactions that let the screen respond, *Downloading your history… 12,000 of 50,000*); the phone's page timings from the baseline; the battery result | [§8–9](product/finding-and-using-data.md#9-added-after-the-baseline) |
+| 17 | **Test build** (`release/<name>` with `android`, pushed by the user), fixes, docs, version PR, v0.4.0 | — |
 
 **Done when:** every *Done when* in the two specs holds on the desktop demo and in the test build on a real PC and phone; `pnpm check`, `docs:check-links` and `errors:check` pass; the performance baseline and battery result are recorded here.
 
@@ -265,7 +269,13 @@ Added 2026-11-11 (the user's points, decided one at a time):
 - **The brief marks what was missed.** The daily brief gets a *Missed or behind* part: tasks due and not done, tasks only partly done, chores not confirmed, assumed routines an entry contradicts. Computed in code like the brief's other facts; the AI only phrases them. No schema change.
 - **Day coverage** (a setting, off by default). Hours accounted for out of 24: logged `duration_min` plus assumed routines (sleep, work), with 15% of the day allowed for small things nobody logs. The rest is shown as *unaccounted*, not *wasted*, because an unlogged hour may have been rest. It relies on routines and on durations being right (Phase 8's metric editing), so it comes last.
 
-Suggested order: done with a note → routines and chores (with repeating tasks) → reminders → missed in the brief → day coverage.
+Added later on 2026-11-11 (second round):
+- **Finishing a task** grows from *done with a note*: done (with a note), partly done, **move** (Tomorrow · Next week · Pick a date…, on every task row on both apps) and **cancel** (`cancelled_at`: shown struck through, never counted as missed; **Delete** stays for "this wasn't a task"). Deletes in the main window show an undo message instead of asking *Are you sure?*; on the phone, swiping a task row right finishes it and left moves it to tomorrow.
+- **The brief's first two lines:** *Moved forward* and *Friction* become one line each, **✓ Went well** and **! Needs attention**, at the top, with a mark and a colour; *Missed or behind* (above) becomes part of **Needs attention**.
+- **Share to Avchetan:** Android's share sheet sends text or a link from any app into a capture.
+- **Accessibility pass:** text size follows the system, visible keyboard focus, screen-reader labels, on both apps.
+
+Planned days, at the same evenness as Phase 8 (to be confirmed when v0.5.0 is planned in detail): 1 task fields (done note, partly done, cancelled; schema and sync) · 2 task actions on both apps (move, cancel, swipe, undo message) · 3 routines engine and ADR · 4 the routines page and starter chores · 5 the chore checklist card and evening notification · 6 repeating tasks through routines · 7 reminders on the phone · 8 "remind me at 4" read by extraction · 9 the brief's Went well / Needs attention · 10 day coverage · 11 Share to Avchetan · 12 accessibility pass · 13 `/done` and `/undo` on the phone · 14 test build and release.
 
 ## v0.6.0 — Security
 
