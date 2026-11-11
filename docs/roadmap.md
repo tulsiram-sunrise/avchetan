@@ -229,6 +229,27 @@ Planned 2026-11-10 from the [feature audit](product/feature-audit-2026-11.md#gap
 
 **Done when:** every *Done when* in the two specs holds on the desktop demo and in the test build on a real PC and phone; `pnpm check`, `docs:check-links` and `errors:check` pass; the performance baseline and battery result are recorded here.
 
+**Performance baseline (Day 1, 2026-11-11).** 50,000 made-up entries over three years (`pnpm --filter @avchetan/desktop demo:seed`: 42,627 activities, 7,373 tasks, 30 people, 8,661 mentions, about 10% in Hindi), on the desktop demo (`dev:demo`: a debug Rust build with the Vite dev server, so slower than an installed app) and the Android emulator with the v0.3.0 APK. Scripts: `demo:bench` (queries on Node's SQLite), [`tooling/perf/`](../avchetan-code/tooling/perf/README.md) (in the app).
+
+| What | Result | Target |
+|---|---|---|
+| Shortcut → capture box in front, typing field focused | 10 ms median (max 17) | < 150 ms ✓ |
+| Main window start (reload until Days settles) | 470 ms (dev build) | — |
+| First visit, after a reload: Days / Tasks / Tags / Projects / Review | ~140 / 110 / 70 / 25 / 25 ms | < 200 ms ✓ |
+| First visit: **People** | **346 ms** | < 200 ms ✗ |
+| Search today (`instr`, Ask's tool) | 1–2 ms on Node | — |
+| Planned FTS5 index: build / size / a match | 66 ms / +1.6 MB / 0.6–3.6 ms | < 100 ms ✓ |
+| Database size (with 147,308 rows queued for sync) | 87 MB | — |
+| Upload of the whole history to the built-in hub | 147,308 rows in 21 min (~117 rows/s, ~4 s per 500-row push), none rejected | — |
+| Hub memory / data folder after it | 647 MB / 358 MB | — |
+| Phone joining that hub (emulator) | not finished after 32 min; the app frozen throughout, 1 GB memory | ✗ |
+
+Found:
+- **People** reads every mention of every person, then each entry by ID: one query with 8,661 IDs as parameters (434 ms cold on Node). One SQL join would remove it.
+- **A phone's first download of a large history** blocks its JavaScript thread: the screen ignores taps until it ends, and it hadn't ended after 32 minutes. Pages should be applied in smaller transactions that yield to the UI, with progress shown.
+- **Search tokenizer:** plain `unicode61` splits Devanagari at vowel signs (a single letter matched almost every Hindi entry); `unicode61 categories 'L* N* Co M*'` keeps words whole. FTS5 is in both apps' SQLite (rusqlite bundled 3.54.1, tested by `fts5_keeps_devanagari_words_whole`; expo-sqlite 3.53.3 builds with `SQLITE_ENABLE_FTS5`, to be run on the phone on Day 5). Recorded in [ADR-0029](decisions/0029-local-search-index.md).
+- In a first attempt, rows the hub kept rejecting were retried until the hub's limit of 60 requests a minute per device answered `rate_limited` for the PC's sync and its daily brief alike. With valid rows the limit was never reached.
+
 ## v0.5.0 — Tasks, routines and reminders
 
 Agreed 2026-11-10 as the release after v0.4.0; to be planned in detail before it starts ([Q28](open-questions.md)). Reminders at a time and repeating tasks, on the phone first:

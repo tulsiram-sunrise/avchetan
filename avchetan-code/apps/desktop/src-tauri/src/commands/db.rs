@@ -219,3 +219,33 @@ pub fn db_rollback(window: WebviewWindow, state: State<'_, DbState>) -> CommandR
     }
     connection.execute_batch("ROLLBACK").map_err(query_failed)
 }
+
+#[cfg(test)]
+mod tests {
+    use rusqlite::Connection;
+
+    /// ADR-0029: the bundled SQLite has FTS5, and the tokenizer the search index uses keeps
+    /// Devanagari words whole (vowel signs are category M, which plain unicode61 splits on).
+    #[test]
+    fn fts5_keeps_devanagari_words_whole() {
+        let connection = Connection::open_in_memory().unwrap();
+        connection
+            .execute_batch(
+                "CREATE VIRTUAL TABLE f USING fts5(c, tokenize = \"unicode61 categories 'L* N* Co M*'\");
+                 INSERT INTO f(c) VALUES ('दिल्ली में दौड़ लगाई'), ('Ran 5 km in the park');",
+            )
+            .unwrap();
+        let count = |query: &str| -> i64 {
+            connection
+                .query_row("SELECT count(*) FROM f WHERE f MATCH ?1", [query], |row| {
+                    row.get(0)
+                })
+                .unwrap()
+        };
+        assert_eq!(count("दिल्ली"), 1);
+        assert_eq!(count("दौड़"), 1);
+        assert_eq!(count("दिल*"), 1);
+        assert_eq!(count("ल"), 0, "a fragment of a word must not match");
+        assert_eq!(count("park"), 1);
+    }
+}
