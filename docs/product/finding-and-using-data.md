@@ -105,6 +105,19 @@ The phone already does little in the background: Android runs one task at most e
 - Measure over two days of normal use with Android's battery usage screen and `adb shell dumpsys batterystats`, and record the result.
 - If the task shows a real cost: skip the run when nothing waits to be organized or sent, and pull at most hourly in the background.
 
+## 9. Added after the baseline
+
+Decided 2026-11-11, after the [performance baseline](../roadmap.md#phase-8--finding-and-using-data-v040) and the user's own observations:
+
+- **Overdue tasks collapse:** on today in Days, overdue tasks are one line, **▸ 7 overdue** in the danger colour, closed by default; the app remembers whether it was left open. Both apps.
+- **Pull-to-refresh** on the phone's Days syncs now.
+- **Settings tabs** on the PC sit on one line across the page (scrolling sideways when the window is narrow); only the fields keep a narrow column.
+- **Show more:** long lists (Tasks, People, a person's entries, tag and project pages, search results) show 50 rows, then **Show more**. No page numbers.
+- **The People page** reads its summary with one join instead of a query with every mentioned entry's ID (346 ms with 50,000 entries).
+- **Keys in the main window:** ← / → the day before and after, **T** today, **Ctrl+F** search, **?** a sheet of the keys. Not while typing in a field.
+- **Empty pages teach:** a page with nothing yet says what fills it, with an example (*Log "ran 5 km" and your distance shows here*).
+- **A phone's first download of a large history** doesn't freeze it: pulled pages are applied in small transactions that let the screen respond, with *Downloading your history… 12,000 of 50,000*.
+
 ## Not in this release
 
 - Reminders at a time and repeating tasks: v0.5.0 ([Q28](../open-questions.md)).
