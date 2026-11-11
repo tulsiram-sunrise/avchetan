@@ -1,6 +1,6 @@
 # Roadmap
 
-**Current phase: [Phase 8 — Finding and using data (v0.4.0)](#phase-8--finding-and-using-data-v040)**, planned 2026-11-10, then [v0.5.0 tasks and reminders](#v050--tasks-and-reminders) and [v0.6.0 security](#v060--security). v0.3.0 (Phases 6 and 7, the [app lock](#app-lock) and the [pre-release fixes](#pre-release-fixes)) was released 2026-11-09 ([v0.3.0](https://github.com/tulsiram-sunrise/avchetan/releases/tag/v0.3.0), PR #45). Phase 7 completed 2026-11-08 (started 2026-11-07). The [app lock](#app-lock) was built 2026-11-08. A hub-only mode for an always-on PC is still under discussion ([Q26](open-questions.md), [draft plan](product/hub-only.md)). Phase 6 completed 2026-11-07 (started 2026-11-06). v0.2.0 was released 2026-11-06 (PR #15). Phase 1 completed 2026-10-26 (PR #1). Phase 2 completed 2026-10-30 (PR #2). Phase 3 completed 2026-10-31. Phase 4 completed 2026-11-02. Phase 5 completed 2026-11-04 (PR #8). Phase 5b completed 2026-11-05 (PR #10). The Public release milestone completed 2026-11-05 with v0.1.0 (PR #12); applying to SignPath remains.
+**Current phase: [Phase 8 — Finding and using data (v0.4.0)](#phase-8--finding-and-using-data-v040)**, planned 2026-11-10, then [v0.5.0 tasks, routines and reminders](#v050--tasks-routines-and-reminders) and [v0.6.0 security](#v060--security). v0.3.0 (Phases 6 and 7, the [app lock](#app-lock) and the [pre-release fixes](#pre-release-fixes)) was released 2026-11-09 ([v0.3.0](https://github.com/tulsiram-sunrise/avchetan/releases/tag/v0.3.0), PR #45). Phase 7 completed 2026-11-08 (started 2026-11-07). The [app lock](#app-lock) was built 2026-11-08. A hub-only mode for an always-on PC is still under discussion ([Q26](open-questions.md), [draft plan](product/hub-only.md)). Phase 6 completed 2026-11-07 (started 2026-11-06). v0.2.0 was released 2026-11-06 (PR #15). Phase 1 completed 2026-10-26 (PR #1). Phase 2 completed 2026-10-30 (PR #2). Phase 3 completed 2026-10-31. Phase 4 completed 2026-11-02. Phase 5 completed 2026-11-04 (PR #8). Phase 5b completed 2026-11-05 (PR #10). The Public release milestone completed 2026-11-05 with v0.1.0 (PR #12); applying to SignPath remains.
 
 Each phase lists scope, deliverables and **done when** criteria (testable). Phases are sequential; a coding agent should finish a phase's criteria before starting the next. Advanced capabilities are specified in [product/advancements.md](product/advancements.md).
 
@@ -229,13 +229,21 @@ Planned 2026-11-10 from the [feature audit](product/feature-audit-2026-11.md#gap
 
 **Done when:** every *Done when* in the two specs holds on the desktop demo and in the test build on a real PC and phone; `pnpm check`, `docs:check-links` and `errors:check` pass; the performance baseline and battery result are recorded here.
 
-## v0.5.0 — Tasks and reminders
+## v0.5.0 — Tasks, routines and reminders
 
 Agreed 2026-11-10 as the release after v0.4.0; to be planned in detail before it starts ([Q28](open-questions.md)). Reminders at a time and repeating tasks, on the phone first:
 - Reminders are scheduled with Android's alarm system as local notifications (as the brief reminder is), so nothing runs in the background to wait for them.
-- Tasks get a reminder time and a repeat rule (daily, weekly on chosen days, monthly): a schema change in both dialects and sync. Finishing a repeating task makes the next one with a derived ID, so two devices make it once.
+- Tasks get a reminder time and a repeat rule (daily, weekly on chosen days, monthly): a schema change in both dialects and sync. Finishing a repeating task makes the next one with a derived ID, so two devices make it once. The repeat rule is the one routines use (below), so there is one repeat system.
 - "Remind me at 4 pm to call the dentist" is read by extraction (a new prompt version with fixtures); a reminder can also be set by hand.
 - Also from the audit: `/done` and `/undo` on the phone, reusing the fuzzy command matching.
+
+Added 2026-11-11 (the user's points, decided one at a time):
+- **Done with a note.** Finishing a task takes an optional note on how it went; **Partly done** records a percentage and keeps the task open. Ahead or behind is computed from `completed_at` against `due_date` ("2 days late"). Tasks get `completion_note` and `progress_pct`.
+- **Routines: a regular schedule and daily chores.** One new synced `routines` table with the repeat rule and an optional time window, in two kinds: *assumed* (sleep, work hours: counted as happening unless an entry says otherwise) and *confirm* (chores such as a walk or watering plants: ticked off). Each day of a routine is one row with a derived ID from the routine and the date. On first use the app offers a starter list of chores to pick from (derived IDs from the starter key, so two devices don't make them twice); the user adds, edits and deletes freely. Confirmation is one checklist card on the day plus one evening notification, never one per chore; a logged activity that matches a chore ticks it. Repeating tasks share the repeat rule. An ADR decides the table shape and how occurrences are made.
+- **The brief marks what was missed.** The daily brief gets a *Missed or behind* part: tasks due and not done, tasks only partly done, chores not confirmed, assumed routines an entry contradicts. Computed in code like the brief's other facts; the AI only phrases them. No schema change.
+- **Day coverage** (a setting, off by default). Hours accounted for out of 24: logged `duration_min` plus assumed routines (sleep, work), with 15% of the day allowed for small things nobody logs. The rest is shown as *unaccounted*, not *wasted*, because an unlogged hour may have been rest. It relies on routines and on durations being right (Phase 8's metric editing), so it comes last.
+
+Suggested order: done with a note → routines and chores (with repeating tasks) → reminders → missed in the brief → day coverage.
 
 ## v0.6.0 — Security
 
