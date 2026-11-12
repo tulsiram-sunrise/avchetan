@@ -1,5 +1,6 @@
 import {
   COMMANDS,
+  type CommandName,
   type CommandReading,
   isCommand,
   loadCommandLearning,
@@ -23,6 +24,7 @@ import {
   readCommand,
 } from '../services/commands';
 import { useServices } from '../services-context';
+import { DOCK_LIST_ID, dockRowId } from './dock-list';
 
 const log = createLogger('commands');
 
@@ -45,7 +47,12 @@ function runnerOf(plan: CommandPlan, choice: number): (() => Promise<CommandOutc
  * Command mode for the capture box (docs/product/command-mode.md): what Enter will do, the AI
  * reading and its confirmation, and the result with Undo.
  */
-export function useCommand(draft: string, setDraft: (text: string) => void) {
+export function useCommand(
+  draft: string,
+  setDraft: (text: string) => void,
+  /** The suggestion picked with ↑/↓ (dock-keys.ts). */
+  highlight: number | null,
+) {
   const services = useServices();
   const { store } = services;
   const learning = useQuery({
@@ -165,9 +172,22 @@ export function useCommand(draft: string, setDraft: (text: string) => void) {
     return false;
   }
 
+  /** A command picked from the list that takes no text runs at once, as `/name` + Enter. */
+  async function runNamed(name: CommandName): Promise<void> {
+    if (busy) return;
+    const typed = parseCommand(`/${name}`);
+    const run = typed ? runnerOf(planCommand(deps, typed, openTasks.data ?? []), 0) : null;
+    if (run) await execute(run, null);
+    else setDraft(`/${name} `);
+  }
+
+  /** Ctrl+Z in an empty box, the same as `/undo`. */
   async function undoLast() {
     const entry = undoStack.pop();
-    if (!entry) return;
+    if (!entry) {
+      setResult({ message: 'Nothing to undo since Avchetan started', undo: null, alias: null });
+      return;
+    }
     try {
       setResult({ message: await entry.undo(), undo: null, alias: null });
     } catch (thrown) {
@@ -179,14 +199,26 @@ export function useCommand(draft: string, setDraft: (text: string) => void) {
   const panel: ReactNode = (
     <div className="flex flex-col gap-1 px-1 pt-1 text-xs" aria-live="polite">
       {active && !reading && suggestions.length > 0 ? (
-        <ul className="flex flex-col gap-0.5">
-          {suggestions.map((name) => (
-            <li key={name} className="flex gap-2">
+        <div
+          id={DOCK_LIST_ID}
+          role="listbox"
+          aria-label="Commands"
+          className="flex flex-col gap-0.5"
+        >
+          {suggestions.map((name, index) => (
+            <div
+              key={name}
+              id={dockRowId(index)}
+              role="option"
+              tabIndex={-1}
+              aria-selected={index === highlight}
+              className={`flex gap-2 rounded px-1 ${index === highlight ? 'bg-accent/15' : ''}`}
+            >
               <span className="font-medium text-ink">{COMMANDS[name].usage}</span>
               <span className="text-ink-muted">{COMMANDS[name].help}</span>
-            </li>
+            </div>
           ))}
-        </ul>
+        </div>
       ) : null}
       {active && parsed?.viaAlias ? (
         <p className="text-ink-muted">
@@ -232,7 +264,16 @@ export function useCommand(draft: string, setDraft: (text: string) => void) {
     </div>
   );
 
-  return { active, submit, onKeyDown, panel, busy: busy !== null };
+  return {
+    active,
+    suggestions: reading ? [] : suggestions,
+    submit,
+    runNamed,
+    undoLast,
+    onKeyDown,
+    panel,
+    busy: busy !== null,
+  };
 }
 
 function PlanLine({ plan, choice }: { plan: CommandPlan; choice: number }) {

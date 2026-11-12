@@ -16,7 +16,9 @@ export type HotkeyStatus = z.infer<typeof hotkeyStatusSchema>;
 export function createShell(invoke: Invoke) {
   return {
     hideDock: () => callNative(invoke, 'dock_hide', {}, z.null()),
-    openMain: (view: MainView = 'timeline') => callNative(invoke, 'main_open', { view }, z.null()),
+    /** `day` (`YYYY-MM-DD`) opens that day in Days. */
+    openMain: (view: MainView = 'timeline', day: string | null = null) =>
+      callNative(invoke, 'main_open', { view, day }, z.null()),
     /** "Your daily brief is ready"; clicking it opens Days on `day` (src-tauri/src/notify.rs). */
     notifyBrief: (day: string) => callNative(invoke, 'brief_notify', { day }, z.null()),
     setTrayPending: (count: number) => callNative(invoke, 'tray_set_pending', { count }, z.null()),

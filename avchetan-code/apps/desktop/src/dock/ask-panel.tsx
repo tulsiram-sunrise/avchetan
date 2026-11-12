@@ -1,20 +1,26 @@
-import { createLogger, describeError, formatDay } from '@avchetan/shared';
+import type { RawLog } from '@avchetan/db/sqlite';
+import { createLogger, describeError, formatDay, localDate } from '@avchetan/shared';
 import { HelpLink } from '../help-link';
+import type { Platform } from '../platform';
 import { useServices } from '../services-context';
 import { useDockStore } from '../stores/dock-store';
+import { DOCK_LIST_ID, dockRowClass, dockRowId } from './dock-list';
 
 const log = createLogger('dock');
+
+/** Opens the day an entry was written on in Days (a source here, a recent entry, a row picked). */
+export function openEntryDay(platform: Platform, rawLog: RawLog) {
+  const day = localDate(rawLog.capturedAt, rawLog.capturedTz);
+  platform.shell.openMain('timeline', day).catch(() => log.warn('could not open a day'));
+}
 
 /** The answer to the last question, in place of the recent entries. */
 export function AskPanel() {
   const { platform } = useServices();
   const ask = useDockStore((state) => state.ask);
   const setAsk = useDockStore((state) => state.setAsk);
+  const highlight = useDockStore((state) => state.highlight);
   if (!ask) return null;
-
-  const openTimeline = () => {
-    platform.shell.openMain('timeline').catch(() => log.warn('could not open timeline'));
-  };
 
   return (
     <section aria-label="Answer" className="flex flex-col gap-2 px-1 py-1 text-sm">
@@ -37,19 +43,33 @@ export function AskPanel() {
       ) : null}
 
       {ask.sources.length > 0 ? (
-        <ul aria-label="Sources" className="flex flex-col gap-0.5 border-t border-line pt-2">
-          {ask.sources.map(({ number, rawLog }) => (
-            <li key={rawLog.id}>
+        <div
+          id={DOCK_LIST_ID}
+          role="listbox"
+          aria-label="Sources"
+          className="flex flex-col gap-0.5 border-t border-line pt-2"
+        >
+          {ask.sources.map(({ number, rawLog }, index) => (
+            <div
+              key={rawLog.id}
+              id={dockRowId(index)}
+              role="option"
+              tabIndex={-1}
+              aria-selected={index === highlight}
+              className={`rounded ${dockRowClass(index === highlight)}`}
+            >
               <button
                 type="button"
+                tabIndex={-1}
+                title="Open this day"
                 className="line-clamp-1 w-full text-left text-xs text-ink-muted hover:underline"
-                onClick={openTimeline}
+                onClick={() => openEntryDay(platform, rawLog)}
               >
                 [{number}] {formatDay(rawLog.capturedAt)}: {rawLog.content}
               </button>
-            </li>
+            </div>
           ))}
-        </ul>
+        </div>
       ) : null}
 
       {ask.status === 'asking' ? null : (

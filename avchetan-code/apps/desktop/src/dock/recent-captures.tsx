@@ -1,9 +1,15 @@
 import { formatTime } from '@avchetan/shared';
 import { useRecentCaptures } from '../queries/raw-logs';
+import { useDockStore } from '../stores/dock-store';
+import { DOCK_LIST_ID, dockRowClass, dockRowId } from './dock-list';
 import { StatusBadge } from './status-badge';
 
+/** How many recent entries the dock shows; ↓ from an empty box moves through them. */
+export const RECENT_SHOWN = 5;
+
 export function RecentCaptures() {
-  const recent = useRecentCaptures(5);
+  const recent = useRecentCaptures(RECENT_SHOWN);
+  const highlight = useDockStore((state) => state.highlight);
   const logs = recent.data ?? [];
 
   if (recent.isSuccess && logs.length === 0) {
@@ -15,11 +21,21 @@ export function RecentCaptures() {
   }
 
   return (
-    <ul aria-label="Recent entries" className="flex flex-col gap-1">
-      {logs.map((rawLog) => (
-        <li
+    <div
+      id={DOCK_LIST_ID}
+      role="listbox"
+      aria-label="Recent entries"
+      className="flex flex-col gap-1"
+    >
+      {logs.map((rawLog, index) => (
+        <div
           key={rawLog.id}
-          className="flex items-start gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-surface-raised"
+          id={dockRowId(index)}
+          role="option"
+          tabIndex={-1}
+          aria-selected={index === highlight}
+          title={index === highlight ? 'Enter opens this day' : undefined}
+          className={`flex items-start gap-2 rounded-lg px-2 py-1.5 text-sm ${dockRowClass(index === highlight)}`}
         >
           <span className="w-11 shrink-0 pt-px text-xs tabular-nums text-ink-muted">
             {formatTime(rawLog.capturedAt)}
@@ -28,8 +44,8 @@ export function RecentCaptures() {
             {rawLog.content}
           </span>
           <StatusBadge status={rawLog.status} />
-        </li>
+        </div>
       ))}
-    </ul>
+    </div>
   );
 }

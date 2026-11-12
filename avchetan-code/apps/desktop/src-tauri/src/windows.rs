@@ -122,6 +122,11 @@ fn show<R: Runtime>(app: &AppHandle<R>, shown: DockShown) {
     }
     warn_on_err("show dock", dock.show());
     warn_on_err("focus dock", dock.set_focus());
+    // Focusing the window doesn't give WebView2 the keyboard; without this the first keys after
+    // the shortcut went nowhere until Tab was pressed. The text box is focused on the next frame
+    // (dock-app.tsx).
+    let webview: &tauri::Webview<R> = dock.as_ref();
+    warn_on_err("focus dock webview", webview.set_focus());
     warn_on_err("emit dock:shown", app.emit_to(DOCK, "dock:shown", shown));
 }
 
