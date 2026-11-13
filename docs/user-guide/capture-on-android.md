@@ -50,7 +50,9 @@ If tapping the widget does nothing (for example after you used **Force stop** on
 - **Back to today:** tap **Today**.
 - **Dots** under a date show what that day had: one colour per category (up to three), grey for entries that aren't organized yet.
 - An entry that talks about another day ("yesterday I ran 5 km") shows on that day too, marked *added on* the day you wrote it.
-- Days ahead show the tasks due then. Tasks that are past their due date show under **Overdue** on today.
+- Days ahead show the tasks due then. Tasks past their due date show on today as one red line, **▸ 3 overdue**; tap it to see them, and again to fold them away. The phone remembers which you chose.
+- **Sync now:** pull **Days** down. The phone sends what is waiting and gets what your other devices added.
+- If entries have waited a day without reaching your hub, a yellow note at the top of **Days** says since when and how many wait, with what to check. It goes away by itself after the next sync ([server_unreachable](troubleshooting.md#server_unreachable)).
 
 ## Add tags and keep entries private
 

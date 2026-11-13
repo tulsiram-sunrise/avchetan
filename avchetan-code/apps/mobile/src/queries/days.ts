@@ -1,4 +1,9 @@
-import type { Category } from '@avchetan/db/sqlite';
+import {
+  type Category,
+  loadOverdueOpen,
+  OVERDUE_OPEN_SETTING,
+  saveOverdueOpen,
+} from '@avchetan/db/sqlite';
 import {
   firstOfMonth,
   type LocalMonth,
@@ -6,7 +11,7 @@ import {
   localDate,
   systemTimeZone,
 } from '@avchetan/shared';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useServices } from '../services-context';
 
 /** Days view queries (docs/product/days-view.md). Every write refreshes all queries here. */
@@ -63,5 +68,24 @@ export function useResolvedCategories() {
       const rows = await store.repos.categories.listResolved(store.db);
       return new Map<string, Category>(rows.map(({ id, resolved }) => [id, resolved]));
     },
+  });
+}
+
+const overdueOpenQuery = ['settings', OVERDUE_OPEN_SETTING] as const;
+
+/** Whether today's overdue tasks were left open; closed until opened (one line). */
+export function useOverdueOpen() {
+  const { store } = useServices();
+  return useQuery({ queryKey: overdueOpenQuery, queryFn: () => loadOverdueOpen(store.db) });
+}
+
+export function useSetOverdueOpen() {
+  const { store } = useServices();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (open: boolean) =>
+      store.write((tx) => saveOverdueOpen(tx, open, store.clock.now())),
+    onMutate: (open) => queryClient.setQueryData(overdueOpenQuery, open),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: overdueOpenQuery }),
   });
 }

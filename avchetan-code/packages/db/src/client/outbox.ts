@@ -1,4 +1,4 @@
-import { and, asc, count, eq, gte, lt, sql } from 'drizzle-orm';
+import { and, asc, count, eq, gte, lt, min, sql } from 'drizzle-orm';
 import { syncOutbox } from '../schema/sqlite/tables';
 import type { ClientDb, Tx } from './database';
 import { SYNCED_TABLES, type SyncedTableName } from './synced';
@@ -36,6 +36,21 @@ export async function stuckOutboxCount(db: ClientDb): Promise<number> {
     .from(syncOutbox)
     .where(gte(syncOutbox.attempts, MAX_OUTBOX_ATTEMPTS));
   return row?.value ?? 0;
+}
+
+/**
+ * Entries waiting to be sent, and since when the oldest has waited, for the warning when a
+ * device can't reach its hub (docs/product/finding-and-using-data.md#5-hub-unreachable-warning).
+ * Changes the server refused count as stuck instead (stuckOutboxCount).
+ */
+export async function waitingEntries(
+  db: ClientDb,
+): Promise<{ count: number; oldestAt: string | null }> {
+  const [row] = await db
+    .select({ value: count(), oldestAt: min(syncOutbox.enqueuedAt) })
+    .from(syncOutbox)
+    .where(and(eq(syncOutbox.tableName, 'raw_logs'), lt(syncOutbox.attempts, MAX_OUTBOX_ATTEMPTS)));
+  return { count: row?.value ?? 0, oldestAt: row?.oldestAt ?? null };
 }
 
 /** Keeps a refused change in the outbox, one attempt closer to waiting for the user. */

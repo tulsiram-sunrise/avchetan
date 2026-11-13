@@ -46,6 +46,20 @@ export async function setSetting(tx: Tx, key: string, value: unknown, now: strin
     .onConflictDoUpdate({ target: settings.key, set: { value, updatedAt: now } });
 }
 
+/**
+ * Whether the overdue tasks on today in Days were left open (finding-and-using-data.md §9).
+ * One setting for both windows of the PC, kept per device; closed until opened.
+ */
+export const OVERDUE_OPEN_SETTING = 'days.overdueOpen';
+
+export async function loadOverdueOpen(db: ClientDb): Promise<boolean> {
+  return (await getSetting(db, OVERDUE_OPEN_SETTING)) === true;
+}
+
+export async function saveOverdueOpen(tx: Tx, open: boolean, now: string): Promise<void> {
+  await setSetting(tx, OVERDUE_OPEN_SETTING, open, now);
+}
+
 export type NewAskEntry = typeof askHistory.$inferInsert;
 
 /** Stays on this device by design: Ask history never syncs. */

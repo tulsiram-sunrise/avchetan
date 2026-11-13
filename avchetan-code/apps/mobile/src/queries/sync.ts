@@ -2,6 +2,7 @@ import {
   type Connection,
   loadServerUrls,
   loadSyncStatus,
+  loadSyncWarning,
   pairWithLink,
   removeConnection,
   SYNC_TOKEN_SECRET,
@@ -31,6 +32,19 @@ export function useSyncStatus() {
     queryKey: ['sync', 'status'],
     queryFn: () => loadSyncStatus(store),
     refetchInterval: STATUS_REFRESH_MS,
+  });
+}
+
+/** How often Days checks whether entries have waited too long for a sync. */
+const WARNING_REFRESH_MS = 60_000;
+
+/** The hub-unreachable warning on Days, or null (packages/sync/src/sync-warning.ts). */
+export function useSyncWarning() {
+  const { store } = useServices();
+  return useQuery({
+    queryKey: ['sync', 'warning'],
+    queryFn: () => loadSyncWarning(store),
+    refetchInterval: WARNING_REFRESH_MS,
   });
 }
 

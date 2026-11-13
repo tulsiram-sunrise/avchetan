@@ -18,7 +18,9 @@ import {
   useDayEntries,
   useDayTasks,
   useMonthDots,
+  useOverdueOpen,
   useResolvedCategories,
+  useSetOverdueOpen,
   useToday,
 } from '../queries/days';
 import { useExtracted } from '../queries/organize';
@@ -26,6 +28,7 @@ import { useServices } from '../services-context';
 import { useAppEvent } from '../use-app-event';
 import { useColorScheme } from '../use-color-scheme';
 import { DailyBrief } from './daily-brief';
+import { SyncWarningBanner } from './sync-warning-banner';
 import { TimelineEntry } from './timeline';
 import { TaskRow } from './timeline-items';
 import { panelClass, QuietButton } from './ui';
@@ -123,6 +126,7 @@ export function DaysPage(props: { requestedDay?: string | null }) {
           </>
         ) : null}
       </div>
+      <SyncWarningBanner />
       <DayPanel day={day} today={today} onToday={() => select(today)} />
     </div>
   );
@@ -457,20 +461,16 @@ function Summary(props: {
 
 function DayTasks({ tasks }: { tasks: { due: Task[]; done: Task[]; overdue: Task[] } }) {
   const groups = [
-    { title: 'Overdue', rows: tasks.overdue },
     { title: 'Due', rows: tasks.due },
     { title: 'Done', rows: tasks.done },
   ].filter((group) => group.rows.length > 0);
-  if (groups.length === 0) return null;
+  if (groups.length === 0 && tasks.overdue.length === 0) return null;
   return (
     <section aria-label="Tasks" className="flex flex-col gap-3">
+      {tasks.overdue.length > 0 ? <OverdueTasks rows={tasks.overdue} /> : null}
       {groups.map((group) => (
         <div key={group.title}>
-          <h2
-            className={`mb-2 text-xs font-semibold uppercase tracking-wide ${
-              group.title === 'Overdue' ? 'text-danger' : 'text-ink-muted'
-            }`}
-          >
+          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-muted">
             {group.title}
           </h2>
           <ul className={`${panelClass} gap-0 [&>li]:px-4 [&>li]:py-2`}>
@@ -481,6 +481,38 @@ function DayTasks({ tasks }: { tasks: { due: Task[]; done: Task[]; overdue: Task
         </div>
       ))}
     </section>
+  );
+}
+
+/**
+ * Today's overdue tasks as one line, "▸ 7 overdue", closed until opened; the choice is
+ * remembered (docs/product/finding-and-using-data.md#9-added-after-the-baseline).
+ */
+function OverdueTasks({ rows }: { rows: Task[] }) {
+  const open = useOverdueOpen().data ?? false;
+  const setOpen = useSetOverdueOpen();
+  return (
+    <div>
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls="overdue-tasks"
+        className="mb-2 flex items-center gap-1.5 text-sm font-medium text-danger hover:underline"
+        onClick={() => setOpen.mutate(!open)}
+      >
+        <span aria-hidden="true" className="w-3">
+          {open ? '▾' : '▸'}
+        </span>
+        {rows.length} overdue
+      </button>
+      {open ? (
+        <ul id="overdue-tasks" className={`${panelClass} gap-0 [&>li]:px-4 [&>li]:py-2`}>
+          {rows.map((task) => (
+            <TaskRow key={task.id} task={task} />
+          ))}
+        </ul>
+      ) : null}
+    </div>
   );
 }
 

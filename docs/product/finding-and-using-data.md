@@ -75,7 +75,8 @@ Today a device that can't reach its hub queues entries silently; Days shows *Pen
 
 - When a device that syncs with a hub or server hasn't synced successfully for **24 hours** and has entries waiting to send, Days shows a banner: *Not synced with your hub since Mon, 9 Nov — 12 entries waiting.*
 - It names the likely fixes (the hub PC is on and Avchetan is running; same Wi-Fi or Tailscale on) and links to [troubleshooting](../user-guide/troubleshooting.md#server_unreachable).
-- It clears itself after the next successful sync. No system notifications.
+- Both must hold: the **oldest waiting entry** has waited 24 hours **and** no sync worked in those 24 hours. A phone left unused for days then doesn't warn the moment a new entry is added, before its first sync could try. A device that never synced warns once its entries have waited a day.
+- It clears itself after the next successful sync. No system notifications. The PC's banner has **Sync now**; on the phone, pulling Days down syncs.
 - Uses the existing `lastSyncedAt` ([setup check](../user-guide/troubleshooting.md)); Standalone devices never show it.
 
 ## 6. Grouped More menu (phone)

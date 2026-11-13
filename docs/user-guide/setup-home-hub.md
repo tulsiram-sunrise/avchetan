@@ -69,7 +69,7 @@ The first start goes through all your existing entries, about 0.2 seconds each o
 |---|---|
 | **Ollama isn't running on this PC** | Open the Ollama app once, then click **Check again**. |
 | Phone can't connect | Both devices must be on the same Wi-Fi. Check that every line of the hub's checklist has a ✓, or run **Settings → General → Setup check**. For a hub run from a terminal, see [Let your phone reach the PC](#let-your-phone-reach-the-pc). |
-| Entries stay "pending" on the phone | The phone can't reach the hub. They are processed automatically once it can. |
+| Entries stay "pending" on the phone | The phone can't reach the hub. They are processed automatically once it can. After a day, **Days** shows a note saying since when; pull **Days** down to try again. |
 | Answers are slow | Choose a smaller model set for the hub, or choose **This PC** and a model for this device in **Settings → AI → AI models**. |
 
 More: [Troubleshooting](troubleshooting.md).
