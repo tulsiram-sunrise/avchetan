@@ -14,7 +14,7 @@ Type `/` in the capture box on Windows to do something instead of logging it. Th
 | `/lock` | Locks Avchetan now, if the [app lock](app-lock.md) is on |
 | `/unlock` | Unlocks Avchetan with Windows Hello |
 
-Type `/` alone to see this list in the box. Typing the start of a command and pressing Enter completes it: `/br` becomes `/brief`.
+Type `/` alone to see this list in the box. You don't need to type a whole name: a few of its letters in order find it, such as `/ulk` for `/unlock`, `/stg` for `/settings` or `/dn` for `/done`. A word from a command's description works too (`/hub` finds `/sync`), and so do words Avchetan has learned for a command. The best match is first and lit; **Enter** runs it, **↑/↓** pick another and **Tab** fills it in. A command that needs words, such as `/done`, is filled in for you to finish. When nothing matches, the line under the box says *Enter asks the AI to read it as one*.
 
 After a command that changed something, an **Undo** button shows for 10 seconds. `/undo` works for longer, until Avchetan restarts: it remembers your last 20 entries and commands from the capture box, and undoes the newest first. An undo syncs to your other devices like any other change. **Ctrl+Z** in an empty capture box does the same as `/undo`.
 

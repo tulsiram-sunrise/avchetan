@@ -14,7 +14,8 @@ import {
   saveCommandLearn,
 } from './learning';
 import { matchOpenTask } from './match';
-import { captureText, isCommand, parseCommand, suggestCommands } from './parse';
+import { captureText, isCommand, parseCommand } from './parse';
+import { rankCommands } from './rank';
 
 describe('parseCommand', () => {
   it('reads the command and the text after it', () => {
@@ -50,9 +51,11 @@ describe('parseCommand', () => {
     expect(captureText('//note to self')).toBe('/note to self');
     expect(captureText('plain entry')).toBe('plain entry');
   });
+});
 
-  it('suggests commands by what was typed so far', () => {
-    expect(suggestCommands('')).toEqual([
+describe('rankCommands', () => {
+  it('lists every command, in registry order, before anything is typed', () => {
+    expect(rankCommands('')).toEqual([
       'done',
       'brief',
       'sync',
@@ -61,8 +64,44 @@ describe('parseCommand', () => {
       'lock',
       'unlock',
     ]);
-    expect(suggestCommands('b')).toEqual(['brief']);
-    expect(suggestCommands('x')).toEqual([]);
+  });
+
+  it('finds a command from its letters in order, anywhere in the name', () => {
+    expect(rankCommands('ulk')[0]).toBe('unlock');
+    expect(rankCommands('stg')[0]).toBe('settings');
+    expect(rankCommands('dn')[0]).toBe('done');
+    expect(rankCommands('SYN')[0]).toBe('sync');
+  });
+
+  it('puts the start of a name before letters found further in', () => {
+    // "lock" starts with "lo"; "unlock" only has it inside.
+    expect(rankCommands('lo')).toEqual(['lock', 'unlock']);
+    expect(rankCommands('b')[0]).toBe('brief');
+  });
+
+  it('prefers fewer letters skipped, then the earliest', () => {
+    // "nc": sync has the letters side by side; unlock skips two ("n-lo-c").
+    expect(rankCommands('nc')).toEqual(['sync', 'unlock']);
+    // "lk": both skip two letters, lock's run starts earlier.
+    expect(rankCommands('lk')).toEqual(['lock', 'unlock']);
+  });
+
+  it('finds a word at the start of a word in the description, not a common one', () => {
+    expect(rankCommands('hub')).toContain('sync');
+    expect(rankCommands('windows')).toEqual(['unlock']);
+    expect(rankCommands('the')).toEqual([]);
+  });
+
+  it('finds learned aliases, a little behind the names', () => {
+    const aliases = { finish: 'done', zz: 'lock' } as const;
+    expect(rankCommands('fin', aliases)).toEqual(['done']);
+    expect(rankCommands('fnsh', aliases)).toEqual(['done']);
+    expect(rankCommands('fin')).toEqual([]);
+  });
+
+  it('finds nothing when the letters are not there in order', () => {
+    expect(rankCommands('xq')).toEqual([]);
+    expect(rankCommands('kcol')).toEqual([]);
   });
 });
 

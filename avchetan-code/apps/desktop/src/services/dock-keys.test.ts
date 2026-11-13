@@ -51,7 +51,14 @@ describe('dockKey', () => {
       draftEmpty: false,
       list: { kind: 'commands', rows: 2 },
     };
-    expect(dockKey(press('ArrowDown'), commands)).toEqual({ kind: 'move', to: 0 });
+    // The first command shows lit as the best match, so ↓ goes on to the second.
+    expect(dockKey(press('ArrowDown'), commands)).toEqual({ kind: 'move', to: 1 });
+    expect(
+      dockKey(press('ArrowDown'), { ...commands, list: { kind: 'commands', rows: 1 } }),
+    ).toEqual({
+      kind: 'move',
+      to: 0,
+    });
     expect(dockKey(press('Tab'), commands)).toEqual({ kind: 'complete', row: 0 });
     expect(dockKey(press('Tab'), { ...commands, highlight: 1 })).toEqual({
       kind: 'complete',

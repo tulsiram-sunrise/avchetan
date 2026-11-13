@@ -3,7 +3,7 @@ import {
   captureText,
   LOCK_FREE_COMMANDS,
   parseCommand,
-  suggestCommands,
+  rankCommands,
 } from '@avchetan/core';
 import { toAppError } from '@avchetan/shared';
 import { type KeyboardEvent, type RefObject, useEffect, useState } from 'react';
@@ -65,7 +65,7 @@ export function CaptureInput(props: {
     typed !== null &&
     (typed.command
       ? LOCK_FREE_COMMANDS.has(typed.command)
-      : !typed.text && suggestCommands(typed.word).length > 0);
+      : !typed.text && rankCommands(typed.word).length > 0);
   /** Ask and the other commands show what was written before, so they wait for an unlock. */
   const needsUnlock = locked && (askMode || (command.active && !lockFree));
   const commandPanelShown = !needsUnlock && !(locked && !lockFree);
@@ -93,6 +93,10 @@ export function CaptureInput(props: {
           ? recent.length
           : 0;
   const picked = listKind !== null && highlight !== null && highlight < listRows ? highlight : null;
+  /** The command list shows its first row lit, the best match, until ↑/↓ pick another. */
+  const lit = picked ?? (listKind === 'commands' ? 0 : null);
+  /** What Enter runs while a command name is being typed: the best match ("/ulk" → /unlock). */
+  const bestCommand = typed?.word ? command.suggestions[0] : undefined;
 
   // New text or another list starts again from the box.
   // biome-ignore lint/correctness/useExhaustiveDependencies: reset on each change
@@ -195,10 +199,12 @@ export function CaptureInput(props: {
       // The question or command runs once unlocked, as if Enter had been pressed then.
       if (outcome !== 'verified') return;
       if (askMode) return submitQuestion();
-      return command.submit();
+      // Already unlocked: run it directly, not through chooseCommand's unlock check again.
+      return bestCommand ? command.runNamed(bestCommand) : command.submit();
     }
     if (askMode) return submitQuestion();
-    if (command.active) return command.submit();
+    // A name still being typed runs the best match, as picking it would. "/" alone does nothing.
+    if (command.active) return bestCommand ? chooseCommand(bestCommand) : command.submit();
     if (!draft.trim() || captureMutation.isPending) return;
     try {
       // "//note" is saved as "/note" (docs/product/command-mode.md).
@@ -245,7 +251,7 @@ export function CaptureInput(props: {
           if (!event.target.value) setSpoken(false);
         }}
         aria-controls={listKind ? DOCK_LIST_ID : undefined}
-        aria-activedescendant={picked !== null ? dockRowId(picked) : undefined}
+        aria-activedescendant={lit !== null ? dockRowId(lit) : undefined}
         onKeyDown={(event) => {
           if (command.active && !needsUnlock && command.onKeyDown(event)) return;
           if (onDockKey(event)) return;
