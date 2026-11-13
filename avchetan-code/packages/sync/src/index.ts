@@ -43,3 +43,11 @@ export {
   type SyncStatus,
   type SyncSummary,
 } from './status';
+export {
+  loadSyncWarning,
+  SYNC_WARNING_AFTER_MS,
+  SYNC_WARNING_FIX,
+  type SyncWarning,
+  syncWarning,
+  syncWarningText,
+} from './sync-warning';

@@ -1,16 +1,25 @@
 import { dayCategories, dayCategoryText, isSunday } from '@avchetan/core';
 import type { Task } from '@avchetan/db/sqlite';
-import { formatLocalDate, isValidLocalDate, localDate, systemTimeZone } from '@avchetan/shared';
-import { useQuery } from '@tanstack/react-query';
+import {
+  createLogger,
+  formatLocalDate,
+  isValidLocalDate,
+  localDate,
+  systemTimeZone,
+  toAppError,
+} from '@avchetan/shared';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { useExtractionMode, useSlotModel } from '../../src/queries/ai-models';
 import {
   useDayActivities,
   useDayEntries,
   useDayTasks,
+  useOverdueOpen,
   useResolvedCategories,
+  useSetOverdueOpen,
   useToday,
 } from '../../src/queries/days';
 import { useExtracted, usePendingCount } from '../../src/queries/entries';
@@ -18,13 +27,17 @@ import { useConnection } from '../../src/queries/sync';
 import { needsSetup } from '../../src/services/first-run';
 import { byRawLog } from '../../src/services/grouping';
 import { useServices } from '../../src/services-context';
+import { usePalette } from '../../src/theme/theme';
 import { CaptureButton } from '../../src/ui/capture-button';
 import { DailyBrief } from '../../src/ui/daily-brief';
 import { DayCalendar } from '../../src/ui/day-calendar';
 import { EntryRow } from '../../src/ui/entry-row';
 import { SectionTitle } from '../../src/ui/parts';
+import { SyncWarningBanner } from '../../src/ui/sync-warning-banner';
 import { TaskRow } from '../../src/ui/task-row';
 import { WeekCard } from '../../src/ui/week-card';
+
+const log = createLogger('days');
 
 /**
  * Shown until the phone can organize entries: with no hub and no model, entries only wait. The
@@ -125,15 +138,28 @@ function DayContent({ day, today }: { day: string; today: string }) {
     (tasks.data?.done.length ?? 0) + (tasks.data?.due.filter((t) => t.completedAt).length ?? 0);
   if (doneCount > 0) summary.push(doneCount === 1 ? '1 task done' : `${doneCount} tasks done`);
 
-  const groups: { title: string; alert?: boolean; rows: Task[] }[] = [
-    { title: 'Overdue', alert: true, rows: tasks.data?.overdue ?? [] },
+  const overdue = tasks.data?.overdue ?? [];
+  const groups: { title: string; rows: Task[] }[] = [
     { title: 'Due', rows: tasks.data?.due ?? [] },
     { title: 'Done', rows: tasks.data?.done ?? [] },
   ].filter((group) => group.rows.length > 0);
-  const empty = entries.isSuccess && tasks.isSuccess && count === 0 && groups.length === 0;
+  const empty =
+    entries.isSuccess && tasks.isSuccess && count === 0 && groups.length === 0 && !overdue.length;
+  const refresh = usePullToSync();
 
   return (
-    <ScrollView contentContainerClassName="pb-24">
+    <ScrollView
+      contentContainerClassName="pb-24"
+      refreshControl={
+        <RefreshControl
+          refreshing={refresh.refreshing}
+          onRefresh={refresh.onRefresh}
+          colors={[refresh.color]}
+          tintColor={refresh.color}
+        />
+      }
+    >
+      <SyncWarningBanner />
       <View className="gap-1 px-4 pt-3">
         <Text className="text-base font-semibold text-ink">
           {formatLocalDate(day, { weekday: 'long', day: 'numeric', month: 'long' })}
@@ -159,9 +185,10 @@ function DayContent({ day, today }: { day: string; today: string }) {
               : 'Nothing was logged this day.'}
         </Text>
       ) : null}
+      {overdue.length > 0 ? <OverdueTasks rows={overdue} /> : null}
       {groups.map((group) => (
         <View key={group.title}>
-          <SectionTitle title={group.title} alert={group.alert} />
+          <SectionTitle title={group.title} />
           {group.rows.map((task) => (
             <TaskRow key={task.id} task={task} />
           ))}
@@ -183,5 +210,50 @@ function DayContent({ day, today }: { day: string; today: string }) {
         );
       })}
     </ScrollView>
+  );
+}
+
+/** Pulling Days down syncs now, then reads the day again (finding-and-using-data.md §9). */
+function usePullToSync() {
+  const { sync } = useServices();
+  const queryClient = useQueryClient();
+  const palette = usePalette();
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = () => {
+    setRefreshing(true);
+    // A failed sync shows on the banner and in Settings → Sync; the spinner just stops.
+    void sync
+      .syncNow()
+      .catch((error) => log.warn('pull to sync failed', { code: toAppError(error).code }))
+      .finally(() => {
+        setRefreshing(false);
+        void queryClient.invalidateQueries({ queryKey: ['days'] });
+        void queryClient.invalidateQueries({ queryKey: ['sync'] });
+      });
+  };
+  return { refreshing, onRefresh, color: palette.accent };
+}
+
+/**
+ * Today's overdue tasks as one line, "▸ 7 overdue", closed until opened; the choice is
+ * remembered (finding-and-using-data.md §9).
+ */
+function OverdueTasks({ rows }: { rows: Task[] }) {
+  const open = useOverdueOpen().data ?? false;
+  const setOpen = useSetOverdueOpen();
+  return (
+    <View>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ expanded: open }}
+        onPress={() => setOpen.mutate(!open)}
+        className="px-4 pb-2 pt-4"
+      >
+        <Text className="text-sm font-medium text-danger">
+          {open ? '▾' : '▸'} {rows.length} overdue
+        </Text>
+      </Pressable>
+      {open ? rows.map((task) => <TaskRow key={task.id} task={task} />) : null}
+    </View>
   );
 }

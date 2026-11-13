@@ -83,6 +83,28 @@ describe('outbox', () => {
     const ids = (await store.sync.listOutbox(1000)).map((entry) => entry.recordId);
     expect(ids).toEqual(expect.arrayContaining([kept.id, gone.id, seedCategoryId('work')]));
   });
+
+  it('counts entries waiting to be sent, and when the oldest was queued', async () => {
+    const { store } = await openTestStore();
+    expect(await store.sync.waitingEntries()).toEqual({ count: 0, oldestAt: null });
+
+    const capture = (content: string) =>
+      store.write((tx) =>
+        store.repos.rawLogs.capture(tx, { content, source: 'desktop_text', capturedTz: 'UTC' }),
+      );
+    await capture('walked to the station');
+    await capture('read two chapters');
+    // A task is waiting too, but only entries count.
+    await store.write((tx) => store.repos.tasks.create(tx, { title: 'Buy milk' }));
+    const queued = (await store.sync.listOutbox()).filter((e) => e.tableName === 'raw_logs');
+
+    const waiting = await store.sync.waitingEntries();
+    expect(waiting.count).toBe(2);
+    expect(waiting.oldestAt).toBe(queued[0]?.enqueuedAt);
+
+    await store.sync.ackOutbox(queued);
+    expect(await store.sync.waitingEntries()).toEqual({ count: 0, oldestAt: null });
+  });
 });
 
 describe('applyRemoteChanges (LWW)', () => {

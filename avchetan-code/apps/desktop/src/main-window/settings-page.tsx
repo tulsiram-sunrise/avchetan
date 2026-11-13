@@ -2,7 +2,7 @@ import { createLogger, systemTimeZone, toAppError } from '@avchetan/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getVersion } from '@tauri-apps/api/app';
 import { disable, enable, isEnabled } from '@tauri-apps/plugin-autostart';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { GUIDE_URL, openExternal, REPORT_PROBLEM_URL } from '../help';
 import { HelpLink } from '../help-link';
 import { emitAppEvent } from '../native/events';
@@ -109,13 +109,20 @@ export function SettingsPage() {
   useAppEvent('main:navigate', (payload) => {
     if (payload.view === 'settings' && payload.tab) choose(payload.tab);
   });
+  // In a narrow window the tabs scroll sideways: keep the chosen one in sight.
+  useEffect(() => {
+    document
+      .getElementById(`settings-tab-${tab}`)
+      ?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }, [tab]);
 
   return (
-    <div className="flex max-w-xl flex-col gap-6">
+    // The tabs run across the page on one line (sideways scroll when narrow); fields stay narrow.
+    <div className="flex flex-col gap-6">
       <div
         role="tablist"
         aria-label="Settings"
-        className="flex flex-wrap gap-1 border-b border-line"
+        className="flex gap-1 overflow-x-auto shadow-[inset_0_-1px_0_var(--color-line)] [scrollbar-width:thin]"
       >
         {SETTINGS_TABS.map((item) => (
           <button
@@ -125,7 +132,7 @@ export function SettingsPage() {
             id={`settings-tab-${item.id}`}
             aria-selected={tab === item.id}
             aria-controls="settings-panel"
-            className={`-mb-px border-b-2 px-3 py-1.5 text-sm ${
+            className={`shrink-0 whitespace-nowrap border-b-2 px-3 py-1.5 text-sm ${
               tab === item.id
                 ? 'border-accent font-medium text-accent'
                 : 'border-transparent text-ink-muted hover:text-ink'
@@ -140,7 +147,7 @@ export function SettingsPage() {
         role="tabpanel"
         id="settings-panel"
         aria-labelledby={`settings-tab-${tab}`}
-        className="flex flex-col gap-6"
+        className="flex max-w-xl flex-col gap-6"
       >
         <TabContent tab={tab} />
       </div>

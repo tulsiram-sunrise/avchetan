@@ -26,6 +26,7 @@ Problems come first, each with its fix and a **Help** link to its section below.
 **"Can't reach your hub or server."**
 - Home Hub: is the PC on and is Avchetan's tray icon green? Is the phone on the same Wi-Fi (or Tailscale connected)? Is the Windows Wi-Fi network set as *Private*?
 - Cloud: open `https://<your-domain>/v1/health` in a browser.
+- **Days shows *Not synced with your hub since …*:** entries on this device have waited a day and no sync worked in that time. Fix the connection as above; the note clears itself after the next sync. Pull **Days** down on the phone, or click **Sync now** on the PC, to try straight away.
 
 ## clock_skew
 **"This device's clock is wrong"** or **"This device's clock is … minutes behind (or ahead of) the server's."** The server refuses changes stamped more than 5 minutes in its future. Turn on automatic date & time in the device settings: on Android, the Setup check's **Open date & time settings** goes there; on Windows, **Settings → Time & language → Date & time → Set time automatically**. If the device's clock is right, the server's is wrong: fix it on the hub's PC or server the same way.
