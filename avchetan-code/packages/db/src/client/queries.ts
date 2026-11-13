@@ -402,6 +402,97 @@ export async function categoryUsage(db: ClientDb): Promise<Map<string, number>> 
   return new Map(rows.map((row) => [row.categoryId, row.value]));
 }
 
+/** Rows a long list shows at first, and adds with each "Show more" (finding-and-using-data.md §9). */
+export const LIST_PAGE = 50;
+
+/**
+ * The Tasks page's groups, in page order (finding-and-using-data.md §9: long lists show 50 rows,
+ * then "Show more"). Tasks someone owes you (an `owed_by` mention) are in `waiting` only.
+ */
+export const TASK_GROUPS = ['overdue', 'today', 'upcoming', 'undated', 'waiting', 'done'] as const;
+export type TaskGroup = (typeof TASK_GROUPS)[number];
+
+export const TASK_GROUP_TITLES: Record<TaskGroup, string> = {
+  overdue: 'Overdue',
+  today: 'Today',
+  upcoming: 'Coming up',
+  undated: 'No date',
+  waiting: 'Waiting on others',
+  done: 'Done',
+};
+
+function taskGroupWhere(db: ClientDb, group: TaskGroup, today: LocalDate) {
+  const waiting = inArray(
+    tasks.id,
+    db
+      .select({ id: entityMentions.targetId })
+      .from(entityMentions)
+      .where(
+        and(
+          live(entityMentions),
+          eq(entityMentions.targetType, 'task'),
+          eq(entityMentions.role, 'owed_by'),
+        ),
+      ),
+  );
+  const open = and(isNull(tasks.completedAt), sql`not ${waiting}`);
+  switch (group) {
+    case 'overdue':
+      return and(open, lt(tasks.dueDate, today));
+    case 'today':
+      return and(open, eq(tasks.dueDate, today));
+    case 'upcoming':
+      return and(open, sql`${tasks.dueDate} > ${today}`);
+    case 'undated':
+      return and(open, isNull(tasks.dueDate));
+    case 'waiting':
+      return and(isNull(tasks.completedAt), waiting);
+    case 'done':
+      return isNotNull(tasks.completedAt);
+  }
+}
+
+/** How many tasks each group holds. */
+export async function taskGroupCounts(
+  db: ClientDb,
+  today: LocalDate,
+): Promise<Record<TaskGroup, number>> {
+  const count = (group: TaskGroup) =>
+    sql<number>`coalesce(sum(case when ${taskGroupWhere(db, group, today)} then 1 else 0 end), 0)`;
+  const row = await db
+    .select({
+      overdue: count('overdue'),
+      today: count('today'),
+      upcoming: count('upcoming'),
+      undated: count('undated'),
+      waiting: count('waiting'),
+      done: count('done'),
+    })
+    .from(tasks)
+    .where(live(tasks))
+    .get();
+  return Object.fromEntries(
+    TASK_GROUPS.map((group) => [group, Number(row?.[group] ?? 0)]),
+  ) as Record<TaskGroup, number>;
+}
+
+/** The first `limit` tasks of a group: by due date (undated: oldest first), done newest first. */
+export function tasksInGroup(
+  db: ClientDb,
+  options: { group: TaskGroup; today: LocalDate; limit: number },
+): Promise<Task[]> {
+  const order =
+    options.group === 'done'
+      ? [desc(tasks.completedAt), desc(tasks.id)]
+      : [sql`${tasks.dueDate} is null`, asc(tasks.dueDate), asc(tasks.createdAt), asc(tasks.id)];
+  return db
+    .select()
+    .from(tasks)
+    .where(and(live(tasks), taskGroupWhere(db, options.group, options.today)))
+    .orderBy(...order)
+    .limit(options.limit);
+}
+
 /** Open tasks: dated ones by due date first, then undated ones, oldest first. */
 export function openTasks(db: ClientDb, limit = 500): Promise<Task[]> {
   return db

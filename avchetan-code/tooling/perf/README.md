@@ -4,7 +4,7 @@ Dev-only scripts for measuring the apps with years of made-up history ([finding 
 
 1. Quit any installed Avchetan (it holds the shortcut and port 8787), and rename `%APPDATA%\app.avchetan.demo` to keep the demo copy you have.
 2. `pnpm --filter @avchetan/desktop demo:seed` fills a new demo database with 50,000 made-up entries over three years (`--entries`, `--years`, `--db`). It refuses a database outside an `app.avchetan.demo` folder or one that already has entries. Takes about 3 minutes.
-3. `pnpm --filter @avchetan/desktop demo:bench` times the queries behind each page on Node's SQLite, and tries the search index on a copy.
+3. `pnpm --filter @avchetan/desktop demo:bench` times the queries behind each page on Node's SQLite, on a copy of the database (pending migrations, such as the search index, are applied to the copy only, and their build time and size are reported).
 4. Start the demo with the debug port (see [screenshots](../screenshots/README.md#the-demo-copy)), then:
    - `powershell -ExecutionPolicy Bypass -File tooling/perf/measure-hotkey.ps1` times the shortcut to the capture box (main window closed);
    - `node tooling/perf/measure-desktop.ts` times the main window's start and each page's first visit.

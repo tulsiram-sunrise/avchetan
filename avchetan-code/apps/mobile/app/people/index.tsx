@@ -1,4 +1,4 @@
-import type { EntitySummary } from '@avchetan/db/sqlite';
+import { LIST_PAGE, type PersonSummary } from '@avchetan/db/sqlite';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { FlatList, Pressable, Text, TextInput, View } from 'react-native';
@@ -12,10 +12,10 @@ import {
   useRecheckPromises,
 } from '../../src/queries/people';
 import { usePalette } from '../../src/theme/theme';
-import { Button, Failure } from '../../src/ui/parts';
+import { Button, Failure, ShowMore } from '../../src/ui/parts';
 import { shortDay } from '../../src/ui/task-promises';
 
-function summaryLine(row: EntitySummary, today: string): string {
+function summaryLine(row: PersonSummary, today: string): string {
   const parts: string[] = [];
   if (row.youOwe > 0) parts.push(`You owe ${row.youOwe}`);
   if (row.waitingOn > 0) parts.push(`Waiting on ${row.waitingOn}`);
@@ -31,6 +31,7 @@ export default function PeopleScreen() {
   const today = useToday();
   const people = usePeople();
   const [search, setSearch] = useState('');
+  const [limit, setLimit] = useState(LIST_PAGE);
   const needle = search.trim().toLowerCase();
   const rows = (people.data ?? []).filter((row) =>
     [row.entity.name, ...row.entity.aliases].some((name) => name.toLowerCase().includes(needle)),
@@ -39,7 +40,14 @@ export default function PeopleScreen() {
   return (
     <View className="flex-1 bg-surface">
       <FlatList
-        data={rows}
+        data={rows.slice(0, limit)}
+        ListFooterComponent={
+          <ShowMore
+            shown={Math.min(limit, rows.length)}
+            total={rows.length}
+            onMore={() => setLimit((n) => n + LIST_PAGE)}
+          />
+        }
         keyExtractor={(row) => row.entity.id}
         keyboardShouldPersistTaps="handled"
         contentContainerClassName="pb-8"

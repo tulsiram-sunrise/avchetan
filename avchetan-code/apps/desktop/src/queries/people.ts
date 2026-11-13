@@ -1,5 +1,5 @@
 import { EXTRACTION_PROMPT_VERSION } from '@avchetan/core';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useServices } from '../services-context';
 import { useToday } from './days';
 
@@ -39,6 +39,8 @@ export function usePersonEntries(rawLogIds: readonly string[]) {
       return logs.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
     },
     enabled: rawLogIds.length > 0,
+    // "Show more" keeps the shown entries while the next ones load.
+    placeholderData: keepPreviousData,
   });
 }
 

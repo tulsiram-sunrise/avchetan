@@ -1,5 +1,5 @@
-import type { ClientStore } from '@avchetan/db/sqlite';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { type ClientStore, TASK_GROUPS, type TaskGroup } from '@avchetan/db/sqlite';
+import { keepPreviousData, useMutation, useQueries, useQuery } from '@tanstack/react-query';
 import { refreshAll } from '../query-client';
 import { scheduleBriefReminder } from '../services/brief-reminder';
 import type { MobileSource } from '../services/capture';
@@ -27,22 +27,6 @@ export function useLogDetail(id: string) {
   return useQuery({
     queryKey: ['raw_logs', 'detail', id],
     queryFn: async () => (await store.queries.rawLogDetail(store.db, id)) ?? null,
-  });
-}
-
-export function useOpenTasks() {
-  const { store } = useServices();
-  return useQuery({
-    queryKey: ['tasks', 'open'],
-    queryFn: () => store.queries.openTasks(store.db),
-  });
-}
-
-export function useCompletedTasks() {
-  const { store } = useServices();
-  return useQuery({
-    queryKey: ['tasks', 'completed'],
-    queryFn: () => store.queries.completedTasks(store.db),
   });
 }
 
@@ -84,5 +68,26 @@ export function useWrite<A, R>(run: (store: ClientStore, args: A) => Promise<R>)
       void extraction.wake();
       sync.schedule();
     },
+  });
+}
+
+/** How many tasks each group of the Tasks tab holds today. */
+export function useTaskGroupCounts(today: string) {
+  const { store } = useServices();
+  return useQuery({
+    queryKey: ['tasks', 'group-counts', today],
+    queryFn: () => store.queries.taskGroupCounts(store.db, today),
+  });
+}
+
+/** Each group's first tasks, up to its own limit, in TASK_GROUPS order. */
+export function useTaskGroups(today: string, limits: Record<TaskGroup, number>) {
+  const { store } = useServices();
+  return useQueries({
+    queries: TASK_GROUPS.map((group) => ({
+      queryKey: ['tasks', 'group', group, today, limits[group]],
+      queryFn: () => store.queries.tasksInGroup(store.db, { group, today, limit: limits[group] }),
+      placeholderData: keepPreviousData,
+    })),
   });
 }

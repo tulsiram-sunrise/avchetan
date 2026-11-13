@@ -309,3 +309,81 @@ describe('unnamed people', () => {
     expect(names.sort()).toEqual(['Asha', 'राहुल']);
   });
 });
+
+describe('listPeople (SQL rollup)', () => {
+  it('agrees with the per-mention summary on a mixed history', async () => {
+    const { store, r, entry, person, task, mention } = await setup();
+    // Typed at 2026-10-26T10:00Z: the 26th in Kolkata, but captured in Los Angeles (03:00 there).
+    const morning = await store.write((tx) =>
+      r.rawLogs.capture(tx, {
+        content: 'Coffee with Meera',
+        source: 'desktop_text',
+        capturedTz: 'America/Los_Angeles',
+        explicitTagPaths: [],
+      }),
+    );
+    const run = await entry('Ran with Meera and Dev');
+    const activity = await store.write((tx) =>
+      r.activities.create(tx, {
+        categoryId: seedCategoryId('workout'),
+        title: 'Run',
+        loggedDate: '2026-10-24',
+        rawLogId: run.id,
+      }),
+    );
+    const gone = await store.write((tx) =>
+      r.activities.create(tx, {
+        categoryId: seedCategoryId('workout'),
+        title: 'Swim',
+        loggedDate: '2026-10-29',
+        rawLogId: run.id,
+      }),
+    );
+    const secret = await entry('Talked to Dev about it', 'local_only');
+    const loose = await store.write((tx) =>
+      r.tasks.create(tx, { title: 'Return Dev the book', dueDate: '2026-10-20' }),
+    );
+    const promised = await task(secret.id, 'Send Meera the photos', '2026-11-05');
+    const meera = await person('Meera');
+    const dev = await person('Dev');
+    await mention(meera.id, 'raw_log', morning.id, 'with');
+    await mention(meera.id, 'activity', activity.id, 'with');
+    await mention(meera.id, 'task', promised.id, 'owed_to');
+    await mention(dev.id, 'activity', gone.id, 'with');
+    await mention(dev.id, 'raw_log', secret.id, 'about');
+    await mention(dev.id, 'task', loose.id, 'owed_by');
+    await store.write((tx) => r.activities.softDelete(tx, gone.id));
+
+    for (const scope of [local, cloud]) {
+      const rolled = await store.people.listPeople(store.db, scope);
+      const perMention = await store.people.findEntities(store.db, {
+        ...scope,
+        kind: 'person',
+        limit: 10,
+      });
+      const shape = (rows: { entity: { name: string } }[]) =>
+        rows
+          .map((row) => {
+            const {
+              entity,
+              rawLogIds: _ids,
+              ...rest
+            } = row as typeof row & { rawLogIds?: unknown };
+            return { name: entity.name, ...rest };
+          })
+          .sort((a, b) => a.name.localeCompare(b.name));
+      expect(shape(rolled)).toEqual(shape(perMention));
+    }
+    const list = await store.people.listPeople(store.db, local);
+    expect(list.find((p) => p.entity.name === 'Meera')).toMatchObject({
+      lastSeen: '2026-10-26',
+      youOwe: 1,
+      overdue: 0,
+    });
+    expect(list.find((p) => p.entity.name === 'Dev')).toMatchObject({
+      lastSeen: null,
+      waitingOn: 1,
+      overdue: 1,
+    });
+  });
+});

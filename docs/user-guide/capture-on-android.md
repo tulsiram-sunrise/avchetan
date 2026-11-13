@@ -82,6 +82,7 @@ Tasks found in your entries appear on the **Tasks** tab: *Overdue*, *Today*, *Co
 
 - Tap the box to mark a task done.
 - Tap the task to change its name or due date, or to delete it. Write dates like `2026-11-25`.
+- Each group shows how many it holds and its first 50; tap **Show more** for the next 50. People and a person's entries work the same way.
 
 ![The Tasks tab listing two tasks with their due dates](images/capture-on-android-tasks.png)
 

@@ -7,7 +7,7 @@ import {
   NO_FILTERS,
   toSearchFilters,
 } from '@avchetan/core';
-import type { EntitySummary, HighlightPart, RawLog } from '@avchetan/db/sqlite';
+import type { HighlightPart, PersonSummary, RawLog } from '@avchetan/db/sqlite';
 import { formatDueDate, formatTime, localDate } from '@avchetan/shared';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useResolvedCategories, useToday } from '../queries/days';
@@ -406,7 +406,7 @@ function TaskResult(props: { hit: TaskHitRow; onOpen: () => void }) {
   );
 }
 
-function PersonResult(props: { person: EntitySummary; onOpen: (id: string) => void }) {
+function PersonResult(props: { person: PersonSummary; onOpen: (id: string) => void }) {
   const { entity, lastSeen, lastMentioned } = props.person;
   const today = useToday();
   const seen = lastSeen ?? lastMentioned;

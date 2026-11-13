@@ -74,6 +74,11 @@ fn open_connection(path: &Path) -> CommandResult<Connection> {
     connection
         .pragma_update(None, "foreign_keys", "OFF")
         .map_err(open_failed)?;
+    // A 32 MB page cache (in KiB when negative). The 2 MB default missed on almost every lookup
+    // with years of entries: the People page's mention join took 110 ms instead of 28.
+    connection
+        .pragma_update(None, "cache_size", -32_768)
+        .map_err(open_failed)?;
     Ok(connection)
 }
 

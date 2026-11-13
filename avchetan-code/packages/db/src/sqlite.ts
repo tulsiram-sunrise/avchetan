@@ -42,6 +42,7 @@ export type {
   DuplicatePair,
   EntitySummary,
   PersonDetail,
+  PersonSummary,
   PromiseDirection,
   PromiseItem,
   PromiseLink,
@@ -58,8 +59,10 @@ export type {
   MonthDay,
   RawLogCursor,
   RawLogDetail,
+  TaskGroup,
 } from './client/queries';
 export * as queries from './client/queries';
+export { LIST_PAGE, TASK_GROUP_TITLES, TASK_GROUPS } from './client/queries';
 export type { Activity, ActivityEdit, NewActivity } from './client/repos/activities';
 export {
   type Category,
