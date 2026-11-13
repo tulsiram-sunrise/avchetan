@@ -1,3 +1,4 @@
+import { type FilterChoice, NO_FILTERS } from '@avchetan/core';
 import { useEffect, useState } from 'react';
 import { LockScreen } from '../lock-screen';
 import type { MainView } from '../native/events';
@@ -42,6 +43,7 @@ export function MainApp(props: { initialView: MainView; initialDay?: string | nu
     personId: null,
   });
   const [searchText, setSearchText] = useState('');
+  const [searchChoice, setSearchChoice] = useState<FilterChoice>(NO_FILTERS);
   const [searchFocus, setSearchFocus] = useState(0);
   const [keysOpen, setKeysOpen] = useState(false);
   useTableInvalidation();
@@ -84,6 +86,8 @@ export function MainApp(props: { initialView: MainView; initialDay?: string | nu
           <SearchPage
             text={searchText}
             onText={setSearchText}
+            choice={searchChoice}
+            onChoice={setSearchChoice}
             focusSignal={searchFocus}
             onOpenEntry={(day, entryId) => {
               setTarget({ day, entryId, personId: null });

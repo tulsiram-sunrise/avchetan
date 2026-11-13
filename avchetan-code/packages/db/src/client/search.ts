@@ -1,6 +1,31 @@
-import { and, desc, eq, getTableColumns, inArray, isNotNull, sql } from 'drizzle-orm';
+import { addDays, type LocalDate, startOfDay, type TimeZone } from '@avchetan/shared';
+import {
+  and,
+  desc,
+  eq,
+  getTableColumns,
+  gte,
+  inArray,
+  isNotNull,
+  isNull,
+  like,
+  lt,
+  lte,
+  or,
+  type SQL,
+  sql,
+} from 'drizzle-orm';
 import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
-import { entities, rawLogs, tasks } from '../schema/sqlite/tables';
+import type { LinkTargetType } from '../schema/enums';
+import {
+  activities,
+  entities,
+  entityMentions,
+  entityTags,
+  rawLogs,
+  tags,
+  tasks,
+} from '../schema/sqlite/tables';
 import type { ClientDb } from './database';
 import { type DataScope, notFromPrivateLog } from './privacy';
 import type { RawLog } from './repos/raw-logs';
@@ -84,12 +109,200 @@ async function highlights(
   return new Map(rows.map((row) => [row.rowid, highlightParts(row.marked)]));
 }
 
+/**
+ * Narrows a search (docs/product/finding-and-using-data.md#1-plain-search). All optional; every
+ * one given must hold. An entry matches a tag, category, project or person when it or anything
+ * organized from it carries it; a task when it or its entry does.
+ */
+export type SearchFilters = {
+  /**
+   * Inclusive local dates. An entry's date is the day it was typed in `timeZone`; a task's is
+   * its due date, or the day it was made when it has none.
+   */
+  from?: LocalDate | undefined;
+  to?: LocalDate | undefined;
+  timeZone?: TimeZone | undefined;
+  /** The tag or any tag nested under it (`health` takes `health/knee`). */
+  tagPath?: string | undefined;
+  categoryId?: string | undefined;
+  projectId?: string | undefined;
+  personId?: string | undefined;
+};
+
 export type SearchOptions = DataScope & {
   text: string;
   limit: number;
   /** Rows to skip, for "Show more". */
   offset?: number;
+  filters?: SearchFilters | undefined;
 };
+
+/** Whether any filter is set. */
+export function hasFilters(filters: SearchFilters | undefined): boolean {
+  return Boolean(
+    filters &&
+      (filters.from ||
+        filters.to ||
+        filters.tagPath ||
+        filters.categoryId ||
+        filters.projectId ||
+        filters.personId),
+  );
+}
+
+/** `[start, end)` instants for an inclusive local date range. */
+function instantRange(filters: SearchFilters) {
+  const zone = filters.timeZone ?? 'UTC';
+  return {
+    start: filters.from ? startOfDay(filters.from, zone) : undefined,
+    end: filters.to ? startOfDay(addDays(filters.to, 1), zone) : undefined,
+  };
+}
+
+/** IDs of rows of `type` carrying the tag or one nested under it. */
+const taggedIds = (db: ClientDb, type: LinkTargetType, path: string) =>
+  db
+    .select({ id: entityTags.targetId })
+    .from(entityTags)
+    .innerJoin(tags, eq(tags.id, entityTags.tagId))
+    .where(
+      and(
+        live(entityTags),
+        live(tags),
+        eq(entityTags.targetType, type),
+        or(eq(tags.path, path), like(tags.path, `${path}/%`)),
+      ),
+    );
+
+/** IDs of rows of `type` that mention the person. */
+const mentionedIds = (db: ClientDb, type: LinkTargetType, personId: string) =>
+  db
+    .select({ id: entityMentions.targetId })
+    .from(entityMentions)
+    .where(
+      and(
+        live(entityMentions),
+        eq(entityMentions.targetType, type),
+        eq(entityMentions.entityId, personId),
+      ),
+    );
+
+/** Entries with a live activity or task organized from them that meets the condition. */
+function entriesWithItem(
+  db: ClientDb,
+  activityWhere: SQL | undefined,
+  taskWhere: SQL | undefined,
+): SQL | undefined {
+  const fromActivities = db
+    .select({ id: sql<string>`${activities.rawLogId}` })
+    .from(activities)
+    .where(and(live(activities), isNotNull(activities.rawLogId), activityWhere));
+  const fromTasks = db
+    .select({ id: sql<string>`${tasks.rawLogId}` })
+    .from(tasks)
+    .where(and(live(tasks), isNotNull(tasks.rawLogId), taskWhere));
+  return or(inArray(rawLogs.id, fromActivities), inArray(rawLogs.id, fromTasks));
+}
+
+/** Conditions on `raw_logs` for the filters. */
+function entryFilters(db: ClientDb, filters: SearchFilters | undefined): SQL | undefined {
+  if (!filters) return undefined;
+  const { start, end } = instantRange(filters);
+  const { tagPath, categoryId, projectId, personId } = filters;
+  return and(
+    start ? gte(rawLogs.capturedAt, start) : undefined,
+    end ? lt(rawLogs.capturedAt, end) : undefined,
+    tagPath
+      ? or(
+          inArray(rawLogs.id, taggedIds(db, 'raw_log', tagPath)),
+          entriesWithItem(
+            db,
+            inArray(activities.id, taggedIds(db, 'activity', tagPath)),
+            inArray(tasks.id, taggedIds(db, 'task', tagPath)),
+          ),
+        )
+      : undefined,
+    categoryId
+      ? entriesWithItem(db, eq(activities.categoryId, categoryId), eq(tasks.categoryId, categoryId))
+      : undefined,
+    projectId
+      ? entriesWithItem(db, eq(activities.projectId, projectId), eq(tasks.projectId, projectId))
+      : undefined,
+    personId
+      ? or(
+          inArray(rawLogs.id, mentionedIds(db, 'raw_log', personId)),
+          entriesWithItem(
+            db,
+            inArray(activities.id, mentionedIds(db, 'activity', personId)),
+            inArray(tasks.id, mentionedIds(db, 'task', personId)),
+          ),
+        )
+      : undefined,
+  );
+}
+
+/** Conditions on `tasks` for the filters. */
+function taskFilters(db: ClientDb, filters: SearchFilters | undefined): SQL | undefined {
+  if (!filters) return undefined;
+  const { start, end } = instantRange(filters);
+  const { from, to, tagPath, categoryId, projectId, personId } = filters;
+  const entry = sql<string>`${tasks.rawLogId}`;
+  return and(
+    from || to
+      ? or(
+          and(
+            isNotNull(tasks.dueDate),
+            from ? gte(tasks.dueDate, from) : undefined,
+            to ? lte(tasks.dueDate, to) : undefined,
+          ),
+          and(
+            isNull(tasks.dueDate),
+            start ? gte(tasks.createdAt, start) : undefined,
+            end ? lt(tasks.createdAt, end) : undefined,
+          ),
+        )
+      : undefined,
+    tagPath
+      ? or(
+          inArray(tasks.id, taggedIds(db, 'task', tagPath)),
+          and(isNotNull(tasks.rawLogId), inArray(entry, taggedIds(db, 'raw_log', tagPath))),
+        )
+      : undefined,
+    categoryId ? eq(tasks.categoryId, categoryId) : undefined,
+    projectId ? eq(tasks.projectId, projectId) : undefined,
+    personId
+      ? or(
+          inArray(tasks.id, mentionedIds(db, 'task', personId)),
+          and(isNotNull(tasks.rawLogId), inArray(entry, mentionedIds(db, 'raw_log', personId))),
+        )
+      : undefined,
+  );
+}
+
+/**
+ * Of these entries (the hub's meaning matches), the live ones in scope that pass the filters,
+ * in the order given.
+ */
+export async function filterLogs(
+  db: ClientDb,
+  ids: readonly string[],
+  options: DataScope & { filters?: SearchFilters | undefined },
+): Promise<RawLog[]> {
+  if (ids.length === 0) return [];
+  const rows = await db
+    .select()
+    .from(rawLogs)
+    .where(
+      and(
+        inArray(rawLogs.id, [...ids]),
+        live(rawLogs),
+        options.includePrivate ? undefined : eq(rawLogs.privacy, 'normal'),
+        entryFilters(db, options.filters),
+      ),
+    );
+  const order = new Map(ids.map((id, index) => [id, index]));
+  return rows.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+}
 
 const matches = (query: string, kind: 'entry' | 'task' | 'entity') =>
   and(sql`search_index MATCH ${query}`, eq(searchRows.kind, kind));
@@ -130,6 +343,7 @@ function entryRows(db: ClientDb, query: string, options: SearchOptions) {
         matches(query, 'entry'),
         live(rawLogs),
         options.includePrivate ? undefined : eq(rawLogs.privacy, 'normal'),
+        entryFilters(db, options.filters),
       ),
     )
     .orderBy(desc(rawLogs.capturedAt), desc(rawLogs.id))
@@ -153,6 +367,7 @@ export async function searchTasks(db: ClientDb, options: SearchOptions): Promise
         matches(query, 'task'),
         live(tasks),
         options.includePrivate ? undefined : notFromPrivateLog(db, tasks),
+        taskFilters(db, options.filters),
       ),
     )
     .orderBy(isNotNull(tasks.completedAt), desc(tasks.createdAt), desc(tasks.id))

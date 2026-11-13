@@ -30,7 +30,7 @@ Everything Avchetan organizes can only be found today through Ask, which needs a
 - **Tasks:** title, due date, open or done. Clicking opens Tasks.
 - **People:** name and last seen. Clicking opens the person's page.
 
-**Filters:** date range (any time, this week, this month, this year, custom), tag, category, project, person. Filters apply to both sections.
+**Filters:** date range (any time, this week, this month, this year, custom), tag, category, project, person. Filters apply to both sections. An entry matches a tag, category, project or person when it or anything organized from it has it; a task's date is its due date, or the day it was made. People aren't filtered, so the People group is hidden while a filter is on (built 2026-11-13). *Similar entries* lists only close matches ([retrieval](../architecture/retrieval.md#search-api)).
 
 **Private entries** show only while the app is unlocked, as everywhere else. Locked, they're left out of the results (not shown as hidden).
 

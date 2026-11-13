@@ -135,7 +135,9 @@ Open Avchetan (tray icon → **Open Avchetan**):
 
 Press **Ctrl+F** in the main window and type a word, or the start of one. Results come in three groups: **Entries** (with their date, category and tags), **Tasks** (open or done, and when due) and **People**. Private entries are included, because the main window only opens while the app is unlocked.
 
-Search looks for the words themselves, not their meaning: *ran* doesn't find *jogged*. To ask in your own words, use [Ask](#ask-about-your-entries).
+**Narrow it down** with the lists under the box: when (*Any time*, *This week*, *This month*, *This year*, or *Pick dates*), a tag (its nested tags count too: `#health` takes `#health/knee`), a category, a project or a person. An entry counts when it, or something organized from it, has that tag, category, project or person; a task's date is its due date, or the day it was made. People aren't filtered, so they're hidden while a filter is on. **Clear filters** puts them all back.
+
+Search looks for the words themselves, not their meaning: *ran* doesn't find *jogged*. When this PC syncs with a hub that has search on, a second group, **Similar entries**, adds entries the hub finds by meaning (*swimming* can find *went to the pool*), after the word results and with the same filters. It only lists close matches, so it's often empty, and it isn't shown offline or without a hub. To ask in your own words, use [Ask](#ask-about-your-entries).
 
 Press **?** anywhere in the main window (outside a text field) for a list of its keys.
 

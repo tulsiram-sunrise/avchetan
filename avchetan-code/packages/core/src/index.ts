@@ -255,6 +255,19 @@ export {
   type ProviderDeps,
 } from './providers/registry';
 export {
+  DATE_PRESET_LABELS,
+  DATE_PRESETS,
+  type DatePreset,
+  type DateRange,
+  presetRange,
+} from './search/date-range';
+export {
+  choiceIsSet,
+  type FilterChoice,
+  NO_FILTERS,
+  toSearchFilters,
+} from './search/filters';
+export {
   DEFAULT_VOICE_SETTINGS,
   insertDictation,
   loadVoiceSettings,

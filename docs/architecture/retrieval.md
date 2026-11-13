@@ -33,6 +33,7 @@ Hybrid retrieval: **deterministic SQL** for anything with numbers, dates, tags o
 `{ results: [{ rawLogId, score, capturedAt, snippet }] }`
 - Embeds the query, `ORDER BY (embedding::vector(N)) <=> $q LIMIT k`, only rows of the same `model` and `dims`. With no embedding model the server answers 503 `search_unavailable`.
 - Clients call it through `searchServer` (`@avchetan/sync`), which tries each server address and returns `null` instead of failing. Ask offers `search_history` only when a server is set up, and reads the found entries from the local database, so the privacy scope applies whatever the server returned.
+- The Search page's *Similar entries* ([finding and using data](../product/finding-and-using-data.md#1-plain-search)) calls it through `similarEntries`: it drops entries the word search already lists, applies the page's filters on the device (`filterLogs`), and keeps only close matches. The hub returns its nearest entries whatever they are, so a match must score at least **0.55** and be within **0.12** of the best one (`MIN_SIMILARITY`, `SIMILARITY_SPREAD`). Measured 2026-11-13 with `qwen3-embedding:0.6b` on the demo entries: related ones scored 0.57–0.78, unrelated ones up to 0.59, and a search with nothing related at most 0.47. Another embedding model may need other numbers.
 - Optional hybrid boost: union with Postgres full-text (`tsvector`) hits, merged with reciprocal-rank fusion. Start vector-only; add FTS if recall is poor.
 
 ## Ask mode flow

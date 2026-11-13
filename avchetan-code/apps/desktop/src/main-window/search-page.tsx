@@ -1,8 +1,25 @@
-import type { EntitySummary, HighlightPart } from '@avchetan/db/sqlite';
+import {
+  choiceIsSet,
+  DATE_PRESET_LABELS,
+  DATE_PRESETS,
+  type DatePreset,
+  type FilterChoice,
+  NO_FILTERS,
+  toSearchFilters,
+} from '@avchetan/core';
+import type { EntitySummary, HighlightPart, RawLog } from '@avchetan/db/sqlite';
 import { formatDueDate, formatTime, localDate } from '@avchetan/shared';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useResolvedCategories, useToday } from '../queries/days';
-import { SEARCH_PAGE, useSearchEntries, useSearchPeople, useSearchTasks } from '../queries/search';
+import { useActiveCategories, useProjects, useTags } from '../queries/organize';
+import { usePeople } from '../queries/people';
+import {
+  SEARCH_PAGE,
+  useSearchEntries,
+  useSearchPeople,
+  useSearchTasks,
+  useSimilarEntries,
+} from '../queries/search';
 import { useServices } from '../services-context';
 import { fieldClass, panelClass, QuietButton } from './ui';
 
@@ -11,12 +28,15 @@ const TYPING_PAUSE_MS = 120;
 
 /**
  * Plain search (docs/product/finding-and-using-data.md#1-plain-search): the words you typed,
- * on this PC, with no AI. Ctrl+F opens it from anywhere in the main window. The text is kept
- * by the main window, so coming back from a result shows the same results.
+ * on this PC, with no AI, narrowed by the filters; the hub's *Similar entries* below when it
+ * can be reached. Ctrl+F opens it from anywhere in the main window. The text and filters are
+ * kept by the main window, so coming back from a result shows the same results.
  */
 export function SearchPage(props: {
   text: string;
   onText: (text: string) => void;
+  choice: FilterChoice;
+  onChoice: (choice: FilterChoice) => void;
   /** Bumped by Ctrl+F: focus and select the box again. */
   focusSignal: number;
   onOpenEntry: (day: string, rawLogId: string) => void;
@@ -38,7 +58,7 @@ export function SearchPage(props: {
   }, [props.focusSignal]);
 
   return (
-    <div className="flex max-w-3xl flex-col gap-5">
+    <div className="flex max-w-3xl flex-col gap-4">
       <h1 className="text-lg font-semibold">Search</h1>
       <input
         ref={input}
@@ -55,6 +75,7 @@ export function SearchPage(props: {
           }
         }}
       />
+      <FilterBar choice={props.choice} onChoice={props.onChoice} />
       {query ? (
         <Results query={query} {...props} />
       ) : (
@@ -67,33 +88,159 @@ export function SearchPage(props: {
   );
 }
 
+const selectClass = `${fieldClass} max-w-44`;
+
+/** Date, tag, category, project and person. Each list holds only what exists. */
+function FilterBar(props: { choice: FilterChoice; onChoice: (choice: FilterChoice) => void }) {
+  const { choice, onChoice } = props;
+  const today = useToday();
+  const tags = useTags();
+  const categories = useActiveCategories();
+  const projects = useProjects();
+  const people = usePeople();
+  const set = (patch: Partial<FilterChoice>) => onChoice({ ...choice, ...patch });
+  const orNone = (value: string) => (value === '' ? undefined : value);
+  const tagPaths = (tags.data ?? [])
+    .filter((tag) => !tag.mergedIntoId)
+    .map((tag) => tag.path)
+    .sort();
+
+  return (
+    <fieldset aria-label="Filters" className="flex flex-wrap items-center gap-2 text-sm">
+      <select
+        aria-label="When"
+        className={selectClass}
+        value={choice.preset}
+        onChange={(event) => set({ preset: event.target.value as DatePreset })}
+      >
+        {DATE_PRESETS.map((preset) => (
+          <option key={preset} value={preset}>
+            {DATE_PRESET_LABELS[preset]}
+          </option>
+        ))}
+      </select>
+      {choice.preset === 'custom' ? (
+        <>
+          <input
+            type="date"
+            aria-label="From"
+            className={fieldClass}
+            value={choice.customFrom ?? ''}
+            onChange={(event) => set({ customFrom: event.target.value })}
+          />
+          <span className="text-ink-muted">to</span>
+          <input
+            type="date"
+            aria-label="To"
+            className={fieldClass}
+            value={choice.customTo ?? ''}
+            onChange={(event) => set({ customTo: event.target.value })}
+          />
+        </>
+      ) : null}
+      <select
+        aria-label="Tag"
+        className={selectClass}
+        value={choice.tagPath ?? ''}
+        onChange={(event) => set({ tagPath: orNone(event.target.value) })}
+      >
+        <option value="">Any tag</option>
+        {tagPaths.map((path) => (
+          <option key={path} value={path}>
+            #{path}
+          </option>
+        ))}
+      </select>
+      <select
+        aria-label="Category"
+        className={selectClass}
+        value={choice.categoryId ?? ''}
+        onChange={(event) => set({ categoryId: orNone(event.target.value) })}
+      >
+        <option value="">Any category</option>
+        {(categories.data ?? []).map((category) => (
+          <option key={category.id} value={category.id}>
+            {category.name}
+          </option>
+        ))}
+      </select>
+      {(projects.data ?? []).length > 0 ? (
+        <select
+          aria-label="Project"
+          className={selectClass}
+          value={choice.projectId ?? ''}
+          onChange={(event) => set({ projectId: orNone(event.target.value) })}
+        >
+          <option value="">Any project</option>
+          {(projects.data ?? []).map((project) => (
+            <option key={project.id} value={project.id}>
+              {project.name}
+            </option>
+          ))}
+        </select>
+      ) : null}
+      {(people.data ?? []).length > 0 ? (
+        <select
+          aria-label="Person"
+          className={selectClass}
+          value={choice.personId ?? ''}
+          onChange={(event) => set({ personId: orNone(event.target.value) })}
+        >
+          <option value="">Anyone</option>
+          {(people.data ?? []).map((person) => (
+            <option key={person.entity.id} value={person.entity.id}>
+              {person.entity.name}
+            </option>
+          ))}
+        </select>
+      ) : null}
+      {choiceIsSet(choice, today) ? (
+        <QuietButton onClick={() => onChoice(NO_FILTERS)}>Clear filters</QuietButton>
+      ) : null}
+    </fieldset>
+  );
+}
+
 function Results(props: {
   query: string;
+  choice: FilterChoice;
   onOpenEntry: (day: string, rawLogId: string) => void;
   onOpenTasks: () => void;
   onOpenPerson: (id: string) => void;
 }) {
-  const { query } = props;
+  const { query, choice } = props;
+  const { timeZone } = useServices();
+  const today = useToday();
+  const filtered = choiceIsSet(choice, today);
+  const zone = timeZone.current();
+  const filters = useMemo(() => toSearchFilters(choice, today, zone), [choice, today, zone]);
   const [limits, setLimits] = useState({ entries: SEARCH_PAGE, tasks: SEARCH_PAGE });
   // A new search starts from the first page again.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: query is the trigger.
-  useEffect(() => setLimits({ entries: SEARCH_PAGE, tasks: SEARCH_PAGE }), [query]);
-  const entries = useSearchEntries(query, limits.entries);
-  const tasks = useSearchTasks(query, limits.tasks);
-  const people = useSearchPeople(query, SEARCH_PAGE);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: query and filters are the trigger.
+  useEffect(() => setLimits({ entries: SEARCH_PAGE, tasks: SEARCH_PAGE }), [query, filters]);
+  const entries = useSearchEntries(query, filters, limits.entries);
+  const tasks = useSearchTasks(query, filters, limits.tasks);
+  const people = useSearchPeople(query, SEARCH_PAGE, !filtered);
+  const wordIds = useMemo(
+    () => (entries.isSuccess ? entries.data.hits.map((hit) => hit.log.id) : undefined),
+    [entries.isSuccess, entries.data],
+  );
+  const similar = useSimilarEntries(query, filters, wordIds);
 
-  const loaded = entries.isSuccess && tasks.isSuccess && people.isSuccess;
+  const peopleShown = filtered ? [] : (people.data?.people ?? []);
+  const loaded = entries.isSuccess && tasks.isSuccess && (filtered || people.isSuccess);
   const none =
-    loaded && entries.data.hits.length + tasks.data.hits.length + people.data.people.length === 0;
-  if (none) {
-    return (
-      <p className="text-sm text-ink-muted">
-        Nothing matches <strong>{query}</strong>. Try fewer words, or the start of a word.
-      </p>
-    );
-  }
+    loaded && entries.data.hits.length + tasks.data.hits.length + peopleShown.length === 0;
+  const similarShown = (similar.data ?? []).filter((log) => !wordIds?.includes(log.id));
+
   return (
     <div className="flex flex-col gap-6">
+      {none ? (
+        <p className="text-sm text-ink-muted">
+          Nothing matches <strong>{query}</strong>
+          {filtered ? ' with these filters' : ''}. Try fewer words, or the start of a word.
+        </p>
+      ) : null}
       {entries.data && entries.data.hits.length > 0 ? (
         <Group
           title="Entries"
@@ -116,10 +263,17 @@ function Results(props: {
           ))}
         </Group>
       ) : null}
-      {people.data && people.data.people.length > 0 ? (
+      {peopleShown.length > 0 ? (
         <Group title="People">
-          {people.data.people.map((person) => (
+          {peopleShown.map((person) => (
             <PersonResult key={person.entity.id} person={person} onOpen={props.onOpenPerson} />
+          ))}
+        </Group>
+      ) : null}
+      {similarShown.length > 0 ? (
+        <Group title="Similar entries" note="Found by meaning on your hub">
+          {similarShown.map((log) => (
+            <SimilarResult key={log.id} log={log} onOpen={props.onOpenEntry} />
           ))}
         </Group>
       ) : null}
@@ -127,8 +281,28 @@ function Results(props: {
   );
 }
 
+/** An entry the hub found by meaning: no words to mark. */
+function SimilarResult(props: { log: RawLog; onOpen: (day: string, id: string) => void }) {
+  const { log } = props;
+  const { timeZone } = useServices();
+  const today = useToday();
+  const day = localDate(log.capturedAt, timeZone.current());
+  return (
+    <li>
+      <button type="button" className={rowClass} onClick={() => props.onOpen(day, log.id)}>
+        <span className="text-xs text-ink-muted">
+          {formatDueDate(day, today)} · {formatTime(log.capturedAt)}
+        </span>
+        <span className="line-clamp-4 whitespace-pre-wrap break-words">{log.content}</span>
+      </button>
+    </li>
+  );
+}
+
 function Group(props: {
   title: string;
+  /** A quiet line after the title. */
+  note?: string;
   more?: boolean;
   onMore?: () => void;
   children: React.ReactNode;
@@ -137,6 +311,9 @@ function Group(props: {
     <section aria-label={props.title} className="flex flex-col gap-2">
       <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-muted">
         {props.title}
+        {props.note ? (
+          <span className="ml-2 font-normal normal-case tracking-normal">{props.note}</span>
+        ) : null}
       </h2>
       <ul className={panelClass}>{props.children}</ul>
       {props.more && props.onMore ? (

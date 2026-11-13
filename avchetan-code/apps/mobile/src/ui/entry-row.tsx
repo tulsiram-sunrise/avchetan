@@ -3,6 +3,7 @@ import type { Activity, RawLog, Task } from '@avchetan/db/sqlite';
 import { describeError, formatDueDate, formatTime, parseLastError } from '@avchetan/shared';
 import { router } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
+import { usePalette } from '../theme/theme';
 import { privatePrefix, WaitsForLocalAi } from './private-mark';
 import { StatusBadge } from './status-badge';
 import { TaskCheck } from './task-row';
@@ -16,14 +17,21 @@ export function EntryRow(props: {
   activities: Activity[];
   tasks: Task[];
   addedOn?: string | null;
+  /** Opened from Search: drawn with an accent border for a moment. */
+  outlined?: boolean;
+  /** Called with the row's top within the list, so the list can scroll to it. */
+  onLayoutY?: ((y: number) => void) | undefined;
 }) {
-  const { rawLog, activities, tasks } = props;
+  const { rawLog, activities, tasks, onLayoutY } = props;
   const window = windowContextOf(rawLog.context);
   const copied = clipboardOf(rawLog.context);
+  const palette = usePalette();
   return (
     <Pressable
       accessibilityRole="button"
       className="gap-1.5 border-b border-line bg-surfaceRaised px-4 py-3"
+      style={props.outlined ? { borderColor: palette.accent, borderWidth: 2 } : undefined}
+      onLayout={onLayoutY ? (event) => onLayoutY(event.nativeEvent.layout.y) : undefined}
       onPress={() => router.push(`/log/${rawLog.id}`)}
     >
       <View className="flex-row items-center justify-between">

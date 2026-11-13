@@ -26,7 +26,7 @@ export {
   parsePairingLink,
   rotateServerToken,
 } from './pairing';
-export { type SearchDeps, searchServer } from './search';
+export { type SearchDeps, SIMILAR_SHOWN, searchServer, similarEntries } from './search';
 export {
   CLOCK_WARNING_MS,
   type ConnectionCheck,

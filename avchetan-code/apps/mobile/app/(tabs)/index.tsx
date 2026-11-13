@@ -10,7 +10,7 @@ import {
 } from '@avchetan/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { type ComponentRef, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { useExtractionMode, useSlotModel } from '../../src/queries/ai-models';
 import {
@@ -94,7 +94,16 @@ export default function DaysScreen() {
   const [expanded, setExpanded] = useState(false);
   const { brief } = useServices();
   // A tapped brief reminder opens its day (app/_layout.tsx).
-  const requested = useLocalSearchParams<{ day?: string }>().day;
+  const params = useLocalSearchParams<{ day?: string; entry?: string }>();
+  const requested = params.day;
+  // An entry opened from Search is scrolled to and outlined for a moment.
+  const [entryInView, setEntryInView] = useState<string | null>(null);
+  useEffect(() => {
+    if (!params.entry) return;
+    setEntryInView(params.entry);
+    const timer = setTimeout(() => setEntryInView(null), OUTLINE_MS);
+    return () => clearTimeout(timer);
+  }, [params.entry]);
   useEffect(() => {
     if (requested && isValidLocalDate(requested)) setDay(requested);
     // Opening Days is when a phone makes a due brief (it can't run at the brief time).
@@ -111,13 +120,18 @@ export default function DaysScreen() {
         onDay={setDay}
         onExpanded={setExpanded}
       />
-      <DayContent day={day} today={today} />
+      <DayContent day={day} today={today} entryInView={entryInView} />
       <CaptureButton />
     </View>
   );
 }
 
-function DayContent({ day, today }: { day: string; today: string }) {
+/** How long an entry opened from Search stays outlined. */
+const OUTLINE_MS = 2500;
+
+function DayContent(props: { day: string; today: string; entryInView: string | null }) {
+  const { day, today, entryInView } = props;
+  const scroll = useRef<ComponentRef<typeof ScrollView>>(null);
   const entries = useDayEntries(day);
   const dayActivities = useDayActivities(day);
   const tasks = useDayTasks(day, today);
@@ -149,6 +163,7 @@ function DayContent({ day, today }: { day: string; today: string }) {
 
   return (
     <ScrollView
+      ref={scroll}
       contentContainerClassName="pb-24"
       refreshControl={
         <RefreshControl
@@ -201,6 +216,12 @@ function DayContent({ day, today }: { day: string; today: string }) {
           <EntryRow
             key={rawLog.id}
             rawLog={rawLog}
+            outlined={rawLog.id === entryInView}
+            onLayoutY={
+              rawLog.id === entryInView
+                ? (y) => scroll.current?.scrollTo({ y: Math.max(0, y - 120), animated: true })
+                : undefined
+            }
             activities={activitiesOf.get(rawLog.id) ?? []}
             tasks={tasksOf.get(rawLog.id) ?? []}
             addedOn={
