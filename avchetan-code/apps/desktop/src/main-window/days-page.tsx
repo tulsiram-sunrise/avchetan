@@ -28,6 +28,7 @@ import { useServices } from '../services-context';
 import { useAppEvent } from '../use-app-event';
 import { useColorScheme } from '../use-color-scheme';
 import { DailyBrief } from './daily-brief';
+import { isTyping } from './keys';
 import { SyncWarningBanner } from './sync-warning-banner';
 import { TimelineEntry } from './timeline';
 import { TaskRow } from './timeline-items';
@@ -39,7 +40,11 @@ import { WeekCard } from './week-card';
  * (docs/product/days-view.md). Opens on today; ← and → move a day, Page Up and Page Down a
  * month, T goes back to today, M opens or closes the month, Esc closes it.
  */
-export function DaysPage(props: { requestedDay?: string | null }) {
+export function DaysPage(props: {
+  requestedDay?: string | null;
+  /** An entry to bring into view on the requested day (opened from search). */
+  requestedEntry?: string | null;
+}) {
   const today = useToday();
   const [day, setDay] = useState(props.requestedDay ?? today);
   const [month, setMonth] = useState<LocalMonth>(monthOf(props.requestedDay ?? today));
@@ -63,13 +68,7 @@ export function DaysPage(props: { requestedDay?: string | null }) {
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       // Typing in a field must not move the day.
-      const target = event.target;
-      if (
-        target instanceof Element &&
-        target.closest('input, textarea, select, [contenteditable="true"]')
-      ) {
-        return;
-      }
+      if (isTyping(event.target)) return;
       if (event.ctrlKey || event.altKey || event.metaKey) return;
       if (event.key === 'Escape' && monthOpen) {
         event.preventDefault();
@@ -127,7 +126,12 @@ export function DaysPage(props: { requestedDay?: string | null }) {
         ) : null}
       </div>
       <SyncWarningBanner />
-      <DayPanel day={day} today={today} onToday={() => select(today)} />
+      <DayPanel
+        day={day}
+        today={today}
+        onToday={() => select(today)}
+        entryInView={day === props.requestedDay ? (props.requestedEntry ?? null) : null}
+      />
     </div>
   );
 }
@@ -342,7 +346,12 @@ function CalendarDay(props: {
   );
 }
 
-function DayPanel(props: { day: string; today: string; onToday: () => void }) {
+function DayPanel(props: {
+  day: string;
+  today: string;
+  onToday: () => void;
+  entryInView: string | null;
+}) {
   const { day, today } = props;
   const entries = useDayEntries(day);
   const dayActivities = useDayActivities(day);
@@ -421,6 +430,7 @@ function DayPanel(props: { day: string; today: string; onToday: () => void }) {
                 activities={activitiesOf.get(rawLog.id) ?? []}
                 tasks={tasksOf.get(rawLog.id) ?? []}
                 addedOn={addedOn(rawLog, day)}
+                inView={rawLog.id === props.entryInView}
               />
             ))}
           </ul>

@@ -20,8 +20,8 @@ const log = createLogger('people');
 const shortDay = formatDueDate;
 
 /** The People page: everyone your entries name, and what you and they promised. */
-export function PeoplePage() {
-  const [openId, setOpenId] = useState<string | null>(null);
+export function PeoplePage(props: { requestedPerson?: string | null }) {
+  const [openId, setOpenId] = useState<string | null>(props.requestedPerson ?? null);
   if (openId) return <PersonPage id={openId} onBack={() => setOpenId(null)} onOpen={setOpenId} />;
   return <PeopleList onOpen={setOpenId} />;
 }
