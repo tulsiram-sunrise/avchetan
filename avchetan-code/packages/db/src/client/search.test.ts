@@ -4,12 +4,14 @@ import { openTestStore } from '../../testing';
 import { runMigrations } from '../migrations/runner';
 import { sqliteMigrations } from '../migrations/sqlite.generated';
 import type { RemoteChange } from './apply-remote';
-import { highlightParts, matchQuery } from './search';
+import { seedCategoryId } from './repos/categories';
+import { highlightParts, matchQuery, type SearchFilters } from './search';
 import { getById, SYNCED_TABLES } from './synced';
 
 const local = { includePrivate: true, limit: 50 };
 const locked = { includePrivate: false, limit: 50 };
 const today = '2026-10-30';
+const DAY = 86_400_000;
 
 async function setup() {
   const test = await openTestStore();
@@ -244,6 +246,128 @@ describe('searchPeople', () => {
     expect(await names('rah')).toEqual(['Rahul Verma']);
     expect(await names('meera')).toEqual(['Meera']);
     expect(await names('meera', false)).toEqual([]);
+  });
+});
+
+describe('search filters', () => {
+  async function filtered() {
+    const { store, r, entry, advance } = await setup();
+    const workout = seedCategoryId('workout');
+    const health = seedCategoryId('health');
+    // 2026-10-26 10:00Z is 15:30 in Kolkata, so the entries are typed on the 26th, 27th, 28th.
+    const run = await entry('Morning run in the park');
+    advance(DAY);
+    const knee = await store.write((tx) =>
+      r.rawLogs.capture(tx, {
+        content: 'Knee hurt after the run #health/knee',
+        source: 'desktop_text',
+        capturedTz: 'Asia/Kolkata',
+        explicitTagPaths: ['health/knee'],
+      }),
+    );
+    advance(DAY);
+    const plan = await entry('Plan the run club with Asha');
+
+    const projectId = await store.write(async (tx) => {
+      const project = await r.projects.create(tx, { name: 'Marathon' });
+      await r.activities.create(tx, {
+        rawLogId: run.id,
+        categoryId: workout,
+        title: 'Run',
+        loggedDate: '2026-10-26',
+        projectId: project.id,
+      });
+      await r.activities.create(tx, {
+        rawLogId: knee.id,
+        categoryId: health,
+        title: 'Knee pain',
+        loggedDate: '2026-10-27',
+      });
+      await r.tasks.create(tx, {
+        rawLogId: plan.id,
+        title: 'Book the run club room',
+        dueDate: '2026-11-02',
+        projectId: project.id,
+      });
+      await r.tasks.create(tx, { title: 'Buy run shoes', categoryId: workout });
+      const asha = await r.entities.ensure(tx, { kind: 'person', name: 'Asha' });
+      await r.entities.mention(tx, {
+        entityId: asha.id,
+        targetType: 'raw_log',
+        targetId: plan.id,
+        role: 'with',
+      });
+      return project.id;
+    });
+    const ashaId = (await store.people.searchPeople(store.db, { ...local, text: 'asha', today }))[0]
+      ?.entity.id;
+    const entries = async (filters: SearchFilters) =>
+      (await store.search.searchEntries(store.db, { ...local, text: 'run', filters })).map(
+        (hit) => hit.log.content,
+      );
+    const taskTitles = async (filters: SearchFilters) =>
+      (await store.search.searchTasks(store.db, { ...local, text: 'run', filters })).map(
+        (hit) => hit.task.title,
+      );
+    return { store, entries, taskTitles, workout, health, projectId, ashaId };
+  }
+
+  it('narrows entries by the day they were typed, in the given zone', async () => {
+    const { entries } = await filtered();
+    const tz = 'Asia/Kolkata';
+    expect(await entries({ from: '2026-10-27', to: '2026-10-27', timeZone: tz })).toEqual([
+      'Knee hurt after the run #health/knee',
+    ]);
+    expect(await entries({ from: '2026-10-27', timeZone: tz })).toHaveLength(2);
+    expect(await entries({ to: '2026-10-26', timeZone: tz })).toEqual(['Morning run in the park']);
+  });
+
+  it('narrows tasks by due date, or the day made when there is none', async () => {
+    const { taskTitles } = await filtered();
+    const tz = 'Asia/Kolkata';
+    expect(await taskTitles({ from: '2026-11-01', to: '2026-11-30', timeZone: tz })).toEqual([
+      'Book the run club room',
+    ]);
+    // Made on the 28th (no due date).
+    expect(await taskTitles({ from: '2026-10-28', to: '2026-10-28', timeZone: tz })).toEqual([
+      'Buy run shoes',
+    ]);
+  });
+
+  it('narrows by tag (with nested tags), category, project and person', async () => {
+    const { entries, taskTitles, workout, health, projectId, ashaId } = await filtered();
+    expect(await entries({ tagPath: 'health' })).toEqual(['Knee hurt after the run #health/knee']);
+    expect(await entries({ tagPath: 'health/knee' })).toHaveLength(1);
+    expect(await entries({ tagPath: 'heal' })).toEqual([]);
+    expect(await entries({ categoryId: workout })).toEqual(['Morning run in the park']);
+    expect(await entries({ categoryId: health, tagPath: 'health' })).toHaveLength(1);
+    expect(await entries({ categoryId: workout, tagPath: 'health' })).toEqual([]);
+    expect(await entries({ projectId })).toEqual([
+      'Plan the run club with Asha',
+      'Morning run in the park',
+    ]);
+    expect(await entries({ personId: ashaId })).toEqual(['Plan the run club with Asha']);
+
+    expect(await taskTitles({ categoryId: workout })).toEqual(['Buy run shoes']);
+    expect(await taskTitles({ projectId })).toEqual(['Book the run club room']);
+    // Through the entry it came from.
+    expect(await taskTitles({ personId: ashaId })).toEqual(['Book the run club room']);
+  });
+
+  it('filterLogs keeps the given order and applies the filters', async () => {
+    const { store, workout } = await filtered();
+    const all = await store.search.searchEntries(store.db, { ...local, text: 'run' });
+    const ids = all.map((hit) => hit.log.id).reverse();
+    const kept = await store.search.filterLogs(store.db, ids, local);
+    expect(kept.map((log) => log.id)).toEqual(ids);
+    const workouts = await store.search.filterLogs(store.db, ids, {
+      ...local,
+      filters: { categoryId: workout },
+    });
+    expect(workouts.map((log) => log.content)).toEqual(['Morning run in the park']);
+    expect(store.search.hasFilters({})).toBe(false);
+    expect(store.search.hasFilters({ timeZone: 'UTC' })).toBe(false);
+    expect(store.search.hasFilters({ tagPath: 'x' })).toBe(true);
   });
 });
 

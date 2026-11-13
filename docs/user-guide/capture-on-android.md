@@ -85,6 +85,14 @@ Tasks found in your entries appear on the **Tasks** tab: *Overdue*, *Today*, *Co
 
 ![The Tasks tab listing two tasks with their due dates](images/capture-on-android-tasks.png)
 
+## Search
+
+Tap the magnifier at the top of **Days** or **Tasks** and type a word, or the start of one: *dent* finds *dentist*, and with several words all must be there. Results come in groups: **Entries** (the found words marked), **Tasks** and **People**. Tap an entry to open its day with the entry outlined, a task to open **Tasks**, or a person to open their page; your search is still there when you come back.
+
+The chips under the box narrow it: when (*Any time*, *This week*, *This month*, *This year*, or *Pick dates*, typed like `2026-11-01`), a tag, a category, a project or a person. **Clear** removes them. People aren't filtered, so they're hidden while a filter is on.
+
+When the phone syncs with a hub that has search on, **Similar entries** adds close matches the hub finds by meaning, with the same filters. Offline, or without a hub, it isn't shown.
+
 ## Ask about your entries
 
 Open the **Ask** tab and type a question, like `how many workouts this week?`. The answer lists the entries it used, and you can tap one to open it.

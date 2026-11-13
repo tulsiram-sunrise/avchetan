@@ -92,9 +92,12 @@ export type { Tag, TagLink } from './client/repos/tags';
 export type { NewTask, Task, TaskEdit } from './client/repos/tasks';
 export {
   type EntryHit,
+  filterLogs,
   type HighlightPart,
+  hasFilters,
   highlightParts,
   matchQuery,
+  type SearchFilters,
   type SearchOptions,
   searchEntries,
   searchTasks,

@@ -1,3 +1,5 @@
+import type { SearchFilters } from '@avchetan/db/sqlite';
+import { similarEntries } from '@avchetan/sync';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useServices } from '../services-context';
 import { useToday } from './days';
@@ -12,13 +14,18 @@ const local = { includePrivate: true } as const;
 /** Rows a group shows at first, and adds with each "Show more". */
 export const SEARCH_PAGE = 50;
 
-export function useSearchEntries(text: string, limit: number) {
+export function useSearchEntries(text: string, filters: SearchFilters, limit: number) {
   const { store } = useServices();
   return useQuery({
-    queryKey: ['raw_logs', 'search', text, limit],
+    queryKey: ['raw_logs', 'search', text, filters, limit],
     queryFn: async () => {
       // One more than shown tells whether "Show more" has anything to add.
-      const hits = await store.search.searchEntries(store.db, { ...local, text, limit: limit + 1 });
+      const hits = await store.search.searchEntries(store.db, {
+        ...local,
+        text,
+        filters,
+        limit: limit + 1,
+      });
       const shown = hits.slice(0, limit);
       const logIds = shown.map((hit) => hit.log.id);
       const extracted = await store.queries.extractedFrom(store.db, logIds);
@@ -47,12 +54,17 @@ export function useSearchEntries(text: string, limit: number) {
   });
 }
 
-export function useSearchTasks(text: string, limit: number) {
+export function useSearchTasks(text: string, filters: SearchFilters, limit: number) {
   const { store } = useServices();
   return useQuery({
-    queryKey: ['tasks', 'search', text, limit],
+    queryKey: ['tasks', 'search', text, filters, limit],
     queryFn: async () => {
-      const hits = await store.search.searchTasks(store.db, { ...local, text, limit: limit + 1 });
+      const hits = await store.search.searchTasks(store.db, {
+        ...local,
+        text,
+        filters,
+        limit: limit + 1,
+      });
       return { hits: hits.slice(0, limit), more: hits.length > limit };
     },
     enabled: text.trim().length > 0,
@@ -60,7 +72,8 @@ export function useSearchTasks(text: string, limit: number) {
   });
 }
 
-export function useSearchPeople(text: string, limit: number) {
+/** People aren't narrowed by filters, so the page shows them only without any. */
+export function useSearchPeople(text: string, limit: number, enabled: boolean) {
   const { store } = useServices();
   const today = useToday();
   return useQuery({
@@ -74,7 +87,30 @@ export function useSearchPeople(text: string, limit: number) {
       });
       return { people: people.slice(0, limit), more: people.length > limit };
     },
-    enabled: text.trim().length > 0,
+    enabled: enabled && text.trim().length > 0,
     placeholderData: keepPreviousData,
+  });
+}
+
+/**
+ * The hub's *Similar entries*: loaded after the word results (`wordIds` set), which it never
+ * holds up. `null` data means no section: offline, no hub, or the hub has search off.
+ */
+export function useSimilarEntries(
+  text: string,
+  filters: SearchFilters,
+  wordIds: readonly string[] | undefined,
+) {
+  const { store, platform } = useServices();
+  return useQuery({
+    queryKey: ['raw_logs', 'similar', text, filters],
+    queryFn: () => {
+      if (!platform.network.isOnline()) return null;
+      return similarEntries(
+        { store, fetch: platform.fetch, secrets: platform.secrets },
+        { ...local, text, filters, exclude: new Set(wordIds) },
+      );
+    },
+    enabled: text.trim().length > 0 && wordIds !== undefined,
   });
 }
