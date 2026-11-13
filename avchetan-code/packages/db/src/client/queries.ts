@@ -328,25 +328,11 @@ export async function tagTargets(db: ClientDb, path: string) {
     );
 }
 
-/** Entries whose original text contains `text`, ignoring case, newest first. */
-export function searchLogs(
-  db: ClientDb,
-  options: DataScope & { text: string; limit: number },
-): Promise<RawLog[]> {
-  const needle = options.text.toLowerCase();
-  return db
-    .select()
-    .from(rawLogs)
-    .where(
-      and(
-        live(rawLogs),
-        sql`instr(lower(${rawLogs.content}), ${needle}) > 0`,
-        options.includePrivate ? undefined : eq(rawLogs.privacy, 'normal'),
-      ),
-    )
-    .orderBy(desc(rawLogs.capturedAt))
-    .limit(options.limit);
-}
+/**
+ * Entries with every word of `text` (each as the start of a word), newest first, from the local
+ * search index (ADR-0029).
+ */
+export { searchLogs } from './search';
 
 /** Raw logs by ID, in no particular order. */
 export function logsById(

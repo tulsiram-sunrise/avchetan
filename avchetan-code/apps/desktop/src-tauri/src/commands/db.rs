@@ -248,4 +248,62 @@ mod tests {
         assert_eq!(count("ल"), 0, "a fragment of a word must not match");
         assert_eq!(count("park"), 1);
     }
+
+    /// The real client migrations, run one statement at a time through `execute` as the
+    /// webview's migration runner does, build the search index on the bundled SQLite: its
+    /// triggers (one statement each, with inner semicolons) and `json_each` work here.
+    #[test]
+    fn client_migrations_build_the_search_index() {
+        const MIGRATIONS: [&str; 4] = [
+            include_str!("../../../../../packages/db/migrations/sqlite/0000_init.sql"),
+            include_str!(
+                "../../../../../packages/db/migrations/sqlite/0001_example_forgotten_at.sql"
+            ),
+            include_str!("../../../../../packages/db/migrations/sqlite/0002_tag_makes_private.sql"),
+            include_str!("../../../../../packages/db/migrations/sqlite/0003_search_index.sql"),
+        ];
+        let connection = Connection::open_in_memory().unwrap();
+        let run = |sql: &str| {
+            super::execute(
+                &connection,
+                super::Statement {
+                    sql: sql.to_owned(),
+                    params: vec![],
+                },
+            )
+            .unwrap();
+        };
+        for migration in MIGRATIONS {
+            migration
+                .split("--> statement-breakpoint")
+                .map(str::trim)
+                .filter(|statement| !statement.is_empty())
+                .for_each(run);
+        }
+        run(
+            "INSERT INTO raw_logs (id, created_at, updated_at, updated_by_device, content,
+             captured_at, captured_tz, source, status, origin_device_id)
+             VALUES ('l1', 't', 't', 'd', 'दिल्ली में दौड़ लगाई', 't', 'UTC', 'desktop_text',
+             'processed', 'd')",
+        );
+        run(
+            "INSERT INTO entities (id, created_at, updated_at, updated_by_device, kind, name,
+             normalized_name, aliases) VALUES ('e1', 't', 't', 'd', 'person', 'Rahul Verma',
+             'rahul verma', '[\"Rahul V\"]')",
+        );
+        let count = |query: &str| -> i64 {
+            connection
+                .query_row(
+                    "SELECT count(*) FROM search_index WHERE search_index MATCH ?1",
+                    [query],
+                    |row| row.get(0),
+                )
+                .unwrap()
+        };
+        assert_eq!(count("\"दौड़\"*"), 1);
+        assert_eq!(count("\"ड\"*"), 0);
+        assert_eq!(count("\"verma\"*"), 1);
+        run("UPDATE raw_logs SET deleted_at = 't2' WHERE id = 'l1'");
+        assert_eq!(count("\"दौड़\"*"), 0);
+    }
 }

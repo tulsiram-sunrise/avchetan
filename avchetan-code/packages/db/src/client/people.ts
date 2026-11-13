@@ -9,6 +9,7 @@ import type { DataScope } from './privacy';
 import { type Entity, isUnnamedPerson, normalizeEntityName, PROMISE_ROLES } from './repos/entities';
 import type { RawLog } from './repos/raw-logs';
 import type { Task } from './repos/tasks';
+import { matchingEntityIds } from './search';
 import { live } from './synced';
 
 /** Reads for people and promises (docs/product/people-and-promises.md). */
@@ -228,6 +229,35 @@ export async function listPeople(
       recent(b).localeCompare(recent(a)) ||
       a.entity.name.localeCompare(b.entity.name),
   );
+}
+
+/**
+ * People whose name or an alias has every word typed (each as the start of a word), most
+ * recently mentioned first. Like the People page, only people with a mention in `scope`.
+ */
+export async function searchPeople(
+  db: ClientDb,
+  options: DataScope & { text: string; today: LocalDate; limit: number },
+): Promise<EntitySummary[]> {
+  const ids = await matchingEntityIds(db, options.text);
+  if (ids.length === 0) return [];
+  const people = await db
+    .select()
+    .from(entities)
+    .where(and(live(entities), eq(entities.kind, 'person'), inArray(entities.id, ids)));
+  const summaries = await summarize(
+    db,
+    people.filter((entity) => !isUnnamedPerson(entity)),
+    options,
+  );
+  return summaries
+    .sort(
+      (a, b) =>
+        (maxDay(b.lastSeen, b.lastMentioned) ?? '').localeCompare(
+          maxDay(a.lastSeen, a.lastMentioned) ?? '',
+        ) || a.entity.name.localeCompare(b.entity.name),
+    )
+    .slice(0, options.limit);
 }
 
 /**

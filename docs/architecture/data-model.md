@@ -7,7 +7,7 @@ Single logical schema implemented twice: SQLite (clients) and Postgres (server).
 | Class | Tables | Synced? |
 |---|---|---|
 | **Synced entities** | `raw_logs`, `categories`, `projects`, `activities`, `tasks`, `tags`, `entity_tags`, `entities`, `entity_mentions`, `context_rules` | Yes |
-| **Client-local** | `sync_outbox`, `sync_state`, `settings`, `llm_runs`, `ask_history`, `extraction_corrections` | No |
+| **Client-local** | `sync_outbox`, `sync_state`, `settings`, `llm_runs`, `ask_history`, `extraction_corrections`; the search index `search_rows` + `search_index` (FTS5, made by migration and triggers, not in the Drizzle schema: [ADR-0029](../decisions/0029-local-search-index.md)) | No |
 | **Server-only** | `devices`, `server_meta`, `log_embeddings`, `server_jobs` | No (server) |
 
 ## Common sync columns (every synced table)

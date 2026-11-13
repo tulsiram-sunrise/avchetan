@@ -80,7 +80,7 @@ Read-only tools (Zod-defined in `packages/core/src/analysis/tools/`, implementat
 | `search_history` | `query`, `from?`, `to?`, `category?`, `limit ≤ 15` | server `/v1/search` (semantic); returns `unavailable` offline |
 | `query_entities` | `name?`, `kind?`, `topic?` | local SQL (Phase 7, [people and promises](../product/people-and-promises.md#ask)) |
 | `query_commitments` | `person?`, `direction` (`i_owe/owed_to_me/both`), `status` (`open/done/overdue`) | local SQL (Phase 7) |
-| `search_entries` | `text`, `from?`, `to?`, `limit` | local SQL — keyword search over the original text, including entries that were never organized |
+| `search_entries` | `text`, `from?`, `to?`, `limit` | the local search index ([ADR-0029](../decisions/0029-local-search-index.md)): every word, each from its start, over the original text, including entries that were never organized |
 | `get_logs` | `refs[]` | local SQL — fetch full text for citation |
 
 Rules:

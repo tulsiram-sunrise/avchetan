@@ -9,6 +9,17 @@ import { namesWithScope } from './spec-helpers';
 
 const now = () => '2026-10-26T10:00:00.000Z';
 
+/** The client-only search index (ADR-0029): its id map, the FTS5 table and FTS5's own tables. */
+const SEARCH_INDEX_TABLES = [
+  'search_rows',
+  'search_index',
+  'search_index_config',
+  'search_index_content',
+  'search_index_data',
+  'search_index_docsize',
+  'search_index_idx',
+];
+
 describe('bundled migrations', () => {
   it.each([
     ['sqlite', sqliteMigrations],
@@ -32,7 +43,9 @@ describe('SQLite migrations', () => {
       .prepare("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name")
       .all()
       .map((row) => String(row.name));
-    expect(tables).toEqual([...namesWithScope('synced', 'local'), 'avchetan_migrations'].sort());
+    expect(tables).toEqual(
+      [...namesWithScope('synced', 'local'), 'avchetan_migrations', ...SEARCH_INDEX_TABLES].sort(),
+    );
 
     const second = await runMigrations(driver, sqliteMigrations, { now });
     expect(second).toEqual({ applied: [], alreadyApplied: sqliteMigrations.length });

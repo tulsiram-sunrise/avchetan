@@ -5,8 +5,9 @@
  *   pnpm --filter @avchetan/desktop demo:bench [--db <path>]
  *
  * Runs on Node's SQLite, not the app's: it measures the queries and their plans, not the IPC
- * or rendering (those are measured in the app). It also tries the planned search index
- * (ADR-0029) on a copy, for its size and speed. Quit the demo app first.
+ * or rendering (those are measured in the app). It runs on a copy, so pending migrations are
+ * applied there only; when the copy predates the search index (ADR-0029), it reports how long
+ * building the index took and how much it added. Quit the demo app first.
  */
 import { copyFileSync, rmSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -40,9 +41,21 @@ async function time(label: string, fn: () => Promise<unknown> | unknown) {
 }
 
 async function main() {
-  const { raw, executor } = createNodeSqliteExecutor(dbPath);
+  // Work on a copy: opening the store applies pending migrations (the search index among them),
+  // and the demo folder should stay as the app left it.
+  const copy = join(tmpdir(), 'avchetan-bench.db');
+  rmSync(copy, { force: true });
+  copyFileSync(dbPath, copy);
+  const { raw, executor } = createNodeSqliteExecutor(copy);
+  raw.exec('VACUUM');
+  const before = statSync(copy).size;
+  const pending = raw
+    .prepare("SELECT count(*) AS n FROM avchetan_migrations WHERE tag = '0003_search_index'")
+    .get() as { n: number };
+  const opened = performance.now();
   const store = await openClientStore({ executor });
-  const { db, queries, people } = store;
+  const openMs = performance.now() - opened;
+  const { db, queries, people, search } = store;
   const scope = { includePrivate: false };
   const today = localDate(new Date().toISOString(), TIME_ZONE);
   const yesterday = addDays(today, -1);
@@ -50,9 +63,15 @@ async function main() {
 
   const counts = raw.prepare('SELECT count(*) AS n FROM raw_logs').get() as { n: number };
   process.stdout.write(
-    `${dbPath}\n${counts.n} entries, ${(statSync(dbPath).size / 1_048_576).toFixed(1)} MB; median of ${RUNS}\n\n`,
+    `${dbPath}\n${counts.n} entries, ${(before / 1_048_576).toFixed(1)} MB; median of ${RUNS}\n\n`,
   );
-
+  if (pending.n === 0) {
+    raw.exec('VACUUM');
+    const growth = (statSync(copy).size - before) / 1_048_576;
+    process.stdout.write(
+      `Search index built by the migration       ${openMs.toFixed(0).padStart(8)} ms  (+${growth.toFixed(1)} MB)\n\n`,
+    );
+  }
   process.stdout.write('Days\n');
   await time('  dayEntries (yesterday)', () =>
     queries.dayEntries(db, { day: yesterday, timeZone: TIME_ZONE }),
@@ -82,44 +101,22 @@ async function main() {
   process.stdout.write('Capture box and tray\n');
   await time('  recentRawLogs (5)', () => queries.recentRawLogs(db, { limit: 5 }));
   await time('  pendingCount', () => queries.pendingCount(db));
-  process.stdout.write('Search today (instr, used by Ask)\n');
-  await time('  searchLogs "dentist"', () =>
+  process.stdout.write('Search (local index, ADR-0029)\n');
+  for (const text of ['dentist', 'dent', 'park run', 'दौड़', 'meet', 'zebra']) {
+    await time(`  searchEntries "${text}"`, () =>
+      search.searchEntries(db, { ...scope, text, limit: 50 }),
+    );
+  }
+  await time('  searchTasks "call"', () =>
+    search.searchTasks(db, { ...scope, text: 'call', limit: 50 }),
+  );
+  await time('  searchPeople "a"', () =>
+    people.searchPeople(db, { ...scope, text: 'a', today, limit: 50 }),
+  );
+  await time('  searchLogs "dentist" (Ask)', () =>
     queries.searchLogs(db, { ...scope, text: 'dentist', limit: 50 }),
   );
-  await time('  searchLogs "दौड़"', () =>
-    queries.searchLogs(db, { ...scope, text: 'दौड़', limit: 50 }),
-  );
   raw.close();
-
-  // The planned index (ADR-0029), tried on a copy.
-  const copy = join(tmpdir(), 'avchetan-bench-fts.db');
-  rmSync(copy, { force: true });
-  copyFileSync(dbPath, copy);
-  const fts = createNodeSqliteExecutor(copy).raw;
-  fts.exec('VACUUM');
-  const before = statSync(copy).size;
-  const build = performance.now();
-  fts.exec(`
-    CREATE VIRTUAL TABLE search_index USING fts5(
-      content, content='raw_logs', content_rowid='rowid',
-      tokenize = "unicode61 categories 'L* N* Co M*'"
-    );
-    INSERT INTO search_index(rowid, content) SELECT rowid, content FROM raw_logs;
-  `);
-  const buildMs = performance.now() - build;
-  fts.exec('VACUUM');
-  const growth = (statSync(copy).size - before) / 1_048_576;
-  process.stdout.write(
-    `Search index (FTS5, on a copy)\n  build from ${counts.n} entries${''.padEnd(13)} ${buildMs.toFixed(0).padStart(8)} ms  (+${growth.toFixed(1)} MB)\n`,
-  );
-  const match = fts.prepare(
-    `SELECT r.id FROM search_index s JOIN raw_logs r ON r.rowid = s.rowid
-     WHERE search_index MATCH ? AND r.deleted_at IS NULL ORDER BY rank LIMIT 50`,
-  );
-  for (const term of ['dentist', 'park', 'दौड़', 'meet*', 'zebra']) {
-    await time(`  match "${term}"`, () => match.all(term));
-  }
-  fts.close();
   rmSync(copy, { force: true });
 }
 
