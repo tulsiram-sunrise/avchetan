@@ -53,66 +53,77 @@ async function mentionFacts(
   scope: DataScope,
 ): Promise<MentionFact[]> {
   if (entityIds.length === 0) return [];
-  const mentions = await db
-    .select()
+  // One query: each mention with its live activity or task and the live entry behind it. (It
+  // used to read each kind by ID, the entries with one parameter per mentioned entry: 346 ms
+  // for the People page with 50,000 entries, finding-and-using-data.md §9.)
+  const entryId = sql<string | null>`case ${entityMentions.targetType}
+    when 'raw_log' then ${entityMentions.targetId}
+    when 'activity' then ${activities.rawLogId}
+    else ${tasks.rawLogId} end`;
+  const rows = await db
+    .select({
+      entityId: entityMentions.entityId,
+      role: entityMentions.role,
+      targetType: entityMentions.targetType,
+      targetId: entityMentions.targetId,
+      activityId: activities.id,
+      activityLogId: activities.rawLogId,
+      activityDay: activities.loggedDate,
+      taskId: tasks.id,
+      taskLogId: tasks.rawLogId,
+      logId: rawLogs.id,
+      capturedAt: rawLogs.capturedAt,
+      capturedTz: rawLogs.capturedTz,
+      privacy: rawLogs.privacy,
+    })
     .from(entityMentions)
+    .leftJoin(
+      activities,
+      and(
+        eq(entityMentions.targetType, 'activity'),
+        eq(activities.id, entityMentions.targetId),
+        live(activities),
+      ),
+    )
+    .leftJoin(
+      tasks,
+      and(
+        eq(entityMentions.targetType, 'task'),
+        eq(tasks.id, entityMentions.targetId),
+        live(tasks),
+      ),
+    )
+    .leftJoin(rawLogs, and(eq(rawLogs.id, entryId), live(rawLogs)))
     .where(and(live(entityMentions), inArray(entityMentions.entityId, [...entityIds])));
-  const idsOf = (type: MentionFact['targetType']) =>
-    mentions.filter((m) => m.targetType === type).map((m) => m.targetId);
-  const activityIds = idsOf('activity');
-  const taskIds = idsOf('task');
-  const [activityRows, taskRows] = await Promise.all([
-    activityIds.length
-      ? db
-          .select({ id: activities.id, rawLogId: activities.rawLogId, day: activities.loggedDate })
-          .from(activities)
-          .where(and(live(activities), inArray(activities.id, activityIds)))
-      : [],
-    taskIds.length
-      ? db
-          .select({ id: tasks.id, rawLogId: tasks.rawLogId })
-          .from(tasks)
-          .where(and(live(tasks), inArray(tasks.id, taskIds)))
-      : [],
-  ]);
-  const activityById = new Map(activityRows.map((row) => [row.id, row]));
-  const taskById = new Map(taskRows.map((row) => [row.id, row]));
-  const logs = await liveLogs(db, [
-    ...idsOf('raw_log'),
-    ...activityRows.flatMap((row) => (row.rawLogId ? [row.rawLogId] : [])),
-    ...taskRows.flatMap((row) => (row.rawLogId ? [row.rawLogId] : [])),
-  ]);
-  const captureDay = (log: LogInfo | undefined) =>
-    log ? localDate(log.capturedAt, log.capturedTz) : null;
 
   const facts: MentionFact[] = [];
-  for (const mention of mentions) {
+  for (const row of rows) {
     let rawLogId: string | null;
     let day: LocalDate | null;
-    if (mention.targetType === 'raw_log') {
-      if (!logs.has(mention.targetId)) continue;
-      rawLogId = mention.targetId;
-      day = captureDay(logs.get(rawLogId));
-    } else if (mention.targetType === 'activity') {
-      const activity = activityById.get(mention.targetId);
-      if (!activity) continue;
-      rawLogId = activity.rawLogId;
-      day = activity.day;
+    const captureDay =
+      row.capturedAt && row.capturedTz ? localDate(row.capturedAt, row.capturedTz) : null;
+    if (row.targetType === 'raw_log') {
+      if (!row.logId) continue;
+      rawLogId = row.targetId;
+      day = captureDay;
+    } else if (row.targetType === 'activity') {
+      if (!row.activityId) continue;
+      rawLogId = row.activityLogId;
+      day = row.activityDay;
     } else {
-      const task = taskById.get(mention.targetId);
-      if (!task) continue;
-      rawLogId = task.rawLogId;
-      day = rawLogId ? captureDay(logs.get(rawLogId)) : null;
+      if (!row.taskId) continue;
+      rawLogId = row.taskLogId;
+      day = rawLogId ? captureDay : null;
     }
     // An item whose entry was deleted goes with it.
-    if (rawLogId && !logs.has(rawLogId)) continue;
-    const isPrivate = rawLogId ? logs.get(rawLogId)?.privacy !== 'normal' : false;
+    if (rawLogId && !row.logId) continue;
+    const isPrivate = rawLogId ? row.privacy !== 'normal' : false;
     if (isPrivate && !scope.includePrivate) continue;
     facts.push({
-      entityId: mention.entityId,
-      role: mention.role,
-      targetType: mention.targetType,
-      targetId: mention.targetId,
+      entityId: row.entityId,
+      role: row.role,
+      targetType: row.targetType,
+      targetId: row.targetId,
       rawLogId,
       day,
       private: isPrivate,
@@ -122,6 +133,103 @@ async function mentionFacts(
 }
 
 const maxDay = (a: LocalDate | null, b: LocalDate | null) => (a && b ? (a > b ? a : b) : (a ?? b));
+
+/** A person on a list (People, search): the summary without their entries. */
+export type PersonSummary = Omit<EntitySummary, 'rawLogIds'>;
+
+/**
+ * `summarize` in SQL, for lists: one row per person instead of every mention (8,661 rows for
+ * 30 people with 50,000 entries, read across the desktop's IPC). Same rules: mentions of deleted
+ * items or of items whose entry was deleted don't count, private ones only with
+ * `includePrivate`, and a day is the activity's date, else the entry's capture day in its own
+ * zone (the latest `captured_at|captured_tz` sorts as text, so its zone comes with it).
+ */
+async function summarizeInSql(
+  db: ClientDb,
+  list: Entity[],
+  options: DataScope & { today: LocalDate },
+): Promise<PersonSummary[]> {
+  if (list.length === 0) return [];
+  const type = entityMentions.targetType;
+  const role = entityMentions.role;
+  const entryId = sql`case ${type}
+    when 'raw_log' then ${entityMentions.targetId}
+    when 'activity' then ${activities.rawLogId}
+    else ${tasks.rawLogId} end`;
+  const counts = sql`case ${type}
+    when 'raw_log' then ${rawLogs.id} is not null
+    when 'activity' then ${activities.id} is not null
+      and (${activities.rawLogId} is null or ${rawLogs.id} is not null)
+    else ${tasks.id} is not null and (${tasks.rawLogId} is null or ${rawLogs.id} is not null) end`;
+  const isPrivate = sql`(${rawLogs.id} is not null and ${rawLogs.privacy} <> 'normal')`;
+  const captured = sql`${rawLogs.capturedAt} || '|' || ${rawLogs.capturedTz}`;
+  const latest = (onlyWith: boolean) => ({
+    day: sql<string | null>`max(case when ${type} = 'activity'
+      ${onlyWith ? sql`and ${role} = 'with'` : sql``} then ${activities.loggedDate} end)`,
+    capture: sql<string | null>`max(case when ${type} <> 'activity'
+      ${onlyWith ? sql`and ${role} = 'with'` : sql``} then ${captured} end)`,
+  });
+  const open = (promise: 'owed_to' | 'owed_by', overdue: boolean) =>
+    sql<number>`count(distinct case when ${role} = ${promise} and ${tasks.id} is not null
+      and ${tasks.completedAt} is null
+      ${overdue ? sql`and ${tasks.dueDate} < ${options.today}` : sql``} then ${tasks.id} end)`;
+  const seen = latest(true);
+  const mentioned = latest(false);
+  const rows = await db
+    .select({
+      entityId: entityMentions.entityId,
+      seenDay: seen.day,
+      seenCapture: seen.capture,
+      mentionedDay: mentioned.day,
+      mentionedCapture: mentioned.capture,
+      youOwe: open('owed_to', false),
+      waitingOn: open('owed_by', false),
+      overdueOwed: open('owed_to', true),
+      overdueWaiting: open('owed_by', true),
+      allPrivate: sql<number>`min(${isPrivate})`,
+    })
+    .from(entityMentions)
+    .leftJoin(
+      activities,
+      and(eq(type, 'activity'), eq(activities.id, entityMentions.targetId), live(activities)),
+    )
+    .leftJoin(tasks, and(eq(type, 'task'), eq(tasks.id, entityMentions.targetId), live(tasks)))
+    .leftJoin(rawLogs, and(eq(rawLogs.id, entryId), live(rawLogs)))
+    .where(
+      and(
+        live(entityMentions),
+        inArray(
+          entityMentions.entityId,
+          list.map((entity) => entity.id),
+        ),
+        counts,
+        options.includePrivate ? undefined : sql`not ${isPrivate}`,
+      ),
+    )
+    .groupBy(entityMentions.entityId);
+
+  const captureDay = (value: string | null) => {
+    if (!value) return null;
+    const [instant, zone] = value.split('|');
+    return instant && zone ? localDate(instant, zone) : null;
+  };
+  const byId = new Map(list.map((entity) => [entity.id, entity]));
+  return rows.flatMap((row) => {
+    const entity = byId.get(row.entityId);
+    if (!entity) return [];
+    return [
+      {
+        entity,
+        lastSeen: maxDay(row.seenDay, captureDay(row.seenCapture)),
+        lastMentioned: maxDay(row.mentionedDay, captureDay(row.mentionedCapture)),
+        youOwe: Number(row.youOwe),
+        waitingOn: Number(row.waitingOn),
+        overdue: Number(row.overdueOwed) + Number(row.overdueWaiting),
+        onlyPrivate: Number(row.allPrivate) === 1,
+      },
+    ];
+  });
+}
 
 export type EntitySummary = {
   entity: Entity;
@@ -210,18 +318,18 @@ const isPromiseRole = (role: MentionRole): role is 'owed_to' | 'owed_by' =>
 export async function listPeople(
   db: ClientDb,
   options: DataScope & { today: LocalDate },
-): Promise<EntitySummary[]> {
+): Promise<PersonSummary[]> {
   const people = await db
     .select()
     .from(entities)
     .where(and(live(entities), eq(entities.kind, 'person')));
   // Stored before extraction dropped them (`isUnnamedPerson`).
-  const summaries = await summarize(
+  const summaries = await summarizeInSql(
     db,
     people.filter((entity) => !isUnnamedPerson(entity)),
     options,
   );
-  const recent = (s: EntitySummary) => maxDay(s.lastSeen, s.lastMentioned) ?? '';
+  const recent = (s: PersonSummary) => maxDay(s.lastSeen, s.lastMentioned) ?? '';
   return summaries.sort(
     (a, b) =>
       Number(b.overdue > 0) - Number(a.overdue > 0) ||
@@ -238,14 +346,14 @@ export async function listPeople(
 export async function searchPeople(
   db: ClientDb,
   options: DataScope & { text: string; today: LocalDate; limit: number },
-): Promise<EntitySummary[]> {
+): Promise<PersonSummary[]> {
   const ids = await matchingEntityIds(db, options.text);
   if (ids.length === 0) return [];
   const people = await db
     .select()
     .from(entities)
     .where(and(live(entities), eq(entities.kind, 'person'), inArray(entities.id, ids)));
-  const summaries = await summarize(
+  const summaries = await summarizeInSql(
     db,
     people.filter((entity) => !isUnnamedPerson(entity)),
     options,
@@ -593,35 +701,37 @@ export async function entriesToRecheckForPromises(
   db: ClientDb,
   options: { version: number },
 ): Promise<string[]> {
+  // One query with subqueries: it used to read every mention, then send the IDs back as
+  // parameters (thousands with years of entries; most of the People page's first load).
   const people = db
     .select({ id: entities.id })
     .from(entities)
     .where(and(live(entities), eq(entities.kind, 'person')));
-  const mentioned = await db
-    .selectDistinct({ targetType: entityMentions.targetType, targetId: entityMentions.targetId })
-    .from(entityMentions)
-    .where(and(live(entityMentions), inArray(entityMentions.entityId, people)));
-  const ids = (type: string) =>
-    mentioned.filter((row) => row.targetType === type).map((row) => row.targetId);
-  const [fromActivities, fromTasks] = await Promise.all([
-    ids('activity').length
-      ? db
-          .select({ rawLogId: activities.rawLogId })
-          .from(activities)
-          .where(and(live(activities), inArray(activities.id, ids('activity'))))
-      : [],
-    ids('task').length
-      ? db
-          .select({ rawLogId: tasks.rawLogId })
-          .from(tasks)
-          .where(and(live(tasks), inArray(tasks.id, ids('task'))))
-      : [],
-  ]);
-  const naming = new Set([
-    ...ids('raw_log'),
-    ...[...fromActivities, ...fromTasks].flatMap((row) => (row.rawLogId ? [row.rawLogId] : [])),
-  ]);
-  if (naming.size === 0) return [];
+  const mentionedOf = (type: 'raw_log' | 'activity' | 'task') =>
+    db
+      .select({ id: entityMentions.targetId })
+      .from(entityMentions)
+      .where(
+        and(
+          live(entityMentions),
+          eq(entityMentions.targetType, type),
+          inArray(entityMentions.entityId, people),
+        ),
+      );
+  const viaActivities = db
+    .select({ id: sql<string>`${activities.rawLogId}` })
+    .from(activities)
+    .where(
+      and(
+        live(activities),
+        isNotNull(activities.rawLogId),
+        inArray(activities.id, mentionedOf('activity')),
+      ),
+    );
+  const viaTasks = db
+    .select({ id: sql<string>`${tasks.rawLogId}` })
+    .from(tasks)
+    .where(and(live(tasks), isNotNull(tasks.rawLogId), inArray(tasks.id, mentionedOf('task'))));
   const rows = await db
     .select({ id: rawLogs.id })
     .from(rawLogs)
@@ -630,7 +740,11 @@ export async function entriesToRecheckForPromises(
         live(rawLogs),
         eq(rawLogs.status, 'processed'),
         or(isNull(rawLogs.extractionVersion), lt(rawLogs.extractionVersion, options.version)),
-        inArray(rawLogs.id, [...naming]),
+        or(
+          inArray(rawLogs.id, mentionedOf('raw_log')),
+          inArray(rawLogs.id, viaActivities),
+          inArray(rawLogs.id, viaTasks),
+        ),
         inArray(
           rawLogs.id,
           db

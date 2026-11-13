@@ -60,7 +60,7 @@ Applies to `packages/db` and anything that reads/writes data. Full table definit
 
 ## SQLite specifics
 
-- `PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL; PRAGMA foreign_keys=OFF` (logical FKs, [ADR-0011](../decisions/0011-logical-foreign-keys.md)); `busy_timeout=5000`.
+- `PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL; PRAGMA foreign_keys=OFF` (logical FKs, [ADR-0011](../decisions/0011-logical-foreign-keys.md)); `busy_timeout=5000`; `cache_size` of 32 MB per desktop connection and 16 MB on the phone. The 2 MB default missed on almost every lookup with years of entries: the People page's mention join on 50,000 entries took 110 ms instead of 28 (2026-11-13).
 - JSON columns queried with `json_extract` only via helpers in `queries/`.
 - Keep transactions short; never hold one across an `await` on the network.
 

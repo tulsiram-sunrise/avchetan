@@ -84,3 +84,50 @@ describe('claimablePendingLogs and private entries', () => {
     expect((await claimable(true)).map((l) => l.id).sort()).toEqual([normal?.id, priv?.id].sort());
   });
 });
+
+describe('task groups', () => {
+  it('counts and lists each group; waiting tasks only under waiting', async () => {
+    const { store } = await openTestStore();
+    const r = store.repos;
+    const today = '2026-10-30';
+    const make = (title: string, dueDate: string | null = null) =>
+      store.write((tx) => r.tasks.create(tx, { title, dueDate }));
+    await make('Late one', '2026-10-28');
+    await make('Late two', '2026-10-29');
+    await make('Now', today);
+    await make('Later', '2026-11-04');
+    await make('Someday');
+    const lent = await make('Get the drill back', '2026-10-01');
+    const finished = await make('Done thing');
+    await store.write((tx) => r.tasks.complete(tx, finished.id));
+    const gone = await make('Deleted', '2026-10-01');
+    await store.write((tx) => r.tasks.softDelete(tx, gone.id));
+    await store.write(async (tx) => {
+      const dev = await r.entities.ensure(tx, { kind: 'person', name: 'Dev' });
+      await r.entities.mention(tx, {
+        entityId: dev.id,
+        targetType: 'task',
+        targetId: lent.id,
+        role: 'owed_by',
+      });
+    });
+
+    expect(await store.queries.taskGroupCounts(store.db, today)).toEqual({
+      overdue: 2,
+      today: 1,
+      upcoming: 1,
+      undated: 1,
+      waiting: 1,
+      done: 1,
+    });
+    const titles = async (
+      group: Parameters<typeof store.queries.tasksInGroup>[1]['group'],
+      limit = 50,
+    ) => (await store.queries.tasksInGroup(store.db, { group, today, limit })).map((t) => t.title);
+    expect(await titles('overdue')).toEqual(['Late one', 'Late two']);
+    expect(await titles('overdue', 1)).toEqual(['Late one']);
+    expect(await titles('waiting')).toEqual(['Get the drill back']);
+    expect(await titles('undated')).toEqual(['Someday']);
+    expect(await titles('done')).toEqual(['Done thing']);
+  });
+});

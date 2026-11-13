@@ -1,7 +1,13 @@
-import type { Task } from '@avchetan/db/sqlite';
+import {
+  LIST_PAGE,
+  TASK_GROUP_TITLES,
+  TASK_GROUPS,
+  type Task,
+  type TaskGroup,
+} from '@avchetan/db/sqlite';
 import { localDate } from '@avchetan/shared';
-import { useAction, useCompletedTasks, useOpenTasks } from '../queries/organize';
-import { usePromiseLinks } from '../queries/people';
+import { useState } from 'react';
+import { useAction, useTaskGroup, useTaskGroupCounts } from '../queries/organize';
 import { useServices } from '../services-context';
 import { TaskPromises } from './task-promises';
 import { ActionError, EditableText, fieldClass, panelClass, QuietButton } from './ui';
@@ -48,40 +54,44 @@ function TaskLine({ task }: { task: Task }) {
   );
 }
 
-function Group(props: { title: string; tasks: readonly Task[]; alert?: boolean }) {
-  if (props.tasks.length === 0) return null;
+/** One group: its first 50 tasks, then "Show more" while it holds more. */
+function Group(props: { group: TaskGroup; today: string; count: number }) {
+  const [limit, setLimit] = useState(LIST_PAGE);
+  const tasks = useTaskGroup(props.group, props.today, limit);
+  if (props.count === 0) return null;
+  const shown = tasks.data ?? [];
   return (
     <section>
       <h2
         className={`mb-2 text-xs font-semibold uppercase tracking-wide ${
-          props.alert ? 'text-danger' : 'text-ink-muted'
+          props.group === 'overdue' ? 'text-danger' : 'text-ink-muted'
         }`}
       >
-        {props.title} ({props.tasks.length})
+        {TASK_GROUP_TITLES[props.group]} ({props.count})
       </h2>
       <ul className={panelClass}>
-        {props.tasks.map((task) => (
+        {shown.map((task) => (
           <TaskLine key={task.id} task={task} />
         ))}
       </ul>
+      {props.count > shown.length && shown.length >= limit ? (
+        <div className="mt-2">
+          <QuietButton onClick={() => setLimit((n) => n + LIST_PAGE)}>
+            Show more ({props.count - shown.length} left)
+          </QuietButton>
+        </div>
+      ) : null}
     </section>
   );
 }
 
+/** Tasks by when they're due; each group shows 50, then "Show more" (finding-and-using-data.md §9). */
 export function TasksPage() {
   const { timeZone } = useServices();
-  const open = useOpenTasks();
-  const completed = useCompletedTasks();
-  const links = usePromiseLinks();
-  // Tasks you wait on someone for are not your work: they get their own group.
-  const waitingOn = (task: Task) =>
-    links.data?.get(task.id)?.some((link) => link.role === 'owed_by') ?? false;
-  const all = open.data ?? [];
-  const tasks = all.filter((task) => !waitingOn(task));
-  const waiting = all.filter(waitingOn);
   const today = localDate(new Date().toISOString(), timeZone.current());
+  const counts = useTaskGroupCounts(today);
 
-  if (open.isSuccess && all.length === 0 && completed.data?.length === 0) {
+  if (counts.data && TASK_GROUPS.every((group) => counts.data[group] === 0)) {
     return (
       <p className="text-sm text-ink-muted">
         No tasks yet. Write something you need to do, like "call the plumber tomorrow".
@@ -91,12 +101,9 @@ export function TasksPage() {
 
   return (
     <div className="flex max-w-3xl flex-col gap-6">
-      <Group title="Overdue" alert tasks={tasks.filter((t) => t.dueDate && t.dueDate < today)} />
-      <Group title="Today" tasks={tasks.filter((t) => t.dueDate === today)} />
-      <Group title="Coming up" tasks={tasks.filter((t) => t.dueDate && t.dueDate > today)} />
-      <Group title="No date" tasks={tasks.filter((t) => !t.dueDate)} />
-      <Group title="Waiting on others" tasks={waiting} />
-      <Group title="Done" tasks={completed.data ?? []} />
+      {TASK_GROUPS.map((group) => (
+        <Group key={group} group={group} today={today} count={counts.data?.[group] ?? 0} />
+      ))}
     </div>
   );
 }

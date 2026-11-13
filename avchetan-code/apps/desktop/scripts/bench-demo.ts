@@ -13,6 +13,7 @@ import { copyFileSync, rmSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { parseArgs } from 'node:util';
+import { EXTRACTION_PROMPT_VERSION } from '@avchetan/core';
 import { openClientStore } from '@avchetan/db/sqlite';
 import { createNodeSqliteExecutor } from '@avchetan/db/testing';
 import { addDays, firstOfMonth, lastOfMonth, localDate, monthOf } from '@avchetan/shared';
@@ -98,6 +99,10 @@ async function main() {
       people.personDetail(db, { ...scope, id: first.entity.id, today }),
     );
   }
+  await time('  entriesToRecheckForPromises', () =>
+    people.entriesToRecheckForPromises(db, { version: EXTRACTION_PROMPT_VERSION }),
+  );
+  await time('  loadDismissedPairs', () => people.loadDismissedPairs(db));
   process.stdout.write('Capture box and tray\n');
   await time('  recentRawLogs (5)', () => queries.recentRawLogs(db, { limit: 5 }));
   await time('  pendingCount', () => queries.pendingCount(db));

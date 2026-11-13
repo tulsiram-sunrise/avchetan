@@ -111,3 +111,14 @@ export function MergeSelect(props: {
     </select>
   );
 }
+
+/** "Show more" under a long list (finding-and-using-data.md §9); nothing once all are shown. */
+export function ShowMore(props: { shown: number; total: number; onMore: () => void }) {
+  const left = props.total - props.shown;
+  if (left <= 0) return null;
+  return (
+    <div className="mt-2">
+      <QuietButton onClick={props.onMore}>Show more ({left} left)</QuietButton>
+    </div>
+  );
+}

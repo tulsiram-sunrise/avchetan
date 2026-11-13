@@ -1,4 +1,4 @@
-import type { EntitySummary, PromiseItem } from '@avchetan/db/sqlite';
+import { LIST_PAGE, type PersonSummary, type PromiseItem } from '@avchetan/db/sqlite';
 import { createLogger, formatDueDate, localDate } from '@avchetan/shared';
 import { useState } from 'react';
 import { emitAppEvent } from '../native/events';
@@ -13,7 +13,7 @@ import {
   usePersonEntries,
 } from '../queries/people';
 import { PrivateLock } from './private-mark';
-import { ActionError, EditableText, MergeSelect, panelClass, QuietButton } from './ui';
+import { ActionError, EditableText, MergeSelect, panelClass, QuietButton, ShowMore } from './ui';
 
 const log = createLogger('people');
 
@@ -26,7 +26,7 @@ export function PeoplePage(props: { requestedPerson?: string | null }) {
   return <PeopleList onOpen={setOpenId} />;
 }
 
-function summaryLine(row: EntitySummary, today: string): string {
+function summaryLine(row: PersonSummary, today: string): string {
   const parts: string[] = [];
   if (row.youOwe > 0) parts.push(`You owe ${row.youOwe}`);
   if (row.waitingOn > 0) parts.push(`Waiting on ${row.waitingOn}`);
@@ -41,6 +41,7 @@ function PeopleList(props: { onOpen: (id: string) => void }) {
   const people = usePeople();
   const suggestions = useDuplicateSuggestions();
   const [search, setSearch] = useState('');
+  const [limit, setLimit] = useState(LIST_PAGE);
   const rows = (people.data ?? []).filter((row) =>
     [row.entity.name, ...row.entity.aliases].some((name) =>
       name.toLowerCase().includes(search.trim().toLowerCase()),
@@ -68,7 +69,7 @@ function PeopleList(props: { onOpen: (id: string) => void }) {
       {suggestions.length > 0 && !search ? <Suggestions /> : null}
       {search ? null : <Recheck />}
       <ul className={panelClass}>
-        {rows.map((row) => (
+        {rows.slice(0, limit).map((row) => (
           <li key={row.entity.id}>
             <button
               type="button"
@@ -86,6 +87,11 @@ function PeopleList(props: { onOpen: (id: string) => void }) {
           </li>
         ))}
       </ul>
+      <ShowMore
+        shown={Math.min(limit, rows.length)}
+        total={rows.length}
+        onMore={() => setLimit((n) => n + LIST_PAGE)}
+      />
     </div>
   );
 }
@@ -324,8 +330,10 @@ function PromiseLine(props: { item: PromiseItem; today: string }) {
   );
 }
 
+/** Their entries, newest first: 50, then "Show more". Only the shown ones are read. */
 function Entries(props: { rawLogIds: string[] }) {
-  const entries = usePersonEntries(props.rawLogIds);
+  const [limit, setLimit] = useState(LIST_PAGE);
+  const entries = usePersonEntries(props.rawLogIds.slice(0, limit));
   const today = useToday();
   if (props.rawLogIds.length === 0) return null;
   return (
@@ -356,6 +364,11 @@ function Entries(props: { rawLogIds: string[] }) {
           );
         })}
       </ul>
+      <ShowMore
+        shown={entries.data?.length ?? 0}
+        total={props.rawLogIds.length}
+        onMore={() => setLimit((n) => n + LIST_PAGE)}
+      />
     </section>
   );
 }

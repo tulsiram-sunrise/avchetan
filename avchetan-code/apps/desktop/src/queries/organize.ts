@@ -1,5 +1,6 @@
+import type { TaskGroup } from '@avchetan/db/sqlite';
 import { localDate } from '@avchetan/shared';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query';
 import type { ActionArgs, ActionName } from '../services/actions';
 import { useServices } from '../services-context';
 
@@ -23,6 +24,25 @@ export function useOpenTasks() {
   return useQuery({
     queryKey: ['tasks', 'open'],
     queryFn: () => store.queries.openTasks(store.db),
+  });
+}
+
+/** How many tasks each group of the Tasks page holds today. */
+export function useTaskGroupCounts(today: string) {
+  const { store } = useServices();
+  return useQuery({
+    queryKey: ['tasks', 'group-counts', today],
+    queryFn: () => store.queries.taskGroupCounts(store.db, today),
+  });
+}
+
+/** The first tasks of one group, up to the limit. */
+export function useTaskGroup(group: TaskGroup, today: string, limit: number) {
+  const { store } = useServices();
+  return useQuery({
+    queryKey: ['tasks', 'group', group, today, limit],
+    queryFn: () => store.queries.tasksInGroup(store.db, { group, today, limit }),
+    placeholderData: keepPreviousData,
   });
 }
 

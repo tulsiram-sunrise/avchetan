@@ -37,6 +37,7 @@ export async function createExpoPlatform(): Promise<Platform> {
     PRAGMA synchronous = NORMAL;
     PRAGMA foreign_keys = OFF;
     PRAGMA busy_timeout = 5000;
+    PRAGMA cache_size = -16384;
   `);
 
   // Otherwise NetInfo keeps pinging a Google address to test the connection.

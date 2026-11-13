@@ -105,3 +105,14 @@ export function SectionTitle({ title, alert }: { title: string; alert?: boolean 
     </Text>
   );
 }
+
+/** "Show more" under a long list (finding-and-using-data.md §9); nothing once all are shown. */
+export function ShowMore(props: { shown: number; total: number; onMore: () => void }) {
+  const left = props.total - props.shown;
+  if (left <= 0) return null;
+  return (
+    <Pressable accessibilityRole="button" className="px-4 py-3" onPress={props.onMore}>
+      <Text className="text-sm font-medium text-accent">Show more ({left} left)</Text>
+    </Pressable>
+  );
+}

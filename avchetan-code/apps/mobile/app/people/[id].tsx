@@ -1,4 +1,4 @@
-import type { PromiseItem } from '@avchetan/db/sqlite';
+import { LIST_PAGE, type PromiseItem } from '@avchetan/db/sqlite';
 import { localDate } from '@avchetan/shared';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
@@ -12,7 +12,7 @@ import {
   useRenamePerson,
   useUnlinkPromise,
 } from '../../src/queries/people';
-import { Button, Failure, Field, SectionTitle } from '../../src/ui/parts';
+import { Button, Failure, Field, SectionTitle, ShowMore } from '../../src/ui/parts';
 import { privatePrefix } from '../../src/ui/private-mark';
 import { shortDay } from '../../src/ui/task-promises';
 import { TaskCheck } from '../../src/ui/task-row';
@@ -184,8 +184,10 @@ function PromiseGroup(props: { title: string; items: PromiseItem[]; today: strin
   );
 }
 
+/** Their entries, newest first: 50, then "Show more". Only the shown ones are read. */
 function Entries(props: { rawLogIds: string[]; today: string }) {
-  const entries = usePersonEntries(props.rawLogIds);
+  const [limit, setLimit] = useState(LIST_PAGE);
+  const entries = usePersonEntries(props.rawLogIds.slice(0, limit));
   if (props.rawLogIds.length === 0) return null;
   return (
     <View className="pb-8">
@@ -206,6 +208,11 @@ function Entries(props: { rawLogIds: string[]; today: string }) {
           </Text>
         </Pressable>
       ))}
+      <ShowMore
+        shown={entries.data?.length ?? 0}
+        total={props.rawLogIds.length}
+        onMore={() => setLimit((n) => n + LIST_PAGE)}
+      />
     </View>
   );
 }
