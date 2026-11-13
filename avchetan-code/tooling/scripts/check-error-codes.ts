@@ -14,7 +14,13 @@ const workspace = resolve(import.meta.dirname, '..', '..');
 const repoRoot = resolve(workspace, '..');
 
 /** Snake-case strings in the Rust shell that are not error codes (pragmas, serde, clipboard.rs). */
-const RUST_NOT_CODES = new Set(['foreign_keys', 'journal_mode', 'snake_case', 'not_text']);
+const RUST_NOT_CODES = new Set([
+  'cache_size',
+  'foreign_keys',
+  'journal_mode',
+  'snake_case',
+  'not_text',
+]);
 
 function files(dir: string, extensions: readonly string[]): string[] {
   return readdirSync(dir).flatMap((entry) => {
