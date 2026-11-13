@@ -90,6 +90,16 @@ export type { Project } from './client/repos/projects';
 export type { CaptureInput, RawLog } from './client/repos/raw-logs';
 export type { Tag, TagLink } from './client/repos/tags';
 export type { NewTask, Task, TaskEdit } from './client/repos/tasks';
+export {
+  type EntryHit,
+  type HighlightPart,
+  highlightParts,
+  matchQuery,
+  type SearchOptions,
+  searchEntries,
+  searchTasks,
+  type TaskHit,
+} from './client/search';
 export { type ClientStore, type OpenClientStoreOptions, openClientStore } from './client/store';
 export {
   getById,
