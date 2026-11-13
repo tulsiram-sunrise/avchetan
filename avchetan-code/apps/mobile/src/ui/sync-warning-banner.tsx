@@ -2,6 +2,7 @@ import { systemTimeZone } from '@avchetan/shared';
 import { syncWarningText } from '@avchetan/sync';
 import { Text, View } from 'react-native';
 import { useSyncWarning } from '../queries/sync';
+import { usePalette } from '../theme/theme';
 import { HelpLink } from './parts';
 
 /**
@@ -10,9 +11,15 @@ import { HelpLink } from './parts';
  */
 export function SyncWarningBanner() {
   const warning = useSyncWarning();
+  const palette = usePalette();
   if (!warning.data) return null;
   return (
-    <View accessibilityRole="alert" className="mx-4 mt-3 gap-1 rounded-lg bg-warn/15 p-3">
+    <View
+      accessibilityRole="alert"
+      className="mx-4 mt-3 gap-1 rounded-lg p-3"
+      // NativeWind drops the opacity of a theme colour (bg-warn/15 draws nothing on Android).
+      style={{ backgroundColor: `${palette.warn}26` }}
+    >
       <Text className="text-sm font-medium text-ink">
         {syncWarningText(warning.data, systemTimeZone())}
       </Text>
