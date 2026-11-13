@@ -72,6 +72,35 @@ async function main() {
       `Search index built by the migration       ${openMs.toFixed(0).padStart(8)} ms  (+${growth.toFixed(1)} MB)\n\n`,
     );
   }
+  process.stdout.write('Days\n');
+  await time('  dayEntries (yesterday)', () =>
+    queries.dayEntries(db, { day: yesterday, timeZone: TIME_ZONE }),
+  );
+  await time('  activitiesOn (yesterday)', () => queries.activitiesOn(db, yesterday));
+  await time('  dayTasks (yesterday)', () =>
+    queries.dayTasks(db, { day: yesterday, today, timeZone: TIME_ZONE }),
+  );
+  await time('  monthDots (this month)', () =>
+    queries.monthDots(db, {
+      from: firstOfMonth(month),
+      to: lastOfMonth(month),
+      timeZone: TIME_ZONE,
+    }),
+  );
+  process.stdout.write('Tasks\n');
+  await time('  openTasks', () => queries.openTasks(db));
+  await time('  completedTasks', () => queries.completedTasks(db));
+  process.stdout.write('People\n');
+  await time('  listPeople', () => people.listPeople(db, { ...scope, today }));
+  const first = (await people.listPeople(db, { ...scope, today }))[0];
+  if (first) {
+    await time('  personDetail (busiest)', () =>
+      people.personDetail(db, { ...scope, id: first.entity.id, today }),
+    );
+  }
+  process.stdout.write('Capture box and tray\n');
+  await time('  recentRawLogs (5)', () => queries.recentRawLogs(db, { limit: 5 }));
+  await time('  pendingCount', () => queries.pendingCount(db));
   process.stdout.write('Search (local index, ADR-0029)\n');
   for (const text of ['dentist', 'dent', 'park run', 'दौड़', 'meet', 'zebra']) {
     await time(`  searchEntries "${text}"`, () =>
