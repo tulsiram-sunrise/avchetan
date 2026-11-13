@@ -16,11 +16,11 @@ Type `/` in the capture box on Windows to do something instead of logging it. Th
 
 Type `/` alone to see this list in the box. Typing the start of a command and pressing Enter completes it: `/br` becomes `/brief`.
 
-After a command that changed something, an **Undo** button shows for 10 seconds. `/undo` works for longer, until Avchetan restarts: it remembers your last 20 entries and commands from the capture box, and undoes the newest first. An undo syncs to your other devices like any other change.
+After a command that changed something, an **Undo** button shows for 10 seconds. `/undo` works for longer, until Avchetan restarts: it remembers your last 20 entries and commands from the capture box, and undoes the newest first. An undo syncs to your other devices like any other change. **Ctrl+Z** in an empty capture box does the same as `/undo`.
 
 To save an entry that starts with `/`, begin it with `//`. For example, `//etc/hosts edited` is saved as `/etc/hosts edited`.
 
-While Avchetan is [locked](app-lock.md), `/lock`, `/unlock` and `/settings` work as usual. Other commands, `/undo` included, ask for Windows Hello first when you press Enter.
+While Avchetan is [locked](app-lock.md), `/lock`, `/unlock` and `/settings` work as usual. Other commands, `/undo` and Ctrl+Z included, ask for Windows Hello first.
 
 ## When you type something else
 

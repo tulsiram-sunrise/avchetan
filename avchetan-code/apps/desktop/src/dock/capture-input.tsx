@@ -1,17 +1,27 @@
-import { captureText, LOCK_FREE_COMMANDS, parseCommand, suggestCommands } from '@avchetan/core';
+import {
+  type CommandName,
+  captureText,
+  LOCK_FREE_COMMANDS,
+  parseCommand,
+  suggestCommands,
+} from '@avchetan/core';
 import { toAppError } from '@avchetan/shared';
-import { type RefObject, useState } from 'react';
+import { type KeyboardEvent, type RefObject, useEffect, useState } from 'react';
 import { HelpLink } from '../help-link';
-import { useCaptureMutation } from '../queries/raw-logs';
+import { useCaptureMutation, useRecentCaptures } from '../queries/raw-logs';
 import { useSubmitKey } from '../queries/settings';
 import { unlockMessage } from '../services/app-lock';
 import { askQuestion, isQuestion, questionText } from '../services/ask';
 import { commandDeps, rememberCapture } from '../services/commands';
+import { type DockListKind, dockKey } from '../services/dock-keys';
 import { DEFAULT_SUBMIT_KEY, isSubmitPress, submitHint } from '../services/submit-key';
 import { useServices } from '../services-context';
 import { type AskState, useDockStore } from '../stores/dock-store';
 import { isHidden, useLockStatus, useUnlock } from '../use-lock';
+import { openEntryDay } from './ask-panel';
 import { ClipboardLine } from './clipboard-line';
+import { DOCK_LIST_ID, dockRowId } from './dock-list';
+import { RECENT_SHOWN } from './recent-captures';
 import { undoStack, useCommand } from './use-command';
 import type { VoiceUi } from './use-voice';
 import { MicButton, VoiceLine } from './voice-line';
@@ -21,13 +31,19 @@ import { WindowContextLine } from './window-context-line';
 export function CaptureInput(props: {
   inputRef: RefObject<HTMLTextAreaElement | null>;
   onCaptured: () => void;
+  /** Esc with nothing left to step back from: saves the draft and hides the dock. */
+  onHide: () => void;
   voice: VoiceUi;
 }) {
   const submitKey = useSubmitKey().data ?? DEFAULT_SUBMIT_KEY;
   const draft = useDockStore((state) => state.draft);
   const setDraft = useDockStore((state) => state.setDraft);
   const setAsk = useDockStore((state) => state.setAsk);
-  const asking = useDockStore((state) => state.ask?.status === 'asking');
+  const ask = useDockStore((state) => state.ask);
+  const asking = ask?.status === 'asking';
+  const highlight = useDockStore((state) => state.highlight);
+  const setHighlight = useDockStore((state) => state.setHighlight);
+  const recent = useRecentCaptures(RECENT_SHOWN).data ?? [];
   const window = useDockStore((state) => state.window);
   const clipboard = useDockStore((state) => state.clipboard);
   const setClipboard = useDockStore((state) => state.setClipboard);
@@ -38,7 +54,7 @@ export function CaptureInput(props: {
   const [errorCode, setErrorCode] = useState<string | null>(null);
 
   const askMode = isQuestion(draft);
-  const command = useCommand(draft, setDraft);
+  const command = useCommand(draft, setDraft, highlight);
   const locked = isHidden(useLockStatus());
   const unlock = useUnlock();
   // /lock, /unlock and /settings show nothing written before, nor does the list of commands
@@ -52,6 +68,108 @@ export function CaptureInput(props: {
       : !typed.text && suggestCommands(typed.word).length > 0);
   /** Ask and the other commands show what was written before, so they wait for an unlock. */
   const needsUnlock = locked && (askMode || (command.active && !lockFree));
+  const commandPanelShown = !needsUnlock && !(locked && !lockFree);
+
+  // The list ↑/↓ move through: the one showing under the box (dock-app.tsx).
+  const listKind: DockListKind | null = command.active
+    ? commandPanelShown && command.suggestions.length > 0
+      ? 'commands'
+      : null
+    : locked
+      ? null
+      : ask
+        ? ask.sources.length > 0
+          ? 'sources'
+          : null
+        : recent.length > 0
+          ? 'entries'
+          : null;
+  const listRows =
+    listKind === 'commands'
+      ? command.suggestions.length
+      : listKind === 'sources'
+        ? (ask?.sources.length ?? 0)
+        : listKind === 'entries'
+          ? recent.length
+          : 0;
+  const picked = listKind !== null && highlight !== null && highlight < listRows ? highlight : null;
+
+  // New text or another list starts again from the box.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reset on each change
+  useEffect(() => setHighlight(null), [draft, listKind, setHighlight]);
+
+  /** Runs only after an unlock when locked; false when the unlock didn't happen. */
+  async function unlockFirst(reason: string): Promise<boolean> {
+    if (!locked) return true;
+    if (unlock.isPending) return false;
+    return (await unlock.mutateAsync(reason)) === 'verified';
+  }
+
+  async function chooseCommand(name: CommandName) {
+    if (!LOCK_FREE_COMMANDS.has(name) && !(await unlockFirst('Unlock Avchetan to run commands'))) {
+      return;
+    }
+    await command.runNamed(name);
+  }
+
+  /** The capture box's own keys (services/dock-keys.ts). True when the key was used. */
+  function onDockKey(event: KeyboardEvent<HTMLTextAreaElement>): boolean {
+    const { key, shiftKey, ctrlKey, altKey, metaKey } = event;
+    if (
+      key === 'Escape' &&
+      (props.voice.phase === 'listening' || props.voice.phase === 'starting')
+    ) {
+      // Esc while recording throws the recording away; the dock stays.
+      event.preventDefault();
+      props.voice.cancel();
+      return true;
+    }
+    const action = dockKey(
+      { key, shiftKey, ctrlKey, altKey, metaKey },
+      {
+        draftEmpty: !draft.trim(),
+        list: listKind ? { kind: listKind, rows: listRows } : null,
+        highlight: picked,
+        panelOpen: ask !== null && !asking,
+      },
+    );
+    if (action.kind === 'none') return false;
+    event.preventDefault();
+    switch (action.kind) {
+      case 'move':
+        setHighlight(action.to);
+        break;
+      case 'complete': {
+        const name = command.suggestions[action.row];
+        if (name) setDraft(`/${name} `);
+        break;
+      }
+      case 'open':
+        if (listKind === 'commands') {
+          const name = command.suggestions[action.row];
+          if (name) void chooseCommand(name);
+        } else if (listKind === 'sources') {
+          const source = ask?.sources[action.row];
+          if (source) openEntryDay(services.platform, source.rawLog);
+        } else {
+          const rawLog = recent[action.row];
+          if (rawLog) openEntryDay(services.platform, rawLog);
+        }
+        break;
+      case 'undo':
+        void unlockFirst('Unlock Avchetan to take back an entry').then((ok) =>
+          ok ? command.undoLast() : undefined,
+        );
+        break;
+      case 'close_panel':
+        setAsk(null);
+        break;
+      case 'hide':
+        props.onHide();
+        break;
+    }
+    return true;
+  }
 
   /** Never saved as an entry: a question leaves the log untouched. */
   async function submitQuestion() {
@@ -126,8 +244,11 @@ export function CaptureInput(props: {
           setDraft(event.target.value);
           if (!event.target.value) setSpoken(false);
         }}
+        aria-controls={listKind ? DOCK_LIST_ID : undefined}
+        aria-activedescendant={picked !== null ? dockRowId(picked) : undefined}
         onKeyDown={(event) => {
           if (command.active && !needsUnlock && command.onKeyDown(event)) return;
+          if (onDockKey(event)) return;
           const { key, shiftKey, ctrlKey, altKey, metaKey } = event;
           const press = { key, shiftKey, ctrlKey, altKey, metaKey };
           if (isSubmitPress({ ...press, isComposing: event.nativeEvent.isComposing }, submitKey)) {
@@ -146,9 +267,9 @@ export function CaptureInput(props: {
             </p>
           ) : null}
         </div>
-      ) : locked && !lockFree ? null : (
+      ) : commandPanelShown ? (
         command.panel
-      )}
+      ) : null}
       <VoiceLine voice={props.voice} />
       {!askMode && !command.active ? (
         <>

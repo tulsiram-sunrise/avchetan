@@ -26,6 +26,9 @@ export type DockState = {
   /** Some of the draft was dictated: the entry is saved as `desktop_voice` (voice-capture.md). */
   spoken: boolean;
   setSpoken(spoken: boolean): void;
+  /** The list row picked with ↑/↓, or null while the keyboard is in the box (dock-keys.ts). */
+  highlight: number | null;
+  setHighlight(highlight: number | null): void;
 };
 
 export const useDockStore = create<DockState>()((set) => ({
@@ -39,4 +42,6 @@ export const useDockStore = create<DockState>()((set) => ({
   setClipboard: (clipboard) => set({ clipboard }),
   spoken: false,
   setSpoken: (spoken) => set({ spoken }),
+  highlight: null,
+  setHighlight: (highlight) => set({ highlight }),
 }));

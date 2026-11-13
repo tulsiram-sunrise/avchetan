@@ -8,13 +8,30 @@
 1. Press **Ctrl+Shift+Space**, from any app. A small box opens in the middle of your screen.
 2. Type what happened or what you need to do, for example `Walked 30 minutes, remind me to buy milk tomorrow`.
 3. Press **Enter** to save it. The box empties, and the entry appears underneath with a *Pending* badge.
-4. Press **Esc** (or click anywhere else) to close the box.
+4. Press **Esc** (or click anywhere else) to close the box. Esc first steps back out of a list or an answer: see [Use the box with the keyboard](#use-the-box-with-the-keyboard).
 
 ![The capture box with a new entry typed in, and the latest entries underneath marked Organized](images/capture-on-windows-dock.png)
 
 Need more than one line? Press **Shift+Enter** to start a new line.
 
 Half-written text is kept, even if you close the box or restart your PC.
+
+## Use the box with the keyboard
+
+You can type as soon as the box opens, and after you click anything in it the keyboard goes back to the text box.
+
+| Key | What it does |
+|---|---|
+| **↓** in an empty box | Moves into the list underneath: your latest entries, or the sources of an answer |
+| **↓** while typing a command | Moves into the list of commands |
+| **↑ / ↓** | Moves through the list; **↑** on the first row goes back to the box |
+| **Enter** on an entry | Opens that entry's day in **Days** |
+| **Enter** on a command | Runs it (a command that needs words, such as `/done`, is filled in for you to finish) |
+| **Tab** | Fills in the highlighted command (`/unl` → `/unlock `) |
+| **Ctrl+Z** in an empty box | Takes back the entry you just saved, like `/undo`. With text in the box it undoes typing as usual |
+| **Esc** | One step back: leaves the list, then closes an answer, then closes the box |
+
+Typing a letter while a row is highlighted goes into the box as usual.
 
 **Rather talk?** Hold the shortcut instead of pressing it, or press 🎤 in the box, and say it. The text appears in the box for you to check. It works offline once you've downloaded a speech model in **Settings → Voice**: see [Voice](voice.md#on-the-pc).
 
