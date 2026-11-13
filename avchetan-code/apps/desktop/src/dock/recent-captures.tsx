@@ -1,3 +1,4 @@
+import { isCommand } from '@avchetan/core';
 import { formatTime } from '@avchetan/shared';
 import { useRecentCaptures } from '../queries/raw-logs';
 import { useDockStore } from '../stores/dock-store';
@@ -9,7 +10,9 @@ export const RECENT_SHOWN = 5;
 
 export function RecentCaptures() {
   const recent = useRecentCaptures(RECENT_SHOWN);
-  const highlight = useDockStore((state) => state.highlight);
+  // While a command is typed, ↑/↓ move through the commands above, not these entries.
+  const keyed = useDockStore((state) => !isCommand(state.draft));
+  const highlight = useDockStore((state) => (keyed ? state.highlight : null));
   const logs = recent.data ?? [];
 
   if (recent.isSuccess && logs.length === 0) {
@@ -22,7 +25,7 @@ export function RecentCaptures() {
 
   return (
     <div
-      id={DOCK_LIST_ID}
+      id={keyed ? DOCK_LIST_ID : undefined}
       role="listbox"
       aria-label="Recent entries"
       className="flex flex-col gap-1"
@@ -30,7 +33,7 @@ export function RecentCaptures() {
       {logs.map((rawLog, index) => (
         <div
           key={rawLog.id}
-          id={dockRowId(index)}
+          id={keyed ? dockRowId(index) : undefined}
           role="option"
           tabIndex={-1}
           aria-selected={index === highlight}

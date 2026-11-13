@@ -23,11 +23,11 @@ You can type as soon as the box opens, and after you click anything in it the ke
 | Key | What it does |
 |---|---|
 | **↓** in an empty box | Moves into the list underneath: your latest entries, or the sources of an answer |
-| **↓** while typing a command | Moves into the list of commands |
+| **↓** while typing a command | Moves to the next command in the list (the first, the best match, is already lit) |
 | **↑ / ↓** | Moves through the list; **↑** on the first row goes back to the box |
 | **Enter** on an entry | Opens that entry's day in **Days** |
 | **Enter** on a command | Runs it (a command that needs words, such as `/done`, is filled in for you to finish) |
-| **Tab** | Fills in the highlighted command (`/unl` → `/unlock `) |
+| **Tab** | Fills in the lit command (`/ulk` → `/unlock `) |
 | **Ctrl+Z** in an empty box | Takes back the entry you just saved, like `/undo`. With text in the box it undoes typing as usual |
 | **Esc** | One step back: leaves the list, then closes an answer, then closes the box |
 

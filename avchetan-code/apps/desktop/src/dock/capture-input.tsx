@@ -3,7 +3,7 @@ import {
   captureText,
   LOCK_FREE_COMMANDS,
   parseCommand,
-  suggestCommands,
+  rankCommands,
 } from '@avchetan/core';
 import { toAppError } from '@avchetan/shared';
 import { type KeyboardEvent, type RefObject, useEffect, useState } from 'react';
@@ -65,7 +65,7 @@ export function CaptureInput(props: {
     typed !== null &&
     (typed.command
       ? LOCK_FREE_COMMANDS.has(typed.command)
-      : !typed.text && suggestCommands(typed.word).length > 0);
+      : !typed.text && rankCommands(typed.word).length > 0);
   /** Ask and the other commands show what was written before, so they wait for an unlock. */
   const needsUnlock = locked && (askMode || (command.active && !lockFree));
   const commandPanelShown = !needsUnlock && !(locked && !lockFree);
@@ -198,7 +198,11 @@ export function CaptureInput(props: {
       return command.submit();
     }
     if (askMode) return submitQuestion();
-    if (command.active) return command.submit();
+    if (command.active) {
+      // A name still being typed runs the best match, as picking it would: "/ulk" → /unlock.
+      const best = command.suggestions[0];
+      return best ? chooseCommand(best) : command.submit();
+    }
     if (!draft.trim() || captureMutation.isPending) return;
     try {
       // "//note" is saved as "/note" (docs/product/command-mode.md).

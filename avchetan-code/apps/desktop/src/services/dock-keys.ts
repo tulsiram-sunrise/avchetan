@@ -49,8 +49,10 @@ export function dockKey(press: DockKeyPress, state: DockKeyState): DockKeyAction
     case 'ArrowDown': {
       if (!plain || shiftKey || rows === 0) return NONE;
       if (current === null) {
-        // In a box with text the arrow moves the caret, unless a command list is showing.
-        return state.draftEmpty || list?.kind === 'commands' ? { kind: 'move', to: 0 } : NONE;
+        // The best command already shows lit, so the arrow goes on to the next one.
+        if (list?.kind === 'commands') return { kind: 'move', to: Math.min(1, rows - 1) };
+        // In a box with text the arrow moves the caret.
+        return state.draftEmpty ? { kind: 'move', to: 0 } : NONE;
       }
       return { kind: 'move', to: Math.min(current + 1, rows - 1) };
     }

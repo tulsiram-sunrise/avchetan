@@ -76,8 +76,8 @@ export {
   isCommand,
   type ParsedCommand,
   parseCommand,
-  suggestCommands,
 } from './commands/parse';
+export { rankCommands } from './commands/rank';
 export {
   COMMAND_NAMES,
   COMMANDS,

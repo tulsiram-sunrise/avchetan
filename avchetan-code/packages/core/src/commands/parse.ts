@@ -1,4 +1,4 @@
-import { COMMAND_NAMES, type CommandName, isCommandName } from './registry';
+import { type CommandName, isCommandName } from './registry';
 
 export const COMMAND_PREFIX = '/';
 
@@ -39,9 +39,4 @@ export function parseCommand(text: string, aliases: CommandAliases = {}): Parsed
   const aliased = Object.hasOwn(aliases, word) ? aliases[word] : undefined;
   if (aliased) return { word, text: rest, input, command: aliased, viaAlias: true };
   return { word, text: rest, input, command: null, viaAlias: false };
-}
-
-/** Commands whose name starts with what was typed so far, for the list under the box. */
-export function suggestCommands(word: string): CommandName[] {
-  return COMMAND_NAMES.filter((name) => name.startsWith(word.toLowerCase()));
 }

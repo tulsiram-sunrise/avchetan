@@ -5,7 +5,7 @@ import {
   isCommand,
   loadCommandLearning,
   parseCommand,
-  suggestCommands,
+  rankCommands,
 } from '@avchetan/core';
 import { createLogger, toAppError } from '@avchetan/shared';
 import { useQuery } from '@tanstack/react-query';
@@ -50,7 +50,7 @@ function runnerOf(plan: CommandPlan, choice: number): (() => Promise<CommandOutc
 export function useCommand(
   draft: string,
   setDraft: (text: string) => void,
-  /** The suggestion picked with ↑/↓ (dock-keys.ts). */
+  /** The suggestion picked with ↑/↓ (dock-keys.ts); none means the best, the first. */
   highlight: number | null,
 ) {
   const services = useServices();
@@ -76,7 +76,10 @@ export function useCommand(
     () => (parsed ? planCommand(deps, parsed, openTasks.data ?? []) : null),
     [draft, openTasks.data, learning.data, deps],
   );
-  const suggestions = parsed && !parsed.command && !parsed.text ? suggestCommands(parsed.word) : [];
+  const suggestions =
+    parsed && !parsed.command && !parsed.text
+      ? rankCommands(parsed.word, learning.data?.aliases ?? {})
+      : [];
 
   // A new text starts over: no reading, no stale error, first choice.
   useEffect(() => {
@@ -135,7 +138,7 @@ export function useCommand(
     }
   }
 
-  /** Enter in command mode. */
+  /** Enter in command mode. The list of commands is the box's (capture-input.tsx runs its best). */
   async function submit(): Promise<void> {
     if (busy) return;
     if (reading) {
@@ -144,11 +147,6 @@ export function useCommand(
       return;
     }
     if (!plan) return;
-    if (suggestions.length > 0 && parsed?.word !== suggestions[0]) {
-      // Complete the command first: "/bri" + Enter → "/brief ".
-      setDraft(`/${suggestions[0]} `);
-      return;
-    }
     if (plan.kind === 'ask_ai') return ask(plan.input);
     const run = runnerOf(plan, choice);
     if (run) await execute(run, null);
@@ -211,8 +209,8 @@ export function useCommand(
               id={dockRowId(index)}
               role="option"
               tabIndex={-1}
-              aria-selected={index === highlight}
-              className={`flex gap-2 rounded px-1 ${index === highlight ? 'bg-accent/15' : ''}`}
+              aria-selected={index === (highlight ?? 0)}
+              className={`flex gap-2 rounded px-1 ${index === (highlight ?? 0) ? 'bg-accent/15' : ''}`}
             >
               <span className="font-medium text-ink">{COMMANDS[name].usage}</span>
               <span className="text-ink-muted">{COMMANDS[name].help}</span>
