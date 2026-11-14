@@ -10,6 +10,8 @@
 type NumericMetric = {
   key: string;
   type: 'number' | 'int';
+  /** How a period's values combine: amounts add up, levels and readings are averaged. */
+  aggregate: 'sum' | 'average';
   min: number;
   max: number;
   aliases: Readonly<Record<string, number>>;
@@ -88,6 +90,7 @@ export const METRICS: readonly MetricSpec[] = [
   {
     key: 'duration_min',
     type: 'number',
+    aggregate: 'sum',
     min: 0,
     max: 1440,
     units: DURATION_MIN_UNITS,
@@ -109,6 +112,7 @@ export const METRICS: readonly MetricSpec[] = [
   {
     key: 'distance_km',
     type: 'number',
+    aggregate: 'sum',
     min: 0,
     max: 1000,
     units: DISTANCE_KM_UNITS,
@@ -126,16 +130,32 @@ export const METRICS: readonly MetricSpec[] = [
   {
     key: 'pace_min_per_km',
     type: 'number',
+    aggregate: 'average',
     min: 0,
     max: 60,
     aliases: { pace_min_per_km: 1, pace: 1 },
   },
-  { key: 'steps', type: 'int', min: 0, max: 200_000, aliases: { steps: 1, step_count: 1 } },
+  {
+    key: 'steps',
+    type: 'int',
+    aggregate: 'sum',
+    min: 0,
+    max: 200_000,
+    aliases: { steps: 1, step_count: 1 },
+  },
   { key: 'exercises', type: 'exercises', aliases: { exercises: 1, exercise: 1 } },
-  { key: 'rpe', type: 'number', min: 1, max: 10, aliases: { rpe: 1, effort: 1 } },
+  {
+    key: 'rpe',
+    type: 'number',
+    aggregate: 'average',
+    min: 1,
+    max: 10,
+    aliases: { rpe: 1, effort: 1 },
+  },
   {
     key: 'heart_rate_avg_bpm',
     type: 'int',
+    aggregate: 'average',
     min: 20,
     max: 250,
     aliases: { heart_rate_avg_bpm: 1, heart_rate: 1, avg_heart_rate: 1, avg_hr: 1, hr: 1, bpm: 1 },
@@ -143,6 +163,7 @@ export const METRICS: readonly MetricSpec[] = [
   {
     key: 'calories_kcal',
     type: 'number',
+    aggregate: 'sum',
     min: 0,
     max: 20_000,
     aliases: { calories_kcal: 1, calories: 1, kcal: 1, cal: 1, estimated_calories: 1 },
@@ -150,6 +171,7 @@ export const METRICS: readonly MetricSpec[] = [
   {
     key: 'protein_g',
     type: 'number',
+    aggregate: 'sum',
     min: 0,
     max: 1000,
     units: { g: 1, gram: 1, grams: 1 },
@@ -158,6 +180,7 @@ export const METRICS: readonly MetricSpec[] = [
   {
     key: 'carbs_g',
     type: 'number',
+    aggregate: 'sum',
     min: 0,
     max: 2000,
     units: { g: 1, gram: 1, grams: 1 },
@@ -166,6 +189,7 @@ export const METRICS: readonly MetricSpec[] = [
   {
     key: 'fat_g',
     type: 'number',
+    aggregate: 'sum',
     min: 0,
     max: 1000,
     units: { g: 1, gram: 1, grams: 1 },
@@ -174,6 +198,7 @@ export const METRICS: readonly MetricSpec[] = [
   {
     key: 'water_ml',
     type: 'number',
+    aggregate: 'sum',
     min: 0,
     max: 20_000,
     units: WATER_ML_UNITS,
@@ -188,6 +213,7 @@ export const METRICS: readonly MetricSpec[] = [
   {
     key: 'sleep_h',
     type: 'number',
+    aggregate: 'average',
     min: 0,
     max: 24,
     units: DURATION_H_UNITS,
@@ -200,15 +226,51 @@ export const METRICS: readonly MetricSpec[] = [
       sleep_minutes: 1 / 60,
     },
   },
-  { key: 'sleep_quality', type: 'int', min: 1, max: 5, aliases: { sleep_quality: 1 } },
-  { key: 'energy', type: 'int', min: 1, max: 5, aliases: { energy: 1, energy_level: 1 } },
-  { key: 'mood', type: 'int', min: 1, max: 5, aliases: { mood: 1, mood_score: 1 } },
-  { key: 'stress', type: 'int', min: 1, max: 5, aliases: { stress: 1, stress_level: 1 } },
-  { key: 'pain', type: 'int', min: 0, max: 10, aliases: { pain: 1, pain_level: 1 } },
+  {
+    key: 'sleep_quality',
+    type: 'int',
+    aggregate: 'average',
+    min: 1,
+    max: 5,
+    aliases: { sleep_quality: 1 },
+  },
+  {
+    key: 'energy',
+    type: 'int',
+    aggregate: 'average',
+    min: 1,
+    max: 5,
+    aliases: { energy: 1, energy_level: 1 },
+  },
+  {
+    key: 'mood',
+    type: 'int',
+    aggregate: 'average',
+    min: 1,
+    max: 5,
+    aliases: { mood: 1, mood_score: 1 },
+  },
+  {
+    key: 'stress',
+    type: 'int',
+    aggregate: 'average',
+    min: 1,
+    max: 5,
+    aliases: { stress: 1, stress_level: 1 },
+  },
+  {
+    key: 'pain',
+    type: 'int',
+    aggregate: 'average',
+    min: 0,
+    max: 10,
+    aliases: { pain: 1, pain_level: 1 },
+  },
   { key: 'body_part', type: 'body_part', aliases: { body_part: 1, body_parts: 1 } },
   {
     key: 'deep_work_min',
     type: 'number',
+    aggregate: 'sum',
     min: 0,
     max: 1440,
     units: DURATION_MIN_UNITS,
@@ -222,10 +284,18 @@ export const METRICS: readonly MetricSpec[] = [
       focus_hours: 60,
     },
   },
-  { key: 'interruptions', type: 'int', min: 0, max: 1000, aliases: { interruptions: 1 } },
+  {
+    key: 'interruptions',
+    type: 'int',
+    aggregate: 'sum',
+    min: 0,
+    max: 1000,
+    aliases: { interruptions: 1 },
+  },
   {
     key: 'weight_body_kg',
     type: 'number',
+    aggregate: 'average',
     min: 20,
     max: 400,
     units: WEIGHT_KG_UNITS,

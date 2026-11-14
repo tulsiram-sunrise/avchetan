@@ -17,6 +17,7 @@ import { SettingsPage } from './settings-page';
 import { SetupPage } from './setup-page';
 import { TagsPage } from './tags-page';
 import { TasksPage } from './tasks-page';
+import { TrendsPage } from './trends-page';
 
 const VIEWS: { id: MainView; label: string; hint?: string }[] = [
   // The view id stays 'timeline': the tray and the Rust window code open it by that name.
@@ -25,6 +26,7 @@ const VIEWS: { id: MainView; label: string; hint?: string }[] = [
   { id: 'tasks', label: 'Tasks' },
   { id: 'people', label: 'People' },
   { id: 'review', label: 'Review' },
+  { id: 'trends', label: 'Trends' },
   { id: 'categories', label: 'Categories' },
   { id: 'tags', label: 'Tags' },
   { id: 'projects', label: 'Projects' },
@@ -127,6 +129,15 @@ export function MainApp(props: { initialView: MainView; initialDay?: string | nu
         return <PeoplePage requestedPerson={target.personId} />;
       case 'review':
         return <ReviewPage />;
+      case 'trends':
+        return (
+          <TrendsPage
+            onOpenEntry={(day, entryId) => {
+              setTarget({ ...NO_TARGET, day, entryId });
+              setView('timeline');
+            }}
+          />
+        );
       case 'categories':
         return <CategoriesPage />;
       case 'tags':

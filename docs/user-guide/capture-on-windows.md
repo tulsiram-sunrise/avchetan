@@ -151,6 +151,18 @@ Click a tag (on **Tags**, or under an entry on **Days**) or a project (on **Proj
 
 A tag's page includes the tags nested under it: `#health` also shows entries tagged `#health/knee`. An entry counts when it, or something organized from it, has the tag or project. Click the name at the top to rename it.
 
+## Trends
+
+**Trends** in the sidebar draws one of your numbers over time as bars.
+
+- **Pick a number** from the ones in your entries (distance, sleep, body weight…), most used first. **In** narrows it to one category or one tag (with the tags under it).
+- **Pick a range:** **4 weeks** (a bar per day), **3 months** (a bar per week, from Monday) or **1 year** (a bar per month). The last bar is today, this week or this month so far.
+- Amounts such as distance, minutes or steps are **added up** in each bar; ratings and readings such as mood, sleep hours or body weight are **averaged**. A day with nothing logged has no bar (it is not counted as zero).
+- Under the chart: the range's total or average and how it changed from the same length of time before, for example *42 km in all · up 6 km (17%) on the 4 weeks before*.
+- Point at a bar to see its exact value. **Click a bar** (or use ← and → once a bar has focus) to list its activities underneath; click one to open its day with the entry outlined. **Show as a table** lists every bar's number.
+
+A number the AI got wrong shows wrong here too: fix it with **Edit numbers** on **Days** ([Fix the numbers](corrections.md#fix-the-numbers)). Nothing to show yet? Log *ran 5 km* or *slept 7 hours* and it appears.
+
 ## Check it worked
 
 Press your shortcut, type `Test entry #test` and press your save key. The entry appears at the top of the list, and *Open Avchetan* shows it under today in **Days**.

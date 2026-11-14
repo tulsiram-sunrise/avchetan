@@ -32,7 +32,7 @@ const asFilters = (of: Collection): SearchFilters =>
   'tagPath' in of ? { tagPath: of.tagPath } : { projectId: of.projectId };
 
 /** Activities in the collection: tagged themselves or organized from a tagged entry. */
-function activityCondition(db: ClientDb, of: Collection): SQL | undefined {
+export function activityCondition(db: ClientDb, of: Collection): SQL | undefined {
   if ('projectId' in of) return eq(activities.projectId, of.projectId);
   return sql`(${inArray(activities.id, taggedIds(db, 'activity', of.tagPath))} or ${inArray(
     sql`${activities.rawLogId}`,

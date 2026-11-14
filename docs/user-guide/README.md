@@ -17,6 +17,7 @@ Avchetan is a personal logger and planner. Type (or say) anything — a workout,
 8. [People and promises](people.md): who you saw, what you owe them and what they owe you
 9. [Find an entry](capture-on-windows.md#find-an-entry): search your entries, tasks and people on the PC with Ctrl+F
 10. [Tag and project pages](capture-on-windows.md#tag-and-project-pages): a tag's or project's entries, totals and open tasks, on the PC and [the phone](capture-on-android.md#tags-and-projects)
+11. [Trends](capture-on-windows.md#trends): one of your numbers (distance, sleep, weight…) over 4 weeks, 3 months or a year, on the PC
 
 ## Downloads & source
 
