@@ -321,7 +321,6 @@ function ModeBadge(props: { mode: CaptureMode }) {
 
 /** One line to start; taller as lines are added, up to max-h (then it scrolls). */
 function useAutoGrow(input: RefObject<HTMLTextAreaElement | null>, text: string) {
-  // biome-ignore lint/correctness/useExhaustiveDependencies: measure again on each change
   useLayoutEffect(() => {
     const element = input.current;
     if (!element) return;
