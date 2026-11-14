@@ -130,7 +130,8 @@ describe('texts', () => {
     const day = { start: '2026-11-03', end: '2026-11-03' };
     expect(trendBarLabel(day, 'day')).toBe('3');
     expect(trendBarTitle(day, 'day')).toMatch(/Tue/);
-    expect(trendBarTitle(day, 'week')).toMatch(/^Week of 3 Nov/);
+    // Dates follow the system's locale (CI: Nov 3, 2026; here: 3 Nov 2026).
+    expect(trendBarTitle(day, 'week')).toMatch(/^Week of (3 Nov|Nov 3)/);
     expect(trendBarTitle(day, 'month')).toMatch(/November 2026/);
   });
 
