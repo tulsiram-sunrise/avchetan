@@ -8,11 +8,13 @@ import {
   parseCommand,
   rankCommands,
 } from '@avchetan/core';
+import type { EntryHit } from '@avchetan/db/sqlite';
 import { toAppError } from '@avchetan/shared';
 import { type KeyboardEvent, type RefObject, useEffect, useLayoutEffect, useState } from 'react';
 import { HelpLink } from '../help-link';
 import { usePrivateTagPaths } from '../queries/organize';
 import { useCaptureMutation, useRecentCaptures } from '../queries/raw-logs';
+import { useDockFind } from '../queries/search';
 import { useSubmitKey } from '../queries/settings';
 import { unlockMessage } from '../services/app-lock';
 import { askQuestion, isQuestion, questionText } from '../services/ask';
@@ -26,6 +28,7 @@ import { openEntryDay } from './ask-panel';
 import { CaptureHints } from './capture-hints';
 import { ClipboardLine } from './clipboard-line';
 import { DOCK_LIST_ID, dockRowId } from './dock-list';
+import { findWords } from './find-results';
 import { RECENT_SHOWN } from './recent-captures';
 import { undoStack, useCommand } from './use-command';
 import type { VoiceUi } from './use-voice';
@@ -33,6 +36,7 @@ import { MicButton, VoiceLine } from './voice-line';
 import { WindowContextLine } from './window-context-line';
 
 const NO_PATHS: string[] = [];
+const NO_HITS: EntryHit[] = [];
 /** How long 'Saved · Ctrl+Z to take back' stays. */
 const SAVED_SHOWN_MS = 4000;
 
@@ -94,10 +98,15 @@ export function CaptureInput(props: {
   const commandPanelShown = !needsUnlock && !(locked && !lockFree);
 
   // The list ↑/↓ move through: the one showing under the box (dock-app.tsx).
+  // `/find words`: the first matches (find-results.tsx); the same query, so no second read.
+  const words = findWords(draft);
+  const found = useDockFind(words).data ?? NO_HITS;
   const listKind: DockListKind | null = command.active
     ? commandPanelShown && command.suggestions.length > 0
       ? 'commands'
-      : null
+      : commandPanelShown && words && found.length > 0
+        ? 'found'
+        : null
     : locked
       ? null
       : ask
@@ -114,7 +123,9 @@ export function CaptureInput(props: {
         ? (ask?.sources.length ?? 0)
         : listKind === 'entries'
           ? recent.length
-          : 0;
+          : listKind === 'found'
+            ? found.length
+            : 0;
   const picked = listKind !== null && highlight !== null && highlight < listRows ? highlight : null;
   /** The command list shows its first row lit, the best match, until ↑/↓ pick another. */
   const lit = picked ?? (listKind === 'commands' ? 0 : null);
@@ -178,6 +189,9 @@ export function CaptureInput(props: {
         } else if (listKind === 'sources') {
           const source = ask?.sources[action.row];
           if (source) openEntryDay(services.platform, source.rawLog);
+        } else if (listKind === 'found') {
+          const hit = found[action.row];
+          if (hit) openEntryDay(services.platform, hit.log);
         } else {
           const rawLog = recent[action.row];
           if (rawLog) openEntryDay(services.platform, rawLog);

@@ -1,3 +1,4 @@
+import type { HighlightPart } from '@avchetan/db/sqlite';
 import { describeError, toAppError } from '@avchetan/shared';
 import { isConnectionError } from '@avchetan/sync';
 import { type ReactNode, useState } from 'react';
@@ -120,5 +121,24 @@ export function ShowMore(props: { shown: number; total: number; onMore: () => vo
     <div className="mt-2">
       <QuietButton onClick={props.onMore}>Show more ({left} left)</QuietButton>
     </div>
+  );
+}
+
+/** Text with the words the search found marked. */
+export function Highlighted(props: { parts: readonly HighlightPart[] }) {
+  return (
+    <>
+      {props.parts.map((part, index) =>
+        part.match ? (
+          // biome-ignore lint/suspicious/noArrayIndexKey: parts never reorder.
+          <mark key={index} className="rounded-sm bg-accent/30 px-0.5 text-ink">
+            {part.text}
+          </mark>
+        ) : (
+          // biome-ignore lint/suspicious/noArrayIndexKey: parts never reorder.
+          <span key={index}>{part.text}</span>
+        ),
+      )}
+    </>
   );
 }

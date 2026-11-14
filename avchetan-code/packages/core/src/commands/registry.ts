@@ -9,6 +9,11 @@ export const COMMANDS = {
     help: 'Mark the open task that best matches the words as done',
     takesText: true,
   },
+  find: {
+    usage: '/find <words>',
+    help: 'Find entries with these words; Enter opens Search',
+    takesText: true,
+  },
   brief: {
     usage: '/brief',
     help: "Make today's daily brief now",
