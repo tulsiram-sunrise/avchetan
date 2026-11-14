@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { checkDate, dayWords } from './date-check';
+import { checkDate, dayHints, dayWords } from './date-check';
 
 // Sunday 8 November 2026, as in the feature audit.
 const today = '2026-11-08';
@@ -86,5 +86,40 @@ describe('checkDate for when something happened', () => {
   it('keeps a date that fits, and ignores words about the future', () => {
     expect(happened('2026-11-07', 'Yesterday I swam 20 laps')).toBe('2026-11-07');
     expect(happened('2026-11-08', 'Ran 5 km, need to buy milk tomorrow')).toBe('2026-11-08');
+  });
+});
+
+describe('dayHints', () => {
+  // Saturday 2026-11-14.
+  const today = '2026-11-14';
+
+  it('gives each day word its date, once', () => {
+    expect(dayHints('Call mom tomorrow, not tomorrow night', today)).toEqual([
+      { word: 'tomorrow', dates: ['2026-11-15'] },
+    ]);
+    expect(dayHints('ran yesterday, rest today, gym day after tomorrow', today)).toEqual([
+      { word: 'yesterday', dates: ['2026-11-13'] },
+      { word: 'today', dates: ['2026-11-14'] },
+      { word: 'day after tomorrow', dates: ['2026-11-16'] },
+    ]);
+  });
+
+  it('gives a bare weekday its coming and last date; next only the coming ones', () => {
+    expect(dayHints('dentist on Friday', today)).toEqual([
+      { word: 'friday', dates: ['2026-11-20', '2026-11-13'] },
+    ]);
+    expect(dayHints('review next Monday', today)[0]).toEqual({
+      word: 'next monday',
+      dates: ['2026-11-16'],
+    });
+    // Today's weekday is today, either way.
+    expect(dayHints('saturday chores', today)).toEqual([
+      { word: 'saturday', dates: ['2026-11-14'] },
+    ]);
+    expect(dayHints('शुक्रवार को मीटिंग', today)[0]?.word).toBe('friday');
+  });
+
+  it('finds nothing in plain text', () => {
+    expect(dayHints('bought a new lock', today)).toEqual([]);
   });
 });

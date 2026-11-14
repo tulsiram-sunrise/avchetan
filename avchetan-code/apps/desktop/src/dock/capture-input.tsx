@@ -23,6 +23,7 @@ import { useServices } from '../services-context';
 import { type AskState, useDockStore } from '../stores/dock-store';
 import { isHidden, useLockStatus, useUnlock } from '../use-lock';
 import { openEntryDay } from './ask-panel';
+import { CaptureHints } from './capture-hints';
 import { ClipboardLine } from './clipboard-line';
 import { DOCK_LIST_ID, dockRowId } from './dock-list';
 import { RECENT_SHOWN } from './recent-captures';
@@ -32,6 +33,8 @@ import { MicButton, VoiceLine } from './voice-line';
 import { WindowContextLine } from './window-context-line';
 
 const NO_PATHS: string[] = [];
+/** How long 'Saved · Ctrl+Z to take back' stays. */
+const SAVED_SHOWN_MS = 4000;
 
 /** The dock's text box. One of Enter / Shift+Enter saves (a setting); the other adds a line. */
 export function CaptureInput(props: {
@@ -58,9 +61,21 @@ export function CaptureInput(props: {
   const services = useServices();
   const captureMutation = useCaptureMutation();
   const [errorCode, setErrorCode] = useState<string | null>(null);
+  // 'Saved · Ctrl+Z to take back' for a few seconds after Enter (capture-box-redesign.md §6).
+  const [saved, setSaved] = useState(false);
+  useEffect(() => {
+    if (!saved) return;
+    const timer = setTimeout(() => setSaved(false), SAVED_SHOWN_MS);
+    return () => clearTimeout(timer);
+  }, [saved]);
+  // Typing again replaces it.
+  useEffect(() => {
+    if (draft) setSaved(false);
+  }, [draft]);
 
   const askMode = isQuestion(draft);
-  const mode = captureMode(draft, usePrivateTagPaths().data ?? NO_PATHS);
+  const privatePaths = usePrivateTagPaths().data ?? NO_PATHS;
+  const mode = captureMode(draft, privatePaths);
   useAutoGrow(props.inputRef, draft);
   const command = useCommand(draft, setDraft, highlight);
   const locked = isHidden(useLockStatus());
@@ -169,6 +184,7 @@ export function CaptureInput(props: {
         }
         break;
       case 'undo':
+        setSaved(false);
         void unlockFirst('Unlock Avchetan to take back an entry').then((ok) =>
           ok ? command.undoLast() : undefined,
         );
@@ -229,6 +245,7 @@ export function CaptureInput(props: {
       // The window stays until the next shortcut; copied text belongs to this entry only.
       setClipboard(null);
       setErrorCode(null);
+      setSaved(true);
       props.onCaptured();
     } catch (error) {
       setErrorCode(toAppError(error).code);
@@ -268,11 +285,20 @@ export function CaptureInput(props: {
         />
         <MicButton voice={props.voice} />
       </div>
-      <p id="capture-hint" className="px-1 pt-1 text-xs text-ink-muted">
-        {draft
-          ? `${submitHint(submitKey, mode === 'ask' ? 'ask' : command.active ? 'run' : 'save')} · Esc to close`
-          : '#tag  ·  !private  ·  ?question  ·  /command  ·  Esc to close'}
-      </p>
+      {mode === 'entry' || mode === 'private' ? (
+        <CaptureHints text={draft} privatePaths={privatePaths} />
+      ) : null}
+      {saved && !draft ? (
+        <p id="capture-hint" role="status" className="px-1 pt-1 text-xs text-ok">
+          ✓ Saved · Ctrl+Z to take back
+        </p>
+      ) : (
+        <p id="capture-hint" className="px-1 pt-1 text-xs text-ink-muted">
+          {draft
+            ? `${submitHint(submitKey, mode === 'ask' ? 'ask' : command.active ? 'run' : 'save')} · Esc to close`
+            : '#tag  ·  !private  ·  ?question  ·  /command  ·  Esc to close'}
+        </p>
+      )}
       {needsUnlock ? (
         <div className="px-1 pt-1 text-xs text-ink-muted">
           <p>🔒 Unlock to ask or run commands. Press Enter to unlock with Windows Hello.</p>

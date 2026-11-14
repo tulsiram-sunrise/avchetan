@@ -169,3 +169,30 @@ export function checkDate(options: {
   if (words.length > 1) return date;
   return meaning(words[0] as DayWord) ?? date;
 }
+
+/** A day word under the capture box, with the dates it can mean (capture-box-redesign.md §5). */
+export type DayHint = {
+  /** `tomorrow`, `next friday`, `friday`. */
+  word: string;
+  /** One date, or for a bare weekday the coming one and the last one (the tense decides). */
+  dates: LocalDate[];
+};
+
+const dayWordName = (word: DayWord): string => {
+  if (word.kind !== 'weekday') return word.kind === 'day_after' ? 'day after tomorrow' : word.kind;
+  return word.next ? `next ${word.weekday}` : word.weekday;
+};
+
+/** The day words in what is being typed, each once, with their dates, by the same rules. */
+export function dayHints(text: string, today: LocalDate): DayHint[] {
+  const hints: DayHint[] = [];
+  for (const word of dayWords(text)) {
+    const name = dayWordName(word);
+    if (hints.some((hint) => hint.word === name)) continue;
+    const dates = [futureDate(word, today), pastDate(word, today)].filter(
+      (date, index, all): date is LocalDate => date !== null && all.indexOf(date) === index,
+    );
+    if (dates.length > 0) hints.push({ word: name, dates });
+  }
+  return hints;
+}
