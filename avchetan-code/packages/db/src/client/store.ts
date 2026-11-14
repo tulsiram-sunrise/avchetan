@@ -38,6 +38,7 @@ import { tagsRepo } from './repos/tags';
 import { tasksRepo } from './repos/tasks';
 import * as search from './search';
 import { getById, type RepoDeps, SYNCED_TABLES } from './synced';
+import * as trends from './trends';
 
 export type OpenClientStoreOptions = {
   executor: SqliteExecutor;
@@ -110,6 +111,7 @@ export async function openClientStore(options: OpenClientStoreOptions) {
     people,
     search,
     collections,
+    trends,
     recordLlmRun: (run: Omit<NewLlmRun, 'id' | 'createdAt'>): Promise<void> =>
       write((tx) => insertLlmRun(tx, { ...run, id: newId(), createdAt: clock.now() })),
     /** Everything for "Export my data" (see export.ts for what is left out). */

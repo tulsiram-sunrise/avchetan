@@ -200,29 +200,31 @@ ID = `derivedId('mention', entity_id, target_type, target_id, role)`.
 
 `metrics` is open JSON, but keys **must** come from this registry when one fits (the extraction prompt includes it; the normalizer maps synonyms like `minutes`→`duration_min`). Unknown keys are allowed, snake_case with a unit suffix when numeric. The registry lives in `packages/core/src/normalize/metric-keys.ts` and this table is its documentation.
 
-| Key | Type | Unit / range | Example source |
-|---|---|---|---|
-| `duration_min` | number | minutes | "45 min workout" |
-| `distance_km` | number | km | "ran 5k" |
-| `pace_min_per_km` | number | min/km | |
-| `steps` | int | | |
-| `exercises` | array | `[{name, sets?, reps?, weight_kg?, duration_min?}]` | "bench 80kg 3x5" |
-| `rpe` | number | 1–10 | "felt like an 8" |
-| `heart_rate_avg_bpm` | int | bpm | |
-| `calories_kcal` | number | kcal | |
-| `protein_g` / `carbs_g` / `fat_g` | number | grams | |
-| `water_ml` | number | ml | |
-| `meal` | enum | `breakfast`, `lunch`, `dinner`, `snack` | |
-| `sleep_h` | number | hours | |
-| `sleep_quality` | int | 1–5 | |
-| `energy` | int | 1–5 | "low energy" → 2 |
-| `mood` | int | 1–5 | |
-| `stress` | int | 1–5 | |
-| `pain` | int | 0–10 | |
-| `body_part` | string / string[] | normalized (`shoulder-right`) | |
-| `deep_work_min` | number | minutes | |
-| `interruptions` | int | | |
-| `weight_body_kg` | number | kg | |
-| `kind` | string | system rows: `daily_brief`, `weekly_review` (with `week`, the Monday it starts, [weekly review](../product/weekly-review.md)) | |
+| Key | Type | Unit / range | Aggregate | Example source |
+|---|---|---|---|---|
+| `duration_min` | number | minutes | sum | "45 min workout" |
+| `distance_km` | number | km | sum | "ran 5k" |
+| `pace_min_per_km` | number | min/km | average | |
+| `steps` | int | | sum | |
+| `exercises` | array | `[{name, sets?, reps?, weight_kg?, duration_min?}]` | | "bench 80kg 3x5" |
+| `rpe` | number | 1–10 | average | "felt like an 8" |
+| `heart_rate_avg_bpm` | int | bpm | average | |
+| `calories_kcal` | number | kcal | sum | |
+| `protein_g` / `carbs_g` / `fat_g` | number | grams | sum | |
+| `water_ml` | number | ml | sum | |
+| `meal` | enum | `breakfast`, `lunch`, `dinner`, `snack` | | |
+| `sleep_h` | number | hours | average | |
+| `sleep_quality` | int | 1–5 | average | |
+| `energy` | int | 1–5 | average | "low energy" → 2 |
+| `mood` | int | 1–5 | average | |
+| `stress` | int | 1–5 | average | |
+| `pain` | int | 0–10 | average | |
+| `body_part` | string / string[] | normalized (`shoulder-right`) | | |
+| `deep_work_min` | number | minutes | sum | |
+| `interruptions` | int | | sum | |
+| `weight_body_kg` | number | kg | average | |
+| `kind` | string | system rows: `daily_brief`, `weekly_review` (with `week`, the Monday it starts, [weekly review](../product/weekly-review.md)) | | |
+
+**Aggregate** (`aggregate` in the registry) says how a period's values combine on trends and tag pages: amounts are summed, levels and readings averaged. Unknown numeric keys are summed.
 
 Units are always metric in storage; the normalizer converts (lb→kg, mi→km). Display units are a UI setting.

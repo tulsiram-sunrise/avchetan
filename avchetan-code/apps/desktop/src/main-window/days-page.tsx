@@ -368,6 +368,9 @@ function DayPanel(props: {
   const tasksOf = useMemo(() => byLog(extracted.data?.tasks), [extracted.data]);
   const tagsOf = useEntryTags(ids);
   const addedOn = useAddedOn();
+  // Scroll to an entry only once what sits above it has loaded, or it is pushed off-screen after.
+  const settled =
+    tasks.isSuccess && extracted.isSuccess && dayActivities.isSuccess && categories.isSuccess;
 
   const title = formatLocalDate(day, {
     weekday: 'long',
@@ -436,7 +439,7 @@ function DayPanel(props: {
                 activities={activitiesOf.get(rawLog.id) ?? []}
                 tasks={tasksOf.get(rawLog.id) ?? []}
                 addedOn={addedOn(rawLog, day)}
-                inView={rawLog.id === props.entryInView}
+                inView={settled && rawLog.id === props.entryInView}
                 tagPaths={tagsOf(rawLog.id)}
                 onOpenTag={props.onOpenTag}
               />

@@ -128,5 +128,6 @@ export {
   updateSynced,
   upsertSynced,
 } from './client/synced';
+export type { TrendFilter, TrendKey, TrendOptions } from './client/trends';
 export { sqliteMigrations } from './migrations/sqlite.generated';
 export * from './schema/sqlite/tables';

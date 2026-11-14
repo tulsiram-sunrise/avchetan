@@ -14,6 +14,7 @@ const mainViewSchema = z.enum([
   'tasks',
   'people',
   'review',
+  'trends',
   'categories',
   'tags',
   'projects',

@@ -39,6 +39,27 @@ export {
 export type { Candidate, WeekChange, WeekTotals } from './analysis/patterns';
 export type { SearchHistory } from './analysis/tools';
 export {
+  bucketTrend,
+  TREND_RANGE_LABELS,
+  TREND_RANGES,
+  type Trend,
+  type TrendAxis,
+  type TrendBar,
+  type TrendBucket,
+  type TrendPoint,
+  type TrendRange,
+  type TrendSlot,
+  type TrendWindow,
+  trendAxis,
+  trendAxisFor,
+  trendBarLabel,
+  trendBarTitle,
+  trendMax,
+  trendSummaryText,
+  trendValueText,
+  trendWindow,
+} from './analysis/trends';
+export {
   findWeeklyReview,
   isSunday,
   isWeeklyReview,

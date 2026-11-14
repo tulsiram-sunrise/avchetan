@@ -1,3 +1,5 @@
+import { METRICS } from './metric-keys';
+
 /**
  * Totals of an activity's numbers for a tag or project page
  * (docs/product/finding-and-using-data.md#2-tag-and-project-pages). Amounts add up
@@ -5,25 +7,13 @@
  * since a sum of them means nothing.
  */
 
-/** Keys whose values are a level or a reading, not an amount: averaged, never summed. */
-const AVERAGED = new Set([
-  'pace_min_per_km',
-  'rpe',
-  'heart_rate_avg_bpm',
-  'sleep_h',
-  'sleep_quality',
-  'energy',
-  'mood',
-  'stress',
-  'pain',
-  'weight_body_kg',
-]);
-
 export type MetricTotalKind = 'sum' | 'average';
 
-/** Unknown keys (`pages`, `cups`) are amounts unless the registry says otherwise. */
-export const metricTotalKind = (key: string): MetricTotalKind =>
-  AVERAGED.has(key) ? 'average' : 'sum';
+/** The registry's `aggregate`; unknown keys (`pages`, `cups`) are amounts. */
+export const metricTotalKind = (key: string): MetricTotalKind => {
+  const spec = METRICS.find((metric) => metric.key === key);
+  return spec && 'aggregate' in spec ? spec.aggregate : 'sum';
+};
 
 /** Unit suffix → what is written after the number. Longest suffixes first. */
 const UNITS: readonly [suffix: string, unit: string][] = [
