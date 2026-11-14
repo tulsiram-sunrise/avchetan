@@ -4,6 +4,10 @@ import { callNative, type Invoke } from './ipc';
 
 const recentAppsSchema = z.array(z.object({ app: z.string(), app_name: z.string() }));
 
+/** What sits behind the dock (src-tauri/src/dock_look.rs): none on Windows 10. */
+const backdropSchema = z.enum(['acrylic', 'mica', 'none']);
+export type Backdrop = z.infer<typeof backdropSchema>;
+
 const hotkeyStatusSchema = z.object({
   shortcut: z.string(),
   registered: z.boolean(),
@@ -16,6 +20,9 @@ export type HotkeyStatus = z.infer<typeof hotkeyStatusSchema>;
 export function createShell(invoke: Invoke) {
   return {
     hideDock: () => callNative(invoke, 'dock_hide', {}, z.null()),
+    dockBackdrop: () => callNative(invoke, 'dock_look', {}, backdropSchema),
+    /** The dock's height in CSS pixels; the top stays put. */
+    fitDock: (height: number) => callNative(invoke, 'dock_fit', { height }, z.null()),
     /** `day` (`YYYY-MM-DD`) opens that day in Days. */
     openMain: (view: MainView = 'timeline', day: string | null = null) =>
       callNative(invoke, 'main_open', { view, day }, z.null()),

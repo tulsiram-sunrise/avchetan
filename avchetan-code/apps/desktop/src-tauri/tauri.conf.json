@@ -16,7 +16,7 @@
         "url": "dock.html",
         "title": "Avchetan",
         "width": 520,
-        "height": 400,
+        "height": 140,
         "decorations": false,
         "transparent": true,
         "alwaysOnTop": true,

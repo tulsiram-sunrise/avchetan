@@ -38,7 +38,11 @@ body {
   background: var(--color-surface);
 }
 
-/* The dock window is transparent; the panel draws its own background and shadow. */
+/*
+ * The dock window is transparent: Windows 11's backdrop shows through, or on Windows 10 the
+ * panel draws its own. `html` too, or its surface colour fills the whole window.
+ */
+html:has(> body.dock),
 body.dock {
   background: transparent;
   overflow: hidden;

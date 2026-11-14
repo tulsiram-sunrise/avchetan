@@ -1,13 +1,17 @@
 import {
+  CAPTURE_MODE_BADGES,
+  type CaptureMode,
   type CommandName,
+  captureMode,
   captureText,
   LOCK_FREE_COMMANDS,
   parseCommand,
   rankCommands,
 } from '@avchetan/core';
 import { toAppError } from '@avchetan/shared';
-import { type KeyboardEvent, type RefObject, useEffect, useState } from 'react';
+import { type KeyboardEvent, type RefObject, useEffect, useLayoutEffect, useState } from 'react';
 import { HelpLink } from '../help-link';
+import { usePrivateTagPaths } from '../queries/organize';
 import { useCaptureMutation, useRecentCaptures } from '../queries/raw-logs';
 import { useSubmitKey } from '../queries/settings';
 import { unlockMessage } from '../services/app-lock';
@@ -26,6 +30,8 @@ import { undoStack, useCommand } from './use-command';
 import type { VoiceUi } from './use-voice';
 import { MicButton, VoiceLine } from './voice-line';
 import { WindowContextLine } from './window-context-line';
+
+const NO_PATHS: string[] = [];
 
 /** The dock's text box. One of Enter / Shift+Enter saves (a setting); the other adds a line. */
 export function CaptureInput(props: {
@@ -54,6 +60,8 @@ export function CaptureInput(props: {
   const [errorCode, setErrorCode] = useState<string | null>(null);
 
   const askMode = isQuestion(draft);
+  const mode = captureMode(draft, usePrivateTagPaths().data ?? NO_PATHS);
+  useAutoGrow(props.inputRef, draft);
   const command = useCommand(draft, setDraft, highlight);
   const locked = isHidden(useLockStatus());
   const unlock = useUnlock();
@@ -229,41 +237,42 @@ export function CaptureInput(props: {
 
   return (
     <div>
-      <div className="flex items-center gap-2 px-1 pb-1 text-xs text-ink-muted">
-        <span className="rounded-full bg-accent/15 px-2 py-0.5 font-medium text-accent">
-          {askMode ? 'Ask' : command.active ? 'Command' : 'Capture'}
-        </span>
-        <span>
-          {submitHint(submitKey, askMode ? 'ask' : command.active ? 'run' : 'save')} · Esc to close
-        </span>
-        <span className="ml-auto">
-          <MicButton voice={props.voice} />
-        </span>
+      <div className="flex items-start gap-2">
+        <ModeBadge mode={mode} />
+        <textarea
+          ref={props.inputRef}
+          aria-label="What's on your mind?"
+          aria-describedby="capture-hint"
+          placeholder="What's on your mind?"
+          rows={1}
+          value={draft}
+          onChange={(event) => {
+            setDraft(event.target.value);
+            if (!event.target.value) setSpoken(false);
+          }}
+          aria-controls={listKind ? DOCK_LIST_ID : undefined}
+          aria-activedescendant={lit !== null ? dockRowId(lit) : undefined}
+          onKeyDown={(event) => {
+            if (command.active && !needsUnlock && command.onKeyDown(event)) return;
+            if (onDockKey(event)) return;
+            const { key, shiftKey, ctrlKey, altKey, metaKey } = event;
+            const press = { key, shiftKey, ctrlKey, altKey, metaKey };
+            if (
+              isSubmitPress({ ...press, isComposing: event.nativeEvent.isComposing }, submitKey)
+            ) {
+              event.preventDefault();
+              void submit();
+            }
+          }}
+          className="max-h-40 min-w-0 flex-1 resize-none overflow-y-auto bg-transparent [scrollbar-width:thin] px-1 py-1 text-lg leading-7 outline-none placeholder:text-ink-muted/70"
+        />
+        <MicButton voice={props.voice} />
       </div>
-      <textarea
-        ref={props.inputRef}
-        aria-label="What's on your mind?"
-        placeholder="What's on your mind?  #tags  !private  ?question  /command"
-        rows={3}
-        value={draft}
-        onChange={(event) => {
-          setDraft(event.target.value);
-          if (!event.target.value) setSpoken(false);
-        }}
-        aria-controls={listKind ? DOCK_LIST_ID : undefined}
-        aria-activedescendant={lit !== null ? dockRowId(lit) : undefined}
-        onKeyDown={(event) => {
-          if (command.active && !needsUnlock && command.onKeyDown(event)) return;
-          if (onDockKey(event)) return;
-          const { key, shiftKey, ctrlKey, altKey, metaKey } = event;
-          const press = { key, shiftKey, ctrlKey, altKey, metaKey };
-          if (isSubmitPress({ ...press, isComposing: event.nativeEvent.isComposing }, submitKey)) {
-            event.preventDefault();
-            void submit();
-          }
-        }}
-        className="w-full resize-none rounded-lg border border-line bg-surface-raised px-3 py-2 text-[15px] outline-none focus:border-accent"
-      />
+      <p id="capture-hint" className="px-1 pt-1 text-xs text-ink-muted">
+        {draft
+          ? `${submitHint(submitKey, mode === 'ask' ? 'ask' : command.active ? 'run' : 'save')} · Esc to close`
+          : '#tag  ·  !private  ·  ?question  ·  /command  ·  Esc to close'}
+      </p>
       {needsUnlock ? (
         <div className="px-1 pt-1 text-xs text-ink-muted">
           <p>🔒 Unlock to ask or run commands. Press Enter to unlock with Windows Hello.</p>
@@ -291,4 +300,34 @@ export function CaptureInput(props: {
       ) : null}
     </div>
   );
+}
+
+/** What Enter will do, changing as you type (docs/product/capture-box-redesign.md#4-mode-badge). */
+function ModeBadge(props: { mode: CaptureMode }) {
+  const badge = CAPTURE_MODE_BADGES[props.mode];
+  return (
+    <span
+      role="status"
+      aria-label={`Mode: ${badge.label}`}
+      className={`mt-1 flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
+        props.mode === 'private' ? 'bg-ink/10 text-ink' : 'bg-accent/15 text-accent'
+      }`}
+    >
+      <span aria-hidden="true">{badge.icon}</span>
+      {badge.label}
+    </span>
+  );
+}
+
+/** One line to start; taller as lines are added, up to max-h (then it scrolls). */
+function useAutoGrow(input: RefObject<HTMLTextAreaElement | null>, text: string) {
+  // biome-ignore lint/correctness/useExhaustiveDependencies: measure again on each change
+  useLayoutEffect(() => {
+    const element = input.current;
+    if (!element) return;
+    // Empty, it is one row (rows={1}); measuring then could count a wrapped placeholder.
+    element.style.height = '';
+    if (!text) return;
+    element.style.height = `${element.scrollHeight}px`;
+  }, [input, text]);
 }

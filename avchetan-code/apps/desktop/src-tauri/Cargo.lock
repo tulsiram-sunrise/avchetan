@@ -270,9 +270,11 @@ dependencies = [
  "tauri-plugin-window-state",
  "tauri-winrt-notification",
  "whisper-rs",
+ "window-vibrancy",
  "windows",
  "windows-future",
  "windows-sys 0.61.2",
+ "windows-version",
 ]
 
 [[package]]

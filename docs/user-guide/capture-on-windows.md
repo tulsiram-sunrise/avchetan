@@ -5,14 +5,26 @@
 
 ## Write an entry
 
-1. Press **Ctrl+Shift+Space**, from any app. A small box opens in the middle of your screen.
+1. Press **Ctrl+Shift+Space**, from any app. A bar opens in the upper part of your screen. On Windows 11 the desktop shows through it, blurred; on Windows 10 it is a plain panel.
 2. Type what happened or what you need to do, for example `Walked 30 minutes, remind me to buy milk tomorrow`.
 3. Press **Enter** to save it. The box empties, and the entry appears underneath with a *Pending* badge.
 4. Press **Esc** (or click anywhere else) to close the box. Esc first steps back out of a list or an answer: see [Use the box with the keyboard](#use-the-box-with-the-keyboard).
 
 ![The capture box with a new entry typed in, and the latest entries underneath marked Organized](images/capture-on-windows-dock.png)
 
-Need more than one line? Press **Shift+Enter** to start a new line.
+Need more than one line? Press **Shift+Enter** to start a new line; the bar grows with it.
+
+The chip at the left of the box says what Enter will do, and changes as you type:
+
+| Chip | When |
+|---|---|
+| ✎ **Entry** | Plain text: saved as an entry |
+| 🔒 **Private** | The text has `!private` or a [private tag](#add-tags-and-keep-entries-private): saved as a private entry |
+| ? **Ask** | The text starts with `?`: a [question](#ask-about-your-entries) |
+| / **Command** | The text starts with `/`: a [command](commands.md) |
+| 🔍 **Find** | The text starts with `/find`: a search |
+
+The list under the box (your latest entries, a list of commands, an answer) shows only when there is something in it.
 
 Half-written text is kept, even if you close the box or restart your PC.
 

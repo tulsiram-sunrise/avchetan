@@ -11,7 +11,7 @@ Primary target: **Windows 11**. macOS/Linux should work where Tauri does, but ar
 
 | Label | Purpose | Config |
 |---|---|---|
-| `dock` | Capture / Ask / Command HUD | ~520×400 (grows for Ask answers up to ~520×640), `decorations: false`, `transparent: true`, `alwaysOnTop: true`, `skipTaskbar: true`, `resizable: false`, `visible: false`, `shadow: false` (CSS draws it) |
+| `dock` | Capture / Ask / Command HUD | 520 wide; its height follows what it shows (`dock_fit`, 56–640), `decorations: false`, `transparent: true`, `alwaysOnTop: true`, `skipTaskbar: true`, `resizable: false`, `visible: false`. On Windows 11 `dock_look.rs` puts Acrylic (22H2+) or Mica behind it with Windows' rounded corners and shadow; on Windows 10 the page draws a translucent panel with its own shadow |
 | `main` | Full window: timeline, tasks, tags, people, settings | Normal decorated, resizable, taskbar visible, created on demand, hidden (not closed) on close |
 
 - Visual: frosted glass (`backdrop-filter: blur`) with a solid fallback (Windows transparency + blur can be inconsistent; Mica/acrylic via `window-vibrancy` crate is an option), rounded corners, subtle border, respects light/dark.
