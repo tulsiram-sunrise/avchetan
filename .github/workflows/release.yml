@@ -165,6 +165,18 @@ jobs:
         env:
           EXPO_NO_TELEMETRY: 1
 
+      # The native modules (react-native-screens, -worklets) build with the Android Gradle plugin's
+      # default CMake, 3.31.6. The ubuntu-26.04 runners (from 2026-11) no longer have it in the
+      # Android SDK, and Gradle doesn't fetch it: "CMake '3.31.6' was not found in SDK".
+      - name: CMake for the native modules
+        run: |
+          sdkmanager="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "$sdkmanager" ]; then
+            echo "::error::No sdkmanager at $sdkmanager; the runner image changed again"
+            exit 1
+          fi
+          yes | "$sdkmanager" --install "cmake;3.31.6" > /dev/null
+
       - name: Release key
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
