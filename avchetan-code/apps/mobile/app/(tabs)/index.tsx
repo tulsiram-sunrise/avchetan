@@ -13,6 +13,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { type ComponentRef, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { useExtractionMode, useSlotModel } from '../../src/queries/ai-models';
+import { useEntryTags } from '../../src/queries/collections';
 import {
   useDayActivities,
   useDayEntries,
@@ -138,6 +139,7 @@ function DayContent(props: { day: string; today: string; entryInView: string | n
   const categories = useResolvedCategories();
   const ids = useMemo(() => (entries.data ?? []).map((log) => log.id), [entries.data]);
   const extracted = useExtracted(ids);
+  const tagsOf = useEntryTags(ids);
   const activitiesOf = useMemo(() => byRawLog(extracted.data?.activities), [extracted.data]);
   const tasksOf = useMemo(() => byRawLog(extracted.data?.tasks), [extracted.data]);
 
@@ -224,6 +226,7 @@ function DayContent(props: { day: string; today: string; entryInView: string | n
             }
             activities={activitiesOf.get(rawLog.id) ?? []}
             tasks={tasksOf.get(rawLog.id) ?? []}
+            tagPaths={tagsOf(rawLog.id)}
             addedOn={
               typedOn === day ? null : formatLocalDate(typedOn, { day: 'numeric', month: 'short' })
             }

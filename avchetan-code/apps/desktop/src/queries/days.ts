@@ -12,7 +12,16 @@ import { useServices } from '../services-context';
  * The Days view reads several tables, so its queries share the `days` key, which
  * `useTableInvalidation` refreshes when any of those tables change.
  */
-export const DAY_TABLES = ['raw_logs', 'activities', 'tasks', 'categories'] as const;
+export const DAY_TABLES = [
+  'raw_logs',
+  'activities',
+  'tasks',
+  'categories',
+  // Tag chips on entries, and the tag and project pages (queries/collections.ts).
+  'tags',
+  'entity_tags',
+  'projects',
+] as const;
 
 export function useToday(): string {
   const { store, timeZone } = useServices();

@@ -21,6 +21,9 @@ export function TimelineEntry(props: {
   addedOn?: string | null;
   /** Opened from search: scrolled into view and outlined for a moment. */
   inView?: boolean;
+  /** Tags on the entry or its activities; each chip opens its tag page. */
+  tagPaths?: readonly string[];
+  onOpenTag?: ((path: string) => void) | undefined;
 }) {
   const { rawLog, activities, tasks } = props;
   const window = windowContextOf(rawLog.context);
@@ -49,6 +52,7 @@ export function TimelineEntry(props: {
           <PrivateLock rawLog={rawLog} />
           {rawLog.content}
         </p>
+        <TagChips paths={props.tagPaths ?? []} onOpen={props.onOpenTag} />
         <WaitsForLocalAi rawLog={rawLog} />
         {window ? (
           <p className="text-xs text-ink-muted" title={window.window_title ?? window.app_name}>
@@ -75,5 +79,35 @@ export function TimelineEntry(props: {
       </div>
       <StatusBadge status={rawLog.status} />
     </li>
+  );
+}
+
+/** Tag chips under an entry. Buttons when there's a tag page to open. */
+export function TagChips(props: {
+  paths: readonly string[];
+  onOpen?: ((path: string) => void) | undefined;
+}) {
+  if (props.paths.length === 0) return null;
+  const chip = 'rounded-full bg-surface-raised px-2 py-0.5 text-xs text-ink-muted';
+  return (
+    <p className="flex flex-wrap gap-1.5">
+      {props.paths.map((path) =>
+        props.onOpen ? (
+          <button
+            key={path}
+            type="button"
+            className={`${chip} hover:text-accent hover:underline`}
+            title={`Open #${path}`}
+            onClick={() => props.onOpen?.(path)}
+          >
+            #{path}
+          </button>
+        ) : (
+          <span key={path} className={chip}>
+            #{path}
+          </span>
+        ),
+      )}
+    </p>
   );
 }

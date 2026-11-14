@@ -23,6 +23,22 @@ export default function MoreScreen() {
         <Pressable
           accessibilityRole="button"
           className="border-b border-line bg-surfaceRaised p-4"
+          onPress={() => router.push('/tags')}
+        >
+          <Text className="text-base text-ink">Tags</Text>
+          <Text className="text-sm text-inkMuted">Each tag's entries, totals and tasks.</Text>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          className="border-b border-line bg-surfaceRaised p-4"
+          onPress={() => router.push('/projects')}
+        >
+          <Text className="text-base text-ink">Projects</Text>
+          <Text className="text-sm text-inkMuted">Each project's entries, totals and tasks.</Text>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          className="border-b border-line bg-surfaceRaised p-4"
           onPress={() => router.push('/settings/ai-models')}
         >
           <Text className="text-base text-ink">AI models</Text>

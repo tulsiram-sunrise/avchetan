@@ -160,7 +160,7 @@ function instantRange(filters: SearchFilters) {
 }
 
 /** IDs of rows of `type` carrying the tag or one nested under it. */
-const taggedIds = (db: ClientDb, type: LinkTargetType, path: string) =>
+export const taggedIds = (db: ClientDb, type: LinkTargetType, path: string) =>
   db
     .select({ id: entityTags.targetId })
     .from(entityTags)
@@ -205,7 +205,7 @@ function entriesWithItem(
 }
 
 /** Conditions on `raw_logs` for the filters. */
-function entryFilters(db: ClientDb, filters: SearchFilters | undefined): SQL | undefined {
+export function entryFilters(db: ClientDb, filters: SearchFilters | undefined): SQL | undefined {
   if (!filters) return undefined;
   const { start, end } = instantRange(filters);
   const { tagPath, categoryId, projectId, personId } = filters;
@@ -242,7 +242,7 @@ function entryFilters(db: ClientDb, filters: SearchFilters | undefined): SQL | u
 }
 
 /** Conditions on `tasks` for the filters. */
-function taskFilters(db: ClientDb, filters: SearchFilters | undefined): SQL | undefined {
+export function taskFilters(db: ClientDb, filters: SearchFilters | undefined): SQL | undefined {
   if (!filters) return undefined;
   const { start, end } = instantRange(filters);
   const { from, to, tagPath, categoryId, projectId, personId } = filters;

@@ -6,6 +6,11 @@ export {
   type DailyBackupOptions,
   startDailyBackups,
 } from './client/backup';
+export type {
+  Collection,
+  CollectionMetric,
+  CollectionSummary,
+} from './client/collections';
 export {
   type ClientDatabase,
   type ClientDb,

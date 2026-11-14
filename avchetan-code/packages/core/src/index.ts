@@ -218,6 +218,16 @@ export {
 } from './normalize/day-summary';
 export { METRIC_ALIASES, METRICS, type MetricSpec } from './normalize/metric-keys';
 export {
+  formatMetricAmount,
+  type MetricSums,
+  type MetricTotal,
+  type MetricTotalKind,
+  metricLabel,
+  metricTotalKind,
+  metricTotalText,
+  topMetricTotals,
+} from './normalize/metric-totals';
+export {
   type Exercise,
   type MetricIssue,
   type NormalizedMetrics,

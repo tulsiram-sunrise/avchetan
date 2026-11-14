@@ -21,6 +21,8 @@ export function EntryRow(props: {
   outlined?: boolean;
   /** Called with the row's top within the list, so the list can scroll to it. */
   onLayoutY?: ((y: number) => void) | undefined;
+  /** Tags on the entry or its activities; tapping one opens its page. */
+  tagPaths?: readonly string[];
 }) {
   const { rawLog, activities, tasks, onLayoutY } = props;
   const window = windowContextOf(rawLog.context);
@@ -45,6 +47,7 @@ export function EntryRow(props: {
         {privatePrefix(rawLog)}
         {rawLog.content}
       </Text>
+      <TagChips paths={props.tagPaths ?? []} />
       <WaitsForLocalAi rawLog={rawLog} />
       {window || copied ? (
         <Text className="text-xs text-inkMuted">
@@ -75,5 +78,26 @@ export function EntryRow(props: {
         </View>
       ))}
     </Pressable>
+  );
+}
+
+/** Tag chips; each opens its tag's page. */
+export function TagChips(props: { paths: readonly string[] }) {
+  if (props.paths.length === 0) return null;
+  return (
+    <View className="flex-row flex-wrap gap-1.5">
+      {props.paths.map((path) => (
+        <Pressable
+          key={path}
+          accessibilityRole="link"
+          accessibilityLabel={`Open tag ${path}`}
+          hitSlop={4}
+          className="rounded-full bg-surface px-2 py-0.5"
+          onPress={() => router.push({ pathname: '/tag', params: { path } })}
+        >
+          <Text className="text-xs text-inkMuted">#{path}</Text>
+        </Pressable>
+      ))}
+    </View>
   );
 }
