@@ -79,9 +79,13 @@ export function rankCommands(word: string, aliases: CommandAliases = {}): Comman
     consider(name, fitHelp(typed, COMMANDS[name].help));
   }
   for (const [alias, name] of Object.entries(aliases)) {
-    // An alias fits a little behind the name itself: exact counts as its start.
+    // An alias fits a little behind a name: exact counts as a name's start, and any other fit
+    // comes after the same fit on a name (`fin` → find before finish = done).
     const fit = fitWord(typed, alias);
-    consider(name, fit && fit.tier === EXACT ? { ...fit, tier: NAME_START } : fit);
+    consider(
+      name,
+      fit && (fit.tier === EXACT ? { ...fit, tier: NAME_START } : { ...fit, gaps: fit.gaps + 1 }),
+    );
   }
   return COMMAND_NAMES.filter((name) => fits.has(name)).sort((a, b) =>
     compare(fits.get(a) as Fit, fits.get(b) as Fit),

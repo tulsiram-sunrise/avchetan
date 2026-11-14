@@ -5,7 +5,7 @@
  */
 
 /** What the list under the box shows: commands while a name is typed, else entries or sources. */
-export type DockListKind = 'commands' | 'entries' | 'sources';
+export type DockListKind = 'commands' | 'entries' | 'sources' | 'found';
 
 export type DockKeyPress = {
   key: string;
@@ -51,6 +51,8 @@ export function dockKey(press: DockKeyPress, state: DockKeyState): DockKeyAction
       if (current === null) {
         // The best command already shows lit, so the arrow goes on to the next one.
         if (list?.kind === 'commands') return { kind: 'move', to: Math.min(1, rows - 1) };
+        // `/find words` is one line: the arrow goes to the first match.
+        if (list?.kind === 'found') return { kind: 'move', to: 0 };
         // In a box with text the arrow moves the caret.
         return state.draftEmpty ? { kind: 'move', to: 0 } : NONE;
       }

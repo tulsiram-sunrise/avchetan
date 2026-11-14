@@ -38,6 +38,7 @@ beforeEach(async () => {
       }),
     },
     openSettings: vi.fn(async () => {}),
+    openSearch: vi.fn(async () => {}),
   };
   lockStatus = { configured: true, enabled: true, locked: false };
 });
@@ -148,6 +149,14 @@ describe('/undo', () => {
     rememberCapture(deps, rawLog);
     expect((await run('/undo')).message).toBe('Deleted: “Tea”');
     expect((await run('/undo')).message).toBe('Reopened: Water the plants');
+  });
+});
+
+describe('/find', () => {
+  it('asks for words, then opens Search with them', async () => {
+    expect(await plan('/find')).toMatchObject({ kind: 'hint' });
+    expect((await run('/find dentist visit')).message).toBe('Opened Search');
+    expect(deps.openSearch).toHaveBeenCalledWith('dentist visit');
   });
 });
 

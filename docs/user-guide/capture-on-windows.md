@@ -28,6 +28,8 @@ The list under the box (your latest entries, a list of commands, an answer) show
 
 While you type, chips under the box show what Avchetan reads from your text, with no AI: the tags (with 🔒 when a tag makes the entry [private](#add-tags-and-keep-entries-private)) and the dates your day words mean, such as *tomorrow → Sun, 15 Nov*. A weekday on its own shows both its coming and its last date (*friday → Fri, 20 Nov or Fri, 13 Nov*): the AI picks by what you wrote (*will* or *did*). They are only hints; the AI still organizes the entry afterwards.
 
+The line at the bottom of the box shows how things stand, from this PC alone: tasks **due today**, entries waiting **to organize** and, with a hub or server, entries waiting **to send** and a dot for the hub (green: synced; amber: syncing or offline; red: not synced, point at it for why and when it last synced). Click an item to open its page: due today opens **Tasks**, to organize opens **Days**, the dot and to send open **Settings → Hub & sync**.
+
 Half-written text is kept, even if you close the box or restart your PC.
 
 ## Use the box with the keyboard

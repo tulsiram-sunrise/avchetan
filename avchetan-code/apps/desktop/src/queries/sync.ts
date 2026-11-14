@@ -1,6 +1,8 @@
 import { createLogger } from '@avchetan/shared';
 import {
   type Connection,
+  describeSync,
+  hubDot,
   loadPairingLink,
   loadServerUrls,
   loadSyncStatus,
@@ -113,5 +115,36 @@ export function useRotateToken() {
       void queryClient.invalidateQueries({ queryKey: ['native', 'hub'] });
       void askDockToSync();
     },
+  });
+}
+
+/** How often the capture box's status line reads again (it also refreshes on every change). */
+const DOCK_STATUS_REFRESH_MS = 30_000;
+
+/**
+ * The capture box's status line (docs/product/capture-box-redesign.md#7-status-line), from local
+ * data only: tasks due today, entries waiting to be sent, and the hub dot. Keyed under `days`, so
+ * a new entry or task refreshes it.
+ */
+export function useDockStatus(today: string) {
+  const { store } = useServices();
+  return useQuery({
+    queryKey: ['days', 'dock-status', today],
+    queryFn: async () => {
+      const [groups, waiting, status, lastSyncedAt] = await Promise.all([
+        store.queries.taskGroupCounts(store.db, today),
+        store.sync.waitingEntries(),
+        loadSyncStatus(store),
+        store.sync.getState('last_pull_at'),
+      ]);
+      return {
+        dueToday: groups.today,
+        waitingToSend: waiting.count,
+        dot: hubDot(status),
+        statusText: describeSync(status).text,
+        lastSyncedAt: lastSyncedAt || null,
+      };
+    },
+    refetchInterval: DOCK_STATUS_REFRESH_MS,
   });
 }

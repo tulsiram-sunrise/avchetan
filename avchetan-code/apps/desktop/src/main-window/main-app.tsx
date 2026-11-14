@@ -2,6 +2,7 @@ import { type FilterChoice, NO_FILTERS } from '@avchetan/core';
 import { useEffect, useState } from 'react';
 import { LockScreen } from '../lock-screen';
 import type { MainView } from '../native/events';
+import { takePendingSearch } from '../services/search-handoff';
 import { useAppEvent, useTableInvalidation } from '../use-app-event';
 import { isHidden, useLockStatus } from '../use-lock';
 import { CategoriesPage } from './categories-page';
@@ -54,7 +55,8 @@ const NO_TARGET: Target = {
 export function MainApp(props: { initialView: MainView; initialDay?: string | null }) {
   const [view, setView] = useState<MainView>(props.initialView);
   const [target, setTarget] = useState<Target>({ ...NO_TARGET, day: props.initialDay ?? null });
-  const [searchText, setSearchText] = useState('');
+  // `/find words` in the capture box opened this window on Search (services/search-handoff.ts).
+  const [searchText, setSearchText] = useState(() => takePendingSearch() ?? '');
   const [searchChoice, setSearchChoice] = useState<FilterChoice>(NO_FILTERS);
   const [searchFocus, setSearchFocus] = useState(0);
   const [keysOpen, setKeysOpen] = useState(false);
@@ -62,6 +64,11 @@ export function MainApp(props: { initialView: MainView; initialDay?: string | nu
   useAppEvent('main:navigate', (payload) => {
     setView(payload.view);
     if (payload.day) setTarget({ ...NO_TARGET, day: payload.day });
+    if (payload.view === 'search' && payload.text) {
+      takePendingSearch();
+      setSearchText(payload.text);
+      setSearchFocus((n) => n + 1);
+    }
   });
   const lock = useLockStatus();
   const hidden = isHidden(lock);

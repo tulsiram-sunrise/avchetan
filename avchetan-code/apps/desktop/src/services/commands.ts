@@ -28,6 +28,7 @@ import { emitAppEvent } from '../native/events';
 import type { LockStatus } from '../native/lock';
 import { unlockApp } from './app-lock';
 import { announce } from './extraction';
+import { savePendingSearch } from './search-handoff';
 
 const log = createLogger('commands');
 
@@ -91,6 +92,8 @@ export type CommandDeps = {
     unlock(): Promise<UnlockOutcome>;
     lockNow(): Promise<LockStatus>;
   };
+  /** Opens the main window's Search with the words (`/find`). */
+  openSearch: (text: string) => Promise<void>;
   /** Opens the main window on Settings, on `tab` when given. */
   openSettings: (tab: SettingsTab | null) => Promise<void>;
 };
@@ -117,6 +120,12 @@ export function commandDeps(services: AppServices, undo: UndoStack): CommandDeps
       status: () => platform.lock.status(),
       unlock: () => unlockApp(store, platform.lock, 'Unlock Avchetan'),
       lockNow: () => platform.lock.lockNow(),
+    },
+    async openSearch(text) {
+      // For a main window not created yet (services/search-handoff.ts).
+      savePendingSearch(text);
+      await platform.shell.openMain('search');
+      await emitAppEvent('main:navigate', { view: 'search', text });
     },
     async openSettings(tab) {
       // The tab is remembered in storage both windows share, for a main window not created yet.
@@ -236,6 +245,17 @@ export function planFor(
         kind: 'choose',
         label: 'Several tasks match. ↑↓ to pick, Enter to mark it done',
         options: match.tasks.map((task) => ({ label: task.title, run: doneTask(deps, task) })),
+      };
+    }
+    case 'find': {
+      if (!text) return { kind: 'hint', text: 'Type words to find' };
+      return {
+        kind: 'run',
+        label: 'Open Search with these words',
+        async run() {
+          await deps.openSearch(text);
+          return { message: 'Opened Search', undo: null };
+        },
       };
     }
     case 'brief':

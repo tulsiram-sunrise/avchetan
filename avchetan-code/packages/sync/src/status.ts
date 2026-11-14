@@ -64,3 +64,15 @@ export function describeSync(status: SyncStatus): SyncSummary {
   }
   return STATE_TEXT[status.state];
 }
+
+/** The capture box's hub dot (capture-box-redesign.md §7); null with no server set up. */
+export type HubDot = 'synced' | 'trying' | 'problem';
+
+export function hubDot(status: SyncStatus): HubDot | null {
+  if (status.state === 'not_configured') return null;
+  // Something the user has to fix comes first, as in describeSync.
+  if (status.clockSkew || status.stuck > 0) return 'problem';
+  if (status.state === 'synced') return 'synced';
+  if (status.state === 'syncing' || status.state === 'offline') return 'trying';
+  return 'problem';
+}

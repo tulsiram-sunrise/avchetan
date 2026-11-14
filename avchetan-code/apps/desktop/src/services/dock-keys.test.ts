@@ -66,6 +66,13 @@ describe('dockKey', () => {
     });
   });
 
+  it('moves into /find matches with text typed, and opens one with Enter', () => {
+    const found: DockKeyState = { ...entries, draftEmpty: false, list: { kind: 'found', rows: 3 } };
+    expect(dockKey(press('ArrowDown'), found)).toEqual({ kind: 'move', to: 0 });
+    expect(dockKey(press('Enter'), found)).toEqual({ kind: 'none' });
+    expect(dockKey(press('Enter'), { ...found, highlight: 1 })).toEqual({ kind: 'open', row: 1 });
+  });
+
   it('does nothing with an empty list', () => {
     expect(dockKey(press('ArrowDown'), { ...entries, list: null })).toEqual({ kind: 'none' });
     expect(dockKey(press('Tab'), { ...entries, list: null })).toEqual({ kind: 'none' });

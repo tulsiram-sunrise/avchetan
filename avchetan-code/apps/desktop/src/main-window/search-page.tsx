@@ -7,7 +7,7 @@ import {
   NO_FILTERS,
   toSearchFilters,
 } from '@avchetan/core';
-import type { HighlightPart, PersonSummary, RawLog } from '@avchetan/db/sqlite';
+import type { PersonSummary, RawLog } from '@avchetan/db/sqlite';
 import { formatDueDate, formatTime, localDate } from '@avchetan/shared';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useResolvedCategories, useToday } from '../queries/days';
@@ -21,7 +21,7 @@ import {
   useSimilarEntries,
 } from '../queries/search';
 import { useServices } from '../services-context';
-import { fieldClass, panelClass, QuietButton } from './ui';
+import { fieldClass, Highlighted, panelClass, QuietButton } from './ui';
 
 /** Waits this long after the last key before searching, so each keystroke doesn't query. */
 const TYPING_PAUSE_MS = 120;
@@ -322,25 +322,6 @@ function Group(props: {
         </div>
       ) : null}
     </section>
-  );
-}
-
-/** Text with the words the search found marked. */
-export function Highlighted(props: { parts: readonly HighlightPart[] }) {
-  return (
-    <>
-      {props.parts.map((part, index) =>
-        part.match ? (
-          // biome-ignore lint/suspicious/noArrayIndexKey: parts never reorder.
-          <mark key={index} className="rounded-sm bg-accent/30 px-0.5 text-ink">
-            {part.text}
-          </mark>
-        ) : (
-          // biome-ignore lint/suspicious/noArrayIndexKey: parts never reorder.
-          <span key={index}>{part.text}</span>
-        ),
-      )}
-    </>
   );
 }
 

@@ -1,4 +1,5 @@
 import { bootstrap } from '../bootstrap';
+import { mainViewSchema } from '../native/events';
 import { MainApp } from './main-app';
 
 declare global {
@@ -10,8 +11,8 @@ declare global {
   }
 }
 
-const requested = window.__AVCHETAN_INITIAL_VIEW__;
-const initialView = requested === 'settings' || requested === 'setup' ? requested : 'timeline';
+const requested = mainViewSchema.safeParse(window.__AVCHETAN_INITIAL_VIEW__);
+const initialView = requested.success ? requested.data : 'timeline';
 
 const initialDay = /^\d{4}-\d{2}-\d{2}$/.test(window.__AVCHETAN_INITIAL_DAY__ ?? '')
   ? (window.__AVCHETAN_INITIAL_DAY__ ?? null)

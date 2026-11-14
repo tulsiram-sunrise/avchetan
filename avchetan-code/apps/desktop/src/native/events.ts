@@ -8,7 +8,8 @@ import { lockStatusSchema } from './lock';
 
 const log = createLogger('events');
 
-const mainViewSchema = z.enum([
+/** The main window's pages; src-tauri/src/windows.rs MAIN_VIEWS lists the same. */
+export const mainViewSchema = z.enum([
   'timeline',
   'search',
   'tasks',
@@ -52,6 +53,8 @@ const eventSchemas = {
       .regex(/^\d{4}-\d{2}-\d{2}$/)
       .nullish(),
     tab: settingsTabSchema.nullish(),
+    /** Words to search for, with `view: 'search'` (`/find` in the capture box). */
+    text: z.string().max(500).nullish(),
   }),
   /** Main → dock: make this day's daily brief now (Make the brief now, Make it again). */
   'brief:make': z.object({ day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }),

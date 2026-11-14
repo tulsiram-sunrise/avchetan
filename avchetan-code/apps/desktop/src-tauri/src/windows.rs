@@ -17,6 +17,23 @@ use crate::error::{warn_on_err, CommandError, CommandResult};
 pub const DOCK: &str = "dock";
 pub const MAIN: &str = "main";
 
+/// The main window's pages (`mainViewSchema` in src/native/events.ts). Only these are put into
+/// the script that opens a new main window.
+pub const MAIN_VIEWS: [&str; 12] = [
+    "timeline",
+    "search",
+    "tasks",
+    "people",
+    "review",
+    "trends",
+    "categories",
+    "tags",
+    "projects",
+    "settings",
+    "setup",
+    "check",
+];
+
 /// Hide the dock this long after it loses focus, unless it got focus back (tray clicks).
 const BLUR_HIDE_DELAY: Duration = Duration::from_millis(100);
 
@@ -165,14 +182,14 @@ pub fn is_local_date(value: &str) -> bool {
         })
 }
 
-/// Shows the main window, creating it on first use. `view` is `timeline`, `settings` or `setup`;
+/// Shows the main window, creating it on first use. `view` is one of `MAIN_VIEWS`;
 /// `day` (`YYYY-MM-DD`) opens that day in Days.
 pub fn open_main<R: Runtime>(
     app: &AppHandle<R>,
     view: &str,
     day: Option<&str>,
 ) -> CommandResult<()> {
-    if !matches!(view, "timeline" | "settings" | "setup") {
+    if !MAIN_VIEWS.contains(&view) {
         return Err(CommandError::new("invalid_view", "Unknown view"));
     }
     if day.is_some_and(|day| !is_local_date(day)) {
@@ -194,7 +211,7 @@ pub fn open_main<R: Runtime>(
         );
         return Ok(());
     }
-    // `view` is one of three literals and `day` only digits and dashes (checked above), so both
+    // `view` is one of the literals in MAIN_VIEWS and `day` only digits and dashes (checked above), so both
     // are safe to inline.
     let mut script = format!("window.__AVCHETAN_INITIAL_VIEW__ = '{view}';");
     if let Some(day) = day {
@@ -267,6 +284,13 @@ pub fn main_open(app: AppHandle, view: String, day: Option<String>) -> CommandRe
 #[cfg(test)]
 mod tests {
     use super::is_local_date;
+
+    #[test]
+    fn main_views_are_plain_words() {
+        assert!(super::MAIN_VIEWS
+            .iter()
+            .all(|view| view.chars().all(|c| c.is_ascii_lowercase())));
+    }
 
     #[test]
     fn local_dates_are_only_digits_and_dashes() {
