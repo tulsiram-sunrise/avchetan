@@ -116,3 +116,25 @@ export function ShowMore(props: { shown: number; total: number; onMore: () => vo
     </Pressable>
   );
 }
+
+/** A filter chip; `menu` (the default) marks one that opens a list. */
+export function Chip(props: {
+  label: string;
+  active: boolean;
+  onPress: () => void;
+  menu?: boolean;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      className={`rounded-full border px-3 py-1.5 ${
+        props.active ? 'border-accent bg-accent' : 'border-line bg-surfaceRaised'
+      }`}
+      onPress={props.onPress}
+    >
+      <Text className={`text-sm ${props.active ? 'text-white' : 'text-ink'}`}>
+        {props.menu === false ? props.label : `${props.label} ▾`}
+      </Text>
+    </Pressable>
+  );
+}

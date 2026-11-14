@@ -65,6 +65,19 @@ If tapping the widget does nothing (for example after you used **Force stop** on
 
 An entry's tags show under it on **Days**; tap one to open the tag's page. **More → Tags** and **More → Projects** list them all. A tag's or project's page shows how many entries and open tasks it has, when it was first and last used, the totals of its three most used numbers (*distance: 42 km this month · 318 km in all*; ratings such as mood show their average), its open tasks, and its entries by day, newest first. Tap a date to open that day; **Show more** adds 50 entries. A tag's page includes the tags nested under it (`#health` takes `#health/knee`). Renaming, merging and adding projects are on the PC.
 
+## Trends
+
+**More → Trends** draws one of your numbers over time, the same as on the PC ([Trends](capture-on-windows.md#trends)).
+
+- Tap the first chip to pick a number (distance, sleep, body weight…; the most used come first), and **Everything** to narrow it to one category or tag (with the tags under it).
+- Pick **4 weeks** (a bar per day), **3 months** (a bar per week) or **1 year** (a bar per month). Amounts such as distance or minutes are added up in each bar; ratings and readings such as mood, sleep or weight are averaged. A day with nothing logged has no bar.
+- Under the chart: the total or average and the change on the same length of time before.
+- **Tap a bar** for its exact value and its activities; tap an activity to open its day with the entry outlined.
+
+## The More tab
+
+**More** is grouped: **Your stuff** (People, Tags, Projects, Trends), **AI and capture** (AI models, Voice, Daily brief, What Avchetan learned), **Privacy** (App lock, Private tags), **Connection and data** (Sync, Your data, Setup check) and **Help** (User guide, Report a problem, Run setup again).
+
 ## Change or fix an entry
 
 Tap an entry on **Days** to see what was found in it.

@@ -95,6 +95,7 @@ function AppRoutes({ startup }: { startup: Startup }) {
           <Stack.Screen name="tag" options={{ title: 'Tag' }} />
           <Stack.Screen name="projects" options={{ title: 'Projects' }} />
           <Stack.Screen name="project/[id]" options={{ title: 'Project' }} />
+          <Stack.Screen name="trends" options={{ title: 'Trends' }} />
           <Stack.Screen name="settings/ai-models" options={{ title: 'AI models' }} />
           <Stack.Screen name="settings/sync" options={{ title: 'Sync' }} />
           <Stack.Screen name="settings/data" options={{ title: 'Your data' }} />

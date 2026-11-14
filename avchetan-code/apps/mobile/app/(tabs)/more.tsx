@@ -1,141 +1,125 @@
 import { createLogger } from '@avchetan/shared';
 import Constants from 'expo-constants';
-import { router } from 'expo-router';
+import { type Href, router } from 'expo-router';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { openGuide, openReportProblem } from '../../src/help';
 import { CaptureButton } from '../../src/ui/capture-button';
+import { SectionTitle } from '../../src/ui/parts';
 
 const log = createLogger('more');
+
+type Item = { title: string; hint: string } & (
+  | { href: Href }
+  | { link: () => Promise<unknown>; failure: string }
+);
+
+/** Grouped as in docs/product/finding-and-using-data.md#6-grouped-more-menu-phone. */
+const GROUPS: { title: string; items: Item[] }[] = [
+  {
+    title: 'Your stuff',
+    items: [
+      { title: 'People', hint: 'Who you saw, and what you promised.', href: '/people' },
+      { title: 'Tags', hint: "Each tag's entries, totals and tasks.", href: '/tags' },
+      { title: 'Projects', hint: "Each project's entries, totals and tasks.", href: '/projects' },
+      { title: 'Trends', hint: 'Your numbers over weeks, months and a year.', href: '/trends' },
+    ],
+  },
+  {
+    title: 'AI and capture',
+    items: [
+      {
+        title: 'AI models',
+        hint: 'Choose who organizes and answers.',
+        href: '/settings/ai-models',
+      },
+      { title: 'Voice', hint: 'Say entries instead of typing, offline.', href: '/settings/voice' },
+      {
+        title: 'Daily brief',
+        hint: "When it's made, and the evening reminder.",
+        href: '/settings/brief',
+      },
+      {
+        title: 'What Avchetan learned',
+        hint: 'Your fixes the AI follows, and forgetting them.',
+        href: '/settings/learned',
+      },
+    ],
+  },
+  {
+    title: 'Privacy',
+    items: [
+      {
+        title: 'App lock',
+        hint: 'Unlock with your fingerprint, face or PIN.',
+        href: '/settings/app-lock',
+      },
+      {
+        title: 'Private tags',
+        hint: 'Tags that keep an entry away from cloud AI.',
+        href: '/settings/private-tags',
+      },
+    ],
+  },
+  {
+    title: 'Connection and data',
+    items: [
+      { title: 'Sync', hint: 'Connect to your Avchetan server.', href: '/settings/sync' },
+      { title: 'Your data', hint: 'Export everything, and daily backups.', href: '/settings/data' },
+      {
+        title: 'Setup check',
+        hint: "Find out why something doesn't work.",
+        href: '/settings/check',
+      },
+    ],
+  },
+  {
+    title: 'Help',
+    items: [
+      {
+        title: 'User guide',
+        hint: 'How to set up and use Avchetan.',
+        link: openGuide,
+        failure: 'could not open the guide',
+      },
+      {
+        title: 'Report a problem',
+        hint: 'Opens a form on GitHub.',
+        link: openReportProblem,
+        failure: 'could not open the issue form',
+      },
+      {
+        title: 'Run setup again',
+        hint: 'Choose how this phone syncs and organizes.',
+        href: '/setup',
+      },
+    ],
+  },
+];
 
 export default function MoreScreen() {
   return (
     <View className="flex-1 bg-surface">
       {/* Room at the end so the last rows scroll clear of the + button. */}
       <ScrollView contentContainerClassName="pb-24">
-        <Pressable
-          accessibilityRole="button"
-          className="border-b border-line bg-surfaceRaised p-4"
-          onPress={() => router.push('/people')}
-        >
-          <Text className="text-base text-ink">People</Text>
-          <Text className="text-sm text-inkMuted">Who you saw, and what you promised.</Text>
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          className="border-b border-line bg-surfaceRaised p-4"
-          onPress={() => router.push('/tags')}
-        >
-          <Text className="text-base text-ink">Tags</Text>
-          <Text className="text-sm text-inkMuted">Each tag's entries, totals and tasks.</Text>
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          className="border-b border-line bg-surfaceRaised p-4"
-          onPress={() => router.push('/projects')}
-        >
-          <Text className="text-base text-ink">Projects</Text>
-          <Text className="text-sm text-inkMuted">Each project's entries, totals and tasks.</Text>
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          className="border-b border-line bg-surfaceRaised p-4"
-          onPress={() => router.push('/settings/ai-models')}
-        >
-          <Text className="text-base text-ink">AI models</Text>
-          <Text className="text-sm text-inkMuted">Choose who organizes and answers.</Text>
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          className="border-b border-line bg-surfaceRaised p-4"
-          onPress={() => router.push('/settings/private-tags')}
-        >
-          <Text className="text-base text-ink">Private tags</Text>
-          <Text className="text-sm text-inkMuted">Tags that keep an entry away from cloud AI.</Text>
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          className="border-b border-line bg-surfaceRaised p-4"
-          onPress={() => router.push('/settings/app-lock')}
-        >
-          <Text className="text-base text-ink">App lock</Text>
-          <Text className="text-sm text-inkMuted">Unlock with your fingerprint, face or PIN.</Text>
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          className="border-b border-line bg-surfaceRaised p-4"
-          onPress={() => router.push('/settings/voice')}
-        >
-          <Text className="text-base text-ink">Voice</Text>
-          <Text className="text-sm text-inkMuted">Say entries instead of typing, offline.</Text>
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          className="border-b border-line bg-surfaceRaised p-4"
-          onPress={() => router.push('/settings/learned')}
-        >
-          <Text className="text-base text-ink">What Avchetan learned</Text>
-          <Text className="text-sm text-inkMuted">
-            Your fixes the AI follows, and forgetting them.
-          </Text>
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          className="border-b border-line bg-surfaceRaised p-4"
-          onPress={() => router.push('/settings/brief')}
-        >
-          <Text className="text-base text-ink">Daily brief</Text>
-          <Text className="text-sm text-inkMuted">When it's made, and the evening reminder.</Text>
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          className="border-b border-line bg-surfaceRaised p-4"
-          onPress={() => router.push('/settings/sync')}
-        >
-          <Text className="text-base text-ink">Sync</Text>
-          <Text className="text-sm text-inkMuted">Connect to your Avchetan server.</Text>
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          className="border-b border-line bg-surfaceRaised p-4"
-          onPress={() => router.push('/settings/data')}
-        >
-          <Text className="text-base text-ink">Your data</Text>
-          <Text className="text-sm text-inkMuted">Export everything, and daily backups.</Text>
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          className="border-b border-line bg-surfaceRaised p-4"
-          onPress={() => router.push('/settings/check')}
-        >
-          <Text className="text-base text-ink">Setup check</Text>
-          <Text className="text-sm text-inkMuted">Find out why something doesn't work.</Text>
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          className="border-b border-line bg-surfaceRaised p-4"
-          onPress={() => router.push('/setup')}
-        >
-          <Text className="text-base text-ink">Run setup again</Text>
-          <Text className="text-sm text-inkMuted">Choose how this phone syncs and organizes.</Text>
-        </Pressable>
-        <Pressable
-          accessibilityRole="link"
-          className="border-b border-line bg-surfaceRaised p-4"
-          onPress={() => void openGuide().catch(() => log.warn('could not open the guide'))}
-        >
-          <Text className="text-base text-ink">User guide</Text>
-          <Text className="text-sm text-inkMuted">How to set up and use Avchetan.</Text>
-        </Pressable>
-        <Pressable
-          accessibilityRole="link"
-          className="border-b border-line bg-surfaceRaised p-4"
-          onPress={() =>
-            void openReportProblem().catch(() => log.warn('could not open the issue form'))
-          }
-        >
-          <Text className="text-base text-ink">Report a problem</Text>
-          <Text className="text-sm text-inkMuted">Opens a form on GitHub.</Text>
-        </Pressable>
+        {GROUPS.map((group) => (
+          <View key={group.title}>
+            <SectionTitle title={group.title} />
+            {group.items.map((item) => (
+              <Pressable
+                key={item.title}
+                accessibilityRole={'href' in item ? 'button' : 'link'}
+                className="border-b border-line bg-surfaceRaised p-4"
+                onPress={() => {
+                  if ('href' in item) router.push(item.href);
+                  else void item.link().catch(() => log.warn(item.failure));
+                }}
+              >
+                <Text className="text-base text-ink">{item.title}</Text>
+                <Text className="text-sm text-inkMuted">{item.hint}</Text>
+              </Pressable>
+            ))}
+          </View>
+        ))}
         <Text className="p-4 text-sm text-inkMuted">Avchetan {Constants.expoConfig?.version}</Text>
       </ScrollView>
       <CaptureButton />

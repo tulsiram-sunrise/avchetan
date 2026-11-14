@@ -23,7 +23,7 @@ import {
 } from '../src/queries/search';
 import { useSearchState } from '../src/stores/search';
 import { usePalette } from '../src/theme/theme';
-import { SectionTitle } from '../src/ui/parts';
+import { Chip, SectionTitle } from '../src/ui/parts';
 import { PickSheet } from '../src/ui/pick-sheet';
 
 /** Waits this long after the last key before searching. */
@@ -185,23 +185,6 @@ function Filters(props: { choice: FilterChoice; onChoice: (choice: FilterChoice)
         onClose={() => setOpen(null)}
       />
     </View>
-  );
-}
-
-/** A filter chip; `menu` (the default) marks one that opens a list. */
-function Chip(props: { label: string; active: boolean; onPress: () => void; menu?: boolean }) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      className={`rounded-full border px-3 py-1.5 ${
-        props.active ? 'border-accent bg-accent' : 'border-line bg-surfaceRaised'
-      }`}
-      onPress={props.onPress}
-    >
-      <Text className={`text-sm ${props.active ? 'text-white' : 'text-ink'}`}>
-        {props.menu === false ? props.label : `${props.label} ▾`}
-      </Text>
-    </Pressable>
   );
 }
 
