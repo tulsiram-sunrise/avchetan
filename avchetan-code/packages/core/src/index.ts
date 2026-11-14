@@ -166,6 +166,7 @@ export {
   renderExample,
   saveLearnFromCorrections,
 } from './extraction/corrections';
+export { type DayHint, dayHints } from './extraction/date-check';
 export {
   EXTRACTION_PROMPT_VERSION,
   type ExtractionOptions,

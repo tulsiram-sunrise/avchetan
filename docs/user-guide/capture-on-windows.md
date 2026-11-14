@@ -7,7 +7,7 @@
 
 1. Press **Ctrl+Shift+Space**, from any app. A bar opens in the upper part of your screen. On Windows 11 the desktop shows through it, blurred; on Windows 10 it is a plain panel.
 2. Type what happened or what you need to do, for example `Walked 30 minutes, remind me to buy milk tomorrow`.
-3. Press **Enter** to save it. The box empties, and the entry appears underneath with a *Pending* badge.
+3. Press **Enter** to save it. The box empties and says *✓ Saved · Ctrl+Z to take back* for a few seconds; the entry appears underneath, *Pending* until the AI has organized it, then *Organized*.
 4. Press **Esc** (or click anywhere else) to close the box. Esc first steps back out of a list or an answer: see [Use the box with the keyboard](#use-the-box-with-the-keyboard).
 
 ![The capture box with a new entry typed in, and the latest entries underneath marked Organized](images/capture-on-windows-dock.png)
@@ -25,6 +25,8 @@ The chip at the left of the box says what Enter will do, and changes as you type
 | 🔍 **Find** | The text starts with `/find`: a search |
 
 The list under the box (your latest entries, a list of commands, an answer) shows only when there is something in it.
+
+While you type, chips under the box show what Avchetan reads from your text, with no AI: the tags (with 🔒 when a tag makes the entry [private](#add-tags-and-keep-entries-private)) and the dates your day words mean, such as *tomorrow → Sun, 15 Nov*. A weekday on its own shows both its coming and its last date (*friday → Fri, 20 Nov or Fri, 13 Nov*): the AI picks by what you wrote (*will* or *did*). They are only hints; the AI still organizes the entry afterwards.
 
 Half-written text is kept, even if you close the box or restart your PC.
 
