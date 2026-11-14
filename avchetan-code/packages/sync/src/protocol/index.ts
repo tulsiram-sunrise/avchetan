@@ -129,6 +129,8 @@ export const pullResponseSchema = z.object({
   ),
   nextCursor: z.int(),
   hasMore: z.boolean(),
+  /** Changes after this page, for a long first download's progress. Older servers leave it out. */
+  remaining: z.int().min(0).optional(),
 });
 export type PullResponse = z.infer<typeof pullResponseSchema>;
 

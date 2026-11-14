@@ -50,7 +50,19 @@ export type SyncEngineDeps = {
   device: SyncDevice | (() => Promise<SyncDevice>);
   /** Rows changed here, so the UI can refresh and the pending processor can look again. */
   onSynced?: () => void;
+  /**
+   * A long download (more than one page): changes taken so far of all there are, after each
+   * page; null when it ends, however it ends. Only from servers that say what remains.
+   */
+  onPullProgress?: (progress: PullProgress | null) => void;
+  /** Changes per pulled page, each applied in one transaction (the server allows up to 500). */
+  pullPageSize?: number;
 };
+
+export type PullProgress = { done: number; total: number };
+
+/** Lets the screen draw and its own reads run between two pulled pages. */
+const yieldToUi = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
 
 export type SyncEngine = {
   /** Sync soon, after local writes settle. Never awaited by a write. */
@@ -123,6 +135,8 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
     await store.sync.setState('server_id', serverId);
     await store.sync.setState(DATA_EPOCH, dataEpoch ?? '');
     await store.sync.setState('pull_cursor', '0');
+    // A pull of everything under way was from the old server or epoch: start it again.
+    await store.sync.setState('refill_cursor', '');
     await store.sync.setState(REGISTRATION, '');
   }
 
@@ -165,18 +179,42 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
   async function pull(api: ReturnType<typeof createApiClient>): Promise<void> {
     // After an update that added synced columns, pull everything once and take rows of the same
     // version too: an older app dropped the new columns when it pulled them.
+    // A new device pulls everything this way too. Either kind resumes where it was interrupted
+    // (a lost connection, the app closed, the hub's rate limit): starting over each time, a long
+    // history never finished downloading.
     const refill = (await store.sync.getState('pulled_columns')) !== SYNCED_COLUMNS_FINGERPRINT;
-    if (refill) log.info('pulling everything once for new columns');
-    let cursor = refill ? 0 : Number((await store.sync.getState('pull_cursor')) ?? 0);
-    while (true) {
-      const { changes, nextCursor, hasMore } = await api.pull(cursor);
-      // A newer server may have tables this app doesn't know yet.
-      const known = changes.filter(({ table }) => isSyncedTable(table)).map(toRemoteChange);
-      await store.sync.applyPage(known, nextCursor, { refill });
-      cursor = nextCursor;
-      if (!hasMore) break;
+    const resumeAt = Number((await store.sync.getState('refill_cursor')) || 0);
+    if (refill) log.info('pulling everything', { from: resumeAt });
+    let cursor = refill ? resumeAt : Number((await store.sync.getState('pull_cursor')) ?? 0);
+    let done = 0;
+    let reporting = false;
+    const startedMs = Date.now();
+    try {
+      while (true) {
+        const { changes, nextCursor, hasMore, remaining } = await api.pull(
+          cursor,
+          deps.pullPageSize,
+        );
+        // A newer server may have tables this app doesn't know yet.
+        const known = changes.filter(({ table }) => isSyncedTable(table)).map(toRemoteChange);
+        await store.sync.applyPage(known, nextCursor, { refill });
+        cursor = nextCursor;
+        done += changes.length;
+        if (!hasMore) break;
+        if (remaining !== undefined) {
+          reporting = true;
+          deps.onPullProgress?.({ done, total: done + remaining });
+        }
+        await yieldToUi();
+      }
+    } finally {
+      if (reporting) deps.onPullProgress?.(null);
     }
-    if (refill) await store.sync.setState('pulled_columns', SYNCED_COLUMNS_FINGERPRINT);
+    if (refill) {
+      await store.sync.setState('pulled_columns', SYNCED_COLUMNS_FINGERPRINT);
+      await store.sync.setState('refill_cursor', '');
+      log.info('pulled everything', { rows: done, durationMs: Date.now() - startedMs });
+    }
     await store.sync.setState('last_pull_at', store.clock.now());
   }
 

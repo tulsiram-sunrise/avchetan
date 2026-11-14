@@ -71,13 +71,15 @@ Rows that lost LWW are **acked** (the conflict is resolved). Rejected rows stay 
 
 ```json
 { "changes": [ { "table": "activities", "row": { … }, "seq": 1043 } ],
-  "nextCursor": 1043, "hasMore": false }
+  "nextCursor": 1043, "hasMore": false, "remaining": 0 }
 ```
 - Returns rows from all synced tables with `server_seq > cursor`, ordered by `server_seq`, including tombstones.
-- Client applies each page in one local transaction with LWW, then stores `nextCursor` in `sync_state.pull_cursor` **in the same transaction**. Loop while `hasMore`.
+- `remaining` (optional; servers before v0.4.0 leave it out): rows after this page, counted only while `hasMore`. A client shows it as the progress of a long first download (*Downloading your history… 12,000 of 50,000*).
+- Client applies each page in one local transaction with LWW, then stores `nextCursor` in `sync_state.pull_cursor` **in the same transaction**. Loop while `hasMore`, yielding to the UI between pages so the app's own reads run. A page is applied with one lookup per table and multi-row inserts, not a statement per row. The phone asks for pages of 200 (`limit=200`), so the screen waits less for each transaction.
 - Applying pulled rows does **not** enqueue the outbox.
 - Rows pushed by this device come back in the pull; LWW makes them no-ops.
-- `cursor=0` = full bootstrap (new device or reset).
+- `cursor=0` = full bootstrap (new device or reset). A pull of everything (a new device, or new columns after an update) keeps its position in `sync_state.refill_cursor`, written in each page's transaction, and resumes there after an interruption instead of starting over; a new server or data epoch clears it.
+- Rate limits per device and minute: 600 pulls, 60 of everything else. A first download of 50,000 entries is about 150,000 rows: 750 pages of 200.
 
 Sequence gaps from rolled-back transactions are harmless (cursor is "greater than", not "next").
 

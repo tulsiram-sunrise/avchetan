@@ -32,6 +32,7 @@ import { usePalette } from '../../src/theme/theme';
 import { CaptureButton } from '../../src/ui/capture-button';
 import { DailyBrief } from '../../src/ui/daily-brief';
 import { DayCalendar } from '../../src/ui/day-calendar';
+import { DownloadBanner } from '../../src/ui/download-banner';
 import { EntryRow } from '../../src/ui/entry-row';
 import { SectionTitle } from '../../src/ui/parts';
 import { SyncWarningBanner } from '../../src/ui/sync-warning-banner';
@@ -176,6 +177,7 @@ function DayContent(props: { day: string; today: string; entryInView: string | n
         />
       }
     >
+      <DownloadBanner />
       <SyncWarningBanner />
       <View className="gap-1 px-4 pt-3">
         <Text className="text-base font-semibold text-ink">

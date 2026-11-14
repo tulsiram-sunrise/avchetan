@@ -18,7 +18,7 @@ import type { ServerIdentity } from './auth';
 import { hashToken, tokenMatches } from './auth';
 import type { HubBrief } from './brief/hub-brief';
 import type { ServerDb } from './db/client';
-import { createRateLimiter } from './rate-limit';
+import { createRateLimiter, MAX_PULLS } from './rate-limit';
 import { askRoutes } from './routes/ask';
 import { briefRoutes } from './routes/brief';
 import { commandRoutes } from './routes/command';
@@ -78,6 +78,7 @@ function errorBody(
 export function createApp(deps: AppDeps) {
   const { db, identity } = deps;
   const rateLimited = createRateLimiter(deps.nowMs ?? Date.now);
+  const pullsLimited = createRateLimiter(deps.nowMs ?? Date.now, MAX_PULLS);
   const internalHash = deps.internalToken ? hashToken(deps.internalToken) : null;
   const app = new Hono<AppEnv>();
 
@@ -129,7 +130,8 @@ export function createApp(deps: AppDeps) {
       if (!known) throw new ApiError(403, 'unknown_device', 'Pair this device again');
       c.set('deviceId', known.id);
     }
-    const retryAfter = c.get('internal') ? null : rateLimited(deviceId ?? 'unregistered');
+    const limit = c.req.path === '/v1/sync/pull' ? pullsLimited : rateLimited;
+    const retryAfter = c.get('internal') ? null : limit(deviceId ?? 'unregistered');
     if (retryAfter !== null) {
       c.header('Retry-After', String(retryAfter));
       throw new ApiError(429, 'rate_limited', 'Too many requests');
