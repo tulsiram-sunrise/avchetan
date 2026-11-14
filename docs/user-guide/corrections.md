@@ -7,6 +7,7 @@ When Avchetan organizes an entry wrongly and you fix it, it remembers. Next time
 | You | The AI learns |
 |---|---|
 | Change an activity's title or category | "Entries like this one get this title and this category" |
+| Change, add or remove an activity's numbers (minutes, km, steps…) | "Entries like this one keep these numbers", so the AI stops dropping them |
 | Change a task's title | "Entries like this one make this task" |
 | Delete an activity or task that Avchetan made | "This isn't an activity" or "This isn't a task" |
 | Add a promise with **Person…**, or remove one with **Not a promise** ([People and promises](people.md#fix-a-promise)) | "Tasks like this one are for this person" (or waited on them), or "this isn't a promise" |
@@ -21,6 +22,15 @@ A fix you make on your phone also teaches your PC and your hub, once they sync.
 
 - **Windows:** in **Days**, under the entry, pick another category from the list next to the activity, click its title to change it, or click **Delete**. Change or delete tasks in **Tasks**.
 - **Android:** tap the entry. Under **Activities**, tap **Edit** to change the title or pick another category, or tap **Delete**. Tap a task to change its title or due date, or to delete it.
+
+### Fix the numbers
+
+Activities keep numbers such as *Duration: 40 min* or *Distance: 5 km*, which tag pages and trends add up. When the AI got one wrong or left it out:
+
+- **Windows:** in **Days**, click **Edit numbers** (or **Add numbers**) next to the activity.
+- **Android:** tap the entry, then tap the numbers line under the activity (or **+ Add numbers**).
+
+Each number is a row: choose what it is (*Duration (min)*, *Distance (km)*, *Steps*…), type the value, and **Save**. **Add a number** adds a row; **Remove**, or emptying the value, takes one out. You can type another unit and it's converted: *5 mi* is saved as 8.05 km, *1.5 h* as 90 min. A value out of range (a mood of 9 when moods go from 1 to 5) is marked on its row with what to type. The activity then shows *edited*, and the AI won't change it when the entry is organized again.
 
 ## See what it learned, and forget a fix
 

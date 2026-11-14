@@ -153,6 +153,28 @@ describe('correction examples', () => {
     ]);
   });
 
+  it('edited numbers are a correction, and the example carries the new numbers', async () => {
+    const { store } = await openTestStore();
+    const { activity } = await extracted(store);
+    await store.write((tx) =>
+      store.repos.activities.editByUser(tx, activity.id, {
+        metrics: { distance_km: 5, duration_min: 28 },
+      }),
+    );
+    const rows = await store.db.select().from(extractionCorrections);
+    expect(rows).toEqual([
+      expect.objectContaining({
+        field: 'metrics',
+        before: activity.metrics,
+        after: { distance_km: 5, duration_min: 28 },
+      }),
+    ]);
+    const [entry] = await examples(store);
+    expect(entry?.activities).toEqual([
+      expect.objectContaining({ metrics: { distance_km: 5, duration_min: 28 }, userEdited: true }),
+    ]);
+  });
+
   it('a delete is a negative example, and re-extraction does not bring the item back', async () => {
     const { store } = await openTestStore();
     const { log, task } = await extracted(store);

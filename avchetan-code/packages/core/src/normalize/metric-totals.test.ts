@@ -10,7 +10,8 @@ import {
 describe('metric totals', () => {
   it('names keys without their unit suffix', () => {
     expect(metricLabel('distance_km')).toBe('distance');
-    expect(metricLabel('heart_rate_avg_bpm')).toBe('heart rate avg');
+    expect(metricLabel('heart_rate_avg_bpm')).toBe('average heart rate');
+    expect(metricLabel('rpe')).toBe('effort (RPE)');
     expect(metricLabel('pace_min_per_km')).toBe('pace');
     expect(metricLabel('steps')).toBe('steps');
   });

@@ -1,4 +1,9 @@
-import { buildCaptureInput, EXTRACTION_PROMPT_VERSION, normalizeTagPath } from '@avchetan/core';
+import {
+  buildCaptureInput,
+  EXTRACTION_PROMPT_VERSION,
+  normalizeMetrics,
+  normalizeTagPath,
+} from '@avchetan/core';
 import type { ClientStore } from '@avchetan/db/sqlite';
 import { AppError, createLogger, newId, toAppError } from '@avchetan/shared';
 import { z } from 'zod';
@@ -51,12 +56,18 @@ const ACTIONS = {
   ),
 
   'activity.edit': action(
-    idArgs.extend({ title: z.string().optional(), categoryId: z.string().optional() }),
-    (store, { id, title, categoryId }) =>
+    idArgs.extend({
+      title: z.string().optional(),
+      categoryId: z.string().optional(),
+      // The whole new object (from applyMetricRows), normalized again here like the model's.
+      metrics: z.record(z.string(), z.unknown()).optional(),
+    }),
+    (store, { id, title, categoryId, metrics }) =>
       store.write((tx) =>
         store.repos.activities.editByUser(tx, id, {
           ...(title === undefined ? {} : { title }),
           ...(categoryId === undefined ? {} : { categoryId }),
+          ...(metrics === undefined ? {} : { metrics: normalizeMetrics(metrics).metrics }),
         }),
       ),
   ),

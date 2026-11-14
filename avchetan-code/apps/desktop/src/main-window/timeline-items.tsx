@@ -3,6 +3,7 @@ import type { Activity, RawLog, Task } from '@avchetan/db/sqlite';
 import { formatDueDate } from '@avchetan/shared';
 import { useState } from 'react';
 import { useAction, useActiveCategories, useCategoryNames } from '../queries/organize';
+import { MetricsEditor } from './metrics-editor';
 import { TaskPromises } from './task-promises';
 import { ActionError, EditableText, fieldClass, QuietButton } from './ui';
 import { RuleForm } from './window-context-setting';
@@ -13,6 +14,7 @@ export function ActivityRow({ activity }: { activity: Activity }) {
   const edit = useAction('activity.edit');
   const remove = useAction('activity.delete');
   const metrics = metricsText(activity.metrics);
+  const [editingNumbers, setEditingNumbers] = useState(false);
   const isActive = categories.data?.some((category) => category.id === activity.categoryId);
 
   return (
@@ -42,6 +44,12 @@ export function ActivityRow({ activity }: { activity: Activity }) {
         />
         {activity.isUserEdited ? <span className="text-xs text-ink-muted">edited</span> : null}
         <QuietButton
+          label={`Edit the numbers of ${activity.title}`}
+          onClick={() => setEditingNumbers((open) => !open)}
+        >
+          {metrics ? 'Edit numbers' : 'Add numbers'}
+        </QuietButton>
+        <QuietButton
           label={`Delete ${activity.title}`}
           disabled={remove.isPending}
           onClick={() => remove.mutate({ id: activity.id })}
@@ -49,7 +57,11 @@ export function ActivityRow({ activity }: { activity: Activity }) {
           Delete
         </QuietButton>
       </div>
-      {metrics ? <p className="text-xs text-ink-muted">{metrics}</p> : null}
+      {editingNumbers ? (
+        <MetricsEditor activity={activity} onClose={() => setEditingNumbers(false)} />
+      ) : metrics ? (
+        <p className="text-xs text-ink-muted">{metrics}</p>
+      ) : null}
       {exerciseLines(activity.metrics).map((line) => (
         <p key={line} className="text-xs text-ink-muted">
           {line}

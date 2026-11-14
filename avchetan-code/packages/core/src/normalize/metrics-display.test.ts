@@ -3,8 +3,8 @@ import { exerciseLines, metricsText } from './metrics-display';
 
 describe('metrics display', () => {
   it('writes metrics on one line, without the exercises', () => {
-    expect(metricsText({ duration_min: 20, distance_km: 3, exercises: [] })).toBe(
-      'duration min: 20 · distance km: 3',
+    expect(metricsText({ duration_min: 20, distance_km: 3.25, meal: 'lunch', exercises: [] })).toBe(
+      'Duration: 20 min · Distance: 3.3 km · Meal: lunch',
     );
   });
 

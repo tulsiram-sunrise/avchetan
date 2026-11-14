@@ -14,6 +14,7 @@ import {
   useEditLog,
   useRequeueLog,
 } from '../../src/queries/writes';
+import { MetricsEditor } from '../../src/ui/metrics-editor';
 import { Button, Failure, Field, HelpLink } from '../../src/ui/parts';
 import { privatePrefix, WaitsForLocalAi } from '../../src/ui/private-mark';
 import { StatusBadge } from '../../src/ui/status-badge';
@@ -80,13 +81,27 @@ function ActivityItem({ activity }: { activity: Activity }) {
   const names = useCategoryNames();
   const remove = useDeleteActivity();
   const [editing, setEditing] = useState(false);
+  const [editingNumbers, setEditingNumbers] = useState(false);
   const metrics = metricsText(activity.metrics);
 
   return (
     <View className="gap-0.5 border-b border-line py-2">
       <Text className="text-sm text-ink">{activity.title}</Text>
       <Text className="text-xs text-inkMuted">{names.data?.get(activity.categoryId) ?? '…'}</Text>
-      {metrics ? <Text className="text-xs text-inkMuted">{metrics}</Text> : null}
+      {editingNumbers ? (
+        <MetricsEditor activity={activity} onClose={() => setEditingNumbers(false)} />
+      ) : (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityHint="Change, add or remove its numbers"
+          hitSlop={6}
+          onPress={() => setEditingNumbers(true)}
+        >
+          <Text className={`text-xs ${metrics ? 'text-inkMuted' : 'text-accent'}`}>
+            {metrics ? `${metrics}  ✎` : '+ Add numbers'}
+          </Text>
+        </Pressable>
+      )}
       {exerciseLines(activity.metrics).map((line) => (
         <Text key={line} className="text-xs text-inkMuted">
           {line}

@@ -1,4 +1,4 @@
-import { buildCaptureInput } from '@avchetan/core';
+import { buildCaptureInput, normalizeMetrics } from '@avchetan/core';
 import { useWrite } from './entries';
 
 export const useSetTaskDone = () =>
@@ -20,6 +20,14 @@ export const useDeleteTask = () =>
 export const useEditActivity = () =>
   useWrite((store, { id, ...changes }: { id: string; title: string; categoryId: string }) =>
     store.write((tx) => store.repos.activities.editByUser(tx, id, changes)),
+  );
+
+/** New numbers for an activity (from applyMetricRows), normalized like the model's. */
+export const useEditActivityNumbers = () =>
+  useWrite((store, { id, metrics }: { id: string; metrics: Record<string, unknown> }) =>
+    store.write((tx) =>
+      store.repos.activities.editByUser(tx, id, { metrics: normalizeMetrics(metrics).metrics }),
+    ),
   );
 
 export const useDeleteActivity = () =>

@@ -73,6 +73,7 @@ Tap an entry on **Days** to see what was found in it.
 - **Edit text:** change what you wrote. The entry keeps its original time and is organized again.
 - **Delete entry:** remove it, along with everything found in it.
 - **Edit** under an activity: change its title or pick another category.
+- **The numbers line** under an activity (*Duration: 40 min*), or **+ Add numbers**: change, add or remove its numbers ([Fix the numbers](corrections.md#fix-the-numbers)).
 - **Delete** under an activity: remove only that activity.
 - Tap a task to change it or delete it.
 
