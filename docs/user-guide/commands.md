@@ -7,6 +7,7 @@ Type `/` in the capture box on Windows to do something instead of logging it. Th
 | Type | What happens |
 |---|---|
 | `/done foam roll` | Marks the open task that best matches the words as done. The start of a word is enough: `/done plumb` finds "Call the plumber". If two tasks match equally, pick one with ↑ and ↓, then press Enter |
+| `/find dentist` | Shows the first 5 entries with these words under the box, the words marked. ↓ and Enter open an entry's day; Enter in the box opens [Search](capture-on-windows.md#find-an-entry) with the words, for all the results and filters |
 | `/brief` | Makes today's [daily brief](daily-brief.md) now and opens Days on today |
 | `/sync` | Syncs with your hub or server now, and says how it went |
 | `/undo` | Undoes the last thing you did in the capture box: deletes the entry you just saved (and what the AI made from it), or undoes the last command. The line under the box says which, for example *Undo: delete “Bought milk…”* |

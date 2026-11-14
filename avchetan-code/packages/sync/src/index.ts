@@ -38,6 +38,8 @@ export {
 } from './setup-check';
 export {
   describeSync,
+  type HubDot,
+  hubDot,
   loadSyncStatus,
   type SyncState,
   type SyncStatus,

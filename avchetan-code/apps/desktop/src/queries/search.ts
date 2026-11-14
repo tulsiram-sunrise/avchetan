@@ -114,3 +114,18 @@ export function useSimilarEntries(
     enabled: text.trim().length > 0 && wordIds !== undefined,
   });
 }
+
+/** How many matches `/find` shows in the capture box. */
+export const DOCK_FIND_SHOWN = 5;
+
+/** `/find words` in the capture box: the first word matches, newest first. */
+export function useDockFind(words: string) {
+  const { store } = useServices();
+  return useQuery({
+    queryKey: ['raw_logs', 'dock-find', words],
+    queryFn: () =>
+      store.search.searchEntries(store.db, { ...local, text: words, limit: DOCK_FIND_SHOWN }),
+    enabled: words.trim().length > 0,
+    placeholderData: keepPreviousData,
+  });
+}

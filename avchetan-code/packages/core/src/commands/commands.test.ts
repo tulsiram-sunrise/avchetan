@@ -57,6 +57,7 @@ describe('rankCommands', () => {
   it('lists every command, in registry order, before anything is typed', () => {
     expect(rankCommands('')).toEqual([
       'done',
+      'find',
       'brief',
       'sync',
       'undo',
@@ -94,9 +95,10 @@ describe('rankCommands', () => {
 
   it('finds learned aliases, a little behind the names', () => {
     const aliases = { finish: 'done', zz: 'lock' } as const;
-    expect(rankCommands('fin', aliases)).toEqual(['done']);
+    // The name find starts with fin, so it comes before the alias finish (= done).
+    expect(rankCommands('fin', aliases)).toEqual(['find', 'done']);
     expect(rankCommands('fnsh', aliases)).toEqual(['done']);
-    expect(rankCommands('fin')).toEqual([]);
+    expect(rankCommands('fin')).toEqual(['find']);
   });
 
   it('finds nothing when the letters are not there in order', () => {

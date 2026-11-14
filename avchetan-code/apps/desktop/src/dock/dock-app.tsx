@@ -9,6 +9,7 @@ import { isHidden, useLockStatus } from '../use-lock';
 import { AskPanel } from './ask-panel';
 import { CaptureInput } from './capture-input';
 import { DockFooter } from './dock-footer';
+import { FindResults, findWords } from './find-results';
 import { HotkeyBanner } from './hotkey-banner';
 import { RecentCaptures } from './recent-captures';
 import { useDraftPersistence } from './use-draft-persistence';
@@ -25,6 +26,7 @@ export function DockApp() {
   const asking = useDockStore((state) => state.ask !== null);
   const askStatus = useDockStore((state) => state.ask?.status ?? null);
   const setHighlight = useDockStore((state) => state.setHighlight);
+  const words = useDockStore((state) => findWords(state.draft));
   const voice = useVoice(inputRef);
   const recording = voice.phase === 'listening' || voice.phase === 'starting';
   const cancelVoice = voice.cancel;
@@ -116,7 +118,15 @@ export function DockApp() {
           voice={voice}
         />
         <div className="max-h-[360px] overflow-y-auto empty:hidden">
-          {locked ? <DockLockedNotice /> : asking ? <AskPanel /> : <RecentCaptures />}
+          {locked ? (
+            <DockLockedNotice />
+          ) : words ? (
+            <FindResults words={words} />
+          ) : asking ? (
+            <AskPanel />
+          ) : (
+            <RecentCaptures />
+          )}
         </div>
         <DockFooter />
       </main>
