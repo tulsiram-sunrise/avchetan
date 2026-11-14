@@ -125,16 +125,25 @@ describe('access', () => {
     expect(response.status).toBe(403);
   });
 
-  it('limits a device to 60 requests a minute', async () => {
+  it('limits a device to 60 requests a minute, pulls apart', async () => {
     await register();
-    for (let i = 0; i < 59; i += 1) await pull();
+    const status = () => app.request('/v1/status', { headers: headers() });
+    for (let i = 0; i < 59; i += 1) expect((await status()).status).toBe(200);
 
-    const response = await app.request('/v1/sync/pull', { headers: headers() });
-
+    const response = await status();
     expect(response.status).toBe(429);
     expect(response.headers.get('Retry-After')).toBe('60');
-    wallMs += 60_000;
+    // Pulls have their own budget, so a long first download goes on.
     await pull();
+    wallMs += 60_000;
+    expect((await status()).status).toBe(200);
+  });
+
+  it('lets a first download pull hundreds of pages in a minute, not unlimited', async () => {
+    await register();
+    for (let i = 0; i < 600; i += 1) await pull();
+    const response = await app.request('/v1/sync/pull', { headers: headers() });
+    expect(response.status).toBe(429);
   });
 
   it('refuses a body over the limit', async () => {
@@ -281,9 +290,11 @@ describe('push and pull', () => {
     const second = await pull(first.nextCursor, 2);
 
     expect(first.hasMore).toBe(true);
+    expect(first.remaining).toBe(1);
     expect(first.changes.map((c) => c.table)).toEqual(['raw_logs', 'tasks']);
     expect(first.changes[1]?.row).toEqual(task);
     expect(second.hasMore).toBe(false);
+    expect(second.remaining).toBe(0);
     expect(second.changes.map((c) => c.row.content)).toEqual(['2']);
   });
 });

@@ -16,7 +16,12 @@ export type SyncStateKey =
   | 'last_push_at'
   | 'last_pull_at'
   /** SYNCED_COLUMNS_FINGERPRINT when this device last finished a pull. */
-  | 'pulled_columns';
+  | 'pulled_columns'
+  /**
+   * How far a pull of everything has come (a new device, or new columns after an update), so an
+   * interrupted one goes on from there instead of starting over. Empty when none is under way.
+   */
+  | 'refill_cursor';
 
 export async function getSyncState(db: ClientDb, key: SyncStateKey): Promise<string | undefined> {
   const row = await db.select().from(syncState).where(eq(syncState.key, key)).get();

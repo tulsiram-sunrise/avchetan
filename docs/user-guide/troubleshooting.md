@@ -62,7 +62,7 @@ Problems come first, each with its fix and a **Help** link to its section below.
 **"This app and your hub or server are different versions. Update the older one."** Install the latest Avchetan on every device, and update the server if you run one yourself. Your entries wait on each device until they can sync.
 
 ## rate_limited
-**"Your hub got too many requests from this device."** The hub accepts 60 requests a minute from one device. Avchetan waits and tries again by itself; nothing is lost. If it keeps happening, quit and restart Avchetan on that device.
+**"Your hub got too many requests from this device."** The hub accepts 60 requests a minute from one device, and 600 downloads of changes (so a new phone can fetch a long history). Avchetan waits and tries again by itself, going on from where it stopped; nothing is lost. If it keeps happening, quit and restart Avchetan on that device.
 
 ## server_error
 **"Your hub or server answered with an error"**, **"Your hub or server sent something unexpected"**, **"Your hub or server didn't accept the request"** or **"Your hub or server can't reach its database."**

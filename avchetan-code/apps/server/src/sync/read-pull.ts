@@ -1,6 +1,6 @@
 import { PG_SYNCED_TABLES, type PgSyncedTableName } from '@avchetan/db/pg';
 import type { PullResponse } from '@avchetan/sync/protocol';
-import { asc, type Column, getTableColumns, gt } from 'drizzle-orm';
+import { asc, type Column, count, getTableColumns, gt } from 'drizzle-orm';
 import type { ServerDb } from '../db/client';
 
 const TABLE_NAMES = Object.keys(PG_SYNCED_TABLES) as PgSyncedTableName[];
@@ -50,13 +50,30 @@ export async function readPull(db: ServerDb, cursor: number, limit: number): Pro
   rows.sort((a, b) => a.seq - b.seq);
 
   const page = rows.slice(0, limit);
+  const nextCursor = page.at(-1)?.seq ?? cursor;
+  const hasMore = rows.length > limit;
   return {
     changes: page.map(({ table, stored, seq }) => ({
       table,
       row: toWireRow(table, stored),
       seq,
     })),
-    nextCursor: page.at(-1)?.seq ?? cursor,
-    hasMore: rows.length > limit,
+    nextCursor,
+    hasMore,
+    remaining: hasMore ? await countAfter(db, nextCursor) : 0,
   };
+}
+
+/**
+ * Rows after `cursor` in every table: what a long first download still has to fetch, for its
+ * progress. Counted only while more pages follow, so a device that is up to date pays nothing.
+ */
+async function countAfter(db: ServerDb, cursor: number): Promise<number> {
+  let total = 0;
+  for (const name of TABLE_NAMES) {
+    const table = PG_SYNCED_TABLES[name];
+    const [row] = await db.select({ n: count() }).from(table).where(gt(table.serverSeq, cursor));
+    total += row?.n ?? 0;
+  }
+  return total;
 }

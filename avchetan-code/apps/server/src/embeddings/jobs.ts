@@ -46,7 +46,19 @@ export async function rawLogsTouchedBy(
   return [...found];
 }
 
+/**
+ * Jobs per insert. Postgres takes at most 65,535 bound values in one statement; a hub turning on
+ * search over 50,000 entries built a single insert far past that, and failed to start.
+ */
+const JOBS_PER_INSERT = 1000;
+
 export async function enqueueEmbedJobs(db: ServerDb, rawLogIds: readonly string[]): Promise<void> {
+  for (let start = 0; start < rawLogIds.length; start += JOBS_PER_INSERT) {
+    await insertJobs(db, rawLogIds.slice(start, start + JOBS_PER_INSERT));
+  }
+}
+
+async function insertJobs(db: ServerDb, rawLogIds: readonly string[]): Promise<void> {
   if (rawLogIds.length === 0) return;
   await db
     .insert(serverJobs)

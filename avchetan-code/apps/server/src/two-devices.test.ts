@@ -619,3 +619,93 @@ describe('a column added in an update (private tags)', () => {
     expect(await phone.store.repos.tags.privatePaths(phone.store.db)).toEqual([]);
   });
 });
+
+describe('a long first download', () => {
+  it('reports how far it got after each page, and ends with null', async () => {
+    const desktop = await device();
+    for (const title of ['One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven']) {
+      await addTask(desktop, title);
+    }
+    await desktop.engine.syncNow();
+
+    const { store } = await openTestStore({ start: START, newId: () => crypto.randomUUID() });
+    const secrets = new MemorySecretStore();
+    await saveConnection(store, secrets, { urls: [URL], token: TOKEN, trustLocalNetwork: false });
+    const onPullProgress = vi.fn();
+    const phone = createSyncEngine({
+      store,
+      fetch: (input, init) => serverFetch(input, init),
+      secrets,
+      network: new FakeNetworkMonitor(),
+      scheduler: new ManualScheduler(),
+      device: { name: 'Phone', platform: 'android', extractionMode: 'self' },
+      onPullProgress,
+      pullPageSize: 3,
+    });
+    await phone.syncNow();
+
+    const reports = onPullProgress.mock.calls.map(([progress]) => progress);
+    expect(reports.at(-1)).toBeNull();
+    const steps = reports.slice(0, -1) as { done: number; total: number }[];
+    expect(steps.length).toBeGreaterThan(1);
+    // The same total throughout, three more each page, never past the total.
+    const total = steps[0]?.total ?? 0;
+    expect(steps.every((step) => step.total === total)).toBe(true);
+    expect(steps.map((step) => step.done)).toEqual(steps.map((_, index) => (index + 1) * 3));
+    expect(steps.at(-1)?.done).toBeLessThan(total);
+    expect((await titles({ store } as Device)).sort()).toEqual(
+      ['Five', 'Four', 'One', 'Seven', 'Six', 'Three', 'Two'].sort(),
+    );
+  });
+});
+
+describe('an interrupted first download', () => {
+  it('goes on from the last page it saved, not from the start', async () => {
+    const desktop = await device();
+    for (const title of ['One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven']) {
+      await addTask(desktop, title);
+    }
+    await desktop.engine.syncNow();
+
+    // The phone's connection drops on its third pull, as a lost Wi-Fi or a rate limit would.
+    const cursors: number[] = [];
+    let pulls = 0;
+    let dropped = false;
+    const flaky: HttpFetch = (input, init) => {
+      const url = new globalThis.URL(String(input));
+      if (url.pathname === '/v1/sync/pull') {
+        cursors.push(Number(url.searchParams.get('cursor')));
+        pulls += 1;
+        if (pulls === 3 && !dropped) {
+          dropped = true;
+          return Promise.reject(new TypeError('Network request failed'));
+        }
+      }
+      return serverFetch(input, init);
+    };
+    const { store } = await openTestStore({ start: START, newId: () => crypto.randomUUID() });
+    const secrets = new MemorySecretStore();
+    await saveConnection(store, secrets, { urls: [URL], token: TOKEN, trustLocalNetwork: false });
+    const phone = createSyncEngine({
+      store,
+      fetch: flaky,
+      secrets,
+      network: new FakeNetworkMonitor(),
+      scheduler: new ManualScheduler(),
+      device: { name: 'Phone', platform: 'android', extractionMode: 'self' },
+      pullPageSize: 3,
+    });
+
+    await phone.syncNow().catch(() => undefined);
+    const savedBeforeDrop = cursors[2] ?? 0;
+    expect(savedBeforeDrop).toBeGreaterThan(0);
+    cursors.length = 0;
+
+    await phone.syncNow();
+    // The second run starts where the first stopped: the page that failed, not cursor 0.
+    expect(cursors[0]).toBe(savedBeforeDrop);
+    expect((await titles({ store } as Device)).sort()).toEqual(
+      ['Five', 'Four', 'One', 'Seven', 'Six', 'Three', 'Two'].sort(),
+    );
+  });
+});

@@ -9,6 +9,7 @@ export {
 } from './config';
 export {
   createSyncEngine,
+  type PullProgress,
   type SyncDevice,
   type SyncEngine,
   type SyncEngineDeps,

@@ -144,6 +144,8 @@ export async function openClientStore(options: OpenClientStoreOptions) {
         write(async (tx) => {
           const result = await applyRemoteChanges(tx, changes, options);
           await setSyncState(tx, 'pull_cursor', String(cursor));
+          // A pull of everything resumes from here if it is interrupted (sync engine).
+          if (options.refill) await setSyncState(tx, 'refill_cursor', String(cursor));
           for (const { row } of changes) clock.observe(row.updatedAt);
           return result;
         }),

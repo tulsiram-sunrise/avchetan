@@ -35,6 +35,8 @@ After that, a change made on one device shows on the other within about half a m
 
 On the phone, **More → Sync** says **Up to date.**, and your existing entries appear.
 
+With a long history the first download takes a few minutes (50,000 entries took under 5 minutes in our test). **Days** shows *Downloading your history… 12,000 of 50,000* with a bar; you can keep using the app meanwhile, and older days fill in as they arrive. If the phone loses Wi-Fi or you close the app, the download goes on from where it stopped next time.
+
 ## Notes
 
 - The code contains a secret. Don't share a photo or screenshot of it. If you think it leaked: on the PC, **Settings → Hub & sync → Sync → Change token**, then pair your other devices again.

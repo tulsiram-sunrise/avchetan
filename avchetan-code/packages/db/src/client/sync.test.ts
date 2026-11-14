@@ -197,3 +197,52 @@ describe('applyRemoteChanges (LWW)', () => {
     expect((await b.store.sync.listOutbox()).some((e) => e.recordId === task.id)).toBe(false);
   });
 });
+
+describe('applying a large page', () => {
+  /** Tasks made on device a, as the rows a pull would bring. */
+  async function remoteTasks(count: number) {
+    const { store } = await openTestStore({ newId: () => crypto.randomUUID() });
+    const tasks = await store.write(async (tx) => {
+      const made = [];
+      for (let i = 0; i < count; i += 1) {
+        made.push(await store.repos.tasks.create(tx, { title: `Task ${i}` }));
+      }
+      return made;
+    });
+    return { store, tasks };
+  }
+
+  it('inserts more new rows than one statement holds', async () => {
+    const { tasks } = await remoteTasks(450);
+    const { store } = await openTestStore({ newId: () => crypto.randomUUID() });
+    const queued = (await store.sync.listOutbox()).length;
+    const changes = tasks.map((row) => ({ table: 'tasks', row }) as RemoteChange);
+    expect(await store.sync.applyRemote(changes)).toEqual({ applied: 450, skipped: 0 });
+    const stored = await store.db.query.tasks.findMany();
+    expect(stored).toHaveLength(450);
+    expect(stored.find((task) => task.title === 'Task 449')).toBeDefined();
+    // Pulled rows are never queued to be sent back.
+    expect(await store.sync.listOutbox()).toHaveLength(queued);
+  });
+
+  it('mixes new, newer, older and a repeated id in one page', async () => {
+    const { a, b } = await twoDevices();
+    const [kept, replaced] = await b.store.write(async (tx) => [
+      await b.store.repos.tasks.create(tx, { title: 'Kept here' }),
+      await b.store.repos.tasks.create(tx, { title: 'Old here' }),
+    ]);
+    const newer = { ...replaced, title: 'Newer there', updatedAt: '2099-01-01T00:00:00.000Z' };
+    const older = { ...kept, title: 'Older there', updatedAt: '2000-01-01T00:00:00.000Z' };
+    const fresh = await a.store.write((tx) => a.store.repos.tasks.create(tx, { title: 'New' }));
+    const freshLater = { ...fresh, title: 'New, edited', updatedAt: '2099-01-01T00:00:00.000Z' };
+    const page = [newer, older, fresh, freshLater].map(
+      (row) => ({ table: 'tasks', row }) as RemoteChange,
+    );
+
+    expect(await b.store.sync.applyRemote(page)).toEqual({ applied: 2, skipped: 2 });
+    const title = async (id: string) => (await getById(b.store.db, SYNCED_TABLES.tasks, id))?.title;
+    expect(await title(replaced.id)).toBe('Newer there');
+    expect(await title(kept.id)).toBe('Kept here');
+    expect(await title(fresh.id)).toBe('New, edited');
+  });
+});
