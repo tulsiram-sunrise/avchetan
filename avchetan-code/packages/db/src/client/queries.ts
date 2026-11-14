@@ -816,6 +816,33 @@ export async function tagPathsOf(
   return paths;
 }
 
+/**
+ * Each entry's tag paths, its own and those on activities organized from it, sorted and without
+ * repeats: the chips under an entry. Entries with no tags are left out.
+ */
+export async function entryTagPaths(
+  db: ClientDb,
+  rawLogIds: readonly string[],
+): Promise<Map<string, string[]>> {
+  if (rawLogIds.length === 0) return new Map();
+  const children = await db
+    .select({ id: activities.id, rawLogId: activities.rawLogId })
+    .from(activities)
+    .where(and(live(activities), inArray(activities.rawLogId, [...rawLogIds])));
+  const paths = await tagPathsOf(db, {
+    rawLogIds,
+    activityIds: children.map((child) => child.id),
+  });
+  const byEntry = new Map<string, Set<string>>();
+  const add = (entryId: string, list: readonly string[] | undefined) => {
+    for (const path of list ?? [])
+      byEntry.set(entryId, (byEntry.get(entryId) ?? new Set()).add(path));
+  };
+  for (const id of rawLogIds) add(id, paths.get(id));
+  for (const child of children) if (child.rawLogId) add(child.rawLogId, paths.get(child.id));
+  return new Map([...byEntry].map(([id, set]) => [id, [...set].sort()]));
+}
+
 /** Tasks finished in [from, to) (UTC instants), with private ones left out unless allowed. */
 export function tasksCompletedBetween(
   db: ClientDb,

@@ -16,6 +16,7 @@ Avchetan is a personal logger and planner. Type (or say) anything — a workout,
 7. [Voice](voice.md): say an entry instead of typing it, offline, on the PC and the phone
 8. [People and promises](people.md): who you saw, what you owe them and what they owe you
 9. [Find an entry](capture-on-windows.md#find-an-entry): search your entries, tasks and people on the PC with Ctrl+F
+10. [Tag and project pages](capture-on-windows.md#tag-and-project-pages): a tag's or project's entries, totals and open tasks, on the PC and [the phone](capture-on-android.md#tags-and-projects)
 
 ## Downloads & source
 

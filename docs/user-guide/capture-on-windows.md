@@ -124,8 +124,8 @@ Open Avchetan (tray icon → **Open Avchetan**):
 - **People:** everyone your entries name, with what you owe them and what they owe you ([People and promises](people.md)).
 - **Review:** entries that couldn't be organized, and why. Press **Organize now** to try again.
 - **Categories:** rename, merge or archive them. The AI adds a category, marked **New**, only when nothing fits; press **Keep** or merge it into another.
-- **Tags:** rename, nest (`health/knee`), merge or recolor them.
-- **Projects:** list what you're working on. Entries are linked to a project only if it's listed here.
+- **Tags:** merge or recolor them, or click one to open [its page](#tag-and-project-pages), where you can rename or nest it (`health/knee`). Tags also show under each entry on **Days**; click one to open its page.
+- **Projects:** list what you're working on. Entries are linked to a project only if it's listed here. Click a project to open [its page](#tag-and-project-pages), where you can rename it.
 
 ![The main window's Days page: the week pinned at the top with coloured dots under each date, the month and year above it, and today's summary, overdue, due and done tasks, and entries](images/capture-on-windows-days.png)
 
@@ -140,6 +140,16 @@ Press **Ctrl+F** in the main window and type a word, or the start of one. Result
 Search looks for the words themselves, not their meaning: *ran* doesn't find *jogged*. When this PC syncs with a hub that has search on, a second group, **Similar entries**, adds entries the hub finds by meaning (*swimming* can find *went to the pool*), after the word results and with the same filters. It only lists close matches, so it's often empty, and it isn't shown offline or without a hub. To ask in your own words, use [Ask](#ask-about-your-entries).
 
 Press **?** anywhere in the main window (outside a text field) for a list of its keys.
+
+## Tag and project pages
+
+Click a tag (on **Tags**, or under an entry on **Days**) or a project (on **Projects**) to see everything that carries it:
+
+- **At the top:** how many entries and open tasks it has, when it was first and last used, and the totals of its three most used numbers, this month and in all, for example *distance: 42 km this month · 318 km in all*. Amounts such as distance, minutes or steps are added up; ratings and readings such as mood, pace or body weight show their average.
+- **Open tasks** with that tag or project. Tick them off here.
+- **Entries by day**, newest first, with the same rows as **Days**. Click a date to open that day. **Show more** adds 50 entries at a time.
+
+A tag's page includes the tags nested under it: `#health` also shows entries tagged `#health/knee`. An entry counts when it, or something organized from it, has the tag or project. Click the name at the top to rename it.
 
 ## Check it worked
 

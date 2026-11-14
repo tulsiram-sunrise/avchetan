@@ -5,6 +5,7 @@ import {
   type IdGenerator,
 } from '@avchetan/shared';
 import { type ApplyResult, applyRemoteChanges, type RemoteChange } from './apply-remote';
+import * as collections from './collections';
 import { createClientDatabase, type SqliteExecutor, type Tx } from './database';
 import { collectExport, type DataExport } from './export';
 import {
@@ -108,6 +109,7 @@ export async function openClientStore(options: OpenClientStoreOptions) {
     queries,
     people,
     search,
+    collections,
     recordLlmRun: (run: Omit<NewLlmRun, 'id' | 'createdAt'>): Promise<void> =>
       write((tx) => insertLlmRun(tx, { ...run, id: newId(), createdAt: clock.now() })),
     /** Everything for "Export my data" (see export.ts for what is left out). */

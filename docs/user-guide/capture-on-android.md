@@ -61,6 +61,10 @@ If tapping the widget does nothing (for example after you used **Force stop** on
 - **Always private for some topics:** add tags such as `health` under **More → Private tags**. Any entry you tag `#health`, or `#health/knee`, is then private without typing `!private`.
 - **Change it later:** open the entry and tap **Make private** or **Make normal**.
 
+## Tags and projects
+
+An entry's tags show under it on **Days**; tap one to open the tag's page. **More → Tags** and **More → Projects** list them all. A tag's or project's page shows how many entries and open tasks it has, when it was first and last used, the totals of its three most used numbers (*distance: 42 km this month · 318 km in all*; ratings such as mood show their average), its open tasks, and its entries by day, newest first. Tap a date to open that day; **Show more** adds 50 entries. A tag's page includes the tags nested under it (`#health` takes `#health/knee`). Renaming, merging and adding projects are on the PC.
+
 ## Change or fix an entry
 
 Tap an entry on **Days** to see what was found in it.

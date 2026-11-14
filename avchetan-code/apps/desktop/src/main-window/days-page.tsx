@@ -13,6 +13,7 @@ import {
   weekOf,
 } from '@avchetan/shared';
 import { useEffect, useMemo, useState } from 'react';
+import { useEntryTags } from '../queries/collections';
 import {
   useDayActivities,
   useDayEntries,
@@ -44,6 +45,8 @@ export function DaysPage(props: {
   requestedDay?: string | null;
   /** An entry to bring into view on the requested day (opened from search). */
   requestedEntry?: string | null;
+  /** Opens a tag's page (from a chip under an entry). */
+  onOpenTag?: (path: string) => void;
 }) {
   const today = useToday();
   const [day, setDay] = useState(props.requestedDay ?? today);
@@ -131,6 +134,7 @@ export function DaysPage(props: {
         today={today}
         onToday={() => select(today)}
         entryInView={day === props.requestedDay ? (props.requestedEntry ?? null) : null}
+        onOpenTag={props.onOpenTag}
       />
     </div>
   );
@@ -351,6 +355,7 @@ function DayPanel(props: {
   today: string;
   onToday: () => void;
   entryInView: string | null;
+  onOpenTag?: ((path: string) => void) | undefined;
 }) {
   const { day, today } = props;
   const entries = useDayEntries(day);
@@ -361,6 +366,7 @@ function DayPanel(props: {
   const extracted = useExtracted(ids);
   const activitiesOf = useMemo(() => byLog(extracted.data?.activities), [extracted.data]);
   const tasksOf = useMemo(() => byLog(extracted.data?.tasks), [extracted.data]);
+  const tagsOf = useEntryTags(ids);
   const addedOn = useAddedOn();
 
   const title = formatLocalDate(day, {
@@ -431,6 +437,8 @@ function DayPanel(props: {
                 tasks={tasksOf.get(rawLog.id) ?? []}
                 addedOn={addedOn(rawLog, day)}
                 inView={rawLog.id === props.entryInView}
+                tagPaths={tagsOf(rawLog.id)}
+                onOpenTag={props.onOpenTag}
               />
             ))}
           </ul>

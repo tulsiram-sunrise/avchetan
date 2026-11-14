@@ -31,17 +31,27 @@ const VIEWS: { id: MainView; label: string; hint?: string }[] = [
   { id: 'settings', label: 'Settings' },
 ];
 
-/** Where a page was asked to open: a day with one entry in view, or one person. */
-type Target = { day: string | null; entryId: string | null; personId: string | null };
+/** Where a page was asked to open: a day with one entry in view, a person, a tag or a project. */
+type Target = {
+  day: string | null;
+  entryId: string | null;
+  personId: string | null;
+  tagPath: string | null;
+  projectId: string | null;
+};
+
+const NO_TARGET: Target = {
+  day: null,
+  entryId: null,
+  personId: null,
+  tagPath: null,
+  projectId: null,
+};
 
 /** The full window. Hidden (not closed) when the user closes it. */
 export function MainApp(props: { initialView: MainView; initialDay?: string | null }) {
   const [view, setView] = useState<MainView>(props.initialView);
-  const [target, setTarget] = useState<Target>({
-    day: props.initialDay ?? null,
-    entryId: null,
-    personId: null,
-  });
+  const [target, setTarget] = useState<Target>({ ...NO_TARGET, day: props.initialDay ?? null });
   const [searchText, setSearchText] = useState('');
   const [searchChoice, setSearchChoice] = useState<FilterChoice>(NO_FILTERS);
   const [searchFocus, setSearchFocus] = useState(0);
@@ -49,7 +59,7 @@ export function MainApp(props: { initialView: MainView; initialDay?: string | nu
   useTableInvalidation();
   useAppEvent('main:navigate', (payload) => {
     setView(payload.view);
-    if (payload.day) setTarget({ day: payload.day, entryId: null, personId: null });
+    if (payload.day) setTarget({ ...NO_TARGET, day: payload.day });
   });
   const lock = useLockStatus();
   const hidden = isHidden(lock);
@@ -77,10 +87,21 @@ export function MainApp(props: { initialView: MainView; initialDay?: string | nu
   // Locked: no page is rendered at all, so nothing written before sits behind the lock screen.
   if (hidden) return <LockScreen ready={lock.configured} />;
 
+  const openTag = (tagPath: string) => {
+    setTarget((t) => ({ ...t, tagPath }));
+    setView('tags');
+  };
+  const openDay = (day: string) => {
+    setTarget((t) => ({ ...t, day, entryId: null }));
+    setView('timeline');
+  };
+
   const page = (() => {
     switch (view) {
       case 'timeline':
-        return <DaysPage requestedDay={target.day} requestedEntry={target.entryId} />;
+        return (
+          <DaysPage requestedDay={target.day} requestedEntry={target.entryId} onOpenTag={openTag} />
+        );
       case 'search':
         return (
           <SearchPage
@@ -90,7 +111,7 @@ export function MainApp(props: { initialView: MainView; initialDay?: string | nu
             onChoice={setSearchChoice}
             focusSignal={searchFocus}
             onOpenEntry={(day, entryId) => {
-              setTarget({ day, entryId, personId: null });
+              setTarget({ ...NO_TARGET, day, entryId });
               setView('timeline');
             }}
             onOpenTasks={() => setView('tasks')}
@@ -109,9 +130,15 @@ export function MainApp(props: { initialView: MainView; initialDay?: string | nu
       case 'categories':
         return <CategoriesPage />;
       case 'tags':
-        return <TagsPage />;
+        return <TagsPage requestedTag={target.tagPath} onOpenDay={openDay} />;
       case 'projects':
-        return <ProjectsPage />;
+        return (
+          <ProjectsPage
+            requestedProject={target.projectId}
+            onOpenTag={openTag}
+            onOpenDay={openDay}
+          />
+        );
       case 'settings':
         return <SettingsPage />;
       case 'setup':
@@ -136,7 +163,13 @@ export function MainApp(props: { initialView: MainView; initialDay?: string | nu
             }`}
             onClick={() => {
               // Clicking a section opens its own start, not a person or entry from search.
-              setTarget((t) => ({ ...t, entryId: null, personId: null }));
+              setTarget((t) => ({
+                ...t,
+                entryId: null,
+                personId: null,
+                tagPath: null,
+                projectId: null,
+              }));
               setView(item.id);
             }}
           >
