@@ -40,8 +40,21 @@ const UNITS: readonly [suffix: string, unit: string][] = [
 
 const unitOf = (key: string) => UNITS.find(([suffix]) => key.endsWith(suffix));
 
-/** `distance_km` → *distance*, `heart_rate_avg_bpm` → *heart rate avg*. */
+/** What is written after a key's number (`km`, `min`), or undefined for counts and ratings. */
+export const metricUnit = (key: string): string | undefined => unitOf(key)?.[1];
+
+/** Registry keys whose words, read from the key, would be unclear. */
+const NAMES = new Map([
+  ['rpe', 'effort (RPE)'],
+  ['heart_rate_avg_bpm', 'average heart rate'],
+  ['weight_body_kg', 'body weight'],
+  ['calories_kcal', 'calories'],
+]);
+
+/** `distance_km` → *distance*, `heart_rate_avg_bpm` → *average heart rate*. */
 export function metricLabel(key: string): string {
+  const named = NAMES.get(key);
+  if (named) return named;
   const unit = unitOf(key);
   const base = unit ? key.slice(0, -unit[0].length) : key;
   return base.replaceAll('_', ' ');

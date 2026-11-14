@@ -1,8 +1,18 @@
-/** One line of an activity's metrics for display. Exercises get their own lines. */
+import { metricChoice } from './metric-edit';
+import { formatMetricAmount } from './metric-totals';
+
+/**
+ * One line of an activity's numbers in words, with units: *Duration: 20 min · Distance: 3 km*.
+ * Exercises get their own lines.
+ */
 export function metricsText(metrics: Record<string, unknown>): string {
   return Object.entries(metrics)
     .filter(([key]) => key !== 'exercises')
-    .map(([key, value]) => `${key.replaceAll('_', ' ')}: ${String(value)}`)
+    .map(([key, value]) => {
+      const { label } = metricChoice(key);
+      const text = typeof value === 'number' ? formatMetricAmount(key, value) : String(value);
+      return `${label}: ${text}`;
+    })
     .join(' · ');
 }
 

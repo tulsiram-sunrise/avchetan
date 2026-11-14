@@ -216,6 +216,18 @@ export {
   dayCategoryText,
   durationText,
 } from './normalize/day-summary';
+export {
+  applyMetricRows,
+  METRIC_CHOICES,
+  type MetricChoice,
+  type MetricEditResult,
+  type MetricRow,
+  type MetricRowProblem,
+  metricChoice,
+  metricChoicesFor,
+  metricRows,
+  nextMetricKey,
+} from './normalize/metric-edit';
 export { METRIC_ALIASES, METRICS, type MetricSpec } from './normalize/metric-keys';
 export {
   formatMetricAmount,
@@ -225,6 +237,7 @@ export {
   metricLabel,
   metricTotalKind,
   metricTotalText,
+  metricUnit,
   topMetricTotals,
 } from './normalize/metric-totals';
 export {

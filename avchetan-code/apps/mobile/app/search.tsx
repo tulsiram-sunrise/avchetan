@@ -11,7 +11,7 @@ import type { HighlightPart, RawLog } from '@avchetan/db/sqlite';
 import { formatDueDate, formatTime, localDate, systemTimeZone } from '@avchetan/shared';
 import { router } from 'expo-router';
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
-import { Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { useToday } from '../src/queries/days';
 import {
   SEARCH_PAGE,
@@ -24,6 +24,7 @@ import {
 import { useSearchState } from '../src/stores/search';
 import { usePalette } from '../src/theme/theme';
 import { SectionTitle } from '../src/ui/parts';
+import { PickSheet } from '../src/ui/pick-sheet';
 
 /** Waits this long after the last key before searching. */
 const TYPING_PAUSE_MS = 150;
@@ -178,43 +179,11 @@ function Filters(props: { choice: FilterChoice; onChoice: (choice: FilterChoice)
         ) : null}
       </ScrollView>
       {choice.preset === 'custom' ? <CustomDates choice={choice} onChoice={onChoice} /> : null}
-      <Modal
-        visible={current !== undefined}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setOpen(null)}
-      >
-        <Pressable
-          accessibilityLabel="Close"
-          className="flex-1 justify-end"
-          style={{ backgroundColor: 'rgba(0, 0, 0, 0.4)' }}
-          onPress={() => setOpen(null)}
-        >
-          {current ? (
-            <Pressable className="rounded-t-2xl bg-surfaceRaised pb-6" style={{ maxHeight: '70%' }}>
-              <Text className="px-4 pb-2 pt-4 text-base font-semibold text-ink">
-                {current.title}
-              </Text>
-              <ScrollView>
-                {current.options.map((option) => (
-                  <Pressable
-                    key={option.value ?? '(any)'}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: option.value === current.selected }}
-                    className="flex-row items-center justify-between border-b border-line px-4 py-3"
-                    onPress={() => current.onPick(option.value)}
-                  >
-                    <Text className="text-base text-ink">{option.label}</Text>
-                    {option.value === current.selected ? (
-                      <Text className="text-base text-accent">✓</Text>
-                    ) : null}
-                  </Pressable>
-                ))}
-              </ScrollView>
-            </Pressable>
-          ) : null}
-        </Pressable>
-      </Modal>
+      <PickSheet
+        open={current}
+        onPick={(value) => current?.onPick(value)}
+        onClose={() => setOpen(null)}
+      />
     </View>
   );
 }
