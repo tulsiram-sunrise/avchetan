@@ -5,6 +5,7 @@ mod app_lock;
 mod clipboard;
 mod commands;
 mod context;
+mod dock_look;
 mod error;
 mod hotkey;
 mod notify;
@@ -50,6 +51,10 @@ pub fn run() {
             app.manage(hotkey::HoldState::default());
             hotkey::register_default(app.handle());
             tray::create(app)?;
+            let backdrop = app
+                .get_webview_window(windows::DOCK)
+                .map_or(dock_look::Backdrop::None, |dock| dock_look::apply(&dock));
+            app.manage(dock_look::LookState(backdrop));
             Ok(())
         })
         .on_window_event(windows::on_window_event)
@@ -82,6 +87,8 @@ pub fn run() {
             commands::secrets::secret_set,
             commands::secrets::secret_delete,
             windows::dock_hide,
+            dock_look::dock_look,
+            dock_look::dock_fit,
             windows::main_open,
             hotkey::hotkey_status,
             hotkey::hotkey_set,

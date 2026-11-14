@@ -1,5 +1,6 @@
 import { createLogger } from '@avchetan/shared';
-import { useCallback, useEffect, useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { type RefObject, useCallback, useEffect, useRef } from 'react';
 import { DockLockedNotice } from '../lock-screen';
 import { useServices } from '../services-context';
 import { useDockStore } from '../stores/dock-store';
@@ -29,6 +30,15 @@ export function DockApp() {
   const cancelVoice = voice.cancel;
   useTableInvalidation();
   const locked = isHidden(useLockStatus());
+  const shell = useRef<HTMLDivElement>(null);
+  const backdrop = useQuery({
+    queryKey: ['dock-backdrop'],
+    queryFn: () => platform.shell.dockBackdrop(),
+    staleTime: Number.POSITIVE_INFINITY,
+  }).data;
+  // Windows draws the panel (backdrop, rounded corners, shadow) when it can; else the page does.
+  const drawn = backdrop === 'acrylic' || backdrop === 'mica';
+  useFitWindow(shell, platform.shell.fitDock);
 
   /**
    * The text box gets the keyboard on the next frame: by then Rust has focused the webview
@@ -43,9 +53,11 @@ export function DockApp() {
     platform.shell.hideDock().catch(() => log.warn('could not hide dock'));
   }, [autosave, platform]);
 
+  const panel = useRef<HTMLElement>(null);
   useWindowContext(() => {
     setHighlight(null);
     focusInput();
+    playOpening(panel.current);
   });
 
   // Back to the box once voice, an answer or the unlock prompt is done.
@@ -87,8 +99,15 @@ export function DockApp() {
   }, [hide, focusInput, recording, cancelVoice]);
 
   return (
-    <div className="h-screen p-2">
-      <main className="flex h-full flex-col gap-2 rounded-[var(--radius-panel)] border border-line bg-surface/90 p-3 shadow-xl backdrop-blur-xl">
+    <div ref={shell} className={drawn ? '' : 'p-2'}>
+      <main
+        ref={panel}
+        className={`flex flex-col gap-2 p-3 ${
+          drawn
+            ? 'bg-surface/75'
+            : 'rounded-[var(--radius-panel)] border border-line bg-surface/90 shadow-xl backdrop-blur-xl'
+        }`}
+      >
         <HotkeyBanner />
         <CaptureInput
           inputRef={inputRef}
@@ -96,11 +115,46 @@ export function DockApp() {
           onHide={hide}
           voice={voice}
         />
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="max-h-[360px] overflow-y-auto empty:hidden">
           {locked ? <DockLockedNotice /> : asking ? <AskPanel /> : <RecentCaptures />}
         </div>
         <DockFooter />
       </main>
     </div>
+  );
+}
+
+/**
+ * The window takes the height of what the dock shows: one bar when there is nothing under the
+ * box, taller as the list grows (docs/product/capture-box-redesign.md#3-the-new-look).
+ */
+function useFitWindow(
+  shell: RefObject<HTMLDivElement | null>,
+  fit: (height: number) => Promise<unknown>,
+) {
+  useEffect(() => {
+    const element = shell.current;
+    if (!element) return;
+    let last = 0;
+    const observer = new ResizeObserver(() => {
+      const height = Math.ceil(element.getBoundingClientRect().height);
+      if (height === last) return;
+      last = height;
+      fit(height).catch(() => log.warn('could not fit the dock'));
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [shell, fit]);
+}
+
+/** A short fade and drop as the dock shows; none when Windows has animations turned off. */
+function playOpening(element: HTMLElement | null) {
+  if (!element || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  element.animate(
+    [
+      { opacity: 0, transform: 'translateY(-6px)' },
+      { opacity: 1, transform: 'none' },
+    ],
+    { duration: 140, easing: 'cubic-bezier(0.2, 0, 0, 1)' },
   );
 }

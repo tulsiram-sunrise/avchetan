@@ -123,3 +123,12 @@ export function useProjects() {
     queryFn: () => store.repos.projects.listActive(store.db),
   });
 }
+
+/** Tags marked private (Settings → Private tags), for the capture box's mode badge. */
+export function usePrivateTagPaths() {
+  const { store } = useServices();
+  return useQuery({
+    queryKey: ['tags', 'private-paths'],
+    queryFn: () => store.repos.tags.privatePaths(store.db),
+  });
+}

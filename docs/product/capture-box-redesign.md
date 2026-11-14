@@ -40,7 +40,7 @@ The capture box is the part of Avchetan used most, many times a day, and it shou
 
 ## 3. The new look
 
-- **A floating search bar:** a large rounded panel with one big input line, a soft shadow and the Windows 11 backdrop (Mica, or Acrylic where Mica isn't available) through Tauri's `windowEffects`, so the desktop shows through blurred. Windows 10 gets a plain translucent panel.
+- **A floating search bar:** a large rounded panel with one big input line, a soft shadow and the Windows 11 backdrop, so the desktop shows through blurred. Windows 10 gets a plain translucent panel. *Built (Day 13):* Acrylic on Windows 11 22H2 and later (the system backdrop Microsoft gives transient surfaces; it blurs the windows behind, where Mica only tints with the wallpaper), Mica on earlier Windows 11, none on Windows 10 (its acrylic is an undocumented API that lags while the window resizes). Windows draws the rounded corners and shadow; the window's height follows its content (`src-tauri/src/dock_look.rs`).
 - The list under the box grows only when there's something to show; with nothing to show the box is a single bar.
 - Short, quiet animations (open, list grow, saved); none when Windows has animations turned off.
 - Light and dark follow Windows.

@@ -76,6 +76,13 @@ export {
   weekTotalsText,
 } from './analysis/weekly-review';
 export { buildCaptureInput } from './capture';
+export {
+  ASK_PREFIX,
+  CAPTURE_MODE_BADGES,
+  CAPTURE_MODES,
+  type CaptureMode,
+  captureMode,
+} from './commands/capture-mode';
 export { type CommandReading, interpretCommand } from './commands/interpret';
 export {
   COMMANDS_ALIASES_SETTING,
