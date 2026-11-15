@@ -77,7 +77,7 @@ ExtractionResult {
 }
 ```
 
-Every field is required (nullable where it can be absent) so strict JSON-schema providers accept it. `occurredAt` isn't requested yet, because a model can't reliably turn local times into UTC. Until it is, `apply` sets `occurred_at` to the entry's `captured_at` when the activity's `logged_date` is the day it was saved (local), else null (`occurredAtOf` in `packages/db`, which Ask also uses for rows saved before this rule). Reading stated times ("woke up at 6:05") is planned for v0.5.0.
+Every field is required (nullable where it can be absent) so strict JSON-schema providers accept it. `occurredAt` isn't requested yet, because a model can't reliably turn local times into UTC; `occurred_at` stays null.
 
 The normalized result is an `ExtractionPlan`, applied in one transaction by `store.repos.extraction.apply`. A `!private` entry is only ever sent to a `local` provider; with none configured it is marked `skipped`.
 

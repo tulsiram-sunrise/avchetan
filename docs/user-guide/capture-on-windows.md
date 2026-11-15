@@ -121,7 +121,7 @@ Start with `?` and press your save key:
 
 A question is never saved as an entry. The answer appears in the box with the entries it came from, numbered like `[1]`. Avchetan does the counting itself, so totals come from your data, not from a guess.
 
-**Times.** Avchetan knows what time each entry was saved, and counts that as the time it happened when it happened the same day, so you can ask `? when did I go to sleep`. Write the time when it was different (`woke up at 6:05`): the answer reads it from the text. Working out how long you slept from two entries is a best guess for now; sleep hours of their own are planned (see the [roadmap](../roadmap.md#v050--tasks-routines-and-reminders)).
+**Times.** Ask knows what time each entry was saved. When your words say you are doing it now or just did it (`now going to sleep`, `just finished lunch`), that counts as when it happened, so you can ask `? when did I go to sleep`. Otherwise (`ran this morning`), write the time if it matters (`woke up at 6:05`): the answer reads it from the text. Working out how long you slept from two entries is a best guess for now; sleep hours of their own are planned (see the [roadmap](../roadmap.md#v050--tasks-routines-and-reminders)).
 
 **Search by meaning.** If your hub has a search model (see [Home Hub](setup-home-hub.md#search-by-meaning)), a question like `when did my knee hurt` also finds entries that say "stiff leg" or "physio". Without a hub, or when it can't be reached, Avchetan searches for the words you used.
 

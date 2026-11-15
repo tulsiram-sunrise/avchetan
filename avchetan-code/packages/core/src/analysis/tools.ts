@@ -1,12 +1,5 @@
 import { ENTITY_KINDS } from '@avchetan/db';
-import {
-  type Activity,
-  type ClientStore,
-  type DataScope,
-  occurredAtOf,
-  type RawLog,
-  type Task,
-} from '@avchetan/db/sqlite';
+import type { Activity, ClientStore, DataScope, RawLog, Task } from '@avchetan/db/sqlite';
 import { type LocalDate, localDate, localTime } from '@avchetan/shared';
 import { tool } from 'ai';
 import { z } from 'zod';
@@ -26,6 +19,17 @@ const filters = {
 };
 
 const clip = (text: string | null) => (text ? text.slice(0, MAX_TEXT) : null);
+
+/**
+ * When an entry was written, local to where it was written: `YYYY-MM-DD HH:MM`. Not when it
+ * happened: the model decides that from the words ("now going to sleep", but not "ran this
+ * morning"), as the prompt says. Stored times come with v0.5.0 (roadmap).
+ */
+export function savedAt(log: Pick<RawLog, 'capturedAt' | 'capturedTz'>): string {
+  return `${localDate(log.capturedAt, log.capturedTz)} ${localTime(log.capturedAt, log.capturedTz)}`;
+}
+
+const savedOf = (log: RawLog | undefined) => (log ? { saved: savedAt(log) } : {});
 
 /**
  * Answers are shown as plain text. Models also write 【3】 and [1, 2], which become [3] [1] [2],
@@ -130,18 +134,9 @@ export function createAnalysisTools(
       .map(({ log, date }) => ({
         ref: citations.numberOf(log.id),
         date,
-        ...timeOf({ loggedDate: date, occurredAt: null }, log),
+        saved: savedAt(log),
         text: clip(log.content),
       }));
-  }
-
-  /**
-   * The local `time` (HH:MM) something happened, when known: its own time, else when its entry
-   * was saved that same day (occurredAtOf). Shown in the zone the entry was saved in.
-   */
-  function timeOf(activity: Pick<Activity, 'loggedDate' | 'occurredAt'>, log: RawLog | undefined) {
-    const at = log ? occurredAtOf(activity, log) : null;
-    return at && log ? { time: localTime(at, log.capturedTz) } : {};
   }
 
   async function matchingActivities(input: {
@@ -258,7 +253,7 @@ export function createAnalysisTools(
           activities: shown.map((row) => ({
             ref: cite(row.rawLogId),
             date: row.loggedDate,
-            ...timeOf(row, row.rawLogId ? logOf.get(row.rawLogId) : undefined),
+            ...savedOf(row.rawLogId ? logOf.get(row.rawLogId) : undefined),
             category: slugOf(row.categoryId),
             title: row.title,
             notes: clip(row.notes),
@@ -439,7 +434,7 @@ export function createAnalysisTools(
         );
         return logs.map((log) => ({
           ref: citations.numberOf(log.id),
-          saved: `${localDate(log.capturedAt, log.capturedTz)} ${localTime(log.capturedAt, log.capturedTz)}`,
+          saved: savedAt(log),
           text: clip(log.content),
         }));
       },
