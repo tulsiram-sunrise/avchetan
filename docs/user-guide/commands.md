@@ -11,7 +11,7 @@ Type `/` in the capture box on Windows to do something instead of logging it. Th
 | `/brief` | Makes today's [daily brief](daily-brief.md) now and opens Days on today |
 | `/sync` | Syncs with your hub or server now, and says how it went |
 | `/undo` | Undoes the last thing you did in the capture box: deletes the entry you just saved (and what the AI made from it), or undoes the last command. The line under the box says which, for example *Undo: delete “Bought milk…”* |
-| `/settings` | Opens Settings. Add a tab to go straight there: `/settings privacy`, `/settings ai`, `/settings voice`, `/settings sync` |
+| `/settings` | Opens Settings. Add a tab to go straight there: `/settings privacy`, `/settings ai`, `/settings voice`, `/settings sync`. The tab name as shown works too, in any case: `/settings Hub & sync`, `/settings daily brief` |
 | `/lock` | Locks Avchetan now, if the [app lock](app-lock.md) is on |
 | `/unlock` | Unlocks Avchetan with Windows Hello |
 

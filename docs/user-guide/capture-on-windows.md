@@ -103,6 +103,7 @@ On **Capture box**:
 - **Shortcut:** type a new one, for example `Ctrl+Alt+Space`, and click **Save**. If another app already uses it, Avchetan says so and keeps the old one.
 - **Clipboard snap:** the shortcut that [attaches the clipboard](#attach-the-clipboard), changed the same way, or turned off.
 - **Saving an entry:** choose whether **Enter** saves and **Shift+Enter** starts a new line (the default), or the other way round. Swap them if you often write entries longer than one line.
+- **See-through:** how much of the blurred window behind shows through the box on Windows 11: **Solid**, **Light**, **Medium** (the default) or **Strong**. Strong looks best on a dark background; choose Solid or Light if the text is hard to read over bright windows. It applies to this PC only. Windows 10 shows a plain box, so it changes nothing there.
 
 On **General**:
 - **Start with Windows:** leave this on so the shortcut works right after you sign in.
@@ -119,6 +120,8 @@ Start with `?` and press your save key:
 ```
 
 A question is never saved as an entry. The answer appears in the box with the entries it came from, numbered like `[1]`. Avchetan does the counting itself, so totals come from your data, not from a guess.
+
+**Times.** Ask knows what time each entry was saved. When your words say you are doing it now or just did it (`now going to sleep`, `just finished lunch`), that counts as when it happened, so you can ask `? when did I go to sleep`. Otherwise (`ran this morning`), write the time if it matters (`woke up at 6:05`): the answer reads it from the text. Working out how long you slept from two entries is a best guess for now; sleep hours of their own are planned (see the [roadmap](../roadmap.md#v050--tasks-routines-and-reminders)).
 
 **Search by meaning.** If your hub has a search model (see [Home Hub](setup-home-hub.md#search-by-meaning)), a question like `when did my knee hurt` also finds entries that say "stiff leg" or "physio". Without a hub, or when it can't be reached, Avchetan searches for the words you used.
 

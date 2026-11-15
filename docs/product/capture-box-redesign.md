@@ -44,6 +44,7 @@ The capture box is the part of Avchetan used most, many times a day, and it shou
 - The list under the box grows only when there's something to show; with nothing to show the box is a single bar.
 - Short, quiet animations (open, list grow, saved); none when Windows has animations turned off.
 - Light and dark follow Windows.
+- *Added 2026-11-15 (test build):* **Settings → Capture box → See-through** sets how opaque the panel over the backdrop is, in four steps: Solid 100%, Light 85%, Medium 75% (the default, the Day 13 look), Strong 60%. Steps instead of a slider because below 60% text over a bright window is hard to read. A per-PC setting (`dock.seeThrough`, not synced); no effect without a backdrop (Windows 10).
 
 ## 4. Mode badge
 

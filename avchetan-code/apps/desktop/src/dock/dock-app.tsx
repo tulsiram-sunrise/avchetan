@@ -2,6 +2,8 @@ import { createLogger } from '@avchetan/shared';
 import { useQuery } from '@tanstack/react-query';
 import { type RefObject, useCallback, useEffect, useRef } from 'react';
 import { DockLockedNotice } from '../lock-screen';
+import { useSeeThrough } from '../queries/settings';
+import { DEFAULT_SEE_THROUGH, panelBackground } from '../services/see-through';
 import { useServices } from '../services-context';
 import { useDockStore } from '../stores/dock-store';
 import { useTableInvalidation } from '../use-app-event';
@@ -40,6 +42,7 @@ export function DockApp() {
   }).data;
   // Windows draws the panel (backdrop, rounded corners, shadow) when it can; else the page does.
   const drawn = backdrop === 'acrylic' || backdrop === 'mica';
+  const seeThrough = useSeeThrough().data ?? DEFAULT_SEE_THROUGH;
   useFitWindow(shell, platform.shell.fitDock);
 
   /**
@@ -106,9 +109,11 @@ export function DockApp() {
         ref={panel}
         className={`flex flex-col gap-2 p-3 ${
           drawn
-            ? 'bg-surface/75'
+            ? ''
             : 'rounded-[var(--radius-panel)] border border-line bg-surface/90 shadow-xl backdrop-blur-xl'
         }`}
+        // Over Windows' backdrop, as see-through as chosen in Settings → Capture box.
+        style={drawn ? { background: panelBackground(seeThrough) } : undefined}
       >
         <HotkeyBanner />
         <CaptureInput

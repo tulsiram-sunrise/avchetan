@@ -275,6 +275,9 @@ Added later on 2026-11-11 (second round):
 - **Share to Avchetan:** Android's share sheet sends text or a link from any app into a capture.
 - **Accessibility pass:** text size follows the system, visible keyboard focus, screen-reader labels, on both apps.
 
+Added 2026-11-15 (from the v0.4.0 test build):
+- **Sleep hours.** Extraction stores when an activity happened in `occurred_at`: a stated time ("woke up at 6:05"), or the time it was saved when the words say it is happening now or just happened ("now going to sleep", but not "ran this morning") (a new prompt version with fixtures; the model gives a local time, code turns it into UTC), "woke up" always becomes an activity, and a night's sleep is paired from going to bed and waking up into the `sleep_h` metric, shown in Trends. It fits with the *assumed* sleep routine above. In v0.4.0 nothing is stored yet: Ask sees when each entry was saved and judges from the words whether that is when it happened.
+
 Planned days, at the same evenness as Phase 8 (to be confirmed when v0.5.0 is planned in detail): 1 task fields (done note, partly done, cancelled; schema and sync) · 2 task actions on both apps (move, cancel, swipe, undo message) · 3 routines engine and ADR · 4 the routines page and starter chores · 5 the chore checklist card and evening notification · 6 repeating tasks through routines · 7 reminders on the phone · 8 "remind me at 4" read by extraction · 9 the brief's Went well / Needs attention · 10 day coverage · 11 Share to Avchetan · 12 accessibility pass · 13 `/done` and `/undo` on the phone · 14 test build and release.
 
 ## v0.6.0 — Security

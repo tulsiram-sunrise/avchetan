@@ -1,6 +1,6 @@
 import { ENTITY_KINDS } from '@avchetan/db';
 import type { Activity, ClientStore, DataScope, RawLog, Task } from '@avchetan/db/sqlite';
-import { type LocalDate, localDate } from '@avchetan/shared';
+import { type LocalDate, localDate, localTime } from '@avchetan/shared';
 import { tool } from 'ai';
 import { z } from 'zod';
 import { aggregate, aggregationSchema, groupingSchema, streaks } from './compute';
@@ -19,6 +19,17 @@ const filters = {
 };
 
 const clip = (text: string | null) => (text ? text.slice(0, MAX_TEXT) : null);
+
+/**
+ * When an entry was written, local to where it was written: `YYYY-MM-DD HH:MM`. Not when it
+ * happened: the model decides that from the words ("now going to sleep", but not "ran this
+ * morning"), as the prompt says. Stored times come with v0.5.0 (roadmap).
+ */
+export function savedAt(log: Pick<RawLog, 'capturedAt' | 'capturedTz'>): string {
+  return `${localDate(log.capturedAt, log.capturedTz)} ${localTime(log.capturedAt, log.capturedTz)}`;
+}
+
+const savedOf = (log: RawLog | undefined) => (log ? { saved: savedAt(log) } : {});
 
 /**
  * Answers are shown as plain text. Models also write 【3】 and [1, 2], which become [3] [1] [2],
@@ -123,6 +134,7 @@ export function createAnalysisTools(
       .map(({ log, date }) => ({
         ref: citations.numberOf(log.id),
         date,
+        saved: savedAt(log),
         text: clip(log.content),
       }));
   }
@@ -229,11 +241,19 @@ export function createAnalysisTools(
             row.title.toLowerCase().includes(needle) ||
             row.notes?.toLowerCase().includes(needle),
         );
+        const shown = rows.slice(0, limit ?? DEFAULT_LIST);
+        const logs = await queries.logsById(
+          db,
+          shown.flatMap((row) => (row.rawLogId ? [row.rawLogId] : [])),
+          scope,
+        );
+        const logOf = new Map(logs.map((log) => [log.id, log]));
         return {
           totalFound: rows.length,
-          activities: rows.slice(0, limit ?? DEFAULT_LIST).map((row) => ({
+          activities: shown.map((row) => ({
             ref: cite(row.rawLogId),
             date: row.loggedDate,
+            ...savedOf(row.rawLogId ? logOf.get(row.rawLogId) : undefined),
             category: slugOf(row.categoryId),
             title: row.title,
             notes: clip(row.notes),
@@ -414,7 +434,7 @@ export function createAnalysisTools(
         );
         return logs.map((log) => ({
           ref: citations.numberOf(log.id),
-          capturedAt: log.capturedAt,
+          saved: savedAt(log),
           text: clip(log.content),
         }));
       },

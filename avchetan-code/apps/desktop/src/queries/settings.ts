@@ -9,6 +9,7 @@ import { getSetting, setSetting } from '@avchetan/db/sqlite';
 import { createLogger } from '@avchetan/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { emitAppEvent } from '../native/events';
+import { loadSeeThrough, type SeeThrough, saveSeeThrough } from '../services/see-through';
 import { loadSubmitKey, type SubmitKey, saveSubmitKey } from '../services/submit-key';
 import { loadTimeZone, saveTimeZone } from '../services/time-zone';
 import { useServices } from '../services-context';
@@ -94,5 +95,28 @@ export function useOrganizingSetup() {
       models: (await loadExtractionSettings(store)).models,
       delegated: (await loadExtractionMode(store)) === 'delegate',
     }),
+  });
+}
+
+const seeThroughQuery = ['settings', 'dock.seeThrough'] as const;
+
+/** How see-through the capture box is; this PC only (services/see-through.ts). */
+export function useSeeThrough() {
+  const { store } = useServices();
+  return useQuery({ queryKey: seeThroughQuery, queryFn: () => loadSeeThrough(store) });
+}
+
+export function useSetSeeThrough() {
+  const { store } = useServices();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (seeThrough: SeeThrough) => saveSeeThrough(store, seeThrough),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: seeThroughQuery });
+      // The dock is another window: it refreshes its `settings` queries on this event.
+      emitAppEvent('logs:changed', { tables: ['settings'] }).catch(() =>
+        log.warn('could not announce setting change'),
+      );
+    },
   });
 }

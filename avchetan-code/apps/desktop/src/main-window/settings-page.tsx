@@ -13,6 +13,7 @@ import {
   useSubmitKey,
   useTimeZoneChoice,
 } from '../queries/settings';
+import { AUTOSTART_AVAILABLE } from '../services/autostart';
 import { changeHotkey } from '../services/hotkey';
 import type { SubmitKey } from '../services/submit-key';
 import { useServices } from '../services-context';
@@ -25,6 +26,7 @@ import { DataSetting } from './data-setting';
 import { HubSetting } from './hub-setting';
 import { LearnedSetting } from './learned-setting';
 import { PrivateTagsSetting } from './private-tags-setting';
+import { SeeThroughSetting } from './see-through-setting';
 import { loadSettingsTab, SETTINGS_TABS, type SettingsTab, saveSettingsTab } from './settings-tabs';
 import { SyncSetting } from './sync-setting';
 import { QuietButton } from './ui';
@@ -56,6 +58,7 @@ function TabContent({ tab }: { tab: SettingsTab }) {
         <>
           <ShortcutSetting />
           <SubmitKeySetting />
+          <SeeThroughSetting />
           <CommandsSetting />
           <WindowContextSetting />
           <ClipboardSnapSetting />
@@ -352,7 +355,11 @@ function TimeZoneSetting() {
 
 function AutostartSetting() {
   const queryClient = useQueryClient();
-  const enabled = useQuery({ queryKey: ['native', 'autostart'], queryFn: isEnabled });
+  const enabled = useQuery({
+    queryKey: ['native', 'autostart'],
+    queryFn: isEnabled,
+    enabled: AUTOSTART_AVAILABLE,
+  });
   const toggle = useMutation({
     mutationFn: (on: boolean) => (on ? enable() : disable()),
     onSettled: () => queryClient.invalidateQueries({ queryKey: ['native', 'autostart'] }),
@@ -370,6 +377,11 @@ function AutostartSetting() {
         />
         Start Avchetan when I sign in, so the shortcut always works
       </label>
+      {AUTOSTART_AVAILABLE ? null : (
+        <p className="text-sm text-ink-muted">
+          Not in a development build: it would replace the installed app's start-up entry.
+        </p>
+      )}
     </section>
   );
 }

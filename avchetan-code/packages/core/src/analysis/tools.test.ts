@@ -7,6 +7,7 @@ import {
   createCitations,
   normalizeCitations,
   type SearchHistory,
+  savedAt,
 } from './tools';
 
 let store: ClientStore;
@@ -132,6 +133,30 @@ describe('analysis tools', () => {
     expect(found.date).toBe('2026-10-20');
   });
 
+  it('says when each entry was saved, in local time, for the model to judge', async () => {
+    const log = await logWith('now going to sleep', {
+      title: 'Going to sleep',
+      date: '2026-10-29',
+    });
+    // Test entries are saved in UTC, so local time is the instant's own.
+    const saved = `${log.capturedAt.slice(0, 10)} ${log.capturedAt.slice(11, 16)}`;
+    const tools = toolsFor(false);
+
+    const { activities } = await run(tools.query_activities, {});
+    const found = await run(tools.search_entries, { text: 'sleep' });
+    const [read] = await run(tools.get_logs, { refs: [found[0].ref] });
+
+    expect(activities).toMatchObject([{ title: 'Going to sleep', date: '2026-10-29', saved }]);
+    expect(found).toMatchObject([{ date: '2026-10-29', saved }]);
+    expect(read.saved).toBe(saved);
+  });
+
+  it('gives the saved time where the entry was written', () => {
+    expect(savedAt({ capturedAt: '2026-11-14T19:02:00.000Z', capturedTz: 'Asia/Kolkata' })).toBe(
+      '2026-11-15 00:32',
+    );
+  });
+
   it('removes citations nobody handed out', () => {
     const citations = createCitations();
     citations.numberOf('log-1');
@@ -226,7 +251,7 @@ describe('search_history', () => {
 
     const result = await run(tools.search_history, { query: 'knee pain' });
 
-    expect(result).toEqual([
+    expect(result).toMatchObject([
       { ref: 1, date: '2026-10-29', text: 'physio session' },
       { ref: 2, date: '2026-10-28', text: 'stiff leg after the run' },
     ]);

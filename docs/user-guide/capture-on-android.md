@@ -118,6 +118,8 @@ Open the **Ask** tab and type a question, like `how many workouts this week?`. T
 
 To answer, your question and the entries it needs are sent to your AI model. Without a connection, you'll get today's activity and open task counts from your phone instead.
 
+**Times.** Ask knows what time each entry was saved. When your words say you are doing it now or just did it (`now going to sleep`, `just finished lunch`), that counts as when it happened, so you can ask `? when did I go to sleep`. Otherwise (`ran this morning`), write the time if it matters (`woke up at 6:05`): the answer reads it from the text. Working out how long you slept from two entries is a best guess for now; sleep hours of their own are planned (see the [roadmap](../roadmap.md#v050--tasks-routines-and-reminders)).
+
 **Search by meaning.** If your hub has a search model (see [Home Hub](setup-home-hub.md#search-by-meaning)), a question like `when did my knee hurt` also finds entries that say "stiff leg" or "physio". Without a hub, or when it can't be reached, Avchetan searches for the words you used.
 
 ![The Ask tab: a question about lunch, the answer, and the entry it came from](images/capture-on-android-ask.png)
