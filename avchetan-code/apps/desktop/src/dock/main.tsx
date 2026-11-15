@@ -6,7 +6,7 @@ import { tauriActionBus } from '../native/action-bus';
 import { onAppEvent } from '../native/events';
 import { serveActions } from '../services/actions';
 import { applySavedAppLock } from '../services/app-lock';
-import { ensureAutostartDefault } from '../services/autostart';
+import { AUTOSTART_AVAILABLE, ensureAutostartDefault } from '../services/autostart';
 import { startBackups } from '../services/data';
 import { loadDraft } from '../services/draft';
 import { announce } from '../services/extraction';
@@ -21,7 +21,11 @@ const log = createLogger('dock');
 /** Startup chores that must not delay the dock; each failure is logged and ignored. */
 async function settleNativeState({ store, platform }: AppServices): Promise<void> {
   const chores: [string, () => Promise<unknown>][] = [
-    ['start at login', () => ensureAutostartDefault(store, { enable })],
+    [
+      'start at login',
+      // A development build would point Windows' start-up entry at its own exe (autostart.ts).
+      async () => AUTOSTART_AVAILABLE && ensureAutostartDefault(store, { enable }),
+    ],
     [
       'saved shortcuts',
       async () => {

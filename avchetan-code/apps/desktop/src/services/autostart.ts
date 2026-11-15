@@ -2,6 +2,12 @@ import { type ClientStore, getSetting, setSetting } from '@avchetan/db/sqlite';
 
 const INITIALIZED_KEY = 'autostart.initialized';
 
+/**
+ * Development builds share the installed app's start-up entry name ("Avchetan"), so turning
+ * it on there would make Windows start the debug exe, console window and all, at sign-in.
+ */
+export const AUTOSTART_AVAILABLE = !import.meta.env.DEV;
+
 export type AutostartControl = { enable(): Promise<void> };
 
 /**

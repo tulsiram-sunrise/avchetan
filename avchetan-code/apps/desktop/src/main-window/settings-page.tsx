@@ -13,6 +13,7 @@ import {
   useSubmitKey,
   useTimeZoneChoice,
 } from '../queries/settings';
+import { AUTOSTART_AVAILABLE } from '../services/autostart';
 import { changeHotkey } from '../services/hotkey';
 import type { SubmitKey } from '../services/submit-key';
 import { useServices } from '../services-context';
@@ -352,7 +353,11 @@ function TimeZoneSetting() {
 
 function AutostartSetting() {
   const queryClient = useQueryClient();
-  const enabled = useQuery({ queryKey: ['native', 'autostart'], queryFn: isEnabled });
+  const enabled = useQuery({
+    queryKey: ['native', 'autostart'],
+    queryFn: isEnabled,
+    enabled: AUTOSTART_AVAILABLE,
+  });
   const toggle = useMutation({
     mutationFn: (on: boolean) => (on ? enable() : disable()),
     onSettled: () => queryClient.invalidateQueries({ queryKey: ['native', 'autostart'] }),
@@ -370,6 +375,11 @@ function AutostartSetting() {
         />
         Start Avchetan when I sign in, so the shortcut always works
       </label>
+      {AUTOSTART_AVAILABLE ? null : (
+        <p className="text-sm text-ink-muted">
+          Not in a development build: it would replace the installed app's start-up entry.
+        </p>
+      )}
     </section>
   );
 }
