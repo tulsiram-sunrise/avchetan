@@ -169,20 +169,27 @@ const TAB_ALIASES: Record<string, SettingsTab> = {
   models: 'ai',
 };
 
-/** The tab `/settings <words>` means: a tab's id, or the start of a word in its name. */
+/** Lowercase words, without `&` and other marks: "Hub & sync" → hub, sync. */
+function tabWords(text: string): string[] {
+  return text
+    .toLowerCase()
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter((part) => part.length > 0);
+}
+
+/**
+ * The tab `/settings <words>` means: an alias, or a tab where every typed word starts its id or
+ * a word of its name, in any case ("Hub & sync", "daily brief", "cap box").
+ */
 export function settingsTabFor(text: string): SettingsTab | null | 'unknown' {
-  const word = text.trim().toLowerCase();
-  if (!word) return null;
-  const alias = TAB_ALIASES[word];
+  const typed = tabWords(text);
+  if (typed.length === 0) return null;
+  const alias = typed.length === 1 ? TAB_ALIASES[typed[0] as string] : undefined;
   if (alias) return alias;
-  const tab = SETTINGS_TABS.find(
-    (item) =>
-      item.id.startsWith(word) ||
-      item.label
-        .toLowerCase()
-        .split(/[\s&]+/)
-        .some((part) => part.length > 0 && part.startsWith(word)),
-  );
+  const tab = SETTINGS_TABS.find((item) => {
+    const words = [item.id, ...tabWords(item.label)];
+    return typed.every((word) => words.some((part) => part.startsWith(word)));
+  });
   return tab ? tab.id : 'unknown';
 }
 

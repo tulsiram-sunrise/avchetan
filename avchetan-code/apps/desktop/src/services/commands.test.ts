@@ -178,6 +178,15 @@ describe('/settings', () => {
     expect(settingsTabFor('data')).toBe('data');
     expect(settingsTabFor('xyz')).toBe('unknown');
   });
+
+  it('takes a tab name as shown, in any case', () => {
+    expect(settingsTabFor('Hub & sync')).toBe('hub');
+    expect(settingsTabFor('hub sync')).toBe('hub');
+    expect(settingsTabFor('Daily brief')).toBe('brief');
+    expect(settingsTabFor('YOUR DATA')).toBe('data');
+    expect(settingsTabFor('cap box')).toBe('capture');
+    expect(settingsTabFor('daily data')).toBe('unknown');
+  });
 });
 
 describe('/lock and /unlock', () => {
