@@ -103,6 +103,7 @@ On **Capture box**:
 - **Shortcut:** type a new one, for example `Ctrl+Alt+Space`, and click **Save**. If another app already uses it, Avchetan says so and keeps the old one.
 - **Clipboard snap:** the shortcut that [attaches the clipboard](#attach-the-clipboard), changed the same way, or turned off.
 - **Saving an entry:** choose whether **Enter** saves and **Shift+Enter** starts a new line (the default), or the other way round. Swap them if you often write entries longer than one line.
+- **See-through:** how much of the blurred window behind shows through the box on Windows 11: **Solid**, **Light**, **Medium** (the default) or **Strong**. Strong looks best on a dark background; choose Solid or Light if the text is hard to read over bright windows. It applies to this PC only. Windows 10 shows a plain box, so it changes nothing there.
 
 On **General**:
 - **Start with Windows:** leave this on so the shortcut works right after you sign in.

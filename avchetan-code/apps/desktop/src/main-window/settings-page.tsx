@@ -26,6 +26,7 @@ import { DataSetting } from './data-setting';
 import { HubSetting } from './hub-setting';
 import { LearnedSetting } from './learned-setting';
 import { PrivateTagsSetting } from './private-tags-setting';
+import { SeeThroughSetting } from './see-through-setting';
 import { loadSettingsTab, SETTINGS_TABS, type SettingsTab, saveSettingsTab } from './settings-tabs';
 import { SyncSetting } from './sync-setting';
 import { QuietButton } from './ui';
@@ -57,6 +58,7 @@ function TabContent({ tab }: { tab: SettingsTab }) {
         <>
           <ShortcutSetting />
           <SubmitKeySetting />
+          <SeeThroughSetting />
           <CommandsSetting />
           <WindowContextSetting />
           <ClipboardSnapSetting />
