@@ -4,6 +4,7 @@ import type { EntityKind, LinkTargetType, MentionRole } from '../../schema/enums
 import { activities, entityMentions, rawLogs, tasks } from '../../schema/sqlite/tables';
 import type { Tx } from '../database';
 import { getSetting, setSetting } from '../local';
+import { occurredAtOf } from '../occurred';
 import {
   getById,
   live,
@@ -152,7 +153,8 @@ export function extractionRepo(deps: RepoDeps, repos: Repos) {
           id,
           rawLogId,
           categoryId: categoryIdOf(item.categoryId),
-          occurredAt: null,
+          // No stated time yet (the model doesn't give one): the time it was saved, same day only.
+          occurredAt: occurredAtOf({ loggedDate: fields.loggedDate, occurredAt: null }, log),
           origin: 'extraction',
           isUserEdited: false,
           ordinal,

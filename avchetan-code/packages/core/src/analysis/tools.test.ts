@@ -132,6 +132,24 @@ describe('analysis tools', () => {
     expect(found.date).toBe('2026-10-20');
   });
 
+  it('gives the local time something happened on the day it was saved', async () => {
+    const log = await logWith('going to sleep', { title: 'Going to sleep', date: '2000-01-01' });
+    const savedOn = log.capturedAt.slice(0, 10);
+    const time = log.capturedAt.slice(11, 16);
+    await logWith('woke up', { title: 'Woke up', date: savedOn });
+    const tools = toolsFor(false);
+
+    const { activities } = await run(tools.query_activities, {});
+    const found = await run(tools.search_entries, { text: 'woke' });
+    const [read] = await run(tools.get_logs, { refs: [found[0].ref] });
+
+    // An activity on another day than its entry was saved gets no time.
+    expect(activities).toMatchObject([{ title: 'Woke up', time }, { title: 'Going to sleep' }]);
+    expect(activities[1]).not.toHaveProperty('time');
+    expect(found).toMatchObject([{ date: savedOn, time }]);
+    expect(read.saved).toBe(`${savedOn} ${time}`);
+  });
+
   it('removes citations nobody handed out', () => {
     const citations = createCitations();
     citations.numberOf('log-1');

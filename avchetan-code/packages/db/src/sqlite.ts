@@ -42,6 +42,7 @@ export {
   setSyncState,
 } from './client/local';
 export { compareVersions, type RowVersion } from './client/lww';
+export { occurredAtOf } from './client/occurred';
 export { ackOutbox, listOutbox, type OutboxEntry } from './client/outbox';
 export type {
   DuplicatePair,

@@ -1,6 +1,13 @@
 import { ENTITY_KINDS } from '@avchetan/db';
-import type { Activity, ClientStore, DataScope, RawLog, Task } from '@avchetan/db/sqlite';
-import { type LocalDate, localDate } from '@avchetan/shared';
+import {
+  type Activity,
+  type ClientStore,
+  type DataScope,
+  occurredAtOf,
+  type RawLog,
+  type Task,
+} from '@avchetan/db/sqlite';
+import { type LocalDate, localDate, localTime } from '@avchetan/shared';
 import { tool } from 'ai';
 import { z } from 'zod';
 import { aggregate, aggregationSchema, groupingSchema, streaks } from './compute';
@@ -123,8 +130,18 @@ export function createAnalysisTools(
       .map(({ log, date }) => ({
         ref: citations.numberOf(log.id),
         date,
+        ...timeOf({ loggedDate: date, occurredAt: null }, log),
         text: clip(log.content),
       }));
+  }
+
+  /**
+   * The local `time` (HH:MM) something happened, when known: its own time, else when its entry
+   * was saved that same day (occurredAtOf). Shown in the zone the entry was saved in.
+   */
+  function timeOf(activity: Pick<Activity, 'loggedDate' | 'occurredAt'>, log: RawLog | undefined) {
+    const at = log ? occurredAtOf(activity, log) : null;
+    return at && log ? { time: localTime(at, log.capturedTz) } : {};
   }
 
   async function matchingActivities(input: {
@@ -229,11 +246,19 @@ export function createAnalysisTools(
             row.title.toLowerCase().includes(needle) ||
             row.notes?.toLowerCase().includes(needle),
         );
+        const shown = rows.slice(0, limit ?? DEFAULT_LIST);
+        const logs = await queries.logsById(
+          db,
+          shown.flatMap((row) => (row.rawLogId ? [row.rawLogId] : [])),
+          scope,
+        );
+        const logOf = new Map(logs.map((log) => [log.id, log]));
         return {
           totalFound: rows.length,
-          activities: rows.slice(0, limit ?? DEFAULT_LIST).map((row) => ({
+          activities: shown.map((row) => ({
             ref: cite(row.rawLogId),
             date: row.loggedDate,
+            ...timeOf(row, row.rawLogId ? logOf.get(row.rawLogId) : undefined),
             category: slugOf(row.categoryId),
             title: row.title,
             notes: clip(row.notes),
@@ -414,7 +439,7 @@ export function createAnalysisTools(
         );
         return logs.map((log) => ({
           ref: citations.numberOf(log.id),
-          capturedAt: log.capturedAt,
+          saved: `${localDate(log.capturedAt, log.capturedTz)} ${localTime(log.capturedAt, log.capturedTz)}`,
           text: clip(log.content),
         }));
       },
