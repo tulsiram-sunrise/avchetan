@@ -173,6 +173,7 @@ export {
   extractRawLog,
   processRawLog,
 } from './extraction/extract';
+export { MAX_ATTEMPTS } from './extraction/failure-policy';
 export {
   buildExtractionInput,
   type ExtractionInput,
@@ -298,6 +299,7 @@ export {
   ollamaRoot,
   type PullProgress,
   pullOllamaModel,
+  someModelAnswers,
 } from './providers/ollama-models';
 export {
   apiKeySecretName,

@@ -106,6 +106,8 @@ The phone already does little in the background: Android runs one task at most e
 - Measure over two days of normal use with Android's battery usage screen and `adb shell dumpsys batterystats`, and record the result.
 - If the task shows a real cost: skip the run when nothing waits to be organized or sent, and pull at most hourly in the background.
 
+**Result (2026-11-15, the author's phone, two periods since a full charge):** Avchetan's share of the phone's battery use was 1.35% and 3.31% (the second period about 2% of a full charge); CPU about 3 min per period, almost all in the background; data under 100 KB. The first period kept the phone awake 17 min 31 s for 3 min of CPU: waiting, not working. The likely cause: away from home, a background run called the Ollama on the PC, which no one answered, and a local model's call waits up to 3 minutes (and used up one of the entry's tries). **Fixed in v0.4.0:** a background run reads the local database first and does nothing when nothing waits to be sent or organized and the last pull is under an hour old (`backgroundPlan`); before organizing, `someModelAnswers` asks Ollama for its model list (5 s) and leaves entries for a later run when it doesn't answer.
+
 ## 9. Added after the baseline
 
 Decided 2026-11-11, after the [performance baseline](../roadmap.md#phase-8--finding-and-using-data-v040) and the user's own observations:

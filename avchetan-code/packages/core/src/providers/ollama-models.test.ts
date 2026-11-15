@@ -5,6 +5,7 @@ import {
   ollamaRoot,
   type PullProgress,
   pullOllamaModel,
+  someModelAnswers,
 } from './ollama-models';
 
 /** A response whose body arrives in the given pieces, as a stream would. */
@@ -45,6 +46,44 @@ describe('listOllamaModels', () => {
       throw new TypeError('connection refused');
     });
     expect(await listOllamaModels(fetch)).toEqual({ running: false });
+  });
+});
+
+describe('someModelAnswers', () => {
+  const ollama = {
+    provider: 'ollama',
+    model: 'small-model:3b',
+    baseUrl: 'http://192.0.2.10:11434/v1',
+  } as const;
+  const cloud = { provider: 'groq', model: 'cloud-model' } as const;
+  const unreachable = () =>
+    vi.fn(async (_url: string | URL | Request, _init?: RequestInit): Promise<Response> => {
+      throw new TypeError('Network request failed');
+    });
+
+  it('takes a cloud model while online without asking anything', async () => {
+    const fetch = unreachable();
+    expect(await someModelAnswers(fetch, [ollama, cloud], true)).toBe(true);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('asks Ollama when it is the only way, and says no when nothing answers', async () => {
+    const fetch = unreachable();
+    expect(await someModelAnswers(fetch, [ollama, cloud], false)).toBe(false);
+    expect(fetch).toHaveBeenCalledWith('http://192.0.2.10:11434/api/tags', {
+      signal: expect.any(AbortSignal),
+    });
+  });
+
+  it('says yes when Ollama answers, even with an error', async () => {
+    const up = vi.fn(async () => Response.json({ models: [] }));
+    expect(await someModelAnswers(up, [ollama], false)).toBe(true);
+    const failing = vi.fn(async () => new Response('', { status: 500 }));
+    expect(await someModelAnswers(failing, [ollama], false)).toBe(true);
+  });
+
+  it('says no for an empty chain', async () => {
+    expect(await someModelAnswers(unreachable(), [], true)).toBe(false);
   });
 });
 
