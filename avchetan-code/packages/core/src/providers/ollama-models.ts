@@ -1,5 +1,6 @@
 import { type HttpFetch, LlmError } from '@avchetan/shared';
 import { z } from 'zod';
+import type { ModelConfig } from './config';
 
 const DEFAULT_ROOT = 'http://localhost:11434';
 
@@ -32,6 +33,31 @@ export async function listOllamaModels(fetch: HttpFetch, baseUrl?: string): Prom
   }
   const { models } = tagsSchema.parse(await response.json());
   return { running: true, models: models.map((model) => model.name) };
+}
+
+/**
+ * Whether a model in the chain can take an entry now: a cloud model while online, Ollama only when
+ * its address answers. A call to an Ollama the device can't reach (a PC at home, the phone out)
+ * otherwise waits up to three minutes, and counts as one of the entry's tries.
+ */
+export async function someModelAnswers(
+  fetch: HttpFetch,
+  models: readonly ModelConfig[],
+  online: boolean,
+): Promise<boolean> {
+  if (online && models.some((model) => model.provider !== 'ollama')) return true;
+  const roots = new Set(
+    models.filter((model) => model.provider === 'ollama').map((model) => ollamaRoot(model.baseUrl)),
+  );
+  for (const root of roots) {
+    const answer = await listOllamaModels(fetch, root).catch((error: unknown) => {
+      // An error status still means something is there; the real call reports what's wrong.
+      if (error instanceof LlmError) return { running: true } as const;
+      throw error;
+    });
+    if (answer.running) return true;
+  }
+  return false;
 }
 
 /** Models in `wanted` that Ollama doesn't have. A name without a tag means `:latest`. */

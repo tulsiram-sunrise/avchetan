@@ -42,3 +42,4 @@ With a long history the first download takes a few minutes (50,000 entries took 
 - The code contains a secret. Don't share a photo or screenshot of it. If you think it leaked: on the PC, **Settings → Hub & sync → Sync → Change token**, then pair your other devices again.
 - To pair another phone, repeat these steps.
 - For syncing away from home, set up [Tailscale](remote-access-tailscale.md) **before** pairing, so the QR code includes your Tailscale address too. (Or pair again afterwards.)
+- With Avchetan closed, the phone checks in the background about every 15 minutes. It sends new entries, gets other devices' changes at most once an hour, and organizes entries only when its AI model answers. When it can't reach your PC (you're out, no Tailscale), it waits quietly and catches up once you're back, so it doesn't drain your battery.
