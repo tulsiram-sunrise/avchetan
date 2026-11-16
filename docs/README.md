@@ -34,6 +34,7 @@ The project started from an original discussion and first specification that are
 | [product/clipboard-snap.md](product/clipboard-snap.md) | Clipboard snap: a second shortcut attaches the clipboard text (4 KB) to an entry on the PC |
 | [product/finding-and-using-data.md](product/finding-and-using-data.md) | Finding and using your data (v0.4.0): plain search, tag and project pages, editing numbers, trends, the hub-unreachable warning |
 | [product/capture-box-redesign.md](product/capture-box-redesign.md) | Capture box redesign (v0.4.0): a keyboard that always works, fuzzy commands, a floating search-bar look, mode badge, live hints, status line |
+| [product/tasks-routines-reminders.md](product/tasks-routines-reminders.md) | Tasks, routines and reminders (v0.5.0): finishing a task (note, partly done, move, cancel), routines and chores, repeat rules, reminders, sleep hours, the brief's Went well / Needs attention |
 | [product/feature-audit-2026-11.md](product/feature-audit-2026-11.md) | Feature audit (November 2026, for discussion): what was tested, bugs found, gaps and ideas |
 | [product/glossary.md](product/glossary.md) | Shared vocabulary |
 

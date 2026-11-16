@@ -123,7 +123,7 @@ Decided 2026-11-11, after the [performance baseline](../roadmap.md#phase-8--find
 
 ## Not in this release
 
-- Reminders at a time and repeating tasks: v0.5.0 ([Q28](../open-questions.md)).
+- Reminders at a time and repeating tasks: v0.5.0 ([R25](../open-questions.md#resolved), [spec](tasks-routines-reminders.md)).
 - Encrypted hub traffic on home Wi-Fi and database encryption: v0.6.0 ([Q29](../open-questions.md), [Q6](../open-questions.md)).
 - Search inside the phone's capture screen; saved searches; pinned trend cards on Review.
 
