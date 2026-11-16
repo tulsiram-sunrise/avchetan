@@ -103,6 +103,27 @@ describe('analysis tools', () => {
     expect(result.tasks.map((t: { title: string }) => t.title)).toEqual(['Late']);
   });
 
+  it('tells done, partly done and cancelled tasks apart, and keeps cancelled ones out of overdue', async () => {
+    await store.write(async (tx) => {
+      const r = store.repos.tasks;
+      const done = await r.create(tx, { title: 'Paid rent', dueDate: '2026-10-25' });
+      await r.complete(tx, done.id, 'paid online');
+      const dropped = await r.create(tx, { title: 'Old plan', dueDate: '2026-10-25' });
+      await r.cancel(tx, dropped.id);
+      const half = await r.create(tx, { title: 'Report', dueDate: '2026-10-25' });
+      await r.partlyDone(tx, half.id, 50);
+    });
+    const tools = toolsFor(false);
+
+    const overdue = await run(tools.query_tasks, { status: 'overdue' });
+    const done = await run(tools.query_tasks, { status: 'done' });
+    const cancelled = await run(tools.query_tasks, { status: 'cancelled' });
+
+    expect(overdue.tasks).toMatchObject([{ title: 'Report', status: 'open', partlyDonePct: 50 }]);
+    expect(done.tasks).toMatchObject([{ title: 'Paid rent', doneNote: 'paid online' }]);
+    expect(cancelled.tasks).toMatchObject([{ title: 'Old plan', status: 'cancelled' }]);
+  });
+
   it('gives each entry one number, and clips long text', async () => {
     const long = 'x'.repeat(900);
     await logWith(long, { title: 'Run', date: '2026-10-27' });
@@ -336,7 +357,7 @@ describe('people and promises', () => {
           person: 'Rahul',
           direction: 'i_owe',
           dueDate: '2026-10-28',
-          done: false,
+          status: 'open',
         },
       ],
     });

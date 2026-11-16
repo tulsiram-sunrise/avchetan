@@ -73,5 +73,13 @@ export const sqliteMigrations: readonly Migration[] = [
       "INSERT INTO search_rows (kind, ref_id)\n\tSELECT 'entry', id FROM raw_logs WHERE deleted_at IS NULL\n\tUNION ALL SELECT 'task', id FROM tasks WHERE deleted_at IS NULL\n\tUNION ALL SELECT 'entity', id FROM entities WHERE deleted_at IS NULL;",
       "INSERT INTO search_index (rowid, body)\n\tSELECT s.id, r.content FROM search_rows s JOIN raw_logs r ON r.id = s.ref_id WHERE s.kind = 'entry'\n\tUNION ALL SELECT s.id, t.title FROM search_rows s JOIN tasks t ON t.id = s.ref_id WHERE s.kind = 'task'\n\tUNION ALL SELECT s.id, e.name || coalesce(' ' || (SELECT group_concat(value, ' ') FROM json_each(e.aliases)), '')\n\t\tFROM search_rows s JOIN entities e ON e.id = s.ref_id WHERE s.kind = 'entity';"
     ]
+  },
+  {
+    "tag": "0004_task_finishing",
+    "statements": [
+      "ALTER TABLE `tasks` ADD `completion_note` text;",
+      "ALTER TABLE `tasks` ADD `progress_pct` integer;",
+      "ALTER TABLE `tasks` ADD `cancelled_at` text;"
+    ]
   }
 ];

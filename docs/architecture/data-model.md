@@ -120,8 +120,13 @@ Indexes: `(logged_date)`, `(category_id, logged_date)`, `(raw_log_id)`, `(projec
 | `origin` | enum | `extraction`, `user`, `system` |
 | `is_user_edited` | bool | As for activities, except that changing only `due_date` (moving the task) doesn't set it |
 | `ordinal` | int | |
+| `completion_note` | text, nullable | How it went, given when it was marked done ([finishing a task](../product/tasks-routines-reminders.md#1-finishing-a-task)). Cleared when the task is reopened or cancelled |
+| `progress_pct` | int, nullable | Partly done, 1–99 (`invalid_progress` otherwise). The task stays open; reopening keeps it |
+| `cancelled_at` | UTC ISO, nullable | Cancelled: not done and never counted as missed. A task is **open** when both `completed_at` and `cancelled_at` are null; marking it done clears `cancelled_at` and cancelling clears `completed_at` |
 
 Indexes: `(completed_at, due_date)`, `(raw_log_id)`.
+
+The last three columns were added in v0.5.0. A row pushed by an older app, which doesn't send them, reads them as null.
 
 ### `tags`
 | Column | Type | Notes |

@@ -1,4 +1,5 @@
 import { isValidLocalDate, ValidationError } from '@avchetan/shared';
+import { and, isNull } from 'drizzle-orm';
 import { tasks } from '../../schema/sqlite/tables';
 import type { Tx } from '../database';
 import {
@@ -14,6 +15,25 @@ import { softDeleteLinksTo } from './cascade';
 import { recordCorrection } from './corrections';
 
 export type Task = Row<typeof tasks>;
+
+/** Where a task stands (product/tasks-routines-reminders.md §1). Cancelled is never missed. */
+export type TaskState = 'open' | 'done' | 'cancelled';
+
+export function taskState(task: Pick<Task, 'completedAt' | 'cancelledAt'>): TaskState {
+  if (task.completedAt !== null) return 'done';
+  if (task.cancelledAt !== null) return 'cancelled';
+  return 'open';
+}
+
+export const isOpenTask = (task: Pick<Task, 'completedAt' | 'cancelledAt'>): boolean =>
+  taskState(task) === 'open';
+
+/** SQL: the task is open (neither done nor cancelled). */
+export const openTaskWhere = () => and(isNull(tasks.completedAt), isNull(tasks.cancelledAt));
+
+/** Partly done is a whole percentage from 1 to 99: 0 is not started, 100 is done. */
+export const PROGRESS_MIN = 1;
+export const PROGRESS_MAX = 99;
 
 export type NewTask = {
   title: string;
@@ -53,6 +73,9 @@ export function tasksRepo(deps: RepoDeps) {
         origin: 'user',
         isUserEdited: false,
         ordinal: null,
+        completionNote: null,
+        progressPct: null,
+        cancelledAt: null,
       });
     },
 
@@ -98,10 +121,43 @@ export function tasksRepo(deps: RepoDeps) {
       await repo.softDelete(tx, id);
     },
 
-    complete: (tx: Tx, id: string) =>
-      updateSynced(tx, deps, tasks, id, { completedAt: deps.clock.now() }),
+    /** Done, with an optional note on how it went. Finishing a cancelled task un-cancels it. */
+    complete: (tx: Tx, id: string, note?: string | null) =>
+      updateSynced(tx, deps, tasks, id, {
+        completedAt: deps.clock.now(),
+        cancelledAt: null,
+        completionNote: note?.trim() || null,
+      }),
 
-    reopen: (tx: Tx, id: string) => updateSynced(tx, deps, tasks, id, { completedAt: null }),
+    /** Partly done: the percentage is recorded and the task stays open. */
+    partlyDone(tx: Tx, id: string, progressPct: number): Promise<Task> {
+      if (
+        !Number.isInteger(progressPct) ||
+        progressPct < PROGRESS_MIN ||
+        progressPct > PROGRESS_MAX
+      ) {
+        throw new ValidationError('invalid_progress', 'Progress must be 1 to 99', {
+          details: { progressPct },
+        });
+      }
+      return updateSynced(tx, deps, tasks, id, { progressPct });
+    },
+
+    /** Not going to happen: shown struck through, never counted as missed. */
+    cancel: (tx: Tx, id: string) =>
+      updateSynced(tx, deps, tasks, id, {
+        cancelledAt: deps.clock.now(),
+        completedAt: null,
+        completionNote: null,
+      }),
+
+    /** Back to open, from done or cancelled. Progress is kept: it was real work. */
+    reopen: (tx: Tx, id: string) =>
+      updateSynced(tx, deps, tasks, id, {
+        completedAt: null,
+        cancelledAt: null,
+        completionNote: null,
+      }),
 
     async softDelete(tx: Tx, id: string): Promise<void> {
       await softDeleteLinksTo(tx, deps, 'task', [id]);

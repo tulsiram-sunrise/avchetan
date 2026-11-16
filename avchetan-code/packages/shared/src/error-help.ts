@@ -26,6 +26,7 @@ export const ERROR_HELP = {
   invalid_merge: own(),
   invalid_name: own(),
   invalid_port: own(),
+  invalid_progress: own('Partly done takes a percentage from 1 to 99'),
   invalid_tag: own(),
   invalid_title: own(),
   invalid_time_zone: own('Unknown time zone. Choose one from the list'),

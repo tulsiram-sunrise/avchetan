@@ -1,23 +1,11 @@
 import type { LocalDate } from '@avchetan/shared';
-import {
-  and,
-  asc,
-  count,
-  desc,
-  eq,
-  inArray,
-  isNull,
-  max,
-  min,
-  ne,
-  type SQL,
-  sql,
-} from 'drizzle-orm';
+import { and, asc, count, desc, eq, inArray, max, min, ne, type SQL, sql } from 'drizzle-orm';
 import { activities, rawLogs, tasks } from '../schema/sqlite/tables';
 import type { ClientDb } from './database';
 import { type DataScope, notFromPrivateLog } from './privacy';
 import type { RawLog } from './repos/raw-logs';
 import type { Task } from './repos/tasks';
+import { openTaskWhere } from './repos/tasks';
 import { entryFilters, type SearchFilters, taggedIds, taskFilters } from './search';
 import { live } from './synced';
 
@@ -79,7 +67,7 @@ export async function collectionSummary(
       .where(
         and(
           live(tasks),
-          isNull(tasks.completedAt),
+          openTaskWhere(),
           options.includePrivate ? undefined : notFromPrivateLog(db, tasks),
           taskFilters(db, filters),
         ),
@@ -151,7 +139,7 @@ export function collectionOpenTasks(
     .where(
       and(
         live(tasks),
-        isNull(tasks.completedAt),
+        openTaskWhere(),
         options.includePrivate ? undefined : notFromPrivateLog(db, tasks),
         taskFilters(db, asFilters(options.of)),
       ),

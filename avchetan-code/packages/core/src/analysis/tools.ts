@@ -1,5 +1,12 @@
 import { ENTITY_KINDS } from '@avchetan/db';
-import type { Activity, ClientStore, DataScope, RawLog, Task } from '@avchetan/db/sqlite';
+import {
+  type Activity,
+  type ClientStore,
+  type DataScope,
+  type RawLog,
+  type Task,
+  taskState,
+} from '@avchetan/db/sqlite';
 import { type LocalDate, localDate, localTime } from '@avchetan/shared';
 import { tool } from 'ai';
 import { z } from 'zod';
@@ -288,9 +295,10 @@ export function createAnalysisTools(
     }),
 
     query_tasks: tool({
-      description: 'Find tasks by status: open, done or overdue. Each has a ref to cite.',
+      description:
+        'Find tasks by status: open, done, cancelled or overdue. Each has a ref to cite.',
       inputSchema: z.object({
-        status: z.enum(['open', 'done', 'overdue']),
+        status: z.enum(['open', 'done', 'cancelled', 'overdue']),
         from: date,
         to: date,
         tag: filters.tag,
@@ -300,8 +308,8 @@ export function createAnalysisTools(
         const rows = await queries.tasksForAnalysis(db, { ...scope, limit: MAX_ROWS });
         const hasTag = tag ? await taggedWith(tag) : null;
         const matches = rows.filter((row) => {
-          const done = row.completedAt !== null;
-          if (status === 'done' ? !done : done) return false;
+          const state = taskState(row);
+          if (state !== (status === 'overdue' ? 'open' : status)) return false;
           if (status === 'overdue' && !(row.dueDate && row.dueDate < today)) return false;
           if (from && !(row.dueDate && row.dueDate >= from)) return false;
           if (to && !(row.dueDate && row.dueDate <= to)) return false;
@@ -314,7 +322,11 @@ export function createAnalysisTools(
             title: row.title,
             notes: clip(row.notes),
             dueDate: row.dueDate,
-            done: row.completedAt !== null,
+            status: taskState(row),
+            ...(row.completionNote ? { doneNote: clip(row.completionNote) } : {}),
+            ...(row.progressPct !== null && taskState(row) === 'open'
+              ? { partlyDonePct: row.progressPct }
+              : {}),
           })),
         };
       },
@@ -404,7 +416,7 @@ export function createAnalysisTools(
             person: item.entity.name,
             direction: item.role === 'owed_to' ? 'i_owe' : 'owed_to_me',
             dueDate: item.task.dueDate,
-            done: item.task.completedAt !== null,
+            status: taskState(item.task),
           })),
         };
       },
