@@ -34,7 +34,7 @@ import { type DataScope, notFromPrivateLog } from './privacy';
 import type { Activity } from './repos/activities';
 import { PROMISE_ROLES, type PromiseRole } from './repos/entities';
 import type { RawLog } from './repos/raw-logs';
-import type { Task } from './repos/tasks';
+import { openTaskWhere, type Task } from './repos/tasks';
 import { live } from './synced';
 
 /** Read helpers shared by UI hooks and (later) analysis tools. Keyset pagination only. */
@@ -435,7 +435,7 @@ function taskGroupWhere(db: ClientDb, group: TaskGroup, today: LocalDate) {
         ),
       ),
   );
-  const open = and(isNull(tasks.completedAt), sql`not ${waiting}`);
+  const open = and(openTaskWhere(), sql`not ${waiting}`);
   switch (group) {
     case 'overdue':
       return and(open, lt(tasks.dueDate, today));
@@ -446,9 +446,9 @@ function taskGroupWhere(db: ClientDb, group: TaskGroup, today: LocalDate) {
     case 'undated':
       return and(open, isNull(tasks.dueDate));
     case 'waiting':
-      return and(isNull(tasks.completedAt), waiting);
+      return and(openTaskWhere(), waiting);
     case 'done':
-      return isNotNull(tasks.completedAt);
+      return or(isNotNull(tasks.completedAt), isNotNull(tasks.cancelledAt));
   }
 }
 
@@ -483,7 +483,7 @@ export function tasksInGroup(
 ): Promise<Task[]> {
   const order =
     options.group === 'done'
-      ? [desc(tasks.completedAt), desc(tasks.id)]
+      ? [desc(sql`coalesce(${tasks.completedAt}, ${tasks.cancelledAt})`), desc(tasks.id)]
       : [sql`${tasks.dueDate} is null`, asc(tasks.dueDate), asc(tasks.createdAt), asc(tasks.id)];
   return db
     .select()
@@ -498,7 +498,7 @@ export function openTasks(db: ClientDb, limit = 500): Promise<Task[]> {
   return db
     .select()
     .from(tasks)
-    .where(and(live(tasks), isNull(tasks.completedAt)))
+    .where(and(live(tasks), openTaskWhere()))
     .orderBy(sql`${tasks.dueDate} is null`, asc(tasks.dueDate), asc(tasks.createdAt))
     .limit(limit);
 }
@@ -631,7 +631,10 @@ export async function dayTasks(
       .select()
       .from(tasks)
       .where(and(live(tasks), eq(tasks.dueDate, options.day)))
-      .orderBy(sql`${tasks.completedAt} is not null`, asc(tasks.createdAt)),
+      .orderBy(
+        sql`${tasks.completedAt} is not null or ${tasks.cancelledAt} is not null`,
+        asc(tasks.createdAt),
+      ),
     db
       .select()
       .from(tasks)
@@ -641,7 +644,7 @@ export async function dayTasks(
       ? db
           .select()
           .from(tasks)
-          .where(and(live(tasks), isNull(tasks.completedAt), lt(tasks.dueDate, options.today)))
+          .where(and(live(tasks), openTaskWhere(), lt(tasks.dueDate, options.today)))
           .orderBy(asc(tasks.dueDate), asc(tasks.createdAt))
       : Promise.resolve([]),
   ]);
@@ -717,7 +720,7 @@ export function rolledOverTasks(
     .where(
       and(
         live(tasks),
-        isNull(tasks.completedAt),
+        openTaskWhere(),
         lte(tasks.dueDate, options.day),
         notInArray(tasks.id, waitingOnSomeone(db)),
         options.includePrivate ? undefined : notFromPrivateLog(db, tasks),

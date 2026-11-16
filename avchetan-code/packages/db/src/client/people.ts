@@ -9,6 +9,7 @@ import type { DataScope } from './privacy';
 import { type Entity, isUnnamedPerson, normalizeEntityName, PROMISE_ROLES } from './repos/entities';
 import type { RawLog } from './repos/raw-logs';
 import type { Task } from './repos/tasks';
+import { isOpenTask, openTaskWhere, taskState } from './repos/tasks';
 import { matchingEntityIds } from './search';
 import { live } from './synced';
 
@@ -171,7 +172,7 @@ async function summarizeInSql(
   });
   const open = (promise: 'owed_to' | 'owed_by', overdue: boolean) =>
     sql<number>`count(distinct case when ${role} = ${promise} and ${tasks.id} is not null
-      and ${tasks.completedAt} is null
+      and ${tasks.completedAt} is null and ${tasks.cancelledAt} is null
       ${overdue ? sql`and ${tasks.dueDate} < ${options.today}` : sql``} then ${tasks.id} end)`;
   const seen = latest(true);
   const mentioned = latest(false);
@@ -264,7 +265,7 @@ async function summarize(
     ? await db
         .select({ id: tasks.id, dueDate: tasks.dueDate })
         .from(tasks)
-        .where(and(live(tasks), isNull(tasks.completedAt), inArray(tasks.id, promiseTaskIds)))
+        .where(and(live(tasks), openTaskWhere(), inArray(tasks.id, promiseTaskIds)))
     : [];
   const openById = new Map(openTasks.map((task) => [task.id, task]));
   const logDays = new Map<string, LocalDate | null>();
@@ -491,10 +492,10 @@ export async function promises(
       if (!log) continue;
       if (log.privacy !== 'normal' && !options.includePrivate) continue;
     }
-    const open = task.completedAt === null;
+    const open = isOpenTask(task);
     const overdue = open && task.dueDate !== null && task.dueDate < options.today;
     if (options.status === 'open' && !open) continue;
-    if (options.status === 'done' && open) continue;
+    if (options.status === 'done' && taskState(task) !== 'done') continue;
     if (options.status === 'overdue' && !overdue) continue;
     items.push({
       task,
@@ -504,7 +505,7 @@ export async function promises(
   }
   items.sort(
     (a, b) =>
-      Number(a.task.completedAt !== null) - Number(b.task.completedAt !== null) ||
+      Number(!isOpenTask(a.task)) - Number(!isOpenTask(b.task)) ||
       Number(a.task.dueDate === null) - Number(b.task.dueDate === null) ||
       (a.task.dueDate ?? '').localeCompare(b.task.dueDate ?? '') ||
       (b.task.completedAt ?? '').localeCompare(a.task.completedAt ?? '') ||
@@ -621,8 +622,8 @@ export async function personDetail(
   };
   return {
     ...base,
-    open: all.filter((item) => item.task.completedAt === null),
-    done: all.filter((item) => item.task.completedAt !== null),
+    open: all.filter((item) => isOpenTask(item.task)),
+    done: all.filter((item) => !isOpenTask(item.task)),
   };
 }
 

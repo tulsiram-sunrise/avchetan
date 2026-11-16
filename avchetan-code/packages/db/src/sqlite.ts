@@ -97,7 +97,16 @@ export {
 export type { Project } from './client/repos/projects';
 export type { CaptureInput, RawLog } from './client/repos/raw-logs';
 export type { Tag, TagLink } from './client/repos/tags';
-export type { NewTask, Task, TaskEdit } from './client/repos/tasks';
+export {
+  isOpenTask,
+  type NewTask,
+  PROGRESS_MAX,
+  PROGRESS_MIN,
+  type Task,
+  type TaskEdit,
+  type TaskState,
+  taskState,
+} from './client/repos/tasks';
 export {
   type EntryHit,
   filterLogs,

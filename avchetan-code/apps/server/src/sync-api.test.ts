@@ -279,6 +279,9 @@ describe('push and pull', () => {
       origin: 'user',
       isUserEdited: false,
       ordinal: null,
+      completionNote: null,
+      progressPct: null,
+      cancelledAt: null,
     };
     await push([
       { table: 'raw_logs', row: await clientRow('1') },

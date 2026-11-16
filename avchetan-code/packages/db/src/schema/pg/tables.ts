@@ -171,6 +171,9 @@ export const tasks = pgTable(
     origin: text('origin', { enum: E.ROW_ORIGINS }).notNull(),
     isUserEdited: boolean('is_user_edited').notNull().default(false),
     ordinal: integer('ordinal'),
+    completionNote: text('completion_note'),
+    progressPct: integer('progress_pct'),
+    cancelledAt: instant('cancelled_at'),
   },
   (t) => [
     seqIndex('tasks', t),

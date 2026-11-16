@@ -23,7 +23,7 @@ describe('recentRawLogs', () => {
 });
 
 describe('openTasks', () => {
-  it('lists dated tasks by due date, then undated, excluding completed', async () => {
+  it('lists dated tasks by due date, then undated, excluding completed and cancelled', async () => {
     const { store } = await openTestStore();
     await store.write(async (tx) => {
       await store.repos.tasks.create(tx, { title: 'someday' });
@@ -31,6 +31,11 @@ describe('openTasks', () => {
       await store.repos.tasks.create(tx, { title: 'tomorrow', dueDate: '2026-10-27' });
       const done = await store.repos.tasks.create(tx, { title: 'done', dueDate: '2026-10-26' });
       await store.repos.tasks.complete(tx, done.id);
+      const dropped = await store.repos.tasks.create(tx, {
+        title: 'dropped',
+        dueDate: '2026-10-26',
+      });
+      await store.repos.tasks.cancel(tx, dropped.id);
     });
     const titles = (await store.queries.openTasks(store.db)).map((t) => t.title);
     expect(titles).toEqual(['tomorrow', 'friday', 'someday']);
@@ -100,6 +105,8 @@ describe('task groups', () => {
     const lent = await make('Get the drill back', '2026-10-01');
     const finished = await make('Done thing');
     await store.write((tx) => r.tasks.complete(tx, finished.id));
+    const dropped = await make('Dropped', '2026-10-01');
+    await store.write((tx) => r.tasks.cancel(tx, dropped.id));
     const gone = await make('Deleted', '2026-10-01');
     await store.write((tx) => r.tasks.softDelete(tx, gone.id));
     await store.write(async (tx) => {
@@ -118,7 +125,7 @@ describe('task groups', () => {
       upcoming: 1,
       undated: 1,
       waiting: 1,
-      done: 1,
+      done: 2,
     });
     const titles = async (
       group: Parameters<typeof store.queries.tasksInGroup>[1]['group'],
@@ -128,6 +135,31 @@ describe('task groups', () => {
     expect(await titles('overdue', 1)).toEqual(['Late one']);
     expect(await titles('waiting')).toEqual(['Get the drill back']);
     expect(await titles('undated')).toEqual(['Someday']);
-    expect(await titles('done')).toEqual(['Done thing']);
+    expect(await titles('done')).toEqual(['Dropped', 'Done thing']);
+  });
+});
+
+describe('cancelled tasks', () => {
+  it('are never overdue or rolled over, but still listed on their due day', async () => {
+    const { store } = await openTestStore();
+    const r = store.repos;
+    const today = '2026-11-16';
+    await store.write(async (tx) => {
+      const dropped = await r.tasks.create(tx, { title: 'Dropped', dueDate: '2026-11-10' });
+      await r.tasks.cancel(tx, dropped.id);
+      const dueToday = await r.tasks.create(tx, { title: 'Not today', dueDate: today });
+      await r.tasks.cancel(tx, dueToday.id);
+      await r.tasks.create(tx, { title: 'Late', dueDate: '2026-11-12' });
+      await r.tasks.create(tx, { title: 'Now', dueDate: today });
+    });
+
+    const day = await store.queries.dayTasks(store.db, { day: today, today, timeZone: 'UTC' });
+    expect(day.overdue.map((t) => t.title)).toEqual(['Late']);
+    expect(day.due.map((t) => t.title)).toEqual(['Now', 'Not today']);
+    const rolled = await store.queries.rolledOverTasks(store.db, {
+      day: today,
+      includePrivate: true,
+    });
+    expect(rolled.map((t) => t.title)).toEqual(['Late', 'Now']);
   });
 });

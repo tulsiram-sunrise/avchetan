@@ -125,6 +125,9 @@ export const tasks = sqliteTable(
     origin: text('origin', { enum: E.ROW_ORIGINS }).notNull(),
     isUserEdited: bool('is_user_edited').notNull().default(false),
     ordinal: integer('ordinal'),
+    completionNote: text('completion_note'),
+    progressPct: integer('progress_pct'),
+    cancelledAt: text('cancelled_at'),
   },
   (t) => [
     index('tasks_completed_at_due_date_idx').on(t.completedAt, t.dueDate),

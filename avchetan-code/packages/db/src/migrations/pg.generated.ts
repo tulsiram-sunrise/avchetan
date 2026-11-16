@@ -107,5 +107,13 @@ export const pgMigrations: readonly Migration[] = [
     "statements": [
       "ALTER TABLE \"tags\" ADD COLUMN \"makes_private\" boolean DEFAULT false NOT NULL;"
     ]
+  },
+  {
+    "tag": "0008_task_finishing",
+    "statements": [
+      "ALTER TABLE \"tasks\" ADD COLUMN \"completion_note\" text;",
+      "ALTER TABLE \"tasks\" ADD COLUMN \"progress_pct\" integer;",
+      "ALTER TABLE \"tasks\" ADD COLUMN \"cancelled_at\" timestamp(3) with time zone;"
+    ]
   }
 ];

@@ -125,6 +125,12 @@ export const TABLES = {
     origin: req('text', E.ROW_ORIGINS),
     is_user_edited: req('bool'),
     ordinal: opt('int'),
+    /** How it went, given when it was marked done (product/tasks-routines-reminders.md §1). */
+    completion_note: opt('text'),
+    /** Partly done: 1–99. The task stays open. */
+    progress_pct: opt('int'),
+    /** Cancelled: not done, never counted as missed. */
+    cancelled_at: opt('instant'),
   }),
   tags: synced({
     name: req('text'),

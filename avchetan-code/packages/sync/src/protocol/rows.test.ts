@@ -63,6 +63,29 @@ describe('synced row schemas', () => {
     expect(SYNCED_ROW_SCHEMAS.tags?.parse(fromAnOlderApp)).toMatchObject({ makesPrivate: false });
   });
 
+  it('reads a task row from an app before v0.5.0 as open, with no note or progress', async () => {
+    const { store } = await openTestStore();
+    const task = await store.write((tx) => store.repos.tasks.create(tx, { title: 'Pay rent' }));
+    const { completionNote: _n, progressPct: _p, cancelledAt: _c, ...fromAnOlderApp } = task;
+
+    expect(SYNCED_ROW_SCHEMAS.tasks?.parse(fromAnOlderApp)).toMatchObject({
+      completionNote: null,
+      progressPct: null,
+      cancelledAt: null,
+    });
+  });
+
+  it('carries a cancelled task with its note and progress unchanged', async () => {
+    const { store } = await openTestStore();
+    const task = await store.write(async (tx) => {
+      const made = await store.repos.tasks.create(tx, { title: 'Pay rent' });
+      await store.repos.tasks.partlyDone(tx, made.id, 30);
+      return store.repos.tasks.cancel(tx, made.id);
+    });
+
+    expect(SYNCED_ROW_SCHEMAS.tasks?.parse(task)).toEqual(task);
+  });
+
   it('still requires the fields that are not nullable', async () => {
     const { content: _missing, ...row } = await capturedRow();
 
