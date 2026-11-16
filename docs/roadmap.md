@@ -259,7 +259,9 @@ Found:
 
 ## v0.5.0 — Tasks, routines and reminders
 
-Agreed 2026-11-10 as the release after v0.4.0; to be planned in detail before it starts ([Q28](open-questions.md)). Reminders at a time and repeating tasks, on the phone first:
+**Planned in detail 2026-11-16:** spec [tasks, routines and reminders](product/tasks-routines-reminders.md), 17 days below; decisions in [R25](open-questions.md#resolved) (each device chooses whether it rings; a few minutes' leeway with exact timing as an opt-in; full calendar repeat rules; a short starter list; the AI suggests a chore match and code ticks it).
+
+Agreed 2026-11-10 as the release after v0.4.0. Reminders at a time and repeating tasks, on the phone first:
 - Reminders are scheduled with Android's alarm system as local notifications (as the brief reminder is), so nothing runs in the background to wait for them.
 - Tasks get a reminder time and a repeat rule (daily, weekly on chosen days, monthly): a schema change in both dialects and sync. Finishing a repeating task makes the next one with a derived ID, so two devices make it once. The repeat rule is the one routines use (below), so there is one repeat system.
 - "Remind me at 4 pm to call the dentist" is read by extraction (a new prompt version with fixtures); a reminder can also be set by hand.
@@ -280,7 +282,24 @@ Added later on 2026-11-11 (second round):
 Added 2026-11-15 (from the v0.4.0 test build):
 - **Sleep hours.** Extraction stores when an activity happened in `occurred_at`: a stated time ("woke up at 6:05"), or the time it was saved when the words say it is happening now or just happened ("now going to sleep", but not "ran this morning") (a new prompt version with fixtures; the model gives a local time, code turns it into UTC), "woke up" always becomes an activity, and a night's sleep is paired from going to bed and waking up into the `sleep_h` metric, shown in Trends. It fits with the *assumed* sleep routine above. In v0.4.0 nothing is stored yet: Ask sees when each entry was saved and judges from the words whether that is when it happened.
 
-Planned days, at the same evenness as Phase 8 (to be confirmed when v0.5.0 is planned in detail): 1 task fields (done note, partly done, cancelled; schema and sync) · 2 task actions on both apps (move, cancel, swipe, undo message) · 3 routines engine and ADR · 4 the routines page and starter chores · 5 the chore checklist card and evening notification · 6 repeating tasks through routines · 7 reminders on the phone · 8 "remind me at 4" read by extraction · 9 the brief's Went well / Needs attention · 10 day coverage · 11 Share to Avchetan · 12 accessibility pass · 13 `/done` and `/undo` on the phone · 14 test build and release.
+Planned days (confirmed 2026-11-16; full calendar repeat rules and sleep hours made the earlier 14-day sketch 17), one feature per day, each its own branch and PR:
+1. Task fields: done with a note, partly done, cancelled (schema both dialects, sync)
+2. Task actions on both apps: move, cancel, swipe on the phone, undo message on delete
+3. Repeat rules engine in `packages/core` (full calendar rules) and its ADR
+4. `routines` table and the days of a routine (derived IDs, sync)
+5. Routines page and starter list, both apps
+6. Chore checklist card and evening notification
+7. Chores ticked from entries (the AI suggests, code ticks, with undo)
+8. Repeating tasks through routines
+9. Reminders: phone alarms (leeway, exact opt-in), *ring on this device* setting, PC popup
+10. "Remind me at 4" read by extraction
+11. Sleep hours: stated times, *woke up*, bed + wake into `sleep_h` in Trends
+12. The brief's Went well / Needs attention
+13. Day coverage (opt-in, *unaccounted*)
+14. Share to Avchetan
+15. Accessibility pass
+16. `/done` and `/undo` on the phone
+17. Test build and release
 
 ## v0.6.0 — Security
 
