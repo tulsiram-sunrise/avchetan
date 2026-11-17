@@ -31,7 +31,7 @@ A version is the pair `(updated_at, updated_by_device)`. Incoming wins iff it is
 - After applying a pulled page, a client moves its clock past the newest `updated_at` in it (`clock.observe`). Otherwise an edit made right after pulling from a device with a faster clock would carry an older time and silently lose.
 - The server compares `updated_by_device` with `COLLATE "C"`, the byte order clients use, so both sides pick the same winner.
 
-**Local edits vs incoming pull:** if a pulled row loses LWW against the local row, it is skipped (the local row is in the outbox and will win on the server too). If it wins, it overwrites the local row and any outbox pointer for that record is removed (the local change already lost).
+**Local edits vs incoming pull:** if a pulled row loses LWW against the local row, it is skipped (the local row is in the outbox and will win on the server too). If it wins, it overwrites the local row and any outbox pointer for that record is removed (the local change already lost). **Planned for v0.5.0:** the losing user edit is kept on the device and shown as *Changed on two devices* ([roadmap](../roadmap.md#v050--tasks-routines-and-reminders)); until then it is lost silently.
 
 **Special cases:**
 - `raw_logs.content` is immutable; a mismatch on the same ID is a bug → log error, keep server version.
