@@ -1,5 +1,10 @@
 import { type ColumnSpec, SYNCED_TABLE_NAMES, TABLES, type TableName } from '@avchetan/db';
-import { isUtcInstant, isValidLocalDate } from '@avchetan/shared';
+import {
+  isUtcInstant,
+  isValidLocalDate,
+  isValidLocalTime,
+  repeatRuleSchema,
+} from '@avchetan/shared';
 import { z } from 'zod';
 
 const camelCase = (column: string) =>
@@ -31,10 +36,18 @@ function baseSchema(spec: ColumnSpec): z.ZodType {
   }
 }
 
+/** Columns with a tighter check than their logical type, keyed `table.column`. */
+const COLUMN_SCHEMAS: Record<string, z.ZodType> = {
+  // A rule from sync is checked like one typed in (ADR-0030).
+  'routines.repeat_rule': repeatRuleSchema,
+  'routines.window_start': z.string().refine(isValidLocalTime, 'Expected HH:MM'),
+  'routines.window_end': z.string().refine(isValidLocalTime, 'Expected HH:MM'),
+};
+
 function rowSchema(table: TableName) {
   const fields = Object.entries(TABLES[table].columns as Record<string, ColumnSpec>).map(
     ([name, spec]) => {
-      const base = baseSchema(spec);
+      const base = COLUMN_SCHEMAS[`${table}.${name}`] ?? baseSchema(spec);
       // A missing nullable field reads as null, so an older client that doesn't know a newly
       // added column can still push.
       // Likewise a missing column with a default takes it.

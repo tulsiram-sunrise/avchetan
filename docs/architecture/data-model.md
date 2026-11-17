@@ -35,6 +35,7 @@ projects 1───* activities *───1 raw_logs 1───* tasks *──�
                     └──── entity_tags (polymorphic) ┘──* tags (self-ref parent_id)
                     └──── entity_mentions (polymorphic) ──* entities
 context_rules ──(maps app/title patterns)──> projects / tags
+routines 1───* routine_days *───0..1 raw_logs (the entry that ticked it)
 ```
 
 ## Synced tables
@@ -180,6 +181,33 @@ ID = `derivedId('mention', entity_id, target_type, target_id, role)`.
 | `project_id` | UUID, nullable | |
 | `tag_paths` | JSON array | |
 | `enabled` | bool | |
+
+### `routines` (v0.5.0)
+A regular schedule or chore ([tasks, routines and reminders §3](../product/tasks-routines-reminders.md#3-routines), [ADR-0031](../decisions/0031-routine-days-derived-rows.md)).
+
+| Column | Type | Notes |
+|---|---|---|
+| `title` | text | |
+| `kind` | enum | `assumed` (counted as happening unless an entry says otherwise: sleep, work hours), `confirm` (a chore you tick), `task` (a repeating task; its days are tasks, from Day 8) |
+| `repeat_rule` | JSON | A repeat rule ([ADR-0030](../decisions/0030-repeat-rules-json-own-engine.md)), checked with `repeatRuleSchema` by the repository and in sync payloads |
+| `window_start` / `window_end` | text, nullable | Local `HH:MM`, both or neither; the end may be past midnight (22:30–06:00) |
+| `category_id` / `tag_id` | UUID, nullable | |
+| `paused_at` | UTC ISO, nullable | Paused: no new days are made |
+
+A starter routine's ID = `derivedId('routine', 'starter', key)`; others use `newId()`.
+
+### `routine_days` (v0.5.0)
+One day of an `assumed` or `confirm` routine.
+
+| Column | Type | Notes |
+|---|---|---|
+| `routine_id` | UUID | |
+| `scheduled_date` | local date | |
+| `status` | enum | `open` (not ticked; for an assumed routine, taken as happening), `done`, `skipped` |
+| `status_at` | UTC ISO, nullable | When it was ticked or skipped |
+| `raw_log_id` | UUID, nullable | The entry that ticked it or said it didn't happen (Day 7) |
+
+ID = `derivedId('routine_day', routine_id, scheduled_date)`. Made only on the day itself (`ensureDays`), never for the past. A newly made day's `created_at` and `updated_at` are midnight UTC at the start of the day before, so any tick wins over another device making the same day later ([ADR-0031](../decisions/0031-routine-days-derived-rows.md)). Days are never deleted.
 
 ## Client-local tables
 

@@ -1,5 +1,5 @@
-import { localDate } from '@avchetan/shared';
 import { describe, expect, it } from 'vitest';
+import { localDate } from './dates';
 import {
   describeRepeatRule,
   isOccurrence,

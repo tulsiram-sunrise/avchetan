@@ -96,6 +96,16 @@ export {
 } from './client/repos/extraction';
 export type { Project } from './client/repos/projects';
 export type { CaptureInput, RawLog } from './client/repos/raw-logs';
+export {
+  madeDayVersion,
+  type Routine,
+  type RoutineDay,
+  type RoutineFields,
+  type RoutineOnDay,
+  routineDayId,
+  routineRule,
+  starterRoutineId,
+} from './client/repos/routines';
 export type { Tag, TagLink } from './client/repos/tags';
 export {
   finishedDaysLate,

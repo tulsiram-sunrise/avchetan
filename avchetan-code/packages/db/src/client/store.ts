@@ -34,6 +34,7 @@ import { entitiesRepo } from './repos/entities';
 import { extractionRepo } from './repos/extraction';
 import { projectsRepo } from './repos/projects';
 import { rawLogsRepo } from './repos/raw-logs';
+import { routinesRepo } from './repos/routines';
 import { tagsRepo } from './repos/tags';
 import { tasksRepo } from './repos/tasks';
 import * as search from './search';
@@ -96,6 +97,7 @@ export async function openClientStore(options: OpenClientStoreOptions) {
     tags,
     entities: entitiesRepo(deps),
     contextRules: contextRulesRepo(deps),
+    routines: routinesRepo(deps),
   };
   const repos = { ...baseRepos, extraction: extractionRepo(deps, baseRepos) };
 

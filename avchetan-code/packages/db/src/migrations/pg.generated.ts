@@ -115,5 +115,18 @@ export const pgMigrations: readonly Migration[] = [
       "ALTER TABLE \"tasks\" ADD COLUMN \"progress_pct\" integer;",
       "ALTER TABLE \"tasks\" ADD COLUMN \"cancelled_at\" timestamp(3) with time zone;"
     ]
+  },
+  {
+    "tag": "0009_routines",
+    "statements": [
+      "CREATE TABLE \"routine_days\" (\n\t\"id\" uuid PRIMARY KEY NOT NULL,\n\t\"created_at\" timestamp(3) with time zone NOT NULL,\n\t\"updated_at\" timestamp(3) with time zone NOT NULL,\n\t\"updated_by_device\" text NOT NULL,\n\t\"deleted_at\" timestamp(3) with time zone,\n\t\"server_seq\" bigint DEFAULT nextval('sync_seq') NOT NULL,\n\t\"created_on_server_at\" timestamp(3) with time zone DEFAULT now() NOT NULL,\n\t\"routine_id\" uuid NOT NULL,\n\t\"scheduled_date\" date NOT NULL,\n\t\"status\" text NOT NULL,\n\t\"status_at\" timestamp(3) with time zone,\n\t\"raw_log_id\" uuid,\n\tCONSTRAINT \"routine_days_status_check\" CHECK (\"routine_days\".\"status\" in ('open', 'done', 'skipped'))\n);",
+      "ALTER TABLE \"routine_days\" ENABLE ROW LEVEL SECURITY;",
+      "CREATE TABLE \"routines\" (\n\t\"id\" uuid PRIMARY KEY NOT NULL,\n\t\"created_at\" timestamp(3) with time zone NOT NULL,\n\t\"updated_at\" timestamp(3) with time zone NOT NULL,\n\t\"updated_by_device\" text NOT NULL,\n\t\"deleted_at\" timestamp(3) with time zone,\n\t\"server_seq\" bigint DEFAULT nextval('sync_seq') NOT NULL,\n\t\"created_on_server_at\" timestamp(3) with time zone DEFAULT now() NOT NULL,\n\t\"title\" text NOT NULL,\n\t\"kind\" text NOT NULL,\n\t\"repeat_rule\" jsonb NOT NULL,\n\t\"window_start\" text,\n\t\"window_end\" text,\n\t\"category_id\" uuid,\n\t\"tag_id\" uuid,\n\t\"paused_at\" timestamp(3) with time zone,\n\tCONSTRAINT \"routines_kind_check\" CHECK (\"routines\".\"kind\" in ('assumed', 'confirm', 'task'))\n);",
+      "ALTER TABLE \"routines\" ENABLE ROW LEVEL SECURITY;",
+      "CREATE INDEX \"routine_days_server_seq_idx\" ON \"routine_days\" USING btree (\"server_seq\");",
+      "CREATE INDEX \"routine_days_scheduled_date_idx\" ON \"routine_days\" USING btree (\"scheduled_date\");",
+      "CREATE INDEX \"routine_days_routine_id_idx\" ON \"routine_days\" USING btree (\"routine_id\");",
+      "CREATE INDEX \"routines_server_seq_idx\" ON \"routines\" USING btree (\"server_seq\");"
+    ]
   }
 ];

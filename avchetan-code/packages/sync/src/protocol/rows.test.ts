@@ -92,3 +92,49 @@ describe('synced row schemas', () => {
     expect(SYNCED_ROW_SCHEMAS.raw_logs?.safeParse(row).success).toBe(false);
   });
 });
+
+describe('routine rows', () => {
+  async function routineRow() {
+    const { store } = await openTestStore();
+    return store.write((tx) =>
+      store.repos.routines.create(tx, {
+        title: 'Sleep',
+        kind: 'assumed',
+        repeatRule: { freq: 'weekly', start: '2026-11-16', byWeekday: ['monday', 'friday'] },
+        windowStart: '22:30',
+        windowEnd: '06:00',
+      }),
+    );
+  }
+
+  it('accepts a real routine unchanged', async () => {
+    const row = await routineRow();
+
+    expect(SYNCED_ROW_SCHEMAS.routines?.parse(row)).toEqual(row);
+  });
+
+  it('checks the repeat rule like one typed in', async () => {
+    const row = await routineRow();
+    const badRules = [
+      { freq: 'hourly', start: '2026-11-16' },
+      { freq: 'daily', start: '2026-11-16', byWeekday: ['monday'] },
+      { freq: 'daily', start: '2026-11-16', extra: true },
+      'FREQ=DAILY',
+    ];
+
+    for (const repeatRule of badRules) {
+      expect(SYNCED_ROW_SCHEMAS.routines?.safeParse({ ...row, repeatRule }).success).toBe(false);
+    }
+  });
+
+  it('checks the window times', async () => {
+    const row = await routineRow();
+
+    expect(SYNCED_ROW_SCHEMAS.routines?.safeParse({ ...row, windowEnd: '6:00' }).success).toBe(
+      false,
+    );
+    expect(
+      SYNCED_ROW_SCHEMAS.routines?.safeParse({ ...row, windowStart: null, windowEnd: null }),
+    ).toMatchObject({ success: true });
+  });
+});

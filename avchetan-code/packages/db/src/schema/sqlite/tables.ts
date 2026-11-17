@@ -203,6 +203,35 @@ export const contextRules = sqliteTable('context_rules', {
   enabled: bool('enabled').notNull().default(true),
 });
 
+export const routines = sqliteTable('routines', {
+  ...syncColumns(),
+  title: text('title').notNull(),
+  kind: text('kind', { enum: E.ROUTINE_KINDS }).notNull(),
+  /** Checked with `repeatRuleSchema` by the repository and on sync (ADR-0030). */
+  repeatRule: text('repeat_rule', { mode: 'json' }).$type<unknown>().notNull(),
+  windowStart: text('window_start'),
+  windowEnd: text('window_end'),
+  categoryId: text('category_id'),
+  tagId: text('tag_id'),
+  pausedAt: text('paused_at'),
+});
+
+export const routineDays = sqliteTable(
+  'routine_days',
+  {
+    ...syncColumns(),
+    routineId: text('routine_id').notNull(),
+    scheduledDate: text('scheduled_date').notNull(),
+    status: text('status', { enum: E.ROUTINE_DAY_STATUSES }).notNull(),
+    statusAt: text('status_at'),
+    rawLogId: text('raw_log_id'),
+  },
+  (t) => [
+    index('routine_days_scheduled_date_idx').on(t.scheduledDate),
+    index('routine_days_routine_id_idx').on(t.routineId),
+  ],
+);
+
 // ----------------------------------------------------------- client-local tables
 
 export const syncOutbox = sqliteTable(
