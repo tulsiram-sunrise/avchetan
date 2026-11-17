@@ -33,6 +33,7 @@ Short records of significant decisions: context, decision, consequences. Accepte
 | [0027](0027-corrections-from-synced-edits.md) | Correction examples come from synced edits | Accepted |
 | [0028](0028-app-lock-device-auth.md) | App lock uses the device's own lock and leaves capture open | Accepted |
 | [0029](0029-local-search-index.md) | Plain search uses a local full-text index that isn't synced | Accepted |
+| [0030](0030-repeat-rules-json-own-engine.md) | Repeat rules are a Zod-checked JSON object, computed by our own code | Accepted |
 
 ## Template
 

@@ -309,6 +309,23 @@ export {
   type ProviderDeps,
 } from './providers/registry';
 export {
+  describeRepeatRule,
+  isOccurrence,
+  type NthWeekday,
+  nextOccurrence,
+  nthWeekdayOfMonth,
+  nthWeekdaySchema,
+  occurrencesBetween,
+  REPEAT_FREQUENCIES,
+  REPEAT_MAX_COUNT,
+  REPEAT_MAX_INTERVAL,
+  REPEAT_WEEKDAYS,
+  type RepeatFrequency,
+  type RepeatRule,
+  repeatRuleSchema,
+  toRRule,
+} from './repeat/repeat-rule';
+export {
   DATE_PRESET_LABELS,
   DATE_PRESETS,
   type DatePreset,
