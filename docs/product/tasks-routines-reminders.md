@@ -55,7 +55,7 @@ Routines and repeating tasks share **one repeat system**. It supports full calen
 
 Rules are computed in `packages/core` with no platform code. Calendar dates are local `YYYY-MM-DD`. Unit tests cover month ends, leap years and time-zone days.
 
-**ADR (Day 3)** decides how a rule is stored (leaning: a small Zod-checked JSON object that maps to RFC 5545 `RRULE` terms, not free RRULE text) and whether an AGPL-compatible library computes the dates or our own code does.
+**Decided in [ADR-0030](../decisions/0030-repeat-rules-json-own-engine.md) (Day 3, 2026-11-17):** a rule is a small Zod-checked JSON object whose fields map to RFC 5545 `RRULE` terms (not free RRULE text), and our own code in `packages/core/src/repeat/` works out its dates, with no new dependency. A rule's `start` is the first day it can fall on; a day number a month doesn't have uses its last day; a missing 5th weekday is skipped. `describeRepeatRule` gives it in words (*Every 2 weeks on Mon, Thu*), and `toRRule` as RRULE text.
 
 ## 3. Routines
 

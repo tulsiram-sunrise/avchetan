@@ -285,7 +285,7 @@ Added 2026-11-15 (from the v0.4.0 test build):
 Planned days (confirmed 2026-11-16; full calendar repeat rules and sleep hours made the earlier 14-day sketch 17), one feature per day, each its own branch and PR:
 1. Task fields: done with a note, partly done, cancelled (schema both dialects, sync) ✅ 2026-11-16
 2. Task actions on both apps: move, cancel, swipe on the phone, undo message on delete ✅ 2026-11-17
-3. Repeat rules engine in `packages/core` (full calendar rules) and its ADR
+3. Repeat rules engine in `packages/core` (full calendar rules) and its ADR ✅ 2026-11-17 ([ADR-0030](decisions/0030-repeat-rules-json-own-engine.md))
 4. `routines` table and the days of a routine (derived IDs, sync)
 5. Routines page and starter list, both apps
 6. Chore checklist card and evening notification
