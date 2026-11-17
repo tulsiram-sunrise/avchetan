@@ -44,6 +44,20 @@ export type EntityKind = (typeof ENTITY_KINDS)[number];
 export const MENTION_ROLES = ['with', 'about', 'at', 'owed_to', 'owed_by'] as const;
 export type MentionRole = (typeof MENTION_ROLES)[number];
 
+/**
+ * `assumed`: counted as happening unless an entry says otherwise (sleep, work hours).
+ * `confirm`: a chore ticked off. `task`: a repeating task (its days are tasks, from Day 8).
+ */
+export const ROUTINE_KINDS = ['assumed', 'confirm', 'task'] as const;
+export type RoutineKind = (typeof ROUTINE_KINDS)[number];
+
+/**
+ * A day of a routine. `open`: not ticked yet (for an assumed routine, taken as happening).
+ * `done`: ticked, by hand or from an entry. `skipped`: didn't happen, or an entry said so.
+ */
+export const ROUTINE_DAY_STATUSES = ['open', 'done', 'skipped'] as const;
+export type RoutineDayStatus = (typeof ROUTINE_DAY_STATUSES)[number];
+
 export const CORRECTION_TARGET_TYPES = ['activity', 'task'] as const;
 export type CorrectionTargetType = (typeof CORRECTION_TARGET_TYPES)[number];
 

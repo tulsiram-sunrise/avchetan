@@ -26,7 +26,8 @@ Today a task is either open or done, nothing reminds you of it, and anything you
 | 14 | [Share to Avchetan](#12-share-to-avchetan) | Phone |
 | 15 | [Accessibility pass](#13-accessibility-pass) | PC and phone |
 | 16 | [`/done` and `/undo` on the phone](#14-done-and-undo-on-the-phone) | Phone |
-| 17 | Test build and release ([releasing](../conventions/releasing.md)) | Both |
+| 17 | Edits made on two devices: keep the losing version ([roadmap](../roadmap.md#v050--tasks-routines-and-reminders)) | Sync, both |
+| 18 | Test build and release ([releasing](../conventions/releasing.md)) | Both |
 
 ## 1. Finishing a task
 
@@ -55,7 +56,7 @@ Routines and repeating tasks share **one repeat system**. It supports full calen
 
 Rules are computed in `packages/core` with no platform code. Calendar dates are local `YYYY-MM-DD`. Unit tests cover month ends, leap years and time-zone days.
 
-**Decided in [ADR-0030](../decisions/0030-repeat-rules-json-own-engine.md) (Day 3, 2026-11-17):** a rule is a small Zod-checked JSON object whose fields map to RFC 5545 `RRULE` terms (not free RRULE text), and our own code in `packages/core/src/repeat/` works out its dates, with no new dependency. A rule's `start` is the first day it can fall on; a day number a month doesn't have uses its last day; a missing 5th weekday is skipped. `describeRepeatRule` gives it in words (*Every 2 weeks on Mon, Thu*), and `toRRule` as RRULE text.
+**Decided in [ADR-0030](../decisions/0030-repeat-rules-json-own-engine.md) (Day 3, 2026-11-17):** a rule is a small Zod-checked JSON object whose fields map to RFC 5545 `RRULE` terms (not free RRULE text), and our own code in `packages/shared/src/repeat-rule.ts` works out its dates, with no new dependency. A rule's `start` is the first day it can fall on; a day number a month doesn't have uses its last day; a missing 5th weekday is skipped. `describeRepeatRule` gives it in words (*Every 2 weeks on Mon, Thu*), and `toRRule` as RRULE text.
 
 ## 3. Routines
 
@@ -64,6 +65,8 @@ A new synced `routines` table: title, repeat rule, optional time window (for exa
 - **confirm**: chores such as a walk or watering the plants. You tick them off.
 
 Each day of a routine is one row whose ID is derived from the routine and the date (`derivedId`), so two devices make it once and retries converge. Days are only made from today on, never backfilled.
+
+**Decided in [ADR-0031](../decisions/0031-routine-days-derived-rows.md) (Day 4, 2026-11-17):** days live in a second table, `routine_days`, with a status (`open`, `done`, `skipped`). A day is made when an app opens on that day. A newly made day carries a fixed early version (midnight UTC the day before), so a tick on one device is never undone when another device makes the same day later.
 
 **Routines page (Day 5)**, on both apps: a list with add, edit, pause and delete (soft delete). On first open the page offers a **starter list** to pick from. Nothing is added until you tick an item, and each starter's ID is derived from its key, so two devices don't add it twice:
 - *confirm:* drink water, walk or exercise, take medicine, tidy up, water plants, read, plan tomorrow, sleep by a set time

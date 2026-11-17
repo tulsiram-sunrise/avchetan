@@ -29,6 +29,8 @@ export const SYNCED_TABLES = {
   entities: S.entities,
   entity_mentions: S.entityMentions,
   context_rules: S.contextRules,
+  routines: S.routines,
+  routine_days: S.routineDays,
 } as const;
 
 export type SyncedTableName = keyof typeof SYNCED_TABLES;

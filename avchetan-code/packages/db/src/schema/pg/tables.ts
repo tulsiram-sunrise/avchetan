@@ -268,6 +268,44 @@ export const contextRules = pgTable(
   (t) => [seqIndex('context_rules', t)],
 ).enableRLS();
 
+export const routines = pgTable(
+  'routines',
+  {
+    ...syncColumns(),
+    title: text('title').notNull(),
+    kind: text('kind', { enum: E.ROUTINE_KINDS }).notNull(),
+    /** Checked with `repeatRuleSchema` by the repository and on sync (ADR-0030). */
+    repeatRule: jsonb('repeat_rule').$type<unknown>().notNull(),
+    windowStart: text('window_start'),
+    windowEnd: text('window_end'),
+    categoryId: uuid('category_id'),
+    tagId: uuid('tag_id'),
+    pausedAt: instant('paused_at'),
+  },
+  (t) => [
+    seqIndex('routines', t),
+    check('routines_kind_check', enumCheck(t.kind, E.ROUTINE_KINDS)),
+  ],
+).enableRLS();
+
+export const routineDays = pgTable(
+  'routine_days',
+  {
+    ...syncColumns(),
+    routineId: uuid('routine_id').notNull(),
+    scheduledDate: localDate('scheduled_date').notNull(),
+    status: text('status', { enum: E.ROUTINE_DAY_STATUSES }).notNull(),
+    statusAt: instant('status_at'),
+    rawLogId: uuid('raw_log_id'),
+  },
+  (t) => [
+    seqIndex('routine_days', t),
+    index('routine_days_scheduled_date_idx').on(t.scheduledDate),
+    index('routine_days_routine_id_idx').on(t.routineId),
+    check('routine_days_status_check', enumCheck(t.status, E.ROUTINE_DAY_STATUSES)),
+  ],
+).enableRLS();
+
 // ------------------------------------------------------------ server-only tables
 
 export const devices = pgTable(

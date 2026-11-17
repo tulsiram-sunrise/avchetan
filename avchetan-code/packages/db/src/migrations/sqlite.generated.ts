@@ -81,5 +81,14 @@ export const sqliteMigrations: readonly Migration[] = [
       "ALTER TABLE `tasks` ADD `progress_pct` integer;",
       "ALTER TABLE `tasks` ADD `cancelled_at` text;"
     ]
+  },
+  {
+    "tag": "0005_routines",
+    "statements": [
+      "CREATE TABLE `routine_days` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`created_at` text NOT NULL,\n\t`updated_at` text NOT NULL,\n\t`updated_by_device` text NOT NULL,\n\t`deleted_at` text,\n\t`routine_id` text NOT NULL,\n\t`scheduled_date` text NOT NULL,\n\t`status` text NOT NULL,\n\t`status_at` text,\n\t`raw_log_id` text\n);",
+      "CREATE INDEX `routine_days_scheduled_date_idx` ON `routine_days` (`scheduled_date`);",
+      "CREATE INDEX `routine_days_routine_id_idx` ON `routine_days` (`routine_id`);",
+      "CREATE TABLE `routines` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`created_at` text NOT NULL,\n\t`updated_at` text NOT NULL,\n\t`updated_by_device` text NOT NULL,\n\t`deleted_at` text,\n\t`title` text NOT NULL,\n\t`kind` text NOT NULL,\n\t`repeat_rule` text NOT NULL,\n\t`window_start` text,\n\t`window_end` text,\n\t`category_id` text,\n\t`tag_id` text,\n\t`paused_at` text\n);"
+    ]
   }
 ];

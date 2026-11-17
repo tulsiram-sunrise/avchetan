@@ -167,6 +167,30 @@ export const TABLES = {
     tag_paths: req('json'),
     enabled: req('bool'),
   }),
+  /** Regular schedule and chores (product/tasks-routines-reminders.md §3). */
+  routines: synced({
+    title: req('text'),
+    kind: req('text', E.ROUTINE_KINDS),
+    /** A repeat rule (ADR-0030), checked with `repeatRuleSchema`. */
+    repeat_rule: req('json'),
+    /** Optional local time window, `HH:MM`; the end may be past midnight (22:30–06:00). */
+    window_start: opt('text'),
+    window_end: opt('text'),
+    category_id: opt('uuid'),
+    tag_id: opt('uuid'),
+    /** Paused: no new days are made until it is resumed. */
+    paused_at: opt('instant'),
+  }),
+  /** One day of a routine. ID = derivedId('routine_day', routine_id, scheduled_date). */
+  routine_days: synced({
+    routine_id: req('uuid'),
+    scheduled_date: req('local_date'),
+    status: req('text', E.ROUTINE_DAY_STATUSES),
+    /** When it was ticked or marked skipped. */
+    status_at: opt('instant'),
+    /** The entry that ticked it or said it didn't happen (Day 7). */
+    raw_log_id: opt('uuid'),
+  }),
 
   sync_outbox: {
     scope: 'local',

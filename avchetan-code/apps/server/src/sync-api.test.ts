@@ -300,6 +300,50 @@ describe('push and pull', () => {
     expect(second.remaining).toBe(0);
     expect(second.changes.map((c) => c.row.content)).toEqual(['2']);
   });
+
+  it('round-trips a routine with its repeat rule and a day of it', async () => {
+    const routine = {
+      id: crypto.randomUUID(),
+      createdAt: NOW,
+      updatedAt: NOW,
+      updatedByDevice: DEVICE,
+      deletedAt: null,
+      title: 'Water plants',
+      kind: 'confirm',
+      repeatRule: {
+        freq: 'monthly',
+        start: '2026-11-01',
+        byNthWeekday: { nth: -1, weekday: 'friday' },
+      },
+      windowStart: null,
+      windowEnd: null,
+      categoryId: null,
+      tagId: null,
+      pausedAt: null,
+    };
+    const day = {
+      id: crypto.randomUUID(),
+      createdAt: '2026-10-25T00:00:00.000Z',
+      updatedAt: '2026-10-25T00:00:00.000Z',
+      updatedByDevice: DEVICE,
+      deletedAt: null,
+      routineId: routine.id,
+      scheduledDate: '2026-10-26',
+      status: 'open',
+      statusAt: null,
+      rawLogId: null,
+    };
+
+    const result = await push([
+      { table: 'routines', row: routine },
+      { table: 'routine_days', row: day },
+      { table: 'routines', row: { ...routine, id: crypto.randomUUID(), repeatRule: 'FREQ=DAILY' } },
+    ]);
+
+    expect(result.acked).toHaveLength(2);
+    expect(result.rejected).toMatchObject([{ table: 'routines', code: 'validation' }]);
+    expect((await pull()).changes.map((c) => c.row)).toEqual([routine, day]);
+  });
 });
 
 describe('status', () => {

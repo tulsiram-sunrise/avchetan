@@ -89,6 +89,23 @@ export { TimerScheduler } from './jobs/timer-scheduler';
 export type { LogFields, Logger, LogLevel, LogRecord, LogSink } from './logger';
 export { configureLogging, consoleSink, createLogger } from './logger';
 export { isOnThisDevice, isPrivateNetwork, isTailscale } from './network';
+export {
+  describeRepeatRule,
+  isOccurrence,
+  type NthWeekday,
+  nextOccurrence,
+  nthWeekdayOfMonth,
+  nthWeekdaySchema,
+  occurrencesBetween,
+  REPEAT_FREQUENCIES,
+  REPEAT_MAX_COUNT,
+  REPEAT_MAX_INTERVAL,
+  REPEAT_WEEKDAYS,
+  type RepeatFrequency,
+  type RepeatRule,
+  repeatRuleSchema,
+  toRRule,
+} from './repeat-rule';
 export type { ModelCheck, ModelJob, ModelReadiness } from './schemas';
 export {
   localDateSchema,
