@@ -41,3 +41,22 @@ Test a release build after adding a native library. It runs R8, which removes co
 On a PC without a working graphics card, start the emulator with `-gpu swiftshader_indirect`.
 
 To use Ollama on the PC from the emulator, the model's base URL is `http://10.0.2.2:11434/v1`.
+
+## Local release builds: traps
+
+These cost real time once. CI builds from a clean checkout and sets what it needs, so published releases don't hit them.
+
+- **Stale JavaScript in the APK.** Gradle's `createBundleReleaseJsAndAssets` step reports UP-TO-DATE when only files outside `apps/mobile` changed (for example `packages/*`), and the APK then ships the old JavaScript. After changing a package, delete `apps/mobile/android/app/build/generated/assets/react/release` before building, or check the build log for that step.
+- **`Cannot find module '@babel/plugin-transform-react-jsx'`.** With a cold Metro cache, Gradle's bundle step calls the Expo CLI with plain `node`, which can't find the workspace's packages. Set `NODE_PATH` to `<repo>/avchetan-code/node_modules/.pnpm/node_modules` before running `gradlew`, as `.github/workflows/release.yml` does.
+- **`INSTALL_FAILED_VERSION_DOWNGRADE`.** The version code comes from `AVCHETAN_VERSION_CODE` (default 1; see `plugins/release-signing.js`). Set it higher than the build already installed. A local release build is signed with the debug key, so uninstall a published (release-signed) app first.
+- **Faster emulator builds.** Add `-PreactNativeArchitectures=x86_64` to `gradlew assembleRelease` to build only the emulator's ABI. A build after adding a native module takes much longer, because prebuild regenerates `android/`.
+- **Release builds aren't debuggable.** `run-as` and database pulls don't work, so judge background work from `adb logcat`. A failed background worker leaves its registered flag set, so run `adb shell pm clear app.avchetan` before testing again.
+- **Colours with opacity.** NativeWind opacity classes such as `bg-warn/15` draw nothing on Android. Use the palette's hex value with an alpha suffix instead.
+
+## Emulator tricks
+
+- **Typing Hindi (Devanagari).** `adb shell input text` can't type it. Put the text on the PC's clipboard (`Set-Clipboard` in PowerShell) and paste with `adb shell input keyevent 279`. The emulator shares the PC's clipboard, so this replaces what you had copied.
+- **Moving the clock.** Run `adb shell settings put global auto_time 0`, then `adb shell cmd alarm set-time <epoch ms>`. Set `auto_time` back to 1 afterwards.
+- **The keyboard covers buttons.** Close it with `adb shell input keyevent 111` before tapping lower buttons. Don't use keyevent 4 (Back) for that: it leaves the screen.
+- **Git Bash mangles paths.** It turns arguments that start with `/` (such as `/sdcard/...`) into Windows paths. Run `export MSYS_NO_PATHCONV=1` first.
+- **Screenshots.** Take `adb exec-out screencap -p` from Git Bash or cmd. PowerShell's `>` re-encodes the output and corrupts the PNG.

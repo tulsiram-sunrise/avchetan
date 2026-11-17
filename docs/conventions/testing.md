@@ -22,6 +22,8 @@ Vitest everywhere TS runs. Tests live beside source (`foo.ts` → `foo.test.ts`)
 - Clients in tests use in-memory SQLite via Node's built-in `node:sqlite` (no native build), server tests use PGlite; helpers in `packages/db/test/drivers.ts`.
 - Every bug fix in sync or extraction comes with a regression test.
 - Tests must be deterministic: fixed clock, seeded IDs, no `sleep` (use fake timers).
+- Don't hard-code locale-formatted text. `formatLocalDate` and friends follow the system locale, which differs between CI (`en-US`: "Nov 3, 2026") and a developer's PC ("3 Nov 2026"). Build the expected value with the same formatter, as `packages/shared/src/format.test.ts` does.
+- Timing assertions (`… quickly`) run on shared CI runners: leave a generous margin, or a busy runner fails them now and then.
 - Coverage is not a target, but `packages/sync` and `packages/db/repos` should stay near-complete.
 
 ## Commands (once scaffolded)
