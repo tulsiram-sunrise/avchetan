@@ -19,6 +19,8 @@ Avchetan is made to keep your entries yours. This page says what leaves your dev
 
 **Your voice** never leaves the device you talk into. The PC turns it into text with a speech model running on the PC, and the phone uses its own on-device speech recognition (never Google's online one). The recording is deleted as soon as it is text; only the text is saved, like a typed entry. Downloading the PC's speech model fetches it from huggingface.co, once, when you press **Download** in **Settings → Voice** ([Voice](voice.md)).
 
+**Your hub or server can read your entries.** They are stored there in readable form (not end-to-end encrypted), because the server searches them and organizes entries your devices left waiting. A Home Hub keeps them on your own PC. A cloud server keeps them with whoever hosts its database: with the [free cloud setup](setup-cloud.md), that is Supabase. Choose the Home Hub if you don't want a company holding your entries.
+
 **Private entries** (`!private`, or a [private tag](ai-models.md#private-entries)) never go to a cloud AI provider, for any job. They do sync to your own hub or server.
 
 API keys and sync tokens are stored in Windows' Credential Manager or Android's secure storage, never in plain files. Avchetan's own logs record counts and durations, never what you wrote.
