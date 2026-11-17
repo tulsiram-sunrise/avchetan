@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Read(**/secrets/**)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/biome-check.mjs\"",
+            "timeout": 60,
+            "statusMessage": "Biome check"
+          }
+        ]
+      }
+    ]
+  }
+}

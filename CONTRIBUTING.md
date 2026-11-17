@@ -34,6 +34,16 @@ All code is in `avchetan-code/`. Run every `pnpm` command there. The [developer 
 4. A change to the architecture adds a decision record in [docs/decisions/](docs/decisions/).
 5. Run `pnpm check` before you push. CI also checks licenses, links, error codes and secrets.
 
+If `pnpm install` adds a `minimumReleaseAgeExclude` list to `pnpm-workspace.yaml`, don't commit it: it switches off the check that keeps brand-new package versions out. Restore `pnpm-workspace.yaml` and `pnpm-lock.yaml` from git and pin a version that is a few days old instead.
+
+## Using Claude Code (optional)
+
+The repository carries a shared [Claude Code](https://docs.anthropic.com/en/docs/claude-code) setup in `.claude/`. You don't need it to contribute.
+
+- **Subagents** in `.claude/agents/`: `code-reviewer`, `security-auditor` and `architecture-guardian` only read and report; `test-engineer` writes and runs tests but never changes production code. They follow [CLAUDE.md](CLAUDE.md) and the [conventions](docs/conventions/).
+- **`.claude/settings.json`** stops Claude from reading `.env` files and `secrets/` folders, and runs a hook after every edit: [`.claude/hooks/biome-check.mjs`](.claude/hooks/biome-check.mjs) runs Biome on the changed file (the same check as the pre-commit hook) and hands any problem back to Claude to fix. The hook runs `node` on your machine, so read it before you trust the folder. It needs `pnpm install` first.
+- Put your own permissions and overrides in `.claude/settings.local.json`. Git ignores it.
+
 ## Commits and sign-off
 
 Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/) (`feat(desktop): …`, `fix(sync): …`, `docs: …`), as described in [docs/conventions/git.md](docs/conventions/git.md).

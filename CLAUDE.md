@@ -29,7 +29,7 @@ pnpm workspaces + Turborepo · TypeScript strict (ESM) · Zod · Drizzle ORM (SQ
 
 ## Layout
 
-**All code lives in `avchetan-code/`** (the pnpm workspace). Code paths in the docs (`apps/…`, `packages/…`) are relative to it. The repo root holds only repo-wide files: `docs/`, `CLAUDE.md`, `README.md`, `LICENSE`, git/editor config, `lefthook.yml`, `.github/`.
+**All code lives in `avchetan-code/`** (the pnpm workspace). Code paths in the docs (`apps/…`, `packages/…`) are relative to it. The repo root holds only repo-wide files: `docs/`, `CLAUDE.md`, `README.md`, `LICENSE`, git/editor config, `lefthook.yml`, `.github/`, and `.claude/` (Claude Code project setup: review/test subagents, settings, a Biome hook; `settings.local.json` is personal and git-ignored).
 
 ```
 avchetan-code/apps/desktop      Tauri v2 shell (src-tauri/ = thin Rust) + React webview
@@ -61,6 +61,8 @@ docs/                           all project documentation
 - Unresolved questions go in [docs/open-questions.md](docs/open-questions.md), not in code comments.
 - **Anyone can self-host Avchetan.** User-visible changes must keep setup guided (wizard, no terminal for Standalone/Home Hub), give every error a fix + guide link, and update [docs/user-guide/](docs/user-guide/README.md) in the same change. See [onboarding & user docs](docs/conventions/onboarding-and-user-docs.md).
 - Pin dependency versions to the latest stable at scaffold time; don't trust version numbers in `original-docs/`.
+- The subagents in `.claude/agents/` quote rules from this file and `docs/conventions/`. When such a rule changes, update the agents in the same change.
+- Project knowledge (how to build, test, debug) goes in `docs/` or a package README, not only in Claude Code's per-user memory, which other contributors never see.
 
 ## Commands
 

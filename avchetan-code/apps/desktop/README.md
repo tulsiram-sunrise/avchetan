@@ -24,6 +24,16 @@ The dev database lives in `%APPDATA%\app.avchetan\avchetan.db`. Delete it to sta
 
 To drive the webviews from a script (smoke tests), start the app with `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9222`. The pages then show up at `http://127.0.0.1:9222/json` for any DevTools-protocol client.
 
+### Scripted testing: what to watch out for
+
+- **Protect your real entries.** `pnpm dev` uses the same data folder as an installed Avchetan. Prefer `pnpm dev:demo`, which keeps its own folder and keychain entries (see [tooling/screenshots](../../tooling/screenshots/README.md#the-demo-copy)). If you must test against `%APPDATA%\app.avchetan`, copy `avchetan.db*` away first and put it back afterwards.
+- **One copy at a time.** The app is single-instance, and the dev and demo copies share port 8787 and the global shortcut with an installed Avchetan. Quit the other copy first, or expect a hotkey warning and a hub that can't start.
+- **Typing and keys.** You don't need the global shortcut to test the capture box: dispatch a `KeyboardEvent('keydown', …)` (Enter, Ctrl+Z) on its textarea over the DevTools protocol, which runs the React handlers. Ctrl+Z in the empty box takes back the last saved entry, so a test can clean up after itself. For the real global shortcut, send keys with the Win32 `keybd_event` from PowerShell.
+- **Reload after editing.** Vite hot reload doesn't swap the main window's window-level key handler; call `location.reload()` after editing it. Editing a `packages/*` file while the app runs reloads the capture box and resets its state, which can look like a bug. Give the main window a moment after `main_open` before clicking in it.
+- **The demo hub runs built code.** It is the sidecar in `apps/server/dist/sidecar/`. After changing `packages/core` or `apps/server`, rebuild it with the demo stopped (`pnpm --filter @avchetan/server build:sidecar`), or the hub organizes entries with old code.
+- **Screenshots and the backdrop.** DevTools screenshots don't show the capture box's Mica/Acrylic backdrop. To check it, take a real screen capture (for example .NET `CopyFromScreen` from a DPI-aware PowerShell script).
+- **Reading the database.** Read it without risk with Node's `node:sqlite`: `new DatabaseSync(path, { readOnly: true })`. Check the schema first: the entry text column in `raw_logs` is `content`.
+
 ## Layout
 
 ```
