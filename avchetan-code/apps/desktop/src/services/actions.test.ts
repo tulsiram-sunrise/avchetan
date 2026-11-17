@@ -86,6 +86,34 @@ describe('actions', () => {
     expect(await store.queries.openTasks(store.db)).toMatchObject([{ id: task.id }]);
   });
 
+  it('finishes a task with a note, partly, or cancels it; unchecking reopens it', async () => {
+    const task = await newTask();
+    const get = async () =>
+      (
+        await store.queries.tasksInGroup(store.db, { group: 'done', today: '2026-11-17', limit: 5 })
+      )[0] ?? (await store.queries.openTasks(store.db))[0];
+
+    await actions.run('task.partlyDone', { id: task.id, progressPct: 40 });
+    expect(await get()).toMatchObject({ progressPct: 40, completedAt: null });
+
+    await actions.run('task.finish', { id: task.id, note: ' Went well ' });
+    expect(await get()).toMatchObject({ completionNote: 'Went well' });
+
+    await actions.run('task.cancel', { id: task.id });
+    expect(await get()).toMatchObject({ completedAt: null, completionNote: null });
+    expect((await get())?.cancelledAt).not.toBeNull();
+
+    await actions.run('task.setDone', { id: task.id, done: false });
+    expect(await store.queries.openTasks(store.db)).toMatchObject([{ id: task.id }]);
+  });
+
+  it('passes a bad percentage back with its code', async () => {
+    const task = await newTask();
+    await expect(
+      actions.run('task.partlyDone', { id: task.id, progressPct: 100 }),
+    ).rejects.toMatchObject({ code: 'invalid_progress' });
+  });
+
   it('edits only the fields it was given', async () => {
     const task = await newTask();
 

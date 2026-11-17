@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatDueDate, formatLocalDate, formatMadeAt, formatTime } from './format';
+import { formatDueDate, formatLocalDate, formatMadeAt, formatTime, formatTiming } from './format';
 
 describe('formatMadeAt', () => {
   it('gives only the time when the brief was made on its own day', () => {
@@ -23,5 +23,14 @@ describe('formatDueDate', () => {
       formatLocalDate('2027-01-04', { ...short, year: 'numeric' }),
     );
     expect(formatDueDate('2026-11-11', '2026-11-08')).not.toContain('2026-11-11');
+  });
+});
+
+describe('formatTiming', () => {
+  it('says on time, late or early in days', () => {
+    expect(formatTiming(0)).toBe('on time');
+    expect(formatTiming(1)).toBe('1 day late');
+    expect(formatTiming(3)).toBe('3 days late');
+    expect(formatTiming(-2)).toBe('2 days early');
   });
 });

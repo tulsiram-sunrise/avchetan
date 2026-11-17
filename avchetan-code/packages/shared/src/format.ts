@@ -75,3 +75,14 @@ export function formatAgo(instant: string, nowMs: number): string {
   if (hours < 48) return hours === 1 ? '1 hour ago' : `${hours} hours ago`;
   return `${Math.round(hours / 24)} days ago`;
 }
+
+/**
+ * How a finished task's finish day compares with its due day, from `daysBetween(due, finished)`:
+ * "on time", "1 day late", "2 days early". Computed when shown, never stored (§1 of
+ * product/tasks-routines-reminders.md).
+ */
+export function formatTiming(daysLate: number): string {
+  if (daysLate === 0) return 'on time';
+  const n = Math.abs(daysLate);
+  return `${n} ${n === 1 ? 'day' : 'days'} ${daysLate > 0 ? 'late' : 'early'}`;
+}

@@ -418,7 +418,7 @@ export const TASK_GROUP_TITLES: Record<TaskGroup, string> = {
   upcoming: 'Coming up',
   undated: 'No date',
   waiting: 'Waiting on others',
-  done: 'Done',
+  done: 'Done or cancelled',
 };
 
 function taskGroupWhere(db: ClientDb, group: TaskGroup, today: LocalDate) {

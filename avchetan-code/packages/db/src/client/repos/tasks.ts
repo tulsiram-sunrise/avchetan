@@ -1,4 +1,10 @@
-import { isValidLocalDate, ValidationError } from '@avchetan/shared';
+import {
+  daysBetween,
+  isValidLocalDate,
+  localDate,
+  type TimeZone,
+  ValidationError,
+} from '@avchetan/shared';
 import { and, isNull } from 'drizzle-orm';
 import { tasks } from '../../schema/sqlite/tables';
 import type { Tx } from '../database';
@@ -25,8 +31,27 @@ export function taskState(task: Pick<Task, 'completedAt' | 'cancelledAt'>): Task
   return 'open';
 }
 
+/** A task's state in words, as search results show it. */
+export const TASK_STATE_LABELS: Record<TaskState, string> = {
+  open: 'Open',
+  done: 'Done',
+  cancelled: 'Cancelled',
+};
+
 export const isOpenTask = (task: Pick<Task, 'completedAt' | 'cancelledAt'>): boolean =>
   taskState(task) === 'open';
+
+/**
+ * Days between a done task's due date and the local day it was finished: positive is late,
+ * negative early, 0 on time. Null when it isn't done or had no due date. Computed, never stored.
+ */
+export function finishedDaysLate(
+  task: Pick<Task, 'completedAt' | 'dueDate'>,
+  timeZone: TimeZone,
+): number | null {
+  if (task.completedAt === null || task.dueDate === null) return null;
+  return daysBetween(task.dueDate, localDate(task.completedAt, timeZone));
+}
 
 /** SQL: the task is open (neither done nor cancelled). */
 export const openTaskWhere = () => and(isNull(tasks.completedAt), isNull(tasks.cancelledAt));

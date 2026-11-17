@@ -4,6 +4,7 @@ import {
   dayRange,
   lastOfMonth,
   monthWeeks,
+  moveDates,
   shiftMonth,
   startOfDay,
   weekOf,
@@ -52,5 +53,20 @@ describe('calendar', () => {
     expect(weeks[0]?.[0]).toBe('2026-10-26');
     expect(weeks.at(-1)?.at(-1)).toBe('2026-12-06');
     expect(monthWeeks('2026-02')).toHaveLength(5);
+  });
+});
+
+describe('moveDates', () => {
+  it('gives tomorrow and the Monday of next week', () => {
+    // 2026-11-17 is a Tuesday.
+    expect(moveDates('2026-11-17')).toEqual({ tomorrow: '2026-11-18', nextWeek: '2026-11-23' });
+  });
+
+  it('on a Sunday, next week starts tomorrow', () => {
+    expect(moveDates('2026-11-22')).toEqual({ tomorrow: '2026-11-23', nextWeek: '2026-11-23' });
+  });
+
+  it('crosses month and year ends', () => {
+    expect(moveDates('2026-12-31')).toEqual({ tomorrow: '2027-01-01', nextWeek: '2027-01-04' });
   });
 });

@@ -40,6 +40,8 @@ Every task row, on both apps, offers:
 
 Deleting a task in the main window shows an undo message instead of asking *Are you sure?*. On the phone, swiping a task row right marks it done and swiping left moves it to tomorrow.
 
+**Built (Day 2, 2026-11-17):** *Next week* is the Monday after this week (`moveDates`). The Tasks page's last group is called *Done or cancelled*. Undo waits 10 seconds, like `/undo` in the capture box: a delete is only written when the time is up, so undoing it writes nothing. The phone shows the same undo message for deletes and for both swipes; the swipes are also screen-reader actions. Ahead or behind shows as *Done 2 days late* (`finishedDaysLate`, `formatTiming`).
+
 **Data (Day 1):** `tasks` gets `completion_note`, `progress_pct` and `cancelled_at`, in both dialects with a migration each, through the repository and sync like every other task field. Reads that count open or missed tasks leave cancelled ones out.
 
 ## 2. Repeat rules

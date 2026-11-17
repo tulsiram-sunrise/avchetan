@@ -88,7 +88,7 @@ Tap an entry on **Days** to see what was found in it.
 - **Edit** under an activity: change its title or pick another category.
 - **The numbers line** under an activity (*Duration: 40 min*), or **+ Add numbers**: change, add or remove its numbers ([Fix the numbers](corrections.md#fix-the-numbers)).
 - **Delete** under an activity: remove only that activity.
-- Tap a task to change it or delete it.
+- Tap a task to change it, finish it, move it or delete it (see [Tasks](#tasks)).
 
 Fixing what Avchetan found teaches it for next time ([Teach Avchetan with your fixes](corrections.md)).
 
@@ -96,10 +96,18 @@ If something went wrong, the reason appears under the entry with a **Help** link
 
 ## Tasks
 
-Tasks found in your entries appear on the **Tasks** tab: *Overdue*, *Today*, *Coming up* and *No date*.
+Tasks found in your entries appear on the **Tasks** tab: *Overdue*, *Today*, *Coming up*, *No date*, *Waiting on others*, and *Done or cancelled*.
 
-- Tap the box to mark a task done.
-- Tap the task to change its name or due date, or to delete it. Write dates like `2026-11-25`.
+- Tap the box to mark a task done; tap it again to open the task again.
+- **Swipe a task right** to mark it done, or **left** to move it to tomorrow. **Undo** shows at the bottom for 10 seconds. With TalkBack, the same two are in the task's actions.
+- Tap the task to:
+  - change its name or due date (to move it to any day, write the date like `2026-11-25`), or delete it. A deleted task can be brought back with **Undo** for 10 seconds.
+  - **Mark done** with a note on how it went (optional).
+  - Save how much is **partly done**, from 1 to 99%. The task stays open and shows *40% done*.
+  - **Move** it to **Tomorrow** or **Next week** (the Monday after this week).
+  - **Cancel task**: it's struck through and never counted as missed. Use **Delete** instead when it was never a task.
+  - **Reopen** a done or cancelled task.
+- A done task shows how it went: *Done on time*, *Done 2 days late* or *Done 1 day early*, and your note.
 - Each group shows how many it holds and its first 50; tap **Show more** for the next 50. People and a person's entries work the same way.
 
 ![The Tasks tab listing two tasks with their due dates](images/capture-on-android-tasks.png)

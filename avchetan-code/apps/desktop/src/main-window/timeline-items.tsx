@@ -4,6 +4,7 @@ import { formatDueDate } from '@avchetan/shared';
 import { useState } from 'react';
 import { useAction, useActiveCategories, useCategoryNames } from '../queries/organize';
 import { MetricsEditor } from './metrics-editor';
+import { TaskCheckbox, TaskStatus, taskTitleClass, useTaskMenu } from './task-actions';
 import { TaskPromises } from './task-promises';
 import { ActionError, EditableText, fieldClass, QuietButton } from './ui';
 import { RuleForm } from './window-context-setting';
@@ -73,22 +74,22 @@ export function ActivityRow({ activity }: { activity: Activity }) {
 }
 
 export function TaskRow({ task }: { task: Task }) {
-  const setDone = useAction('task.setDone');
+  const menu = useTaskMenu(task);
+  if (menu.hidden) return null;
   return (
-    <li className="flex flex-wrap items-center gap-2">
-      <input
-        type="checkbox"
-        aria-label={`Done: ${task.title}`}
-        checked={task.completedAt !== null}
-        disabled={setDone.isPending}
-        onChange={(event) => setDone.mutate({ id: task.id, done: event.target.checked })}
-      />
-      <span className={task.completedAt ? 'text-ink-muted line-through' : ''}>{task.title}</span>
-      {task.dueDate ? (
-        <span className="text-xs text-ink-muted">due {formatDueDate(task.dueDate)}</span>
-      ) : null}
-      <TaskPromises task={task} />
-      <ActionError errors={[setDone.error]} />
+    <li className="flex flex-col gap-1">
+      <div className="flex flex-wrap items-center gap-2">
+        <TaskCheckbox task={task} />
+        <span className={taskTitleClass(task)}>{task.title}</span>
+        {task.dueDate ? (
+          <span className="text-xs text-ink-muted">due {formatDueDate(task.dueDate)}</span>
+        ) : null}
+        <TaskStatus task={task} />
+        <TaskPromises task={task} />
+        <span className="flex-1" />
+        {menu.button}
+      </div>
+      {menu.panel}
     </li>
   );
 }

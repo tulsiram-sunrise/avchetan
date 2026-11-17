@@ -7,7 +7,7 @@ import {
   NO_FILTERS,
   toSearchFilters,
 } from '@avchetan/core';
-import type { PersonSummary, RawLog } from '@avchetan/db/sqlite';
+import { type PersonSummary, type RawLog, TASK_STATE_LABELS, taskState } from '@avchetan/db/sqlite';
 import { formatDueDate, formatTime, localDate } from '@avchetan/shared';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useResolvedCategories, useToday } from '../queries/days';
@@ -379,7 +379,7 @@ function TaskResult(props: { hit: TaskHitRow; onOpen: () => void }) {
           <Highlighted parts={parts} />
         </span>
         <span className="text-xs text-ink-muted">
-          {done ? 'Done' : 'Open'}
+          {TASK_STATE_LABELS[taskState(task)]}
           {task.dueDate ? ` · due ${formatDueDate(task.dueDate, today)}` : ''}
         </span>
       </button>

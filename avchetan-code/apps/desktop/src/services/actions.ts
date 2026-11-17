@@ -40,6 +40,19 @@ const ACTIONS = {
       done ? store.repos.tasks.complete(tx, id) : store.repos.tasks.reopen(tx, id),
     ),
   ),
+  // Finishing a task (product/tasks-routines-reminders.md §1). Moving is `task.edit` with a date.
+  'task.finish': action(
+    idArgs.extend({ note: z.string().nullable().optional() }),
+    (store, { id, note }) => store.write((tx) => store.repos.tasks.complete(tx, id, note)),
+  ),
+  'task.partlyDone': action(
+    idArgs.extend({ progressPct: z.number() }),
+    (store, { id, progressPct }) =>
+      store.write((tx) => store.repos.tasks.partlyDone(tx, id, progressPct)),
+  ),
+  'task.cancel': action(idArgs, (store, { id }) =>
+    store.write((tx) => store.repos.tasks.cancel(tx, id)),
+  ),
   'task.edit': action(
     idArgs.extend({ title: z.string().optional(), dueDate: optionalDate }),
     (store, { id, title, dueDate }) =>

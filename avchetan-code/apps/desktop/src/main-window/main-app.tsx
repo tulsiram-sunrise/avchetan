@@ -19,6 +19,7 @@ import { SetupPage } from './setup-page';
 import { TagsPage } from './tags-page';
 import { TasksPage } from './tasks-page';
 import { TrendsPage } from './trends-page';
+import { UndoProvider } from './undo-bar';
 
 const VIEWS: { id: MainView; label: string; hint?: string }[] = [
   // The view id stays 'timeline': the tray and the Rust window code open it by that name.
@@ -167,46 +168,50 @@ export function MainApp(props: { initialView: MainView; initialDay?: string | nu
   })();
 
   return (
-    <div className="flex h-screen">
-      <nav aria-label="Sections" className="flex w-48 flex-col gap-1 border-r border-line p-3">
-        <p className="px-2 pb-3 font-semibold">Avchetan</p>
-        {VIEWS.map((item) => (
+    <UndoProvider>
+      <div className="flex h-screen">
+        <nav aria-label="Sections" className="flex w-48 flex-col gap-1 border-r border-line p-3">
+          <p className="px-2 pb-3 font-semibold">Avchetan</p>
+          {VIEWS.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              aria-current={view === item.id ? 'page' : undefined}
+              aria-keyshortcuts={item.hint}
+              className={`flex items-baseline rounded-lg px-2 py-1.5 text-left text-sm ${
+                view === item.id
+                  ? 'bg-accent/15 font-medium text-accent'
+                  : 'hover:bg-surface-raised'
+              }`}
+              onClick={() => {
+                // Clicking a section opens its own start, not a person or entry from search.
+                setTarget((t) => ({
+                  ...t,
+                  entryId: null,
+                  personId: null,
+                  tagPath: null,
+                  projectId: null,
+                }));
+                setView(item.id);
+              }}
+            >
+              <span className="flex-1">{item.label}</span>
+              {item.hint ? <span className="text-xs text-ink-muted">{item.hint}</span> : null}
+            </button>
+          ))}
+          <span className="flex-1" />
           <button
-            key={item.id}
             type="button"
-            aria-current={view === item.id ? 'page' : undefined}
-            aria-keyshortcuts={item.hint}
-            className={`flex items-baseline rounded-lg px-2 py-1.5 text-left text-sm ${
-              view === item.id ? 'bg-accent/15 font-medium text-accent' : 'hover:bg-surface-raised'
-            }`}
-            onClick={() => {
-              // Clicking a section opens its own start, not a person or entry from search.
-              setTarget((t) => ({
-                ...t,
-                entryId: null,
-                personId: null,
-                tagPath: null,
-                projectId: null,
-              }));
-              setView(item.id);
-            }}
+            aria-keyshortcuts="?"
+            className="rounded-lg px-2 py-1.5 text-left text-xs text-ink-muted hover:bg-surface-raised"
+            onClick={() => setKeysOpen(true)}
           >
-            <span className="flex-1">{item.label}</span>
-            {item.hint ? <span className="text-xs text-ink-muted">{item.hint}</span> : null}
+            Keys <kbd className="font-mono">?</kbd>
           </button>
-        ))}
-        <span className="flex-1" />
-        <button
-          type="button"
-          aria-keyshortcuts="?"
-          className="rounded-lg px-2 py-1.5 text-left text-xs text-ink-muted hover:bg-surface-raised"
-          onClick={() => setKeysOpen(true)}
-        >
-          Keys <kbd className="font-mono">?</kbd>
-        </button>
-      </nav>
-      <main className="min-w-0 flex-1 overflow-y-auto p-6">{page}</main>
-      {keysOpen ? <KeysSheet onClose={() => setKeysOpen(false)} /> : null}
-    </div>
+        </nav>
+        <main className="min-w-0 flex-1 overflow-y-auto p-6">{page}</main>
+        {keysOpen ? <KeysSheet onClose={() => setKeysOpen(false)} /> : null}
+      </div>
+    </UndoProvider>
   );
 }

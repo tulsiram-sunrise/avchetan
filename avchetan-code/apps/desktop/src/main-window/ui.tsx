@@ -13,6 +13,8 @@ export function QuietButton(props: {
   disabled?: boolean;
   /** An accessible name when the visible text alone is ambiguous ("Delete" in a list). */
   label?: string;
+  /** For a button that opens or closes something below it. */
+  expanded?: boolean;
   children: ReactNode;
 }) {
   return (
@@ -20,6 +22,7 @@ export function QuietButton(props: {
       type="button"
       className="rounded-lg border border-line px-2 py-1 text-xs hover:bg-surface disabled:opacity-50"
       aria-label={props.label}
+      aria-expanded={props.expanded}
       disabled={props.disabled}
       onClick={props.onClick}
     >

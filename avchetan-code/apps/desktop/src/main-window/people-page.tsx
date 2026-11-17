@@ -1,4 +1,4 @@
-import { LIST_PAGE, type PersonSummary, type PromiseItem } from '@avchetan/db/sqlite';
+import { LIST_PAGE, type PersonSummary, type PromiseItem, taskState } from '@avchetan/db/sqlite';
 import { createLogger, formatDueDate, localDate } from '@avchetan/shared';
 import { useState } from 'react';
 import { emitAppEvent } from '../native/events';
@@ -13,6 +13,7 @@ import {
   usePersonEntries,
 } from '../queries/people';
 import { PrivateLock } from './private-mark';
+import { TaskCheckbox, TaskStatus, taskTitleClass, useTaskMenu } from './task-actions';
 import { ActionError, EditableText, MergeSelect, panelClass, QuietButton, ShowMore } from './ui';
 
 const log = createLogger('people');
@@ -295,23 +296,15 @@ function PromiseGroup(props: { title: string; items: PromiseItem[]; today: strin
 
 function PromiseLine(props: { item: PromiseItem; today: string }) {
   const { task } = props.item;
-  const setDone = useAction('task.setDone');
+  const menu = useTaskMenu(task);
   const unlink = useAction('promise.unlink');
-  const done = task.completedAt !== null;
-  const overdue = !done && task.dueDate !== null && task.dueDate < props.today;
+  const overdue = taskState(task) === 'open' && task.dueDate !== null && task.dueDate < props.today;
+  if (menu.hidden) return null;
   return (
     <li className="flex flex-col gap-1 px-4 py-2.5 text-sm">
       <div className="flex flex-wrap items-center gap-3">
-        <input
-          type="checkbox"
-          aria-label={`Done: ${task.title}`}
-          checked={done}
-          disabled={setDone.isPending}
-          onChange={(event) => setDone.mutate({ id: task.id, done: event.target.checked })}
-        />
-        <span className={`min-w-0 flex-1 ${done ? 'text-ink-muted line-through' : ''}`}>
-          {task.title}
-        </span>
+        <TaskCheckbox task={task} />
+        <span className={`min-w-0 flex-1 ${taskTitleClass(task)}`}>{task.title}</span>
         {task.dueDate ? (
           <span className={`text-xs ${overdue ? 'text-danger' : 'text-ink-muted'}`}>
             due {shortDay(task.dueDate, props.today)}
@@ -324,8 +317,11 @@ function PromiseLine(props: { item: PromiseItem; today: string }) {
         >
           Not a promise
         </QuietButton>
+        {menu.button}
       </div>
-      <ActionError errors={[setDone.error, unlink.error]} />
+      <TaskStatus task={task} />
+      {menu.panel}
+      <ActionError errors={[unlink.error]} />
     </li>
   );
 }
