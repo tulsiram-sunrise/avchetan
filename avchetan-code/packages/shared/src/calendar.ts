@@ -117,3 +117,11 @@ export function monthWeeks(month: LocalMonth): LocalDate[][] {
   }
   return weeks;
 }
+
+/**
+ * Where *Move* puts a task (product/tasks-routines-reminders.md §1): *Tomorrow* is the next day,
+ * *Next week* is the Monday after this week (weeks run Monday to Sunday, as in `weekOf`).
+ */
+export function moveDates(today: LocalDate): { tomorrow: LocalDate; nextWeek: LocalDate } {
+  return { tomorrow: addDays(today, 1), nextWeek: addDays(weekOf(today)[0] as LocalDate, 7) };
+}

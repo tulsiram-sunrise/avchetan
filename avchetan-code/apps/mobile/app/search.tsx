@@ -7,7 +7,7 @@ import {
   NO_FILTERS,
   toSearchFilters,
 } from '@avchetan/core';
-import type { HighlightPart, RawLog } from '@avchetan/db/sqlite';
+import { type HighlightPart, type RawLog, TASK_STATE_LABELS, taskState } from '@avchetan/db/sqlite';
 import { formatDueDate, formatTime, localDate, systemTimeZone } from '@avchetan/shared';
 import { router } from 'expo-router';
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
@@ -264,12 +264,12 @@ function Results(props: { query: string; choice: FilterChoice }) {
           {tasks.data.hits.map(({ task, parts }) => (
             <Row key={task.id} onPress={() => router.navigate('/tasks')}>
               <Text
-                className={`text-sm ${task.completedAt ? 'text-inkMuted line-through' : 'text-ink'}`}
+                className={`text-sm ${taskState(task) === 'open' ? 'text-ink' : 'text-inkMuted line-through'}`}
               >
                 <Highlighted parts={parts} />
               </Text>
               <Text className="text-xs text-inkMuted">
-                {task.completedAt ? 'Done' : 'Open'}
+                {TASK_STATE_LABELS[taskState(task)]}
                 {task.dueDate ? ` · due ${formatDueDate(task.dueDate, today)}` : ''}
               </Text>
             </Row>

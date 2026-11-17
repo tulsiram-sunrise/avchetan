@@ -28,6 +28,7 @@ export {
   lastOfMonth,
   monthOf,
   monthWeeks,
+  moveDates,
   shiftMonth,
   startOfDay,
   weekOf,
@@ -78,6 +79,7 @@ export {
   formatMadeAt,
   formatMinutes,
   formatTime,
+  formatTiming,
 } from './format';
 export type { IdGenerator, IdPart } from './ids';
 export { AVCHETAN_NAMESPACE, derivedId, newId } from './ids';

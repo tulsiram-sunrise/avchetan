@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { openTestStore } from '../../../testing';
-import { isOpenTask, taskState } from './tasks';
+import { finishedDaysLate, isOpenTask, taskState } from './tasks';
 
 async function oneTask() {
   const { store } = await openTestStore();
@@ -77,5 +77,33 @@ describe('finishing a task', () => {
     const reopened = await store.write((tx) => store.repos.tasks.reopen(tx, task.id));
 
     expect(reopened.progressPct).toBe(60);
+  });
+});
+
+describe('finishedDaysLate', () => {
+  const due = '2026-11-16';
+  it('compares the local finish day with the due day', () => {
+    expect(finishedDaysLate({ dueDate: due, completedAt: '2026-11-16T20:00:00.000Z' }, 'UTC')).toBe(
+      0,
+    );
+    expect(finishedDaysLate({ dueDate: due, completedAt: '2026-11-18T09:00:00.000Z' }, 'UTC')).toBe(
+      2,
+    );
+    expect(finishedDaysLate({ dueDate: due, completedAt: '2026-11-15T09:00:00.000Z' }, 'UTC')).toBe(
+      -1,
+    );
+  });
+
+  it('uses the time zone: 20:00 UTC is already the next day in Kolkata', () => {
+    expect(
+      finishedDaysLate({ dueDate: due, completedAt: '2026-11-16T20:00:00.000Z' }, 'Asia/Kolkata'),
+    ).toBe(1);
+  });
+
+  it('is null when not done or without a due date', () => {
+    expect(finishedDaysLate({ dueDate: due, completedAt: null }, 'UTC')).toBeNull();
+    expect(
+      finishedDaysLate({ dueDate: null, completedAt: '2026-11-16T20:00:00.000Z' }, 'UTC'),
+    ).toBeNull();
   });
 });

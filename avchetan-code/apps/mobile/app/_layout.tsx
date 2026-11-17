@@ -7,6 +7,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, AppState, Text, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { type AppServices, getAppServices } from '../src/app-services';
 import { expoDeviceLock } from '../src/platform/device-lock';
 import { queryClient, refreshAll } from '../src/query-client';
@@ -18,6 +19,7 @@ import { ServicesProvider } from '../src/services-context';
 import { AppTheme } from '../src/theme/theme';
 import { lockedScreenLayout } from '../src/ui/lock-screen';
 import { HelpLink } from '../src/ui/parts';
+import { UndoProvider } from '../src/ui/undo-bar';
 
 const log = createLogger('app');
 
@@ -76,38 +78,40 @@ function AppRoutes({ startup }: { startup: Startup }) {
   return (
     <ServicesProvider services={startup.services}>
       <QueryClientProvider client={queryClient}>
-        <Stack screenLayout={lockedScreenLayout}>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen
-            name="capture"
-            options={{
-              presentation: 'formSheet',
-              headerShown: false,
-              sheetAllowedDetents: [0.6],
-              sheetGrabberVisible: true,
-            }}
-          />
-          <Stack.Screen name="log/[id]" options={{ title: 'Entry' }} />
-          <Stack.Screen name="search" options={{ title: 'Search' }} />
-          <Stack.Screen name="people/index" options={{ title: 'People' }} />
-          <Stack.Screen name="people/[id]" options={{ title: 'Person' }} />
-          <Stack.Screen name="tags" options={{ title: 'Tags' }} />
-          <Stack.Screen name="tag" options={{ title: 'Tag' }} />
-          <Stack.Screen name="projects" options={{ title: 'Projects' }} />
-          <Stack.Screen name="project/[id]" options={{ title: 'Project' }} />
-          <Stack.Screen name="trends" options={{ title: 'Trends' }} />
-          <Stack.Screen name="settings/ai-models" options={{ title: 'AI models' }} />
-          <Stack.Screen name="settings/sync" options={{ title: 'Sync' }} />
-          <Stack.Screen name="settings/data" options={{ title: 'Your data' }} />
-          <Stack.Screen name="settings/brief" options={{ title: 'Daily brief' }} />
-          <Stack.Screen name="settings/private-tags" options={{ title: 'Private tags' }} />
-          <Stack.Screen name="settings/voice" options={{ title: 'Voice' }} />
-          <Stack.Screen name="settings/app-lock" options={{ title: 'App lock' }} />
-          <Stack.Screen name="settings/learned" options={{ title: 'What Avchetan learned' }} />
-          <Stack.Screen name="settings/pair" options={{ title: 'Scan pairing code' }} />
-          <Stack.Screen name="settings/check" options={{ title: 'Setup check' }} />
-          <Stack.Screen name="setup" options={{ title: 'Welcome', headerBackVisible: false }} />
-        </Stack>
+        <UndoProvider>
+          <Stack screenLayout={lockedScreenLayout}>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="capture"
+              options={{
+                presentation: 'formSheet',
+                headerShown: false,
+                sheetAllowedDetents: [0.6],
+                sheetGrabberVisible: true,
+              }}
+            />
+            <Stack.Screen name="log/[id]" options={{ title: 'Entry' }} />
+            <Stack.Screen name="search" options={{ title: 'Search' }} />
+            <Stack.Screen name="people/index" options={{ title: 'People' }} />
+            <Stack.Screen name="people/[id]" options={{ title: 'Person' }} />
+            <Stack.Screen name="tags" options={{ title: 'Tags' }} />
+            <Stack.Screen name="tag" options={{ title: 'Tag' }} />
+            <Stack.Screen name="projects" options={{ title: 'Projects' }} />
+            <Stack.Screen name="project/[id]" options={{ title: 'Project' }} />
+            <Stack.Screen name="trends" options={{ title: 'Trends' }} />
+            <Stack.Screen name="settings/ai-models" options={{ title: 'AI models' }} />
+            <Stack.Screen name="settings/sync" options={{ title: 'Sync' }} />
+            <Stack.Screen name="settings/data" options={{ title: 'Your data' }} />
+            <Stack.Screen name="settings/brief" options={{ title: 'Daily brief' }} />
+            <Stack.Screen name="settings/private-tags" options={{ title: 'Private tags' }} />
+            <Stack.Screen name="settings/voice" options={{ title: 'Voice' }} />
+            <Stack.Screen name="settings/app-lock" options={{ title: 'App lock' }} />
+            <Stack.Screen name="settings/learned" options={{ title: 'What Avchetan learned' }} />
+            <Stack.Screen name="settings/pair" options={{ title: 'Scan pairing code' }} />
+            <Stack.Screen name="settings/check" options={{ title: 'Setup check' }} />
+            <Stack.Screen name="setup" options={{ title: 'Welcome', headerBackVisible: false }} />
+          </Stack>
+        </UndoProvider>
         <OpenTappedReminder />
       </QueryClientProvider>
     </ServicesProvider>
@@ -169,9 +173,11 @@ export default function RootLayout() {
   }, [startup.status]);
 
   return (
-    <AppTheme>
-      <StatusBar style="auto" />
-      <AppRoutes startup={startup} />
-    </AppTheme>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AppTheme>
+        <StatusBar style="auto" />
+        <AppRoutes startup={startup} />
+      </AppTheme>
+    </GestureHandlerRootView>
   );
 }

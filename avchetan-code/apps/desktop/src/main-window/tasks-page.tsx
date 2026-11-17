@@ -9,26 +9,20 @@ import { localDate } from '@avchetan/shared';
 import { useState } from 'react';
 import { useAction, useTaskGroup, useTaskGroupCounts } from '../queries/organize';
 import { useServices } from '../services-context';
+import { TaskCheckbox, TaskStatus, taskTitleClass, useTaskMenu } from './task-actions';
 import { TaskPromises } from './task-promises';
 import { ActionError, EditableText, fieldClass, panelClass, QuietButton } from './ui';
 
 function TaskLine({ task }: { task: Task }) {
-  const setDone = useAction('task.setDone');
   const edit = useAction('task.edit');
-  const remove = useAction('task.delete');
-  const done = task.completedAt !== null;
+  const menu = useTaskMenu(task);
+  if (menu.hidden) return null;
 
   return (
     <li className="flex flex-col gap-1 px-4 py-2.5 text-sm">
       <div className="flex items-center gap-3">
-        <input
-          type="checkbox"
-          aria-label={`Done: ${task.title}`}
-          checked={done}
-          disabled={setDone.isPending}
-          onChange={(event) => setDone.mutate({ id: task.id, done: event.target.checked })}
-        />
-        <div className={`min-w-0 flex-1 ${done ? 'text-ink-muted line-through' : ''}`}>
+        <TaskCheckbox task={task} />
+        <div className={`min-w-0 flex-1 ${taskTitleClass(task)}`}>
           <EditableText
             value={task.title}
             label="task title"
@@ -42,14 +36,14 @@ function TaskLine({ task }: { task: Task }) {
           value={task.dueDate ?? ''}
           onChange={(event) => edit.mutate({ id: task.id, dueDate: event.target.value || null })}
         />
-        <QuietButton disabled={remove.isPending} onClick={() => remove.mutate({ id: task.id })}>
-          Delete
-        </QuietButton>
+        {menu.button}
       </div>
-      <div className="pl-7">
+      <div className="flex flex-col gap-1 pl-7">
+        <TaskStatus task={task} />
         <TaskPromises task={task} />
+        {menu.panel}
       </div>
-      <ActionError errors={[setDone.error, edit.error, remove.error]} />
+      <ActionError errors={[edit.error]} />
     </li>
   );
 }

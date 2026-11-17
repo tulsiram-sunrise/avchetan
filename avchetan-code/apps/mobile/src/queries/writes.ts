@@ -1,4 +1,6 @@
 import { buildCaptureInput, normalizeMetrics } from '@avchetan/core';
+import type { AppServices } from '../app-services';
+import { refreshAll } from '../query-client';
 import { useWrite } from './entries';
 
 export const useSetTaskDone = () =>
@@ -8,14 +10,40 @@ export const useSetTaskDone = () =>
     ),
   );
 
+/** Done, with an optional note on how it went (product/tasks-routines-reminders.md §1). */
+export const useFinishTask = () =>
+  useWrite((store, { id, note }: { id: string; note?: string | null }) =>
+    store.write((tx) => store.repos.tasks.complete(tx, id, note)),
+  );
+
+export const usePartlyDone = () =>
+  useWrite((store, { id, progressPct }: { id: string; progressPct: number }) =>
+    store.write((tx) => store.repos.tasks.partlyDone(tx, id, progressPct)),
+  );
+
+export const useCancelTask = () =>
+  useWrite((store, id: string) => store.write((tx) => store.repos.tasks.cancel(tx, id)));
+
+/** Move: only the due date changes, so it isn't a correction (see tasksRepo.editByUser). */
+export const useMoveTask = () =>
+  useWrite((store, { id, dueDate }: { id: string; dueDate: string | null }) =>
+    store.write((tx) => store.repos.tasks.editByUser(tx, id, { dueDate })),
+  );
+
 export const useEditTask = () =>
   useWrite((store, { id, ...changes }: { id: string; title: string; dueDate: string | null }) =>
     store.write((tx) => store.repos.tasks.editByUser(tx, id, changes)),
   );
 
-// A delete by the user: an extracted item becomes a correction (ADR-0027).
-export const useDeleteTask = () =>
-  useWrite((store, id: string) => store.write((tx) => store.repos.tasks.deleteByUser(tx, id)));
+/**
+ * A delete by the user: an extracted item becomes a correction (ADR-0027). Not a hook: it runs
+ * when the undo message times out, after the row may have gone.
+ */
+export async function deleteTaskNow(services: AppServices, id: string): Promise<void> {
+  await services.store.write((tx) => services.store.repos.tasks.deleteByUser(tx, id));
+  refreshAll();
+  services.sync.schedule();
+}
 
 export const useEditActivity = () =>
   useWrite((store, { id, ...changes }: { id: string; title: string; categoryId: string }) =>

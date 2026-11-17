@@ -98,10 +98,12 @@ export type { Project } from './client/repos/projects';
 export type { CaptureInput, RawLog } from './client/repos/raw-logs';
 export type { Tag, TagLink } from './client/repos/tags';
 export {
+  finishedDaysLate,
   isOpenTask,
   type NewTask,
   PROGRESS_MAX,
   PROGRESS_MIN,
+  TASK_STATE_LABELS,
   type Task,
   type TaskEdit,
   type TaskState,
