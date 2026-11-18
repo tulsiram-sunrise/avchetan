@@ -14,20 +14,29 @@ Today a task is either open or done, nothing reminds you of it, and anything you
 | 2 | [Task actions](#1-finishing-a-task): move, cancel, swipe, undo message | PC and phone |
 | 3 | [Repeat rules engine](#2-repeat-rules) and its ADR | `packages/core` |
 | 4 | [Routines table](#3-routines) and the days of a routine | Data + sync |
-| 5 | [Routines page and starter list](#3-routines) | PC and phone |
-| 6 | [Chore checklist card and evening notification](#4-confirming-chores) | PC and phone |
-| 7 | [Chores ticked from entries](#5-chores-ticked-from-entries) | Extraction |
-| 8 | [Repeating tasks](#6-repeating-tasks) through routines | PC and phone |
-| 9 | [Reminders](#7-reminders): phone alarms, the per-device ring setting, PC popup | Phone first, PC |
-| 10 | ["Remind me at 4" read by extraction](#8-reminders-from-what-you-type) | Extraction |
-| 11 | [Sleep hours](#9-sleep-hours): stated times, *woke up*, bed + wake into `sleep_h` | Extraction + Trends |
-| 12 | [The brief: Went well / Needs attention](#10-the-brief-went-well-and-needs-attention) | Brief |
-| 13 | [Day coverage](#11-day-coverage) (opt-in) | Days |
-| 14 | [Share to Avchetan](#12-share-to-avchetan) | Phone |
-| 15 | [Accessibility pass](#13-accessibility-pass) | PC and phone |
-| 16 | [`/done` and `/undo` on the phone](#14-done-and-undo-on-the-phone) | Phone |
-| 17 | Edits made on two devices: keep the losing version ([roadmap](../roadmap.md#v050--tasks-routines-and-reminders)) | Sync, both |
-| 18 | Test build and release ([releasing](../conventions/releasing.md)) | Both |
+| 5 | Test tools and safety nets: engine tests, unknown values, repository invariants, migrating a database with rows ([roadmap](../roadmap.md#v050--tasks-routines-and-reminders), [R28](../open-questions.md#resolved)) | Tests |
+| 6 | Sync keeps working on enum values and repeat-rule fields it doesn't know ([R27](../open-questions.md#resolved)) | Sync + server |
+| 7 | Sync safety: keep the server ID, one-transaction server switch, rejected rows, strict IPv4 | Sync |
+| 8 | Security hardening: token rotation, request limits, SQLite defensive mode, IPC inputs | Server + PC |
+| 9 | Bug fixes: Ask dates and totals, weekly review, date slips | Core + db |
+| 10 | Bug fixes: dock command race, hub restore, voice, capture errors | PC and phone |
+| 11 | Log files on the PC and phone, CI audits and pins | Both + CI |
+| 12 | [Routines page and starter list](#3-routines) | PC and phone |
+| 13 | [Chore checklist card and evening notification](#4-confirming-chores) | PC and phone |
+| 14 | [Chores ticked from entries](#5-chores-ticked-from-entries) | Extraction |
+| 15 | [Repeating tasks](#6-repeating-tasks) through routines | PC and phone |
+| 16 | [Reminders](#7-reminders): phone alarms, the per-device ring setting, PC popup | Phone first, PC |
+| 17 | ["Remind me at 4" read by extraction](#8-reminders-from-what-you-type) | Extraction |
+| 18 | [Sleep hours](#9-sleep-hours): stated times, *woke up*, bed + wake into `sleep_h` | Extraction + Trends |
+| 19 | [The brief: Went well / Needs attention](#10-the-brief-went-well-and-needs-attention) | Brief |
+| 20 | [Day coverage](#11-day-coverage) (opt-in) | Days |
+| 21 | [Share to Avchetan](#12-share-to-avchetan) | Phone |
+| 22 | [Accessibility pass](#13-accessibility-pass) | PC and phone |
+| 23 | `HubClient` in core: Ask, the brief and command reading leave the apps ([roadmap](../roadmap.md#v050--tasks-routines-and-reminders)) | `packages/core`, both apps |
+| 24 | Command handlers, one undo model and the write actions move into core | `packages/core`, both apps |
+| 25 | [`/done` and `/undo` on the phone](#14-done-and-undo-on-the-phone) | Phone |
+| 26 | Edits made on two devices: keep the losing version ([roadmap](../roadmap.md#v050--tasks-routines-and-reminders)) | Sync, both |
+| 27 | Test build and release ([releasing](../conventions/releasing.md)) | Both |
 
 ## 1. Finishing a task
 
@@ -114,7 +123,7 @@ This is a setting, off by default. It shows the hours accounted for out of 24: l
 
 ## 12. Share to Avchetan
 
-Android's share sheet sends text or a link from any app into a capture. This is a local capture like any other, and it never waits on the network.
+Android's share sheet sends text or a link from any app into a capture. This is a local capture like any other, and it never waits on the network. It is saved with the source `mobile_text`: a new source value would stop older apps from syncing ([R27](../open-questions.md#resolved)), so `mobile_share` waits for v0.6.0.
 
 ## 13. Accessibility pass
 
@@ -122,4 +131,4 @@ On both apps: text size follows the system setting, keyboard focus is always vis
 
 ## 14. `/done` and `/undo` on the phone
 
-The phone's capture box gets `/done` and `/undo`, reusing the fuzzy command matching from v0.4.0 ([capture box redesign](capture-box-redesign.md)).
+The phone's capture box gets `/done` and `/undo`, reusing the fuzzy command matching from v0.4.0 ([capture box redesign](capture-box-redesign.md)). The handlers come from `packages/core` (Day 24), so the phone and the PC run the same code.
