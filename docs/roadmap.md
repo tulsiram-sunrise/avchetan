@@ -303,7 +303,7 @@ Added 2026-11-18 (from a security audit, a code-quality review and a test-covera
   - a rejected row is tried once per sync, not once per batch (with a backlog over ten batches, a row refused for a passing reason such as `clock_skew` uses up its 10 tries in one sync and is stuck);
   - the sync status keeps the last error code, so the footer links the right guide section (today `failed` always links *server unreachable*), and a corrupt saved status is read safely;
   - addresses are classed as private or Tailscale only when they are real four-number IPv4 addresses (today `100.100.example.com` passes as Tailscale and is allowed over plain HTTP).
-- **Security hardening (Day 8).**
+- **Security hardening (Day 8).** Server part done 2026-11-18 (token rotation, limits, the generated token, error text); the PC and phone part follows.
   - Token rotation only from the hub's own machine (loopback), logged at `warn`, and a *token stolen* section in troubleshooting.
   - A body limit on every `/v1/*` route (today only `/sync/push`); rate limits keyed by the device and the client's address, with old windows cleaned up; a cap on registered devices; failed sign-ins slowed and logged; the health check's database query cached for a second.
   - A pushed batch that deletes many rows is logged at `warn` (count only).

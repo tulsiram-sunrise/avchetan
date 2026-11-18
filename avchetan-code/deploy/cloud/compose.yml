@@ -2,8 +2,8 @@
 # Guide: docs/user-guide/setup-cloud.md#your-own-server. From avchetan-code/:
 #   cp deploy/cloud/.env.example deploy/cloud/.env     (then fill it in)
 #   docker compose -f deploy/cloud/compose.yml --env-file deploy/cloud/.env up -d --build
-# Only Caddy is reachable from outside (ports 80 and 443). The sync token is printed once:
-#   docker compose -f deploy/cloud/compose.yml --env-file deploy/cloud/.env logs server
+# Only Caddy is reachable from outside (ports 80 and 443). The guide puts a SYNC_TOKEN in
+# deploy/cloud/.env; without one the server makes a token and saves it in /secrets, never printed.
 name: avchetan-cloud
 
 services:

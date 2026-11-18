@@ -104,20 +104,21 @@ The setup is `deploy/cloud/` in the repository: Postgres with pgvector, the Avch
    ```sh
    sed -i "s/^DOMAIN=$/DOMAIN=avchetan.example.com/" deploy/cloud/.env
    ```
-6. Make a database password (you never need to type it):
+6. Make a database password (you never need to type it) and your sync token:
    ```sh
    sed -i "s/^POSTGRES_PASSWORD=$/POSTGRES_PASSWORD=$(openssl rand -hex 16)/" deploy/cloud/.env
+   sed -i "s/^SYNC_TOKEN=$/SYNC_TOKEN=$(openssl rand -hex 32)/" deploy/cloud/.env
    ```
 7. Optional: to let the server organize entries and answer questions with a free Groq key, open the file with `nano deploy/cloud/.env`, fill in the lines from the table in [Part 2, step 5](#part-2--the-server-render) (`EXTRACTION_PROVIDER` to `GROQ_API_KEY`), then press **Ctrl+O**, **Enter**, **Ctrl+X**. Leave them empty to have each device use its own AI models.
 8. Start it. The first start builds the server, which takes 5–10 minutes:
    ```sh
    sudo docker compose -f deploy/cloud/compose.yml --env-file deploy/cloud/.env up -d --build
    ```
-9. Show your sync token, which the server makes and prints once on its first start:
+9. Show your sync token from step 6:
    ```sh
-   sudo docker compose -f deploy/cloud/compose.yml --env-file deploy/cloud/.env logs server | grep -A1 "Your sync token"
+   grep '^SYNC_TOKEN=' deploy/cloud/.env
    ```
-   Copy the long line under **Your sync token** and keep it safe, like a password.
+   Copy the long text after `SYNC_TOKEN=` and keep it safe, like a password. The server never prints it in its log.
 10. Open `https://avchetan.example.com/v1/health` (with your name) in a browser. It should show `"status":"ok"`. Then connect your devices as in [Part 3](#part-3--connect-your-devices), with this address and token.
 
 **Updating:** from `avchetan/avchetan-code`, run `git pull`, then the command from step 8 again. Your data stays in the `postgres-data` volume.
@@ -128,7 +129,7 @@ The setup is `deploy/cloud/` in the repository: Postgres with pgvector, the Avch
 
 ## Keep it safe
 
-- Your server's address is public, and only the sync token protects it. Keep the token secret. If it leaks, click **Change token** on the PC and pair your devices again.
+- Your server's address is public, and only the sync token protects it. Keep the token secret. If it leaks, see [If your sync token leaked](troubleshooting.md#token_stolen).
 - Never put the token, the database password or API keys in an entry, a screenshot or a support message.
 
 More: [Troubleshooting](troubleshooting.md).

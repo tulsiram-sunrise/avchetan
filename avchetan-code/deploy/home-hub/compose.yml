@@ -1,8 +1,8 @@
 # A Home Hub without the desktop app, for an always-on machine such as a home server.
 # Data stays in the hub-data volume on this machine. From avchetan-code/:
 #   docker compose -f deploy/home-hub/compose.yml up -d --build
-# The sync token is printed once, on the first start:
-#   docker compose -f deploy/home-hub/compose.yml logs server
+# Without SYNC_TOKEN, the first start makes a token and saves it (it is never printed):
+#   docker compose -f deploy/home-hub/compose.yml exec server cat /secrets/sync-token.txt
 name: avchetan-hub
 
 services:
@@ -39,6 +39,8 @@ services:
       - hub-data:/data
       # A snapshot of hub-data each day, the newest 7 kept.
       - hub-backups:/backups
+      # A token the hub made itself (no SYNC_TOKEN), readable by the server only.
+      - hub-secrets:/secrets
     ports:
       # The desktop app reaches a hub over plain HTTP on 8787 only.
       - "8787:8787"
@@ -46,3 +48,4 @@ services:
 volumes:
   hub-data:
   hub-backups:
+  hub-secrets:

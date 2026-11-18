@@ -161,6 +161,8 @@ export const ERROR_HELP = {
   model_url_required: own(),
   invalid_pairing_code: at('invalid_pairing_code'),
   wrong_server: at('wrong_server'),
+  token_rotate_remote: at('token_rotate_remote', 'Change the token on the hub’s own computer'),
+  device_limit: at('device_limit', 'Your hub or server has as many devices as it takes'),
   no_pairing_address: at('no_pairing_address'),
   protocol_unsupported: at(
     'protocol_unsupported',

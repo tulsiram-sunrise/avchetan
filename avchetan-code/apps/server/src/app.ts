@@ -6,11 +6,13 @@ import {
   HEADERS,
   type HubCommandRequestParsed,
   type HubCommandResponse,
+  MAX_PUSH_BYTES,
   PROTOCOL_VERSION,
   type ServerProfile,
 } from '@avchetan/sync/protocol';
 import { eq } from 'drizzle-orm';
 import { type Context, Hono } from 'hono';
+import { bodyLimit } from 'hono/body-limit';
 import { z } from 'zod';
 import { ApiError } from './api-error';
 import type { HubAsk } from './ask/hub-ask';
@@ -18,7 +20,7 @@ import type { ServerIdentity } from './auth';
 import { hashToken, tokenMatches } from './auth';
 import type { HubBrief } from './brief/hub-brief';
 import type { ServerDb } from './db/client';
-import { createRateLimiter, MAX_PULLS } from './rate-limit';
+import { createRateLimiter, createSignInGuard, MAX_FROM_ADDRESS, MAX_PULLS } from './rate-limit';
 import { askRoutes } from './routes/ask';
 import { briefRoutes } from './routes/brief';
 import { commandRoutes } from './routes/command';
@@ -59,7 +61,22 @@ export type AppDeps = {
   command?: (request: HubCommandRequestParsed) => Promise<HubCommandResponse>;
   /** Whether the server's own models can be used, for the Setup check. */
   checkAi?: () => Promise<ModelCheck[]>;
+  /** The network address a request came from (Node's socket); absent in tests by default. */
+  clientAddress?: (c: Context<AppEnv>) => string | undefined;
+  /** Devices this server accepts (a leaked token can't register thousands). */
+  maxDevices?: number;
+  /** Waits before a failed sign-in's answer; replaced in tests. */
+  sleep?: (ms: number) => Promise<void>;
 };
+
+/** Every request body but a push: questions, commands, searches and registrations are small. */
+export const MAX_REQUEST_BYTES = 64 * 1024;
+export const MAX_DEVICES = 50;
+
+const LOOPBACK = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
+
+/** Whether a request came from the server's own machine. */
+export const isLoopback = (address: string | undefined) => !!address && LOOPBACK.has(address);
 
 export type AppEnv = { Variables: { requestId: string; deviceId: string; internal: boolean } };
 
@@ -77,8 +94,18 @@ function errorBody(
 
 export function createApp(deps: AppDeps) {
   const { db, identity } = deps;
-  const rateLimited = createRateLimiter(deps.nowMs ?? Date.now);
-  const pullsLimited = createRateLimiter(deps.nowMs ?? Date.now, MAX_PULLS);
+  const nowMs = deps.nowMs ?? Date.now;
+  const rateLimited = createRateLimiter(nowMs);
+  const pullsLimited = createRateLimiter(nowMs, MAX_PULLS);
+  const addressLimited = createRateLimiter(nowMs, MAX_FROM_ADDRESS);
+  const signIns = createSignInGuard(nowMs);
+  const sleep = deps.sleep ?? ((ms: number) => new Promise((resolve) => setTimeout(resolve, ms)));
+  const addressOf = (c: Context<AppEnv>) => deps.clientAddress?.(c) ?? 'unknown';
+  const tooLarge = () => {
+    throw new ApiError(413, 'payload_too_large', 'Send less at once');
+  };
+  const smallBody = bodyLimit({ maxSize: MAX_REQUEST_BYTES, onError: tooLarge });
+  const pushBody = bodyLimit({ maxSize: MAX_PUSH_BYTES, onError: tooLarge });
   const internalHash = deps.internalToken ? hashToken(deps.internalToken) : null;
   const app = new Hono<AppEnv>();
 
@@ -102,6 +129,18 @@ export function createApp(deps: AppDeps) {
   // Public, because pairing and URL failover ask it before they hold a working token.
   app.route('/v1', healthRoutes(deps));
 
+  // Before signing in, so guessing tokens or making up device IDs counts too.
+  app.use('/v1/*', async (c, next) => {
+    const retryAfter = addressLimited(addressOf(c));
+    if (retryAfter !== null) {
+      c.header('Retry-After', String(retryAfter));
+      throw new ApiError(429, 'rate_limited', 'Too many requests');
+    }
+    await next();
+  });
+
+  app.use('/v1/*', (c, next) => (c.req.path === '/v1/sync/push' ? pushBody : smallBody)(c, next));
+
   app.use('/v1/*', async (c, next) => {
     if (Number(c.req.header(HEADERS.protocol)) !== PROTOCOL_VERSION) {
       throw new ApiError(426, 'protocol_unsupported', 'Update the app or the server', {
@@ -111,8 +150,13 @@ export function createApp(deps: AppDeps) {
     const [scheme, token] = c.req.header('Authorization')?.split(' ') ?? [];
     const internal = Boolean(token && internalHash && tokenMatches(token, internalHash));
     if (scheme !== 'Bearer' || !token || !(internal || tokenMatches(token, identity.tokenHash))) {
+      const { delayMs, count } = signIns.failed(addressOf(c));
+      // Counts only: never the token or the address.
+      if (count === 1 || count % 10 === 0) log.warn('sign-in failed', { failures: count });
+      if (delayMs > 0) await sleep(delayMs);
       throw new ApiError(401, 'unauthorized', "This device's sync token is not valid");
     }
+    signIns.succeeded(addressOf(c));
     c.set('internal', internal);
     await next();
   });

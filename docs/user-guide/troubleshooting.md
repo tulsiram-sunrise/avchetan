@@ -61,7 +61,19 @@ Problems come first, each with its fix and a **Help** link to its section below.
 **"The hub doesn't know an address a phone can reach."** The hub found no Wi-Fi or Tailscale address on its PC. Check that the PC is connected to your home Wi-Fi (or Ethernet), then show the code again. Away from home, start Tailscale on the PC first ([Use your phone away from home](remote-access-tailscale.md)).
 
 ## token_from_env
-**"This server's token is set in its SYNC_TOKEN setting."** A server you run yourself (cloud, or `start:hub` from the source code) takes its token from the `SYNC_TOKEN` setting, so **Change token** can't replace it. Put a new token into `SYNC_TOKEN` where the server is set up, restart the server, then pair every device again.
+**"This server's token is set in its SYNC_TOKEN setting."** A server you run yourself (cloud, or `start:hub` from the source code) takes its token from the `SYNC_TOKEN` setting, so **Change token** can't replace it. Put a new token into `SYNC_TOKEN` where the server is set up, restart the server, then pair every device again ([If your sync token leaked](#token_stolen)).
+
+## token_rotate_remote
+**"Change the token on the hub's own computer."** A new sync token can only be made on the computer the hub runs on, so someone who got hold of the token can't lock you out with a new one. With the hub built into the desktop app, click **Change token** on that PC. For a hub in Docker or a server in the cloud, set a new `SYNC_TOKEN` where it is set up (see [If your sync token leaked](#token_stolen)).
+
+## device_limit
+**"Your hub or server has as many devices as it takes."** A server accepts 50 devices, so a leaked token can't register thousands. Each install of the app counts once, however often it is reinstalled with its data kept. If you reached it with your own devices, report it; removing old devices comes in a later version.
+
+## token_stolen
+**If your sync token leaked** (a screenshot of the pairing code, a shared `.env` file, a lost phone):
+1. Make a new token on the hub's own computer. With the hub built into the desktop app: **Settings → Hub & sync → Sync → Change token** on that PC. For a hub in Docker or a cloud server: put a new random `SYNC_TOKEN` (at least 32 characters, for example from `openssl rand -base64 32`) where it is set up, and restart it.
+2. Pair every device again ([Pair your phone](pair-your-phone.md)). The old token stops working at once.
+3. If you run the server yourself, look in its log for `push deletes many rows` or `sign-in failed`: they show a device deleting a lot at once, or someone guessing tokens.
 
 ## protocol_unsupported
 **"This app and your hub or server are different versions. Update the older one."** Install the latest Avchetan on every device, and update the server if you run one yourself. Your entries wait on each device until they can sync.

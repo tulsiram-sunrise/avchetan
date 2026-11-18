@@ -121,7 +121,7 @@ The `.env` file holds no secrets, unless you add a cloud AI key to it. Never sha
 pnpm --filter @avchetan/server start:hub
 ```
 
-On the first start it prints **Your sync token**. Copy it somewhere safe: it's shown only once. The hub is ready when it shows `listening`. Keep the window open; closing it stops the hub.
+On the first start it makes your **sync token** and saves it in `apps\server\sync-token.txt` (it is never shown in the window, whose text can end up in screenshots). Open that file, copy the token somewhere safe, then delete the file. To choose the token yourself, put `SYNC_TOKEN=` and a random text of at least 32 characters into the `.env` file before the first start. The hub is ready when it shows `listening`. Keep the window open; closing it stops the hub.
 
 If Windows asks whether to allow **Node.js** on networks, tick **Private networks** only, untick **Public networks**, and click **Allow**.
 
@@ -154,7 +154,7 @@ For a machine that is always on, such as a home server or a second PC, without t
 2. Run `docker compose -f deploy/home-hub/compose.yml up -d --build`. The first build takes a few minutes.
 
    To have the hub organize entries for your phone with [Ollama](https://ollama.com) on the same machine, start it like this instead, with a model you have downloaded in Ollama: `EXTRACTION_PROVIDER=ollama EXTRACTION_MODEL=<model name> docker compose -f deploy/home-hub/compose.yml up -d --build`. On Windows PowerShell, run `$env:EXTRACTION_PROVIDER="ollama"; $env:EXTRACTION_MODEL="<model name>"` first, then the command without the two settings.
-3. Run `docker compose -f deploy/home-hub/compose.yml logs server` and copy the **sync token**. It is shown only once, on the first start, so keep it somewhere safe.
+3. Run `docker compose -f deploy/home-hub/compose.yml exec server cat /secrets/sync-token.txt` and copy the **sync token** somewhere safe. The hub made it on the first start and keeps it in its own `hub-secrets` volume; it is never printed in the log. To choose the token yourself, set `SYNC_TOKEN` (at least 32 characters) before the first start, as with the other settings above.
 4. Connect each device with the server's address, for example `http://192.168.1.20:8787`, and the token: see [Connect by hand](pair-your-phone.md#connect-by-hand).
 
 Your data stays in a Docker volume on that machine, and the hub starts again by itself after a restart. To stop it, run `docker compose -f deploy/home-hub/compose.yml down`. Don't add `-v` unless you want to delete all your synced data.

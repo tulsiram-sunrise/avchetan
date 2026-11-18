@@ -24,7 +24,10 @@ Single user, but the data is intimate (health, moods, relationships) and API key
 
 ## Server hardening
 
-- Constant-time token comparison; rate limiting; request size limits; no stack traces in responses.
+- Constant-time token comparison; no stack traces in responses.
+- **Limits** (`apps/server/src/app.ts`, `rate-limit.ts`): every `/v1` body is capped (64 KB, a push 2 MB); requests are limited per device (60 a minute, pulls 600) and per network address (1,500 a minute, signed in or not, whatever device ID they name), and ended windows are dropped; a server takes 50 devices (`device_limit`); failed sign-ins from one address wait longer each time (up to 3 s) and are logged at `warn` by count, never the token or the address; the public health check asks the database at most once a second.
+- **Token rotation only on the hub's own machine** (loopback, `token_rotate_remote` otherwise), logged at `warn`, so a stolen token can't lock the owner out. A token the server makes itself is saved to `SYNC_TOKEN_FILE` (owner-only, `/secrets` in Docker, outside the data that snapshots copy), never printed. The guides make the token up front (`SYNC_TOKEN`) where they can.
+- A push that deletes 50 rows or more is logged at `warn` with its count. An answer that fails sends its code and a fixed message, never the provider's text; startup failures log a code.
 - Least-privilege DB user (no superuser; extension created by migration owner once).
 - Dependencies scanned (`pnpm audit` in CI, Renovate/Dependabot later).
 

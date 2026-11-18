@@ -1,25 +1,32 @@
 import { devices } from '@avchetan/db/pg';
-import { MAX_PUSH_BYTES, pullQuerySchema, pushRequestSchema } from '@avchetan/sync/protocol';
+import { createLogger } from '@avchetan/shared';
+import { pullQuerySchema, pushRequestSchema } from '@avchetan/sync/protocol';
 import { eq } from 'drizzle-orm';
 import { Hono } from 'hono';
-import { bodyLimit } from 'hono/body-limit';
 import { ApiError } from '../api-error';
 import type { AppDeps, AppEnv } from '../app';
 import { applyPush } from '../sync/apply-push';
 import { readPull } from '../sync/read-pull';
 import { readBody } from './read-body';
 
-export function syncRoutes({ db, clock, onPush }: AppDeps) {
-  const limitBody = bodyLimit({
-    maxSize: MAX_PUSH_BYTES,
-    onError: () => {
-      throw new ApiError(413, 'payload_too_large', 'Send fewer changes at once');
-    },
-  });
+const log = createLogger('sync');
 
+/** A push that deletes at least this many rows is logged: a stolen token wiping data shows. */
+export const MANY_DELETES = 50;
+
+const deletes = (changes: readonly { row: unknown }[]) =>
+  changes.filter(({ row }) => typeof (row as { deletedAt?: unknown })?.deletedAt === 'string')
+    .length;
+
+export function syncRoutes({ db, clock, onPush }: AppDeps) {
   return new Hono<AppEnv>()
-    .post('/sync/push', limitBody, async (c) => {
+    .post('/sync/push', async (c) => {
       const { changes } = await readBody(c, pushRequestSchema);
+      const deleted = deletes(changes);
+      // IDs and counts only.
+      if (deleted >= MANY_DELETES) {
+        log.warn('push deletes many rows', { deviceId: c.get('deviceId'), rows: deleted });
+      }
       const result = await applyPush(db, changes, clock.now());
       onPush?.(c.get('deviceId'), result.acked);
       return c.json(result);

@@ -20,6 +20,8 @@ const envSchema = z
     BACKUP_DIR: z.string().min(1).default('./pglite-backups'),
     SERVER_PROFILE: z.enum(SERVER_PROFILES).default('cloud'),
     SYNC_TOKEN: z.string().min(32).optional(),
+    /** Where a token the server makes itself (no SYNC_TOKEN) is saved, readable by its owner only. */
+    SYNC_TOKEN_FILE: z.string().min(1).default('./sync-token.txt'),
     PORT: z.coerce.number().int().min(1).max(65_535).default(8787),
     BIND_HOST: z.string().min(1).default('0.0.0.0'),
     LOG_LEVEL: z.enum(LOG_LEVELS).default('info'),
