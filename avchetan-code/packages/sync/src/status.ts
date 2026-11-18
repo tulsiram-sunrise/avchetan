@@ -1,5 +1,5 @@
 import type { ClientStore } from '@avchetan/db/sqlite';
-import { errorMessage } from '@avchetan/shared';
+import { createLogger, describeError, errorMessage } from '@avchetan/shared';
 import { z } from 'zod';
 
 const SYNC_STATES = [
@@ -9,6 +9,8 @@ const SYNC_STATES = [
   'synced',
   'unauthorized',
   'server_unreachable',
+  /** A different server answered at the saved addresses; nothing was sent to it. */
+  'wrong_server',
   'failed',
 ] as const;
 export type SyncState = (typeof SYNC_STATES)[number];
@@ -21,6 +23,8 @@ export const syncStatusSchema = z.object({
   stuck: z.int(),
   /** Rows from another device this app can't read yet, set aside (ADR-0032). */
   setAside: z.int().default(0),
+  /** Why the last sync failed, so the right guide section is linked. Null once one succeeds. */
+  errorCode: z.string().max(64).nullable().default(null),
 });
 export type SyncStatus = z.infer<typeof syncStatusSchema>;
 
@@ -29,13 +33,24 @@ export const INITIAL_STATUS: SyncStatus = {
   clockSkew: false,
   stuck: 0,
   setAside: 0,
+  errorCode: null,
 };
+
+const log = createLogger('sync');
 
 /** The latest result, kept so every screen and window can read it. */
 export async function loadSyncStatus(store: ClientStore): Promise<SyncStatus> {
   const stored = await store.sync.getState('status');
   if (!stored) return INITIAL_STATUS;
-  const parsed = syncStatusSchema.safeParse(JSON.parse(stored));
+  let value: unknown;
+  try {
+    value = JSON.parse(stored);
+  } catch {
+    // A status cut short (the app closed while writing it) reads as no status yet.
+    log.warn('saved sync status is not JSON');
+    return INITIAL_STATUS;
+  }
+  const parsed = syncStatusSchema.safeParse(value);
   return parsed.success ? parsed.data : INITIAL_STATUS;
 }
 
@@ -55,8 +70,22 @@ const STATE_TEXT: Record<SyncState, SyncSummary> = {
     text: `${errorMessage('server_unreachable')}.`,
     helpCode: 'server_unreachable',
   },
+  wrong_server: {
+    text: 'A different server answered at this address. Pair again.',
+    helpCode: 'wrong_server',
+  },
   failed: { text: "Sync didn't finish. It will try again.", helpCode: 'server_unreachable' },
 };
+
+/** A failed sync, with what went wrong when the code is known. */
+function describeFailure(errorCode: string | null): SyncSummary {
+  if (!errorCode) return STATE_TEXT.failed;
+  const { message, section } = describeError({ code: errorCode, message: '' });
+  return {
+    text: message ? `Sync didn't finish: ${message}. It will try again.` : STATE_TEXT.failed.text,
+    helpCode: section,
+  };
+}
 
 /** What to tell the user. A problem they can fix comes before a state that resolves itself. */
 export function describeSync(status: SyncStatus): SyncSummary {
@@ -75,6 +104,7 @@ export function describeSync(status: SyncStatus): SyncSummary {
       helpCode: 'sync_set_aside',
     };
   }
+  if (status.state === 'failed') return describeFailure(status.errorCode);
   return STATE_TEXT[status.state];
 }
 

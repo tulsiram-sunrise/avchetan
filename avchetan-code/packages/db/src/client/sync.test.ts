@@ -70,6 +70,30 @@ describe('outbox', () => {
     expect((await store.sync.listOutbox()).some((e) => e.recordId === task.id)).toBe(true);
   });
 
+  it('walks every pointer once in batches, even when they share one time', async () => {
+    const { store } = await openTestStore();
+    await store.write(async (tx) => {
+      for (let n = 0; n < 25; n += 1) await store.repos.tasks.create(tx, { title: `Task ${n}` });
+    });
+    await store.sync.ackOutbox(await store.sync.listOutbox());
+    // Queued again for a new server: every pointer gets the same enqueued_at.
+    await store.sync.setStates({}, { requeue: true });
+    const all = await store.sync.listOutbox();
+    expect(new Set(all.map((entry) => entry.enqueuedAt)).size).toBe(1);
+
+    const seen: string[] = [];
+    let after: (typeof all)[number] | undefined;
+    for (;;) {
+      const batch = await store.sync.listOutbox(7, after);
+      if (batch.length === 0) break;
+      seen.push(...batch.map((entry) => `${entry.tableName}:${entry.recordId}`));
+      after = batch.at(-1);
+    }
+
+    expect(seen).toEqual(all.map((entry) => `${entry.tableName}:${entry.recordId}`));
+    expect(new Set(seen).size).toBe(all.length);
+  });
+
   it('queues every row again, deleted ones too, for a new server', async () => {
     const { store } = await openTestStore();
     const kept = await store.write((tx) => store.repos.tasks.create(tx, { title: 'Buy milk' }));

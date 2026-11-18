@@ -21,6 +21,7 @@ import {
   ackOutbox,
   enqueueEverything,
   listOutbox,
+  type OutboxPosition,
   rejectOutbox,
   stuckOutboxCount,
   waitingEntries,
@@ -130,7 +131,7 @@ export async function openClientStore(options: OpenClientStoreOptions) {
     recordAsk: (entry: Omit<NewAskEntry, 'id' | 'createdAt'>): Promise<void> =>
       write((tx) => insertAskEntry(tx, { ...entry, id: newId(), createdAt: clock.now() })),
     sync: {
-      listOutbox: (limit?: number) => listOutbox(database.db, limit),
+      listOutbox: (limit?: number, after?: OutboxPosition) => listOutbox(database.db, limit, after),
       /** The current row for each pointer: what gets pushed. A row can't be missing, only tombstoned. */
       readOutboxRow: (tableName: keyof typeof SYNCED_TABLES, recordId: string) =>
         getById(database.db, SYNCED_TABLES[tableName], recordId),
@@ -167,6 +168,21 @@ export async function openClientStore(options: OpenClientStoreOptions) {
       /** Applies the set-aside rows this app can read now (after an update). */
       retrySetAside: (read: ReadRow): Promise<number> => write((tx) => retrySetAside(tx, read)),
       setAsideCount: () => setAsideCount(database.db),
+      /**
+       * Several sync state values in one transaction, with every row queued again first when
+       * `requeue` is set: moving to another server, or to the same one after its data went
+       * back in time, must not stop half-way and later skip rows (sync engine, followServer).
+       */
+      setStates: (
+        values: Partial<Record<SyncStateKey, string>>,
+        options: { requeue?: boolean } = {},
+      ): Promise<void> =>
+        write(async (tx) => {
+          if (options.requeue) await enqueueEverything(tx, clock.now());
+          for (const [key, value] of Object.entries(values)) {
+            await setSyncState(tx, key as SyncStateKey, value as string);
+          }
+        }),
       getState: (key: SyncStateKey) => getSyncState(database.db, key),
       setState: (key: SyncStateKey, value: string) =>
         database.write((tx) => setSyncState(tx, key, value)),

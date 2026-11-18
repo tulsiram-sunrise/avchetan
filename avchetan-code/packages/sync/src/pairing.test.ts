@@ -56,6 +56,14 @@ describe('pairing links', () => {
 });
 
 describe('pairWithLink', () => {
+  it('expects the server the code names from then on', async () => {
+    await store.sync.setStates({ expected_server_id: OTHER });
+
+    await pairWithLink({ store, secrets, fetch: network({ [HOME]: SERVER }) }, link);
+
+    expect(await store.sync.getState('expected_server_id')).toBe(SERVER);
+  });
+
   it('keeps the addresses that reach the server, plus Tailscale for later', async () => {
     const result = await pairWithLink({ store, secrets, fetch: network({ [HOME]: SERVER }) }, link);
 

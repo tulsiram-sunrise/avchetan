@@ -1,4 +1,4 @@
-import { and, asc, count, eq, gte, lt, min, sql } from 'drizzle-orm';
+import { and, asc, count, eq, gt, gte, lt, min, or, sql } from 'drizzle-orm';
 import { syncOutbox } from '../schema/sqlite/tables';
 import type { ClientDb, Tx } from './database';
 import { SYNCED_TABLES, type SyncedTableName } from './synced';
@@ -13,8 +13,19 @@ export type OutboxEntry = {
   attempts: number;
 };
 
-/** Oldest pending outbox pointers first (the sync engine reads current rows for them). */
-export async function listOutbox(db: ClientDb, limit = 500): Promise<OutboxEntry[]> {
+/** Where a walk through the outbox got to: the last entry it read. */
+export type OutboxPosition = Pick<OutboxEntry, 'enqueuedAt' | 'tableName' | 'recordId'>;
+
+/**
+ * Oldest pending outbox pointers first (the sync engine reads current rows for them). With
+ * `after`, only those after that entry, so one push walks the outbox once and a refused row is
+ * sent once per sync, not once per batch.
+ */
+export async function listOutbox(
+  db: ClientDb,
+  limit = 500,
+  after?: OutboxPosition,
+): Promise<OutboxEntry[]> {
   const rows = await db
     .select({
       tableName: syncOutbox.tableName,
@@ -23,8 +34,27 @@ export async function listOutbox(db: ClientDb, limit = 500): Promise<OutboxEntry
       attempts: syncOutbox.attempts,
     })
     .from(syncOutbox)
-    .where(lt(syncOutbox.attempts, MAX_OUTBOX_ATTEMPTS))
-    .orderBy(asc(syncOutbox.enqueuedAt))
+    .where(
+      and(
+        lt(syncOutbox.attempts, MAX_OUTBOX_ATTEMPTS),
+        after
+          ? or(
+              gt(syncOutbox.enqueuedAt, after.enqueuedAt),
+              and(
+                eq(syncOutbox.enqueuedAt, after.enqueuedAt),
+                or(
+                  gt(syncOutbox.tableName, after.tableName),
+                  and(
+                    eq(syncOutbox.tableName, after.tableName),
+                    gt(syncOutbox.recordId, after.recordId),
+                  ),
+                ),
+              ),
+            )
+          : undefined,
+      ),
+    )
+    .orderBy(asc(syncOutbox.enqueuedAt), asc(syncOutbox.tableName), asc(syncOutbox.recordId))
     .limit(limit);
   return rows as OutboxEntry[];
 }

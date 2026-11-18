@@ -28,13 +28,16 @@ describe('assertSafeServerUrl', () => {
     'http://100.128.0.1:8787',
     'http://172.32.0.1:8787',
     'ftp://192.168.1.20',
+    // Names that start like an address are names, sent over the internet in the clear.
+    'http://100.100.example.com:8787',
+    'http://192.168.1.20.example.com:8787',
   ])('refuses %s, even on a trusted network', (url) => {
     expect(() => assertSafeServerUrl(url, true)).toThrowError(/https/);
   });
 });
 
 describe('describeSync', () => {
-  const ok = { state: 'synced', clockSkew: false, stuck: 0, setAside: 0 } as const;
+  const ok = { state: 'synced', clockSkew: false, stuck: 0, setAside: 0, errorCode: null } as const;
 
   it('says all is well', () => {
     expect(describeSync(ok)).toEqual({ text: 'Up to date.', helpCode: null });

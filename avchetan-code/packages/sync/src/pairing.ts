@@ -86,6 +86,7 @@ export async function pairWithLink(deps: PairingDeps, text: string): Promise<{ u
     urls,
     token: link.token,
     trustLocalNetwork: true,
+    serverId: link.serverId,
   });
   return { urls };
 }

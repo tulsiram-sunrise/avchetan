@@ -1,5 +1,12 @@
 import { type DevicePlatform, type ExtractionMode, SYNCED_COLUMNS_FINGERPRINT } from '@avchetan/db';
-import type { ClientStore, RemoteChange, SetAsideRow, SyncedTableName } from '@avchetan/db/sqlite';
+import type {
+  ClientStore,
+  OutboxPosition,
+  RemoteChange,
+  SetAsideRow,
+  SyncedTableName,
+  SyncStateKey,
+} from '@avchetan/db/sqlite';
 import {
   type Cancel,
   createLogger,
@@ -29,6 +36,7 @@ const log = createLogger('sync');
 const POLL_MS = 30_000;
 const DEBOUNCE_MS = 2_000;
 const REGISTRATION = 'registration';
+const EXPECTED_SERVER = 'expected_server_id';
 const DATA_EPOCH = 'data_epoch';
 
 export type SyncDevice = {
@@ -126,18 +134,27 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
     await store.sync.setState('status', next);
   }
 
-  /** The first address that answers; all addresses belong to one server. */
+  /**
+   * The first address where the expected server answers (any server, when none is expected yet).
+   * Health needs no token, so a different server at an address (another hub, or someone else's
+   * machine on a café's Wi-Fi at the home address) gets nothing, and the next address is tried:
+   * away from home, Tailscale still reaches the right one.
+   */
   async function findServer(
     urls: readonly string[],
-  ): Promise<{ baseUrl: string; health: HealthResponse } | null> {
+    expected: string,
+  ): Promise<{ baseUrl: string; health: HealthResponse } | 'wrong_server' | null> {
+    let wrongServer = false;
     for (const baseUrl of urls) {
       try {
-        return { baseUrl, health: await fetchHealth(fetch, baseUrl) };
+        const health = await fetchHealth(fetch, baseUrl);
+        if (!expected || health.serverId === expected) return { baseUrl, health };
+        wrongServer = true;
       } catch (error) {
         log.debug('address did not answer', { code: toAppError(error).code });
       }
     }
-    return null;
+    return wrongServer ? 'wrong_server' : null;
   }
 
   /**
@@ -153,24 +170,50 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
     // A device that hasn't seen an epoch yet, or a server too old to send one, carries on.
     const rewound = sameServer && !!dataEpoch && !!previousEpoch && previousEpoch !== dataEpoch;
     if (sameServer && !rewound) {
-      if (dataEpoch && dataEpoch !== previousEpoch)
-        await store.sync.setState(DATA_EPOCH, dataEpoch);
+      const changed: Partial<Record<SyncStateKey, string>> = {};
+      if (dataEpoch && dataEpoch !== previousEpoch) changed[DATA_EPOCH] = dataEpoch;
+      // The first server to answer at newly typed addresses becomes the expected one.
+      if ((await store.sync.getState(EXPECTED_SERVER)) !== serverId) {
+        changed[EXPECTED_SERVER] = serverId;
+      }
+      if (Object.keys(changed).length > 0) await store.sync.setStates(changed);
       return;
     }
-    if (previous) await store.sync.enqueueEverything();
-    await store.sync.setState('server_id', serverId);
-    await store.sync.setState(DATA_EPOCH, dataEpoch ?? '');
-    await store.sync.setState('pull_cursor', '0');
-    // A pull of everything under way was from the old server or epoch: start it again.
-    await store.sync.setState('refill_cursor', '');
-    await store.sync.setState(REGISTRATION, '');
+    // All in one transaction: an app closed half-way could otherwise keep the new server ID
+    // with the old cursor, and skip rows for good.
+    await store.sync.setStates(
+      {
+        server_id: serverId,
+        [EXPECTED_SERVER]: serverId,
+        [DATA_EPOCH]: dataEpoch ?? '',
+        pull_cursor: '0',
+        // A pull of everything under way was from the old server or epoch: start it again.
+        refill_cursor: '',
+        [REGISTRATION]: '',
+      },
+      { requeue: !!previous },
+    );
+  }
+
+  /**
+   * The server this device expects at its addresses: set by pairing, or by the first server to
+   * answer at newly typed ones. A device from before this was kept expects the one it last
+   * synced with. Empty: whichever answers.
+   */
+  async function expectedServer(): Promise<string> {
+    const expected = await store.sync.getState(EXPECTED_SERVER);
+    return expected ?? (await store.sync.getState('server_id')) ?? '';
   }
 
   async function push(api: ReturnType<typeof createApiClient>): Promise<void> {
     let clockSkew = false;
+    // One walk through the outbox: a refused row is sent once per sync, not once per batch, so
+    // a long backlog can't use up its tries in one go.
+    let after: OutboxPosition | undefined;
     while (true) {
-      const entries = await store.sync.listOutbox(MAX_PUSH_CHANGES);
+      const entries = await store.sync.listOutbox(MAX_PUSH_CHANGES, after);
       if (entries.length === 0) break;
+      after = entries.at(-1);
       const changes = await Promise.all(
         entries.map(async ({ tableName, recordId }) => ({
           table: tableName,
@@ -195,8 +238,6 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
         })),
       );
       clockSkew ||= rejected.some(({ code }) => code === 'clock_skew');
-      // Everything left was refused, and sending it again this cycle would change nothing.
-      if (acked.length === 0) break;
     }
     current = { ...current, clockSkew };
     await store.sync.setState('last_push_at', store.clock.now());
@@ -275,9 +316,14 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
     }
 
     await report('syncing');
-    const server = await findServer(urls);
+    const server = await findServer(urls, await expectedServer());
+    if (server === 'wrong_server') {
+      log.warn('a different server answered');
+      await report('wrong_server', { errorCode: 'wrong_server' });
+      return 'idle';
+    }
     if (!server) {
-      await report('server_unreachable');
+      await report('server_unreachable', { errorCode: 'server_unreachable' });
       throw new SyncError('server_unreachable', 'No address of the server answered');
     }
     const { serverId } = server.health;
@@ -288,16 +334,17 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
     } catch (error) {
       const { code } = toAppError(error);
       if (code === 'unauthorized') {
-        await report('unauthorized');
+        await report('unauthorized', { errorCode: code });
         return 'idle';
       }
       // The server forgot this device, for example after a restore. Register again next time.
       if (code === 'unknown_device') await store.sync.setState(REGISTRATION, '');
-      await report('failed');
+      await report('failed', { errorCode: code });
       throw error;
     }
 
     await report('synced', {
+      errorCode: null,
       stuck: await store.sync.stuckCount(),
       setAside: await store.sync.setAsideCount(),
     });

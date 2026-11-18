@@ -224,6 +224,7 @@ const SYNC_MESSAGES: Record<SyncState, string> = {
   offline: 'This PC is offline; it syncs when it’s back',
   unauthorized: 'Your hub or server refused this PC’s sync token',
   server_unreachable: 'Can’t reach your hub or server',
+  wrong_server: 'A different server answered at this PC’s hub address. Pair again',
   failed: 'Sync failed; Settings → Hub & sync → Sync says why',
 };
 

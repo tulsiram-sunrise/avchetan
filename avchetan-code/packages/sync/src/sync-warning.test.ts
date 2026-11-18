@@ -18,7 +18,13 @@ const base = {
   lastSyncedAt: hoursAgo(30),
   waiting: 12,
   oldestWaitingAt: hoursAgo(25),
-  status: { state: 'server_unreachable', clockSkew: false, stuck: 0, setAside: 0 } as const,
+  status: {
+    state: 'server_unreachable',
+    clockSkew: false,
+    stuck: 0,
+    setAside: 0,
+    errorCode: null,
+  } as const,
   nowMs: NOW_MS,
 };
 const unreachable = { fix: SYNC_WARNING_FIX, helpCode: 'server_unreachable' };
@@ -44,6 +50,9 @@ describe('syncWarning', () => {
     expect(clock).toMatchObject({ helpCode: 'clock_skew' });
     const stuck = syncWarning({ ...base, status: { ...base.status, stuck: 3 } });
     expect(stuck).toMatchObject({ helpCode: 'sync_issue' });
+    const other = syncWarning({ ...base, status: { ...base.status, state: 'wrong_server' } });
+    expect(other).toMatchObject({ helpCode: 'wrong_server' });
+    expect(other?.fix).toMatch(/Pair again/);
     // Offline or a sync that just failed: the usual can't-reach advice.
     for (const state of ['offline', 'failed', 'synced'] as const) {
       expect(syncWarning({ ...base, status: { ...base.status, state } })).toMatchObject(
