@@ -10,6 +10,7 @@
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run --passWithNoTests",
+    "coverage": "vitest run --passWithNoTests --coverage --coverage.reporter=text-summary --coverage.include=src/**",
     "test:live": "vitest run --config vitest.live.config.ts src/",
     "eval:extraction": "vitest run --config vitest.live.config.ts test/eval"
   },

@@ -344,6 +344,35 @@ describe('push and pull', () => {
     expect(result.rejected).toMatchObject([{ table: 'routines', code: 'validation' }]);
     expect((await pull()).changes.map((c) => c.row)).toEqual([routine, day]);
   });
+
+  // Characterization: Day 6 of v0.5.0 (tolerant sync) turns this round, so the hub stores and
+  // passes on a value from a newer app instead of leaving it stuck in that app's outbox.
+  it('today: refuses a row with an enum value or a repeat-rule field it does not know', async () => {
+    const entry = { ...(await clientRow()), source: 'mobile_share' };
+    const { store } = await openTestStore({ start: NOW, newId: () => crypto.randomUUID() });
+    const routine = await store.write((tx) =>
+      store.repos.routines.create(tx, {
+        title: 'Water plants',
+        kind: 'confirm',
+        repeatRule: { freq: 'weekly', start: '2026-10-26', byWeekday: ['monday'] },
+      }),
+    );
+    const newerRule = {
+      ...routine,
+      repeatRule: { ...(routine.repeatRule as object), bySetPos: [1] },
+    };
+
+    const result = await push([
+      { table: 'raw_logs', row: entry },
+      { table: 'routines', row: newerRule },
+    ]);
+
+    expect(result.acked).toEqual([]);
+    expect(result.rejected).toMatchObject([
+      { id: entry.id, code: 'validation' },
+      { id: routine.id, code: 'validation' },
+    ]);
+  });
 });
 
 describe('status', () => {

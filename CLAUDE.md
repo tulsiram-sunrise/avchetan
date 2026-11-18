@@ -76,6 +76,7 @@ Requirements: Node ≥ 24, pnpm (pinned via `packageManager`; `corepack enable`)
 | `pnpm typecheck` | `tsc --noEmit` in every package (Turbo) |
 | `pnpm test` | Vitest in every package (Turbo) |
 | `pnpm --filter @avchetan/<pkg> test -- --watch` | Watch one package's tests |
+| `pnpm coverage` | Test coverage per package (a summary, not a CI gate) |
 | `pnpm --filter @avchetan/mobile bundle` | Build the Android Hermes bundle (no SDK or device needed) |
 | `pnpm db:generate` | Generate SQLite + Postgres migrations and bundle them (commit the output) |
 | `pnpm licenses:check` | Fail on production dependencies whose license isn't AGPL-compatible |
