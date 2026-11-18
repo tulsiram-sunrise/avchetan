@@ -12,7 +12,8 @@
     "build": "node scripts/build.ts",
     "build:sidecar": "node scripts/build-sidecar.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --passWithNoTests",
+    "coverage": "vitest run --passWithNoTests --coverage --coverage.reporter=text-summary --coverage.include=src/**"
   },
   "dependencies": {
     "@avchetan/core": "workspace:*",

@@ -10,7 +10,8 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --passWithNoTests",
+    "coverage": "vitest run --passWithNoTests --coverage --coverage.reporter=text-summary --coverage.include=src/**"
   },
   "dependencies": {
     "uuid": "14.0.3",

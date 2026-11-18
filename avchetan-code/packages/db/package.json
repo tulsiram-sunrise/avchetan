@@ -13,6 +13,7 @@
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run --passWithNoTests",
+    "coverage": "vitest run --passWithNoTests --coverage --coverage.reporter=text-summary --coverage.include=src/**",
     "db:generate": "drizzle-kit generate --config drizzle.sqlite.config.ts && drizzle-kit generate --config drizzle.pg.config.ts && node scripts/bundle-migrations.ts"
   },
   "dependencies": {

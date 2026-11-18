@@ -9,7 +9,8 @@
     "android": "expo run:android",
     "bundle": "expo export --platform android --output-dir dist",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --passWithNoTests",
+    "coverage": "vitest run --passWithNoTests --coverage --coverage.reporter=text-summary --coverage.include=src/**"
   },
   "dependencies": {
     "@avchetan/core": "workspace:*",

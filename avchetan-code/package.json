@@ -11,6 +11,7 @@
     "build": "turbo run build",
     "dev": "turbo run dev",
     "test": "turbo run test",
+    "coverage": "turbo run coverage --concurrency=1",
     "typecheck": "turbo run typecheck",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
@@ -31,10 +32,12 @@
   "devDependencies": {
     "@biomejs/biome": "2.6.3",
     "@types/node": "26.6.5",
+    "@vitest/coverage-v8": "5.1.0",
+    "fast-check": "4.10.2",
     "github-slugger": "2.0.0",
     "lefthook": "2.2.2",
     "turbo": "2.11.10",
     "typescript": "7.0.2",
-    "vitest": "5.0.5"
+    "vitest": "5.1.0"
   }
 }

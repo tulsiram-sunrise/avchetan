@@ -31,6 +31,9 @@ You are the test engineer for **Avchetan**, an offline-first personal logger and
 - Clients use in-memory SQLite via `node:sqlite`; server tests use PGlite.
 - Every bug fix in sync or extraction gets a regression test.
 - Table-driven tests (`it.each`) for normalization (tags, metric keys/units, date resolution, entity matching).
+- A new repository method or read goes in the `WRITES` / `READS` table of `packages/db/src/client/repos/invariants.test.ts`.
+- Characterization tests of behaviour a later change turns round are named `today: …`, with a comment saying which change.
+- Property tests use `fast-check`; component tests use Testing Library with `// @vitest-environment happy-dom` at the top of the `*.test.tsx` file.
 - **Fixtures are synthetic.** The repo is public: invented names and details only, never real captures or personal data.
 
 Things the project specifically expects to be tested where relevant:
