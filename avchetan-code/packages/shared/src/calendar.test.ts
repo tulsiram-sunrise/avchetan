@@ -5,6 +5,7 @@ import {
   lastOfMonth,
   monthWeeks,
   moveDates,
+  msUntilNextDay,
   shiftMonth,
   startOfDay,
   weekOf,
@@ -15,6 +16,14 @@ describe('calendar', () => {
     expect(startOfDay('2026-11-05', 'Asia/Kolkata')).toBe('2026-11-04T18:30:00.000Z');
     expect(startOfDay('2026-11-05', 'UTC')).toBe('2026-11-05T00:00:00.000Z');
     expect(startOfDay('2026-11-05', 'America/Los_Angeles')).toBe('2026-11-05T08:00:00.000Z');
+  });
+
+  it('says how long until the next local day', () => {
+    // 23:30 in India is 18:00 UTC.
+    expect(msUntilNextDay('2026-11-05T18:00:00.000Z', 'Asia/Kolkata')).toBe(30 * 60_000);
+    expect(msUntilNextDay('2026-11-05T00:00:00.000Z', 'UTC')).toBe(86_400_000);
+    // Berlin's 25-hour day: from its start, 25 hours to the next.
+    expect(msUntilNextDay('2026-10-24T22:00:00.000Z', 'Europe/Berlin')).toBe(25 * 3_600_000);
   });
 
   it('gives a daylight-saving day its real length', () => {

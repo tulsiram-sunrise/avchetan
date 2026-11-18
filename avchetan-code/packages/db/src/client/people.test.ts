@@ -387,3 +387,29 @@ describe('listPeople (SQL rollup)', () => {
     });
   });
 });
+
+describe('entitiesInLogs', () => {
+  it('leaves out a mention on a deleted activity', async () => {
+    const { store, r, entry, person, mention } = await setup();
+    const log = await entry('Migration call with Rahul');
+    const rahul = await person('Rahul');
+    const call = await store.write((tx) =>
+      r.activities.create(tx, {
+        rawLogId: log.id,
+        categoryId: seedCategoryId('work'),
+        title: 'Migration call',
+        loggedDate: today,
+      }),
+    );
+    await mention(rahul.id, 'activity', call.id, 'with');
+    expect(await store.people.entitiesInLogs(store.db, [log.id])).toEqual([rahul.id]);
+
+    // Deleted on another device; the mention's own delete hasn't arrived yet.
+    await store.write((tx) =>
+      tx.run(
+        `UPDATE activities SET deleted_at = '2026-10-30T00:00:00.000Z' WHERE id = '${call.id}'`,
+      ),
+    );
+    expect(await store.people.entitiesInLogs(store.db, [log.id])).toEqual([]);
+  });
+});

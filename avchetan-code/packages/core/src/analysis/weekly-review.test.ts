@@ -8,6 +8,7 @@ import type { LlmDeps } from '../llm/generate-structured';
 import type { ModelConfig } from '../providers/config';
 import { findDailyBrief, makeDailyBrief } from './daily-brief';
 import {
+  collectDays,
   findWeeklyReview,
   makeWeeklyReview,
   reviewFindings,
@@ -231,5 +232,33 @@ describe('the card’s lines', () => {
     );
     expect(weekChangesText(summary)).toBe('vs your recent weeks: Workout ↑ 4 days (2 days a week)');
     expect(weekChangesText({ ...summary, changes: [] })).toBeNull();
+  });
+});
+
+describe('collectDays', () => {
+  it('puts each entry on its day in the zone the days were read in', async () => {
+    // Saved on a trip in UTC; read back at home in India: 20:00Z on the 1st is the 2nd there.
+    const log = await store.write((tx) =>
+      store.repos.rawLogs.capture(tx, {
+        content: 'late walk',
+        source: 'desktop_text',
+        capturedTz: 'UTC',
+      }),
+    );
+    await store.write((tx) =>
+      tx.run(`UPDATE raw_logs SET captured_at = '2026-11-01T20:00:00.000Z' WHERE id = '${log.id}'`),
+    );
+
+    const days = await collectDays(store, {
+      last: '2026-11-02',
+      count: 2,
+      timeZone: 'Asia/Kolkata',
+      includePrivate: true,
+    });
+
+    expect(days.map((day) => [day.day, day.logged])).toEqual([
+      ['2026-11-01', false],
+      ['2026-11-02', true],
+    ]);
   });
 });

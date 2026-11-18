@@ -35,7 +35,7 @@ The timeline is one endless list, loaded 50 entries at a time and grouped by the
 - **Tasks:** a day lists tasks due that day (open ones first) and tasks completed that day. Overdue open tasks show on today only, under *Overdue*, so they don't fill every past day.
 - **Future days** show only their due tasks, so the calendar also works as a planner. Days without anything say so in one line.
 - **The summary line** counts entries, adds each category's main metric when there is one (`duration_min`, `distance_km`, …, from the [metric registry](../architecture/data-model.md#metric-key-registry)), and counts finished tasks. When the daily brief arrives (Phase 6), it takes this place on the days that have one.
-- **Dots:** one per category that has an activity that day, at most three (the categories with the most activities). A day with only unorganized entries gets a grey dot. No dot means nothing was logged.
+- **Dots:** one per category that has an activity that day, at most three (the categories with the most activities). A day with only unorganized entries (nothing organized from them yet: no activity and no task) gets a grey dot. No dot means nothing was logged.
 - **Category colours:** a fixed palette of eight colours, each with a light-theme and a dark-theme value. A category with its own `color` uses it. Otherwise its slug picks one from the palette, so the same category has the same colour on every device without syncing anything. The palette lives in `@avchetan/shared` so both apps use it.
 - **Pending and failed entries** show on their day like any other, with their status badge, as the timeline does now.
 - **Opening the app** shows today. The app remembers the selected day only while it is open.

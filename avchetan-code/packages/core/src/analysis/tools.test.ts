@@ -146,6 +146,22 @@ describe('analysis tools', () => {
     expect(found).toMatchObject([{ ref: 1, text: 'ran 7k, Knee hurt near the end' }]);
   });
 
+  it('applies the dates before the row limit', async () => {
+    // Typed first, so the oldest; about a day in March 2025.
+    await logWith('knee hurt on the stairs', { title: 'Knee pain', date: '2025-03-05' });
+    for (let i = 0; i < 35; i++) {
+      await logWith(`knee better, day ${i}`, { title: 'Walk', date: '2026-10-28' });
+    }
+
+    const found = await run(toolsFor(false).search_entries, {
+      text: 'knee',
+      from: '2025-03-01',
+      to: '2025-03-31',
+    });
+
+    expect(found).toMatchObject([{ date: '2025-03-05', text: 'knee hurt on the stairs' }]);
+  });
+
   it('dates a found entry by when it happened, not when it was typed', async () => {
     await logWith('yesterday my knee hurt', { title: 'Knee pain', date: '2026-10-20' });
 
@@ -275,6 +291,23 @@ describe('search_history', () => {
     expect(result).toMatchObject([
       { ref: 1, date: '2026-10-29', text: 'physio session' },
       { ref: 2, date: '2026-10-28', text: 'stiff leg after the run' },
+    ]);
+  });
+
+  it('asks the hub for entries saved around the dates', async () => {
+    const asked: Parameters<SearchHistory>[0][] = [];
+    const tools = withSearch(false, async (input) => {
+      asked.push(input);
+      return [];
+    });
+
+    await run(tools.search_history, { query: 'knee', from: '2026-03-01', to: '2026-03-31' });
+    await run(tools.search_history, { query: 'knee' });
+
+    // Any zone's March 1st, to a week after any zone's March 31st.
+    expect(asked).toEqual([
+      { query: 'knee', from: '2026-02-28T10:00:00.000Z', to: '2026-04-08T12:00:00.000Z' },
+      { query: 'knee' },
     ]);
   });
 

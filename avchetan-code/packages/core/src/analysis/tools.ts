@@ -1,10 +1,9 @@
 import { ENTITY_KINDS } from '@avchetan/db';
 import {
-  type Activity,
+  aroundInstants,
   type ClientStore,
   type DataScope,
   type RawLog,
-  type Task,
   taskState,
 } from '@avchetan/db/sqlite';
 import { type LocalDate, localDate, localTime } from '@avchetan/shared';
@@ -13,6 +12,19 @@ import { z } from 'zod';
 import { aggregate, aggregationSchema, groupingSchema, streaks } from './compute';
 
 const MAX_ROWS = 5000;
+/** Entries read for a dated word search, before each one's own date is checked. */
+const MAX_DATED_SEARCH = 500;
+/** Search by meaning also looks this many days after the range: "last Tuesday I ran 5 km". */
+const WRITTEN_LATER_DAYS = 7;
+
+/** Added to a result counted from the newest MAX_ROWS rows only, so the answer says so. */
+const cutNote = (cut: boolean) =>
+  cut
+    ? {
+        onlyNewest: MAX_ROWS,
+        note: `Only the newest ${MAX_ROWS} matching rows were read: say the real number may be higher.`,
+      }
+    : {};
 const DEFAULT_LIST = 30;
 const MAX_LIST = 100;
 const MAX_TEXT = 500;
@@ -87,7 +99,12 @@ export type Citations = ReturnType<typeof createCitations>;
  * Search by meaning on the hub (`POST /v1/search`): raw log IDs, closest first, or `null` when
  * the hub can't be reached or has search off. Apps pass it; without it the tool isn't offered.
  */
-export type SearchHistory = (input: { query: string }) => Promise<{ rawLogId: string }[] | null>;
+export type SearchHistory = (input: {
+  query: string;
+  /** Bounds on when entries were saved (instants), when the question names dates. */
+  from?: string | undefined;
+  to?: string | undefined;
+}) => Promise<{ rawLogId: string }[] | null>;
 
 /**
  * Read-only tools the model answers from. `scope` decides whether private entries are visible:
@@ -106,23 +123,16 @@ export function createAnalysisTools(
   const { db, queries, people, repos } = store;
   const cite = (rawLogId: string | null) => (rawLogId ? citations.numberOf(rawLogId) : null);
 
+  /** The category IDs behind a slug: several, when categories were merged. */
+  async function categoryIds(slug: string): Promise<string[]> {
+    const rows = await repos.categories.listResolved(db);
+    return rows.filter(({ resolved }) => resolved.slug === slug).map(({ id }) => id);
+  }
+
   async function categoryName(): Promise<(id: string) => string> {
     const rows = await repos.categories.listResolved(db);
     const slugs = new Map(rows.map(({ id, resolved }) => [id, resolved.slug]));
     return (id) => slugs.get(id) ?? 'other';
-  }
-
-  /** IDs of rows carrying `tag`, directly or through the entry they came from. */
-  async function taggedWith(tag: string) {
-    const targets = await queries.tagTargets(db, tag);
-    const of = (type: string) =>
-      new Set(targets.filter((t) => t.targetType === type).map((t) => t.targetId));
-    const logs = of('raw_log');
-    const activities = of('activity');
-    const tasks = of('task');
-    return (row: Activity | Task, type: 'activity' | 'task') =>
-      (type === 'activity' ? activities : tasks).has(row.id) ||
-      (row.rawLogId !== null && logs.has(row.rawLogId));
   }
 
   /** "Yesterday my knee hurt" belongs to the day it happened, not the day it was typed. */
@@ -146,25 +156,27 @@ export function createAnalysisTools(
       }));
   }
 
+  /**
+   * Activities matching the filters, newest first, filtered in the query. `cut`: there were
+   * more than MAX_ROWS, so totals count only the newest.
+   */
   async function matchingActivities(input: {
     category?: string | undefined;
     tag?: string | undefined;
     from?: string | undefined;
     to?: string | undefined;
   }) {
+    const ids = input.category ? await categoryIds(input.category) : undefined;
+    if (ids?.length === 0) return { rows: [], cut: false };
     const rows = await queries.activitiesForAnalysis(db, {
       ...scope,
       from: input.from,
       to: input.to,
+      categoryIds: ids,
+      tagPath: input.tag,
       limit: MAX_ROWS,
     });
-    const slugOf = await categoryName();
-    const hasTag = input.tag ? await taggedWith(input.tag) : null;
-    return rows.filter(
-      (row) =>
-        (!input.category || slugOf(row.categoryId) === input.category) &&
-        (!hasTag || hasTag(row, 'activity')),
-    );
+    return { rows, cut: rows.length === MAX_ROWS };
   }
 
   return {
@@ -197,12 +209,16 @@ export function createAnalysisTools(
         limit: z.number().int().min(1).max(MAX_LIST).optional(),
       }),
       execute: async ({ text, from, to, limit }) => {
+        const datedSearch = Boolean(from || to);
+        // With dates, the query keeps the entries that may belong to them, then each one's
+        // own date decides: the limit applies to the answer, not to the newest entries.
         const logs = await queries.searchLogs(db, {
           ...scope,
           text,
-          limit: limit ?? DEFAULT_LIST,
+          limit: datedSearch ? MAX_DATED_SEARCH : (limit ?? DEFAULT_LIST),
+          ...(datedSearch ? { around: { from, to } } : {}),
         });
-        return dated(logs, from, to);
+        return (await dated(logs, from, to)).slice(0, limit ?? DEFAULT_LIST);
       },
     }),
 
@@ -219,7 +235,13 @@ export function createAnalysisTools(
               to: date,
             }),
             execute: async ({ query, from, to }) => {
-              const found = await searchHistory({ query });
+              // The hub bounds when entries were saved; dated() then checks each one's day.
+              const saved = aroundInstants({ from, to }, WRITTEN_LATER_DAYS);
+              const found = await searchHistory({
+                query,
+                ...(saved.start ? { from: saved.start } : {}),
+                ...(saved.end ? { to: saved.end } : {}),
+              });
               if (found === null) return { unavailable: true };
               // Read here, so the privacy scope applies whatever the hub returned.
               const order = new Map(found.map(({ rawLogId }, index) => [rawLogId, index]));
@@ -242,7 +264,8 @@ export function createAnalysisTools(
       execute: async ({ text, limit, ...input }) => {
         const slugOf = await categoryName();
         const needle = text?.toLowerCase();
-        const rows = (await matchingActivities(input)).filter(
+        const matching = await matchingActivities(input);
+        const rows = matching.rows.filter(
           (row) =>
             !needle ||
             row.title.toLowerCase().includes(needle) ||
@@ -257,6 +280,7 @@ export function createAnalysisTools(
         const logOf = new Map(logs.map((log) => [log.id, log]));
         return {
           totalFound: rows.length,
+          ...cutNote(matching.cut),
           activities: shown.map((row) => ({
             ref: cite(row.rawLogId),
             date: row.loggedDate,
@@ -281,7 +305,7 @@ export function createAnalysisTools(
         groupBy: groupingSchema.optional(),
       }),
       execute: async ({ metric, agg, groupBy, ...input }) => {
-        const rows = await matchingActivities(input);
+        const { rows, cut } = await matchingActivities(input);
         const used = metric ? rows.filter((row) => typeof row.metrics[metric] === 'number') : rows;
         const measured = used.map((row) => ({
           date: row.loggedDate,
@@ -289,6 +313,7 @@ export function createAnalysisTools(
         }));
         return {
           ...aggregate(measured, metric ? agg : 'count', groupBy ?? 'none'),
+          ...cutNote(cut),
           sourceRefs: used.slice(0, 10).map((row) => cite(row.rawLogId)),
         };
       },
@@ -305,18 +330,18 @@ export function createAnalysisTools(
         limit: z.number().int().min(1).max(MAX_LIST).optional(),
       }),
       execute: async ({ status, from, to, tag, limit }) => {
-        const rows = await queries.tasksForAnalysis(db, { ...scope, limit: MAX_ROWS });
-        const hasTag = tag ? await taggedWith(tag) : null;
-        const matches = rows.filter((row) => {
-          const state = taskState(row);
-          if (state !== (status === 'overdue' ? 'open' : status)) return false;
-          if (status === 'overdue' && !(row.dueDate && row.dueDate < today)) return false;
-          if (from && !(row.dueDate && row.dueDate >= from)) return false;
-          if (to && !(row.dueDate && row.dueDate <= to)) return false;
-          return !hasTag || hasTag(row, 'task');
+        const matches = await queries.tasksForAnalysis(db, {
+          ...scope,
+          status,
+          today,
+          from,
+          to,
+          tagPath: tag,
+          limit: MAX_ROWS,
         });
         return {
           totalFound: matches.length,
+          ...cutNote(matches.length === MAX_ROWS),
           tasks: matches.slice(0, limit ?? DEFAULT_LIST).map((row) => ({
             ref: cite(row.rawLogId),
             title: row.title,
@@ -426,7 +451,7 @@ export function createAnalysisTools(
       description: 'Consecutive days with an activity in a category or tag.',
       inputSchema: z.object({ category: filters.category, tag: filters.tag }),
       execute: async (input) => {
-        const rows = await matchingActivities(input);
+        const { rows } = await matchingActivities(input);
         return streaks(
           rows.map((row) => row.loggedDate),
           today,

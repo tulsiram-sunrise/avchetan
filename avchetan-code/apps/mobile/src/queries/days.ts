@@ -9,16 +9,38 @@ import {
   type LocalMonth,
   lastOfMonth,
   localDate,
+  msUntilNextDay,
   systemTimeZone,
 } from '@avchetan/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useReducer } from 'react';
+import { AppState } from 'react-native';
 import { useServices } from '../services-context';
 
 /** Days view queries (docs/product/days-view.md). Every write refreshes all queries here. */
 
+/**
+ * Today's local date from the store's clock. Moves on by itself at midnight, and when the app
+ * comes back to the front (a timer doesn't run while the phone sleeps).
+ */
 export function useToday(): string {
   const { store } = useServices();
-  return localDate(store.clock.now(), systemTimeZone());
+  const zone = systemTimeZone();
+  const today = localDate(store.clock.now(), zone);
+  const [, recheck] = useReducer((n: number) => n + 1, 0);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: each new day sets the next timer
+  useEffect(() => {
+    // A second past midnight, so the clock is surely on the new day.
+    const timer = setTimeout(recheck, msUntilNextDay(store.clock.now(), zone) + 1000);
+    const watch = AppState.addEventListener('change', (state) => {
+      if (state === 'active') recheck();
+    });
+    return () => {
+      clearTimeout(timer);
+      watch.remove();
+    };
+  }, [store, zone, today]);
+  return today;
 }
 
 export function useDayEntries(day: string) {

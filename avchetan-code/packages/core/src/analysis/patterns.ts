@@ -119,7 +119,8 @@ const related = (a: string, b: string) => {
   return x === y || x.startsWith(`${y}/`) || y.startsWith(`${x}/`);
 };
 
-function weekOf(days: readonly DayFact[], sunday: LocalDate) {
+/** Whether a day is in the week (Monday to Sunday) ending `sunday`. */
+function inWeekEnding(sunday: LocalDate) {
   const monday = addDays(sunday, -6);
   return (day: DayFact) => day.day >= monday && day.day <= sunday;
 }
@@ -164,7 +165,7 @@ function changes(
   sunday: LocalDate,
   categoryName: (slug: string) => string,
 ): Candidate[] {
-  const thisWeek = days.filter(weekOf(days, sunday));
+  const thisWeek = days.filter(inWeekEnding(sunday));
   const before = days.filter((day) => day.day < addDays(sunday, -6));
   const found: Candidate[] = [];
   const categories = new Set(days.flatMap((day) => [...day.categories.keys()]));
@@ -210,7 +211,7 @@ function streaks(
   sunday: LocalDate,
   sets: ReturnType<typeof conditionsAndOutcomes>,
 ): Candidate[] {
-  const inWeek = weekOf(days, sunday);
+  const inWeek = inWeekEnding(sunday);
   const found: Candidate[] = [];
   for (const condition of sets.conditions.filter((c) => !c.key.startsWith('metric:'))) {
     let run = 0;
@@ -257,7 +258,7 @@ export function findCandidates(
   const window = days.slice(-PATTERN_DAYS);
   const sets = conditionsAndOutcomes(window, options.isFriction, options.categoryName);
   return [
-    ...together(window, sets, weekOf(window, sunday)),
+    ...together(window, sets, inWeekEnding(sunday)),
     ...changes(window, sunday, options.categoryName),
     ...streaks(window, sunday, sets),
   ].sort((a, b) => b.strength - a.strength || a.id.localeCompare(b.id));

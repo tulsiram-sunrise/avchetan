@@ -1,5 +1,5 @@
 import type { TaskGroup } from '@avchetan/db/sqlite';
-import { localDate } from '@avchetan/shared';
+import { firstOfMonth, localDate, monthOf, startOfDay } from '@avchetan/shared';
 import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query';
 import type { ActionArgs, ActionName } from '../services/actions';
 import { useServices } from '../services-context';
@@ -110,8 +110,10 @@ export function useMonthlyUsage() {
   return useQuery({
     queryKey: ['raw_logs', 'llm_usage'],
     queryFn: () => {
-      const month = localDate(new Date().toISOString(), timeZone.current()).slice(0, 7);
-      return store.queries.llmUsageSince(store.db, `${month}-01T00:00:00.000Z`);
+      // This month in the user's zone, from its local midnight (not midnight UTC).
+      const zone = timeZone.current();
+      const first = firstOfMonth(monthOf(localDate(store.clock.now(), zone)));
+      return store.queries.llmUsageSince(store.db, startOfDay(first, zone));
     },
   });
 }

@@ -1,12 +1,11 @@
-import type { ClientStore, DataScope, RawLog, SearchFilters } from '@avchetan/db/sqlite';
 import {
-  addDays,
-  createLogger,
-  type HttpFetch,
-  type SecretStore,
-  startOfDay,
-  toAppError,
-} from '@avchetan/shared';
+  type ClientStore,
+  type DataScope,
+  instantRange,
+  type RawLog,
+  type SearchFilters,
+} from '@avchetan/db/sqlite';
+import { createLogger, type HttpFetch, type SecretStore, toAppError } from '@avchetan/shared';
 import { createApiClient } from './api-client';
 import { loadServerUrls, SYNC_TOKEN_SECRET } from './config';
 import { MAX_SEARCH_RESULTS, type SearchRequest, type SearchResponse } from './protocol';
@@ -70,12 +69,12 @@ export async function similarEntries(
   },
 ): Promise<RawLog[] | null> {
   const { filters } = input;
-  const zone = filters?.timeZone ?? 'UTC';
+  const { start, end } = instantRange(filters);
   const results = await searchServer(deps, {
     query: input.text,
     limit: MAX_SEARCH_RESULTS,
-    ...(filters?.from ? { from: startOfDay(filters.from, zone) } : {}),
-    ...(filters?.to ? { to: startOfDay(addDays(filters.to, 1), zone) } : {}),
+    ...(start ? { from: start } : {}),
+    ...(end ? { to: end } : {}),
   });
   if (results === null) return null;
   const best = results[0]?.score ?? 0;

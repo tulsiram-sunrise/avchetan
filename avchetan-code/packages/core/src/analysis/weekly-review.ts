@@ -103,19 +103,16 @@ export async function collectDays(
   ]);
   const slugOf = new Map(resolved.map(({ id, resolved: r }) => [id, r.slug]));
   const entries = (
-    await Promise.all(
-      days.map((day) => queries.dayEntries(db, { day: day.day, timeZone: options.timeZone })),
-    )
-  )
-    .flat()
-    .filter((entry) => options.includePrivate || entry.privacy === 'normal');
+    await queries.entriesBetween(db, { first, last: options.last, timeZone: options.timeZone })
+  ).filter((entry) => options.includePrivate || entry.privacy === 'normal');
   const tagPaths = await queries.tagPathsOf(db, {
     rawLogIds: entries.map((entry) => entry.id),
     activityIds: activities.map((activity) => activity.id),
   });
 
   for (const entry of entries) {
-    const day = byDay.get(localDate(entry.capturedAt, entry.capturedTz));
+    // The zone the days were read in, so an entry lands on the day that read it.
+    const day = byDay.get(localDate(entry.capturedAt, options.timeZone));
     if (!day) continue;
     day.logged = true;
     if (!day.rawLogIds.includes(entry.id)) day.rawLogIds.push(entry.id);

@@ -5,6 +5,7 @@ import {
   loadAnalysisMode,
   loadAnalysisModel,
   PROVIDER_ADAPTERS,
+  type SearchHistory,
 } from '@avchetan/core';
 import { LlmError, localDate, systemTimeZone } from '@avchetan/shared';
 import { askHub, loadServerUrls, searchServer } from '@avchetan/sync';
@@ -46,8 +47,11 @@ export async function askQuestion(
   // Search by meaning runs on the hub, so it's offered only once one is set up.
   const searchHistory =
     (await loadServerUrls(store)).length > 0
-      ? ({ query }: { query: string }) =>
-          searchServer({ store, fetch, secrets }, { query, limit: MAX_SEARCH_RESULTS })
+      ? ({ query, from, to }: Parameters<SearchHistory>[0]) =>
+          searchServer(
+            { store, fetch, secrets },
+            { query, limit: MAX_SEARCH_RESULTS, ...(from ? { from } : {}), ...(to ? { to } : {}) },
+          )
       : undefined;
   return ask(
     store,

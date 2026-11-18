@@ -4,8 +4,15 @@ import {
   OVERDUE_OPEN_SETTING,
   saveOverdueOpen,
 } from '@avchetan/db/sqlite';
-import { firstOfMonth, type LocalMonth, lastOfMonth, localDate } from '@avchetan/shared';
+import {
+  firstOfMonth,
+  type LocalMonth,
+  lastOfMonth,
+  localDate,
+  msUntilNextDay,
+} from '@avchetan/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useReducer } from 'react';
 import { useServices } from '../services-context';
 
 /**
@@ -23,9 +30,26 @@ export const DAY_TABLES = [
   'projects',
 ] as const;
 
+/**
+ * Today's local date from the store's clock. Moves on by itself at midnight, and when the
+ * window comes back (a timer can sleep through midnight with the PC).
+ */
 export function useToday(): string {
   const { store, timeZone } = useServices();
-  return localDate(store.clock.now(), timeZone.current());
+  const zone = timeZone.current();
+  const today = localDate(store.clock.now(), zone);
+  const [, recheck] = useReducer((n: number) => n + 1, 0);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: each new day sets the next timer
+  useEffect(() => {
+    // A second past midnight, so the clock is surely on the new day.
+    const timer = setTimeout(recheck, msUntilNextDay(store.clock.now(), zone) + 1000);
+    window.addEventListener('focus', recheck);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('focus', recheck);
+    };
+  }, [store, zone, today]);
+  return today;
 }
 
 export function useDayEntries(day: string) {

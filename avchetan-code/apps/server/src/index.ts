@@ -186,11 +186,13 @@ async function main(): Promise<void> {
         model: analysis,
         llm,
         searchHistory: search
-          ? async ({ query }) =>
+          ? async ({ query, from, to }) =>
               searchLogs(database.db, {
                 vector: await search.embed(query),
                 model: search.model,
                 limit: MAX_SEARCH_RESULTS,
+                from,
+                to,
               })
           : undefined,
       });

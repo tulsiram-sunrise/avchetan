@@ -1,5 +1,12 @@
 import type { UtcInstant } from './clock';
-import { addDays, isValidLocalDate, type LocalDate, type TimeZone, weekdayOf } from './dates';
+import {
+  addDays,
+  isValidLocalDate,
+  type LocalDate,
+  localDate,
+  type TimeZone,
+  weekdayOf,
+} from './dates';
 
 /** A calendar month: `YYYY-MM`. */
 export type LocalMonth = string;
@@ -58,6 +65,15 @@ export function dayRange(
   timeZone: TimeZone,
 ): { from: UtcInstant; to: UtcInstant } {
   return { from: startOfDay(date, timeZone), to: startOfDay(addDays(date, 1), timeZone) };
+}
+
+/**
+ * Milliseconds from `now` until the next local day starts in the zone: when a page showing
+ * "today" has to move on. Daylight-saving days get their real length.
+ */
+export function msUntilNextDay(now: UtcInstant, timeZone: TimeZone): number {
+  const next = startOfDay(addDays(localDate(now, timeZone), 1), timeZone);
+  return Math.max(0, Date.parse(next) - Date.parse(now));
 }
 
 export function monthOf(date: LocalDate): LocalMonth {

@@ -48,22 +48,39 @@ function sortChanges(changes: PushRequest['changes'], nowMs: number) {
 }
 
 /**
+ * The row's fields an update replaces, each with its column name. Only real columns: a field
+ * the table doesn't have is left out rather than written as `excluded."undefined"`, which
+ * would fail the whole batch's transaction.
+ */
+export function replacedColumns(
+  name: PgSyncedTableName,
+  row: Record<string, unknown>,
+): [key: string, column: string][] {
+  const columns = getTableColumns(PG_SYNCED_TABLES[name]) as Record<string, { name: string }>;
+  return Object.keys(row).flatMap((key): [string, string][] => {
+    // A raw log's content never changes once written, so the stored text always stays.
+    if (key === 'id' || (name === 'raw_logs' && key === 'content')) return [];
+    const column = Object.hasOwn(columns, key) ? columns[key]?.name : undefined;
+    return column ? [[key, column]] : [];
+  });
+}
+
+/**
  * Last-Write-Wins in the database. `COLLATE "C"` compares device IDs byte by byte like the
  * clients do; a locale's order could pick a different winner on each side.
  */
 async function upsert(tx: ServerDb, { table: name, row }: Accepted): Promise<void> {
   const table = PG_SYNCED_TABLES[name];
-  const columns = getTableColumns(table) as Record<string, { name: string }>;
-  const replaceable = Object.keys(row).filter(
-    // A raw log's content never changes once written, so the stored text always stays.
-    (key) => key !== 'id' && !(name === 'raw_logs' && key === 'content'),
-  );
   const set = Object.fromEntries(
-    replaceable.map((key) => [key, sql.raw(`excluded."${columns[key]?.name}"`)]),
+    replacedColumns(name, row).map(([key, column]) => [key, sql.raw(`excluded."${column}"`)]),
+  );
+  const columns = getTableColumns(table);
+  const values = Object.fromEntries(
+    Object.entries(row).filter(([key]) => Object.hasOwn(columns, key)),
   );
   await tx
     .insert(table as typeof rawLogs)
-    .values(row as never)
+    .values(values as never)
     .onConflictDoUpdate({
       target: table.id,
       set: { ...set, serverSeq: sql`nextval('sync_seq')` },

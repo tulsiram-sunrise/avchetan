@@ -35,6 +35,7 @@ import type { Activity } from './repos/activities';
 import { PROMISE_ROLES, type PromiseRole } from './repos/entities';
 import type { RawLog } from './repos/raw-logs';
 import { openTaskWhere, type Task } from './repos/tasks';
+import { taggedIds } from './search';
 import { live } from './synced';
 
 /** Read helpers shared by UI hooks and (later) analysis tools. Keyset pagination only. */
@@ -286,11 +287,23 @@ export async function extractedFrom(
   return { activities: children, tasks: todo };
 }
 
-/** Activities newest first, for analysis. Dates are inclusive. */
+/**
+ * Activities newest first, for analysis. Dates are inclusive. Every filter is in the query, so
+ * `limit` cuts only rows that match.
+ */
 export function activitiesForAnalysis(
   db: ClientDb,
-  options: DataScope & { from?: string | undefined; to?: string | undefined; limit: number },
+  options: DataScope & {
+    from?: string | undefined;
+    to?: string | undefined;
+    /** Any of these categories (a slug can name several, after a merge). */
+    categoryIds?: readonly string[] | undefined;
+    /** Tagged, or organized from a tagged entry; nested tags included. */
+    tagPath?: string | undefined;
+    limit: number;
+  },
 ): Promise<Activity[]> {
+  const { categoryIds, tagPath } = options;
   return db
     .select()
     .from(activities)
@@ -300,6 +313,13 @@ export function activitiesForAnalysis(
         notSystem(),
         options.from ? gte(activities.loggedDate, options.from) : undefined,
         options.to ? lte(activities.loggedDate, options.to) : undefined,
+        categoryIds ? inArray(activities.categoryId, [...categoryIds]) : undefined,
+        tagPath
+          ? or(
+              inArray(activities.id, taggedIds(db, 'activity', tagPath)),
+              inArray(sql<string>`${activities.rawLogId}`, taggedIds(db, 'raw_log', tagPath)),
+            )
+          : undefined,
         options.includePrivate ? undefined : notFromPrivateLog(db, activities),
       ),
     )
@@ -307,12 +327,47 @@ export function activitiesForAnalysis(
     .limit(options.limit);
 }
 
-/** All tasks, for analysis. */
-export function tasksForAnalysis(db: ClientDb, options: DataScope & { limit: number }) {
+/**
+ * Tasks newest first, for analysis. Every filter is in the query, so `limit` cuts only rows
+ * that match. Dates bound the due date: a task without one is left out when they are given.
+ */
+export function tasksForAnalysis(
+  db: ClientDb,
+  options: DataScope & {
+    status?: 'open' | 'done' | 'cancelled' | 'overdue' | undefined;
+    /** For `overdue`: open and due before this day. */
+    today?: LocalDate | undefined;
+    from?: LocalDate | undefined;
+    to?: LocalDate | undefined;
+    tagPath?: string | undefined;
+    limit: number;
+  },
+) {
+  const { status, tagPath } = options;
+  const open = and(isNull(tasks.completedAt), isNull(tasks.cancelledAt));
   return db
     .select()
     .from(tasks)
-    .where(and(live(tasks), options.includePrivate ? undefined : notFromPrivateLog(db, tasks)))
+    .where(
+      and(
+        live(tasks),
+        status === 'done' ? isNotNull(tasks.completedAt) : undefined,
+        status === 'cancelled'
+          ? and(isNull(tasks.completedAt), isNotNull(tasks.cancelledAt))
+          : undefined,
+        status === 'open' || status === 'overdue' ? open : undefined,
+        status === 'overdue' && options.today ? lt(tasks.dueDate, options.today) : undefined,
+        options.from ? gte(tasks.dueDate, options.from) : undefined,
+        options.to ? lte(tasks.dueDate, options.to) : undefined,
+        tagPath
+          ? or(
+              inArray(tasks.id, taggedIds(db, 'task', tagPath)),
+              inArray(sql<string>`${tasks.rawLogId}`, taggedIds(db, 'raw_log', tagPath)),
+            )
+          : undefined,
+        options.includePrivate ? undefined : notFromPrivateLog(db, tasks),
+      ),
+    )
     .orderBy(desc(tasks.createdAt))
     .limit(options.limit);
 }
@@ -422,19 +477,8 @@ export const TASK_GROUP_TITLES: Record<TaskGroup, string> = {
 };
 
 function taskGroupWhere(db: ClientDb, group: TaskGroup, today: LocalDate) {
-  const waiting = inArray(
-    tasks.id,
-    db
-      .select({ id: entityMentions.targetId })
-      .from(entityMentions)
-      .where(
-        and(
-          live(entityMentions),
-          eq(entityMentions.targetType, 'task'),
-          eq(entityMentions.role, 'owed_by'),
-        ),
-      ),
-  );
+  // A person deleted (or merged away) no longer holds the task in *Waiting on others*.
+  const waiting = inArray(tasks.id, waitingOnSomeone(db));
   const open = and(openTaskWhere(), sql`not ${waiting}`);
   switch (group) {
     case 'overdue':
@@ -595,11 +639,29 @@ export function dayEntries(
   db: ClientDb,
   options: { day: LocalDate; timeZone: TimeZone },
 ): Promise<RawLog[]> {
-  const { from, to } = dayRange(options.day, options.timeZone);
+  return entriesBetween(db, { first: options.day, last: options.day, timeZone: options.timeZone });
+}
+
+/**
+ * Entries of the days `first` to `last` (inclusive), oldest first: typed on one of them in
+ * `timeZone`, or with an activity dated on one. One query for a week or a month.
+ */
+export function entriesBetween(
+  db: ClientDb,
+  options: { first: LocalDate; last: LocalDate; timeZone: TimeZone },
+): Promise<RawLog[]> {
+  const from = dayRange(options.first, options.timeZone).from;
+  const to = dayRange(options.last, options.timeZone).to;
   const datedThatDay = db
     .select({ id: activities.rawLogId })
     .from(activities)
-    .where(and(live(activities), eq(activities.loggedDate, options.day)));
+    .where(
+      and(
+        live(activities),
+        gte(activities.loggedDate, options.first),
+        lte(activities.loggedDate, options.last),
+      ),
+    );
   return db
     .select()
     .from(rawLogs)
@@ -657,8 +719,8 @@ export type MonthDay = { categoryIds: string[]; unorganized: boolean };
 
 /**
  * What each day of a range had, for the calendar's dots: the categories of its activities, most
- * used first, and whether an entry typed that day has nothing organized from it (yet). Days
- * without anything are left out. Dates are inclusive.
+ * used first, and whether an entry typed that day has nothing organized from it (yet): no
+ * activity and no task. Days without anything are left out. Dates are inclusive.
  */
 export async function monthDots(
   db: ClientDb,
@@ -683,8 +745,9 @@ export async function monthDots(
     db
       .select({
         capturedAt: rawLogs.capturedAt,
-        // Spelled out: Drizzle prints unqualified column names inside a raw subquery.
-        organized: sql<number>`exists (select 1 from activities a where a.raw_log_id = raw_logs.id and a.deleted_at is null)`,
+        // Spelled out: Drizzle prints unqualified column names inside a raw subquery. A task
+        // counts too: "call the plumber tomorrow" is organized when it becomes only a task.
+        organized: sql<number>`(exists (select 1 from activities a where a.raw_log_id = raw_logs.id and a.deleted_at is null) or exists (select 1 from tasks t where t.raw_log_id = raw_logs.id and t.deleted_at is null))`,
       })
       .from(rawLogs)
       .where(and(live(rawLogs), gte(rawLogs.capturedAt, start), lt(rawLogs.capturedAt, end))),
@@ -729,7 +792,7 @@ export function rolledOverTasks(
     .orderBy(asc(tasks.dueDate), asc(tasks.createdAt));
 }
 
-/** IDs of tasks linked to a person as `owed_by`: you wait on them for it. */
+/** IDs of tasks linked to a live person as `owed_by`: you wait on them for it. */
 function waitingOnSomeone(db: ClientDb) {
   return db
     .select({ id: entityMentions.targetId })
