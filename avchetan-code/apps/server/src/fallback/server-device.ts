@@ -88,6 +88,7 @@ export async function openServerDevice(deps: ServerDeviceDeps): Promise<ServerDe
     urls: [INTERNAL_URL],
     token: deps.internalToken,
     trustLocalNetwork: false,
+    serverId: deps.serverId,
   });
 
   // A private entry may only go to a model on the user's own hardware.

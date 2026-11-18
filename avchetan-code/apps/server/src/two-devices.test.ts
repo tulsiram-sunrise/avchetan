@@ -467,6 +467,15 @@ describe('two devices and a server', () => {
     });
     target = (input, init) => Promise.resolve(app.fetch(new Request(input, init)));
     try {
+      // Sync alone won't move to a different server at the same address: the user saves the
+      // connection again (or pairs again).
+      await phone.engine.syncNow();
+      expect((await loadSyncStatus(phone.store)).state).toBe('wrong_server');
+      await saveConnection(phone.store, phone.secrets, {
+        urls: [URL],
+        token: TOKEN,
+        trustLocalNetwork: false,
+      });
       await phone.engine.syncNow();
       const laptop = await device(target);
       await laptop.engine.syncNow();

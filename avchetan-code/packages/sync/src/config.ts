@@ -57,8 +57,9 @@ export type Connection = {
  * The token goes first: the engine may start as soon as the addresses exist.
  *
  * Sync only talks to the server this device expects (`expected_server_id`): the one a pairing
- * code names, or else the first to answer at newly typed addresses. Saving the same addresses
- * again (a new token, the trust setting) keeps it.
+ * code names, or else the first to answer after the connection is saved. Saving is always the
+ * user's own act (Settings, pairing, the hub's switch or port), so it may move to a new server,
+ * even at the same address; a sync in the background never does.
  */
 export async function saveConnection(
   store: ClientStore,
@@ -70,11 +71,9 @@ export async function saveConnection(
   );
   for (const url of cleaned) assertSafeServerUrl(url, trustLocalNetwork);
   if (token) await secrets.set(SYNC_TOKEN_SECRET, token.trim());
-  const sameAddresses = JSON.stringify(await loadServerUrls(store)) === JSON.stringify(cleaned);
   await store.write(async (tx) => {
     await setSetting(tx, SERVER_URLS_SETTING, cleaned, store.clock.now());
-    if (serverId) await setSyncState(tx, 'expected_server_id', serverId);
-    else if (!sameAddresses) await setSyncState(tx, 'expected_server_id', '');
+    await setSyncState(tx, 'expected_server_id', serverId ?? '');
   });
 }
 

@@ -127,7 +127,7 @@ class FakeServer {
   }
 }
 
-type SetupOptions = { pullPageSize?: number; online?: boolean };
+type SetupOptions = { pullPageSize?: number; pushBatchSize?: number; online?: boolean };
 
 async function setup(options: SetupOptions = {}) {
   const server = new FakeServer();
@@ -147,6 +147,7 @@ async function setup(options: SetupOptions = {}) {
     device: async () => device,
     onPullProgress: (value) => progress.push(value),
     ...(options.pullPageSize ? { pullPageSize: options.pullPageSize } : {}),
+    ...(options.pushBatchSize ? { pushBatchSize: options.pushBatchSize } : {}),
   });
   return {
     server,
@@ -314,11 +315,12 @@ describe('pushing', () => {
   });
 
   it('tries a refused row once per sync, however long the backlog', async () => {
-    const device = await setup();
+    // Batches of 10, so 130 rows are 13 batches: more than a row's 10 tries.
+    const device = await setup({ pushBatchSize: 10 });
     const first = await device.addTask('Refused for now');
     device.server.refused.set(first.id, 'clock_skew');
     await device.store.write(async (tx) => {
-      for (let n = 1; n <= 5_200; n += 1)
+      for (let n = 1; n <= 130; n += 1)
         await device.store.repos.tasks.create(tx, { title: `${n}` });
     });
 
@@ -329,7 +331,7 @@ describe('pushing', () => {
     device.server.refused.delete(first.id);
     await device.engine.syncNow();
     expect(await device.store.sync.listOutbox()).toEqual([]);
-  }, 20_000);
+  });
 });
 
 describe('pulling', () => {
@@ -564,19 +566,22 @@ describe('the server a device expects', () => {
     expect(device.server.count('/v1/devices/register')).toBe(2);
   });
 
-  it('keeps expecting its server when the same addresses are saved again', async () => {
+  it('moves to a rebuilt server at the same address once the user saves the connection', async () => {
     const device = await setup();
     await device.engine.syncNow();
+    device.server.serverId = OTHER;
+    await device.engine.syncNow();
+    expect(await device.status()).toMatchObject({ state: 'wrong_server' });
+
     await saveConnection(device.store, new MemorySecretStore(), {
       urls: [HOME],
-      token: 'a-new-token-that-is-long-enough-to-pass-32',
+      token: TOKEN,
       trustLocalNetwork: false,
     });
-    device.server.serverId = OTHER;
-
     await device.engine.syncNow();
 
-    expect(await device.status()).toMatchObject({ state: 'wrong_server' });
+    expect(await device.status()).toMatchObject({ state: 'synced' });
+    expect(await device.store.sync.getState('expected_server_id')).toBe(OTHER);
   });
 
   it('carries on with a restored server, sending every row again', async () => {

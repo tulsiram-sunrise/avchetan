@@ -65,6 +65,8 @@ export type SyncEngineDeps = {
   onPullProgress?: (progress: PullProgress | null) => void;
   /** Changes per pulled page, each applied in one transaction (the server allows up to 500). */
   pullPageSize?: number;
+  /** Changes per pushed batch (the server allows up to 500); smaller in tests. */
+  pushBatchSize?: number;
 };
 
 export type PullProgress = { done: number; total: number };
@@ -211,7 +213,7 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
     // a long backlog can't use up its tries in one go.
     let after: OutboxPosition | undefined;
     while (true) {
-      const entries = await store.sync.listOutbox(MAX_PUSH_CHANGES, after);
+      const entries = await store.sync.listOutbox(deps.pushBatchSize ?? MAX_PUSH_CHANGES, after);
       if (entries.length === 0) break;
       after = entries.at(-1);
       const changes = await Promise.all(
