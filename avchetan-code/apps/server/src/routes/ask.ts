@@ -1,10 +1,15 @@
-import { toAppError } from '@avchetan/shared';
+import { createLogger, describeError, toAppError } from '@avchetan/shared';
 import { type AskEvent, askRequestSchema } from '@avchetan/sync/protocol';
 import { Hono } from 'hono';
 import { streamSSE } from 'hono/streaming';
 import { ApiError } from '../api-error';
 import type { AppDeps, AppEnv } from '../app';
 import { readBody } from './read-body';
+
+const log = createLogger('ask');
+
+/** What a device sees when an answer fails: never a provider's own text, which can quote input. */
+const ASK_FAILED = 'The hub couldn’t answer';
 
 export function askRoutes({ ask }: AppDeps) {
   return new Hono<AppEnv>().post('/ask', async (c) => {
@@ -29,8 +34,10 @@ export function askRoutes({ ask }: AppDeps) {
         await send({ type: 'done', ...result });
       } catch (error) {
         // The answer has started streaming, so the failure travels as an event.
-        const { code, message } = toAppError(error);
-        await send({ type: 'error', code, message });
+        const { code } = toAppError(error);
+        log.warn('answer failed', { code });
+        const { message } = describeError({ code, message: '' });
+        await send({ type: 'error', code, message: message || ASK_FAILED });
       }
     });
   });

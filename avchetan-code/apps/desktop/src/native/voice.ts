@@ -56,15 +56,8 @@ export function createVoice(invoke: Invoke) {
       callNative(
         invoke,
         'voice_model_download',
-        {
-          request: {
-            id: model.id,
-            file: model.file,
-            url: model.url,
-            sha256: model.sha256,
-            sizeBytes: model.sizeBytes,
-          },
-        },
+        // The app knows each model's address and checksum itself; it takes only the ID.
+        { request: { id: model.id } },
         z.null(),
       ),
     cancelDownload: () => callNative(invoke, 'voice_model_download_cancel', {}, z.null()),

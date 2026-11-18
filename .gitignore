@@ -57,3 +57,6 @@ original-docs/
 # Claude Code: .claude/ (agents, settings.json, hooks) is shared; these are per person
 .claude/settings.local.json
 .claude/worktrees/
+
+# A sync token the server made itself (start:hub from the source code)
+sync-token.txt

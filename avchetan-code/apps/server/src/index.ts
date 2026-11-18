@@ -9,6 +9,7 @@ import {
 } from '@avchetan/shared';
 import { MAX_SEARCH_RESULTS } from '@avchetan/sync/protocol';
 import { serve } from '@hono/node-server';
+import { getConnInfo } from '@hono/node-server/conninfo';
 import serverPackage from '../package.json' with { type: 'json' };
 import { ApiError } from './api-error';
 import { createApp } from './app';
@@ -33,6 +34,7 @@ import {
   secretsFromEnv,
 } from './from-env';
 import { pairingUrls } from './pairing';
+import { saveGeneratedToken } from './token-file';
 
 /** The release version (`pnpm version:set`), bundled in at build time. */
 const VERSION = serverPackage.version;
@@ -77,10 +79,9 @@ async function main(): Promise<void> {
   });
   if (env.RESET_DATA_EPOCH) log.info('data epoch replaced', { reason: 'requested' });
   if (identity.generatedToken) {
-    // Not through the logger: this is the one time the token is shown, and log sinks keep lines.
-    process.stdout.write(
-      `\nYour sync token (shown once, keep it safe):\n${identity.generatedToken}\n\n`,
-    );
+    // Never printed: container logs are kept and shared. The file's path isn't secret.
+    const path = await saveGeneratedToken(env.SYNC_TOKEN_FILE, identity.generatedToken);
+    log.info('sync token made', { file: path });
   }
 
   // Only the server's own device holds this, in memory; it changes on every start.
@@ -116,6 +117,7 @@ async function main(): Promise<void> {
   let briefRunner: BriefRunner | null = null;
 
   const app = createApp({
+    clientAddress: (c) => getConnInfo(c).remote.address,
     db: database.db,
     identity,
     clock,
@@ -274,6 +276,10 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
-  log.error('startup failed', { error: error instanceof Error ? error.message : 'unknown' });
+  // The code only: a message can carry a connection string or a key.
+  log.error('startup failed', {
+    code: toAppError(error).code,
+    error: error instanceof Error ? error.name : 'unknown',
+  });
   process.exit(1);
 });

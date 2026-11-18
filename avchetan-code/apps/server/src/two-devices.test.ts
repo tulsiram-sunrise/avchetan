@@ -57,6 +57,8 @@ beforeEach(async () => {
     profile: 'hub',
     nowMs: () => serverMs,
     pairing: { urls: () => [URL], tokenFromEnv: false },
+    // The desktop app changes the token of the hub it runs, on the same machine.
+    clientAddress: () => '127.0.0.1',
   });
   serverFetch = (input, init) => Promise.resolve(app.fetch(new Request(input, init)));
 });

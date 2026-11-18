@@ -436,7 +436,7 @@ describe('status', () => {
 });
 
 describe('pairing', () => {
-  async function pairingApp(tokenFromEnv: boolean) {
+  async function pairingApp(tokenFromEnv: boolean, address = '127.0.0.1') {
     const identity = await loadServerIdentity(database.db, TOKEN);
     const clock = createMonotonicClock({ source: () => wallMs });
     const paired = createApp({
@@ -447,6 +447,7 @@ describe('pairing', () => {
       profile: 'hub',
       nowMs: () => wallMs,
       pairing: { urls: () => ['http://192.168.1.5:8787'], tokenFromEnv },
+      clientAddress: () => address,
     });
     return { paired, identity };
   }

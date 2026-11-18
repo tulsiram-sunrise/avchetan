@@ -637,18 +637,34 @@ fn import_data(source: &Path, target: &Path) -> CommandResult<()> {
     fs::rename(&partial, target).map_err(io_failed("hub_import_failed"))
 }
 
+/// Copies a folder of plain files and folders. A symbolic link (or a Windows junction) is
+/// refused rather than followed: a link in a chosen folder could otherwise pull any file the
+/// user can read, such as a key, into the hub's data.
 fn copy_dir(source: &Path, target: &Path) -> std::io::Result<()> {
+    if fs::symlink_metadata(source)?.file_type().is_symlink() {
+        return Err(not_plain(source));
+    }
     fs::create_dir_all(target)?;
     for entry in fs::read_dir(source)? {
         let entry = entry?;
         let to = target.join(entry.file_name());
-        if entry.file_type()?.is_dir() {
+        let kind = entry.file_type()?;
+        if kind.is_dir() {
             copy_dir(&entry.path(), &to)?;
-        } else {
+        } else if kind.is_file() {
             fs::copy(entry.path(), to)?;
+        } else {
+            return Err(not_plain(&entry.path()));
         }
     }
     Ok(())
+}
+
+fn not_plain(path: &Path) -> std::io::Error {
+    std::io::Error::new(
+        std::io::ErrorKind::InvalidInput,
+        format!("{} is a link, not a file or folder", path.display()),
+    )
 }
 
 #[tauri::command]
@@ -729,6 +745,28 @@ mod tests {
         fs::create_dir_all(dir.join("base/1")).unwrap();
         fs::write(dir.join("PG_VERSION"), "17").unwrap();
         fs::write(dir.join("base/1/table"), "rows").unwrap();
+    }
+
+    #[test]
+    fn refuses_a_link_in_the_folder_it_imports() {
+        let dir = temp_dir("import-link");
+        fake_hub_data(&dir.join("old"));
+        fs::write(dir.join("secret.txt"), "private").unwrap();
+        #[cfg(unix)]
+        let made = std::os::unix::fs::symlink(dir.join("secret.txt"), dir.join("old/base/link"));
+        #[cfg(windows)]
+        let made =
+            std::os::windows::fs::symlink_file(dir.join("secret.txt"), dir.join("old/base/link"));
+        if made.is_err() {
+            // Windows makes links only with Developer Mode or as administrator.
+            eprintln!("skipped: this account can't make symbolic links");
+            return;
+        }
+        let target = dir.join("hub/pglite-data");
+        fs::create_dir_all(&target).unwrap();
+
+        assert!(import_data(&dir.join("old"), &target).is_err());
+        assert!(!target.join("base/link").exists());
     }
 
     #[test]

@@ -669,14 +669,41 @@ pub fn voice_model_delete(state: State<'_, VoiceState>, file: String) -> Command
     }
 }
 
+/// What the webview may ask for: a model by its ID. Where it comes from, its checksum and its
+/// size are compiled in from the presets, so a bug or injected script in the webview can't make
+/// the app fetch and keep a file of its choosing.
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DownloadRequest {
+    id: String,
+}
+
+/// One speech model from `packages/core/src/models/presets.json`, the only list of models.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SpeechModelPreset {
     id: String,
     file: String,
     url: String,
     sha256: String,
     size_bytes: u64,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct Presets {
+    speech_models: Vec<SpeechModelPreset>,
+}
+
+const PRESETS_JSON: &str = include_str!("../../../../packages/core/src/models/presets.json");
+
+/// The compiled-in speech model with this ID.
+fn speech_model(id: &str) -> Option<SpeechModelPreset> {
+    let presets: Presets = serde_json::from_str(PRESETS_JSON).ok()?;
+    presets
+        .speech_models
+        .into_iter()
+        .find(|model| model.id == id)
 }
 
 #[derive(Serialize, Clone)]
@@ -693,6 +720,9 @@ pub async fn voice_model_download<R: Runtime>(
     request: DownloadRequest,
 ) -> CommandResult<()> {
     let state = app.state::<VoiceState>();
+    let Some(request) = speech_model(&request.id) else {
+        return Err(CommandError::new("invalid_input", "not a known model"));
+    };
     let path = state.model_path(&request.file)?;
     let expected = request.sha256.to_ascii_lowercase();
     if !MODEL_HOSTS.iter().any(|host| request.url.starts_with(host))
@@ -738,7 +768,7 @@ fn failed(message: impl Into<String>) -> CommandError {
 async fn download<R: Runtime>(
     app: &AppHandle<R>,
     state: &VoiceState,
-    request: &DownloadRequest,
+    request: &SpeechModelPreset,
     partial: &Path,
     expected: &str,
 ) -> CommandResult<()> {
@@ -798,6 +828,23 @@ fn to_hex(bytes: &[u8]) -> String {
 
 #[cfg(test)]
 mod tests {
+    /// Every preset model can be found by its ID, from a Hugging Face address, with a real
+    /// checksum and a file name the models folder accepts.
+    #[test]
+    fn compiled_in_speech_models_are_complete() {
+        for id in ["whisper-base", "whisper-small-q5_1"] {
+            let model = super::speech_model(id).expect(id);
+            assert!(super::MODEL_HOSTS
+                .iter()
+                .any(|host| model.url.starts_with(host)));
+            assert_eq!(model.sha256.len(), 64);
+            assert!(model.sha256.chars().all(|c| c.is_ascii_hexdigit()));
+            assert!(super::valid_file_name(&model.file));
+            assert!(model.size_bytes > 0);
+        }
+        assert!(super::speech_model("anything-else").is_none());
+    }
+
     use super::*;
 
     #[test]

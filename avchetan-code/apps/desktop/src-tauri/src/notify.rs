@@ -57,7 +57,7 @@ fn show_brief_toast<R: Runtime>(app: &AppHandle<R>, day: String) -> CommandResul
         .on_activated(move |_| {
             crate::error::warn_on_err(
                 "open brief",
-                windows::open_main(&handle, "timeline", Some(&day)).map_err(|e| e.message),
+                windows::open_main(&handle, "timeline", Some(&day), None).map_err(|e| e.message),
             );
             Ok(())
         })

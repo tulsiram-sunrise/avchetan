@@ -1,13 +1,16 @@
 import { randomBytes } from 'node:crypto';
 import { serverMeta } from '@avchetan/db/pg';
+import { createLogger } from '@avchetan/shared';
 import type { PairingResponse } from '@avchetan/sync/protocol';
 import { eq } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { ApiError } from '../api-error';
-import type { AppDeps, AppEnv } from '../app';
+import { type AppDeps, type AppEnv, isLoopback } from '../app';
 import { hashToken } from '../auth';
 
-export function pairingRoutes({ db, identity, pairing }: AppDeps) {
+const log = createLogger('auth');
+
+export function pairingRoutes({ db, identity, pairing, clientAddress }: AppDeps) {
   return new Hono<AppEnv>()
     .get('/pairing', (c) => {
       const body: PairingResponse = { serverId: identity.serverId, urls: pairing?.urls() ?? [] };
@@ -15,6 +18,14 @@ export function pairingRoutes({ db, identity, pairing }: AppDeps) {
     })
     .post('/token/rotate', async (c) => {
       if (c.get('internal')) throw new ApiError(403, 'forbidden', 'Not for the server itself');
+      // Someone holding a stolen token mustn't be able to lock the owner out with a new one.
+      if (!isLoopback(clientAddress?.(c))) {
+        throw new ApiError(
+          403,
+          'token_rotate_remote',
+          "Change the token on the hub's own computer",
+        );
+      }
       if (pairing?.tokenFromEnv) {
         throw new ApiError(
           409,
@@ -30,6 +41,7 @@ export function pairingRoutes({ db, identity, pairing }: AppDeps) {
         .where(eq(serverMeta.serverId, identity.serverId));
       // The old token stops working with this request.
       identity.tokenHash = tokenHash;
+      log.warn('sync token changed', { deviceId: c.get('deviceId') });
       return c.json({ token });
     });
 }

@@ -182,18 +182,29 @@ pub fn is_local_date(value: &str) -> bool {
         })
 }
 
+/// Words `/find` passes to Search; longer ones are cut by the capture box already.
+const MAX_SEARCH_CHARS: usize = 500;
+
 /// Shows the main window, creating it on first use. `view` is one of `MAIN_VIEWS`;
-/// `day` (`YYYY-MM-DD`) opens that day in Days.
+/// `day` (`YYYY-MM-DD`) opens that day in Days; `search` fills Search's box (`/find`).
+/// The words travel with the window or its event, in memory only: never in storage on disk.
 pub fn open_main<R: Runtime>(
     app: &AppHandle<R>,
     view: &str,
     day: Option<&str>,
+    search: Option<&str>,
 ) -> CommandResult<()> {
     if !MAIN_VIEWS.contains(&view) {
         return Err(CommandError::new("invalid_view", "Unknown view"));
     }
     if day.is_some_and(|day| !is_local_date(day)) {
         return Err(CommandError::new("invalid_date", "Invalid date"));
+    }
+    if search.is_some_and(|text| text.chars().count() > MAX_SEARCH_CHARS) {
+        return Err(CommandError::new(
+            "invalid_input",
+            "Search words are too long",
+        ));
     }
     // Before showing, so a window left longer than the lock time never shows its pages again.
     app_lock::mark_back(app);
@@ -206,7 +217,7 @@ pub fn open_main<R: Runtime>(
             app.emit_to(
                 MAIN,
                 "main:navigate",
-                serde_json::json!({ "view": view, "day": day }),
+                serde_json::json!({ "view": view, "day": day, "text": search }),
             ),
         );
         return Ok(());
@@ -216,6 +227,9 @@ pub fn open_main<R: Runtime>(
     let mut script = format!("window.__AVCHETAN_INITIAL_VIEW__ = '{view}';");
     if let Some(day) = day {
         script.push_str(&format!("window.__AVCHETAN_INITIAL_DAY__ = '{day}';"));
+    }
+    if let Some(text) = search {
+        script.push_str(&initial_search_script(text));
     }
     WebviewWindowBuilder::new(app, MAIN, WebviewUrl::App("main.html".into()))
         .title("Avchetan")
@@ -275,14 +289,43 @@ pub fn dock_hide(app: AppHandle) -> CommandResult<()> {
     Ok(())
 }
 
+/// The search words as a JavaScript string: JSON, with `<` and the two line separators that
+/// older JavaScript can't hold in a string escaped, so no text can end the script early.
+fn initial_search_script(text: &str) -> String {
+    let literal = serde_json::to_string(text)
+        .unwrap_or_else(|_| "\"\"".into())
+        .replace('<', "\\u003c")
+        .replace('\u{2028}', "\\u2028")
+        .replace('\u{2029}', "\\u2029");
+    format!("window.__AVCHETAN_INITIAL_SEARCH__ = {literal};")
+}
+
 /// `async` because creating a window from a synchronous command deadlocks on Windows.
 #[tauri::command(async)]
-pub fn main_open(app: AppHandle, view: String, day: Option<String>) -> CommandResult<()> {
-    open_main(&app, &view, day.as_deref())
+pub fn main_open(
+    app: AppHandle,
+    view: String,
+    day: Option<String>,
+    search: Option<String>,
+) -> CommandResult<()> {
+    open_main(&app, &view, day.as_deref(), search.as_deref())
 }
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn search_words_stay_one_javascript_string() {
+        assert_eq!(
+            super::initial_search_script("knee pain"),
+            "window.__AVCHETAN_INITIAL_SEARCH__ = \"knee pain\";"
+        );
+        let tricky = super::initial_search_script("a\"; alert(1); \"</script>\u{2028}");
+        assert!(tricky.starts_with("window.__AVCHETAN_INITIAL_SEARCH__ = \"a\\\"; alert(1); \\\""));
+        assert!(!tricky.contains('<'));
+        assert!(!tricky.contains('\u{2028}'));
+        assert!(tricky.ends_with("\";"));
+    }
+
     use super::is_local_date;
 
     #[test]

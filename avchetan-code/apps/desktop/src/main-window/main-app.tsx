@@ -2,7 +2,6 @@ import { type FilterChoice, NO_FILTERS } from '@avchetan/core';
 import { useEffect, useState } from 'react';
 import { LockScreen } from '../lock-screen';
 import type { MainView } from '../native/events';
-import { takePendingSearch } from '../services/search-handoff';
 import { useAppEvent, useTableInvalidation } from '../use-app-event';
 import { isHidden, useLockStatus } from '../use-lock';
 import { CategoriesPage } from './categories-page';
@@ -53,11 +52,15 @@ const NO_TARGET: Target = {
 };
 
 /** The full window. Hidden (not closed) when the user closes it. */
-export function MainApp(props: { initialView: MainView; initialDay?: string | null }) {
+export function MainApp(props: {
+  initialView: MainView;
+  initialDay?: string | null;
+  /** `/find words` in the capture box opened this window on Search. */
+  initialSearch?: string;
+}) {
   const [view, setView] = useState<MainView>(props.initialView);
   const [target, setTarget] = useState<Target>({ ...NO_TARGET, day: props.initialDay ?? null });
-  // `/find words` in the capture box opened this window on Search (services/search-handoff.ts).
-  const [searchText, setSearchText] = useState(() => takePendingSearch() ?? '');
+  const [searchText, setSearchText] = useState(props.initialSearch ?? '');
   const [searchChoice, setSearchChoice] = useState<FilterChoice>(NO_FILTERS);
   const [searchFocus, setSearchFocus] = useState(0);
   const [keysOpen, setKeysOpen] = useState(false);
@@ -66,7 +69,6 @@ export function MainApp(props: { initialView: MainView; initialDay?: string | nu
     setView(payload.view);
     if (payload.day) setTarget({ ...NO_TARGET, day: payload.day });
     if (payload.view === 'search' && payload.text) {
-      takePendingSearch();
       setSearchText(payload.text);
       setSearchFocus((n) => n + 1);
     }

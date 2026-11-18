@@ -7,13 +7,20 @@ import type { AppDeps, AppEnv } from '../app';
 
 const log = createLogger('http');
 
-export function healthRoutes({ db, identity, version }: AppDeps) {
+/** Health is public, so its database check is reused for a second: a flood can't load it. */
+const CHECK_KEPT_MS = 1_000;
+
+export function healthRoutes({ db, identity, version, nowMs = Date.now }: AppDeps) {
+  let checkedAt = Number.NEGATIVE_INFINITY;
   return new Hono<AppEnv>().get('/health', async (c) => {
-    try {
-      await db.execute(sql`select 1`);
-    } catch (error) {
-      log.error('database check failed', { code: toAppError(error).code });
-      throw new ApiError(503, 'unavailable', 'The database is not answering');
+    if (nowMs() - checkedAt >= CHECK_KEPT_MS) {
+      try {
+        await db.execute(sql`select 1`);
+        checkedAt = nowMs();
+      } catch (error) {
+        log.error('database check failed', { code: toAppError(error).code });
+        throw new ApiError(503, 'unavailable', 'The database is not answering');
+      }
     }
     return c.json({
       status: 'ok',

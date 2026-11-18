@@ -29,12 +29,14 @@ FROM node:24.22.1-slim
 ENV NODE_ENV=production \
   PGLITE_DATA_DIR=/data \
   BACKUP_DIR=/backups \
+  SYNC_TOKEN_FILE=/secrets/sync-token.txt \
   PORT=8787 \
   BIND_HOST=0.0.0.0
 WORKDIR /app
 COPY --from=build /out ./
-RUN mkdir /data /backups && chown node:node /data /backups
-VOLUME ["/data", "/backups"]
+RUN mkdir /data /backups /secrets && chown node:node /data /backups /secrets && chmod 700 /secrets
+# /secrets holds a token the server made itself, kept out of /data, whose snapshots travel.
+VOLUME ["/data", "/backups", "/secrets"]
 USER node
 EXPOSE 8787
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
