@@ -28,7 +28,6 @@ import { emitAppEvent } from '../native/events';
 import type { LockStatus } from '../native/lock';
 import { unlockApp } from './app-lock';
 import { announce } from './extraction';
-import { savePendingSearch } from './search-handoff';
 
 const log = createLogger('commands');
 
@@ -122,10 +121,8 @@ export function commandDeps(services: AppServices, undo: UndoStack): CommandDeps
       lockNow: () => platform.lock.lockNow(),
     },
     async openSearch(text) {
-      // For a main window not created yet (services/search-handoff.ts).
-      savePendingSearch(text);
-      await platform.shell.openMain('search');
-      await emitAppEvent('main:navigate', { view: 'search', text });
+      // The words go with the window, or its event when it is open: in memory, never on disk.
+      await platform.shell.openMain('search', null, text);
     },
     async openSettings(tab) {
       // The tab is remembered in storage both windows share, for a main window not created yet.

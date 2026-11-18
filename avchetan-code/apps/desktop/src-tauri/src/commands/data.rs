@@ -45,16 +45,36 @@ fn is_backup_name(name: &str) -> bool {
         })
 }
 
+/// Device names Windows keeps for itself, with or without an extension (`NUL.csv` too).
+const WINDOWS_RESERVED: [&str; 22] = [
+    "CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8",
+    "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
+];
+
 /// A plain file or folder name: no separators, no `..`, nothing Windows reserves.
 fn is_plain_name(name: &str) -> bool {
+    let stem = name.split('.').next().unwrap_or("").trim_end();
     !name.is_empty()
         && name.len() <= 120
         && name != "."
         && name != ".."
         && !name.ends_with('.')
+        && !name.ends_with(' ')
+        && !WINDOWS_RESERVED
+            .iter()
+            .any(|reserved| stem.eq_ignore_ascii_case(reserved))
         && name
             .chars()
             .all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.' | ' '))
+}
+
+/// The kinds of file an export writes: the JSON of everything, a CSV per table, a note.
+/// Nothing that runs when opened (`.bat`, `.lnk`, `.html`), whatever the webview asks for.
+fn is_export_file_name(name: &str) -> bool {
+    is_plain_name(name)
+        && [".json", ".csv", ".md"]
+            .iter()
+            .any(|extension| name.to_ascii_lowercase().ends_with(extension))
 }
 
 #[derive(Serialize)]
@@ -156,7 +176,7 @@ pub fn export_write(
     folder: String,
     files: Vec<ExportFile>,
 ) -> CommandResult<ExportResult> {
-    if !is_plain_name(&folder) || files.iter().any(|file| !is_plain_name(&file.name)) {
+    if !is_plain_name(&folder) || files.iter().any(|file| !is_export_file_name(&file.name)) {
         return Err(CommandError::new(
             "export_invalid",
             "Invalid export file name",
@@ -224,5 +244,23 @@ mod tests {
         assert!(!is_plain_name("a/b.csv"));
         assert!(!is_plain_name("a\\b.csv"));
         assert!(!is_plain_name("c:"));
+        assert!(!is_plain_name("CON"));
+        assert!(!is_plain_name("nul.csv"));
+        assert!(!is_plain_name("Com1.json"));
+        assert!(!is_plain_name("LPT9"));
+        assert!(!is_plain_name("trailing "));
+        assert!(is_plain_name("console.csv"));
+        assert!(is_plain_name("COM10.csv"));
+    }
+
+    #[test]
+    fn exports_only_data_files() {
+        assert!(is_export_file_name("avchetan-export.json"));
+        assert!(is_export_file_name("raw_logs.csv"));
+        assert!(is_export_file_name("README.md"));
+        assert!(!is_export_file_name("run.bat"));
+        assert!(!is_export_file_name("open.html"));
+        assert!(!is_export_file_name("tasks.csv.lnk"));
+        assert!(!is_export_file_name("aux.json"));
     }
 }

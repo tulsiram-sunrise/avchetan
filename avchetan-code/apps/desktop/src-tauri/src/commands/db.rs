@@ -7,6 +7,8 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
+use rusqlite::config::DbConfig;
+use rusqlite::limits::Limit;
 use rusqlite::types::{Value, ValueRef};
 use rusqlite::{params_from_iter, Connection};
 use serde::{Deserialize, Serialize};
@@ -56,11 +58,23 @@ fn open_failed(error: impl std::fmt::Display) -> CommandError {
     )
 }
 
+/// The webview sends raw SQL, so a bug there (or a script injected into it) must not be able
+/// to reach beyond the app's own database: no `ATTACH` (which could create or write any file),
+/// SQLite's defensive mode (no writable schema, no corrupting shadow tables), and functions in
+/// the schema only when SQLite marks them harmless (`trusted_schema` off).
+fn harden(connection: &Connection) -> rusqlite::Result<()> {
+    connection.set_db_config(DbConfig::SQLITE_DBCONFIG_DEFENSIVE, true)?;
+    connection.pragma_update(None, "trusted_schema", "OFF")?;
+    connection.set_limit(Limit::SQLITE_LIMIT_ATTACHED, 0)?;
+    Ok(())
+}
+
 fn open_connection(path: &Path) -> CommandResult<Connection> {
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent).map_err(open_failed)?;
     }
     let connection = Connection::open(path).map_err(open_failed)?;
+    harden(&connection).map_err(open_failed)?;
     connection
         .busy_timeout(Duration::from_millis(5000))
         .map_err(open_failed)?;
@@ -229,6 +243,37 @@ pub fn db_rollback(window: WebviewWindow, state: State<'_, DbState>) -> CommandR
 mod tests {
     use rusqlite::Connection;
 
+    /// A statement from the webview can't attach another file or rewrite the schema directly.
+    #[test]
+    fn hardened_connection_refuses_attach_and_schema_writes() {
+        let dir = std::env::temp_dir().join(format!("avchetan-harden-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let other = dir.join("other.db");
+        let connection = Connection::open_in_memory().unwrap();
+        super::harden(&connection).unwrap();
+
+        let attach = connection.execute(
+            "ATTACH DATABASE ?1 AS other",
+            [other.to_string_lossy().to_string()],
+        );
+        assert!(attach.is_err(), "ATTACH must fail");
+        assert!(!other.exists(), "no file may be created");
+
+        connection.execute_batch("CREATE TABLE t (x)").unwrap();
+        let schema_write = connection.execute_batch(
+            "PRAGMA writable_schema = ON; UPDATE sqlite_schema SET sql = 'x' WHERE name = 't';",
+        );
+        assert!(
+            schema_write.is_err(),
+            "writing the schema directly must fail"
+        );
+        let trusted: i64 = connection
+            .query_row("PRAGMA trusted_schema", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(trusted, 0);
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
     /// ADR-0029: the bundled SQLite has FTS5, and the tokenizer the search index uses keeps
     /// Devanagari words whole (vowel signs are category M, which plain unicode61 splits on).
     #[test]
@@ -281,6 +326,8 @@ mod tests {
             )
             .unwrap();
         };
+        // As the app opens it: the search index's triggers must work in defensive mode.
+        super::harden(&connection).unwrap();
         for migration in MIGRATIONS {
             migration
                 .split("--> statement-breakpoint")

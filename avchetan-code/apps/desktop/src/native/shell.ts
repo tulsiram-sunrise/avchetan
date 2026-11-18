@@ -23,9 +23,12 @@ export function createShell(invoke: Invoke) {
     dockBackdrop: () => callNative(invoke, 'dock_look', {}, backdropSchema),
     /** The dock's height in CSS pixels; the top stays put. */
     fitDock: (height: number) => callNative(invoke, 'dock_fit', { height }, z.null()),
-    /** `day` (`YYYY-MM-DD`) opens that day in Days. */
-    openMain: (view: MainView = 'timeline', day: string | null = null) =>
-      callNative(invoke, 'main_open', { view, day }, z.null()),
+    /** `day` (`YYYY-MM-DD`) opens that day in Days; `search` fills Search's box. */
+    openMain: (
+      view: MainView = 'timeline',
+      day: string | null = null,
+      search: string | null = null,
+    ) => callNative(invoke, 'main_open', { view, day, search }, z.null()),
     /** "Your daily brief is ready"; clicking it opens Days on `day` (src-tauri/src/notify.rs). */
     notifyBrief: (day: string) => callNative(invoke, 'brief_notify', { day }, z.null()),
     setTrayPending: (count: number) => callNative(invoke, 'tray_set_pending', { count }, z.null()),

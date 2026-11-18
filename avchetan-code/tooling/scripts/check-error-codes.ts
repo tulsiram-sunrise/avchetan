@@ -18,6 +18,7 @@ const RUST_NOT_CODES = new Set([
   'cache_size',
   'foreign_keys',
   'journal_mode',
+  'trusted_schema',
   'snake_case',
   'not_text',
 ]);

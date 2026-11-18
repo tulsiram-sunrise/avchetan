@@ -67,9 +67,14 @@ export default function PairScreen() {
         </View>
       ) : (
         <>
-          <Text className="p-4 text-base text-ink">
+          <Text className="px-4 pt-4 text-base text-ink">
             On your PC, open Avchetan → Settings → Sync → Pair a phone, and point the camera at the
             code.
+          </Text>
+          {/* Pairing trusts the home network (pairWithLink), as the PC's wizard says. */}
+          <Text accessibilityRole="text" className="p-4 text-sm text-inkMuted">
+            Pairing trusts this home network: at home, the sync token travels unencrypted on this
+            Wi-Fi. Pair only on your own Wi-Fi, never on a café's or a hotel's.
           </Text>
           <CameraView
             style={{ flex: 1 }}
