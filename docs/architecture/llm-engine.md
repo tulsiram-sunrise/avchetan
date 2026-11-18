@@ -88,6 +88,7 @@ Rules:
 - Tool results number each source entry and the system prompt requires citing those numbers, like `[3]`: shorter than IDs, and an invented number simply matches nothing. The UI lists the cited entries under the answer.
 - **Private entries:** tools read with `includePrivate` only when the model is `local`, so nothing from a `!private` entry reaches a cloud model through a tool. The same scope applies to the extraction vocabulary: a `#tag` or name known only from private entries isn't sent either.
 - The arithmetic is done in `analysis/compute.ts`, never by the model.
+- **Filters are in the query.** Dates, category, tag and task status narrow the SQL before its row limit, so an old match is never crowded out by newer rows that don't match. Totals read at most 5,000 rows; when they hit that, the result carries `onlyNewest` and a note, and the answer says the real number may be higher. `search_entries` with dates reads the entries that may belong to them (typed in the range in any time zone, or with an activity dated in it), then checks each one's own day; `search_history` asks the hub for entries saved from the range's start to a week after its end.
 - Analysis tools are **read-only**. Writes happen only through Command mode with user confirmation.
 - When offline and the analysis slot is a cloud model: Ask shows "offline — showing local stats" and runs a deterministic fallback (basic SQL summary) where possible.
 

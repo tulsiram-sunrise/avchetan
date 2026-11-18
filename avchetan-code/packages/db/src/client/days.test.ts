@@ -58,6 +58,29 @@ describe('dayEntries', () => {
   });
 });
 
+describe('entriesBetween', () => {
+  it('reads several days in one query, by their start in the given zone', async () => {
+    const { store } = await openTestStore();
+    // 18:00Z on the 1st is 23:30 in Kolkata: the 1st there, though UTC's 1st too.
+    await captureAt(store, 'late on the first', '2026-11-01T18:00:00.000Z');
+    // 19:00Z on the 1st is 00:30 on the 2nd in Kolkata.
+    await captureAt(store, 'early on the second', '2026-11-01T19:00:00.000Z');
+    await captureAt(store, 'on the fourth', '2026-11-04T05:00:00.000Z');
+    const told = await captureAt(store, 'ran yesterday', '2026-11-05T05:00:00.000Z');
+    await addActivity(store, told.id, 'workout', '2026-11-03');
+
+    const read = async (first: string, last: string) =>
+      (await store.queries.entriesBetween(store.db, { first, last, timeZone: TZ })).map(
+        (log) => log.content,
+      );
+    expect(await read('2026-11-02', '2026-11-03')).toEqual([
+      'early on the second',
+      'ran yesterday',
+    ]);
+    expect(await read('2026-11-01', '2026-11-01')).toEqual(['late on the first']);
+  });
+});
+
 describe('dayTasks', () => {
   it('lists due, finished and, on today, overdue tasks', async () => {
     const { store } = await openTestStore();
@@ -126,6 +149,20 @@ describe('monthDots', () => {
       unorganized: false,
     });
     expect(dots.get('2026-11-03')).toEqual({ categoryIds: [], unorganized: true });
+  });
+
+  it('counts an entry that became only a task as organized', async () => {
+    const { store } = await openTestStore();
+    const log = await captureAt(store, 'call the plumber tomorrow', '2026-11-04T05:00:00.000Z');
+    await store.write((tx) =>
+      store.repos.tasks.create(tx, { title: 'Call the plumber', rawLogId: log.id }),
+    );
+    const dots = await store.queries.monthDots(store.db, {
+      from: '2026-11-01',
+      to: '2026-11-30',
+      timeZone: TZ,
+    });
+    expect(dots.get('2026-11-04')).toBeUndefined();
   });
 
   it('reads a busy month quickly', async () => {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { openTestStore } from '../../testing';
+import { seedCategoryId } from './repos/categories';
 
 const captureIn = (store: Awaited<ReturnType<typeof openTestStore>>['store'], content: string) =>
   store.write((tx) =>
@@ -161,5 +162,98 @@ describe('cancelled tasks', () => {
       includePrivate: true,
     });
     expect(rolled.map((t) => t.title)).toEqual(['Late', 'Now']);
+  });
+});
+
+describe('waiting on a deleted person', () => {
+  it('leaves the task in its own group', async () => {
+    const { store } = await openTestStore();
+    const r = store.repos;
+    const today = '2026-10-30';
+    const lent = await store.write((tx) =>
+      r.tasks.create(tx, { title: 'Get the drill back', dueDate: '2026-10-01' }),
+    );
+    const dev = await store.write(async (tx) => {
+      const person = await r.entities.ensure(tx, { kind: 'person', name: 'Dev' });
+      await r.entities.mention(tx, {
+        entityId: person.id,
+        targetType: 'task',
+        targetId: lent.id,
+        role: 'owed_by',
+      });
+      return person;
+    });
+    expect((await store.queries.taskGroupCounts(store.db, today)).waiting).toBe(1);
+
+    // A delete synced from another device, before the mention's own delete arrives.
+    await store.write((tx) =>
+      tx.run(`UPDATE entities SET deleted_at = '2026-10-30T00:00:00.000Z' WHERE id = '${dev.id}'`),
+    );
+    const counts = await store.queries.taskGroupCounts(store.db, today);
+    expect(counts.waiting).toBe(0);
+    expect(counts.overdue).toBe(1);
+  });
+});
+
+describe('activitiesForAnalysis and tasksForAnalysis', () => {
+  it('filter in the query, so the limit cuts only matching rows', async () => {
+    const { store } = await openTestStore();
+    const r = store.repos;
+    const workout = seedCategoryId('workout');
+    const diet = seedCategoryId('diet');
+    await store.write(async (tx) => {
+      const tagged = await r.rawLogs.capture(tx, {
+        content: 'Run #training',
+        source: 'desktop_text',
+        capturedTz: 'UTC',
+        explicitTagPaths: ['training/run'],
+      });
+      await r.activities.create(tx, {
+        rawLogId: tagged.id,
+        categoryId: workout,
+        title: 'Old run',
+        loggedDate: '2025-03-02',
+      });
+      // Newer rows that don't match: before, they took the limit's places.
+      for (let day = 1; day <= 5; day++) {
+        await r.activities.create(tx, {
+          categoryId: diet,
+          title: `Lunch ${day}`,
+          loggedDate: `2026-10-0${day}`,
+        });
+      }
+    });
+    const read = (options: { categoryIds?: string[]; tagPath?: string }) =>
+      store.queries.activitiesForAnalysis(store.db, { includePrivate: true, limit: 1, ...options });
+
+    expect((await read({ categoryIds: [workout] })).map((a) => a.title)).toEqual(['Old run']);
+    expect((await read({ tagPath: 'training' })).map((a) => a.title)).toEqual(['Old run']);
+    expect(await read({ tagPath: 'reading' })).toEqual([]);
+
+    await store.write(async (tx) => {
+      const done = await r.tasks.create(tx, { title: 'Done', dueDate: '2026-10-01' });
+      await r.tasks.complete(tx, done.id);
+      const dropped = await r.tasks.create(tx, { title: 'Dropped', dueDate: '2026-10-01' });
+      await r.tasks.cancel(tx, dropped.id);
+      await r.tasks.create(tx, { title: 'Late', dueDate: '2026-10-01' });
+      await r.tasks.create(tx, { title: 'Later', dueDate: '2026-11-20' });
+    });
+    const tasks = async (status: 'open' | 'done' | 'cancelled' | 'overdue', from?: string) =>
+      (
+        await store.queries.tasksForAnalysis(store.db, {
+          includePrivate: true,
+          status,
+          today: '2026-10-30',
+          from,
+          limit: 50,
+        })
+      )
+        .map((t) => t.title)
+        .sort();
+    expect(await tasks('open')).toEqual(['Late', 'Later']);
+    expect(await tasks('overdue')).toEqual(['Late']);
+    expect(await tasks('done')).toEqual(['Done']);
+    expect(await tasks('cancelled')).toEqual(['Dropped']);
+    expect(await tasks('open', '2026-11-01')).toEqual(['Later']);
   });
 });

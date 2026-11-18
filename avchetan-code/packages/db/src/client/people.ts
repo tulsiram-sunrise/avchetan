@@ -269,10 +269,17 @@ async function summarize(
     : [];
   const openById = new Map(openTasks.map((task) => [task.id, task]));
   const logDays = new Map<string, LocalDate | null>();
+  // Grouped once: filtering every fact for each person was people × mentions.
+  const factsOf = new Map<string, MentionFact[]>();
+  for (const fact of facts) {
+    const group = factsOf.get(fact.entityId);
+    if (group) group.push(fact);
+    else factsOf.set(fact.entityId, [fact]);
+  }
 
   const summaries: EntitySummary[] = [];
   for (const entity of list) {
-    const mine = facts.filter((fact) => fact.entityId === entity.id);
+    const mine = factsOf.get(entity.id) ?? [];
     if (mine.length === 0) continue;
     const summary: EntitySummary = {
       entity,
@@ -415,8 +422,12 @@ export async function entitiesInLogs(
 ): Promise<string[]> {
   if (rawLogIds.length === 0) return [];
   const ids = [...rawLogIds];
+  // Only live items: a mention on a deleted activity or task no longer links the person.
   const fromLog = (table: typeof activities | typeof tasks) =>
-    db.select({ id: table.id }).from(table).where(inArray(table.rawLogId, ids));
+    db
+      .select({ id: table.id })
+      .from(table)
+      .where(and(live(table), inArray(table.rawLogId, ids)));
   const rows = await db
     .selectDistinct({ entityId: entityMentions.entityId })
     .from(entityMentions)

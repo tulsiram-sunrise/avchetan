@@ -128,6 +128,8 @@ To answer, your question and the entries it needs are sent to your AI model. Wit
 
 **Times.** Ask knows what time each entry was saved. When your words say you are doing it now or just did it (`now going to sleep`, `just finished lunch`), that counts as when it happened, so you can ask `? when did I go to sleep`. Otherwise (`ran this morning`), write the time if it matters (`woke up at 6:05`): the answer reads it from the text. Working out how long you slept from two entries is a best guess for now; sleep hours of their own are planned (see the [roadmap](../roadmap.md#v050--tasks-routines-and-reminders)).
 
+**Dates and big totals.** A question about a period (`? when did my knee hurt in March 2025`) searches that period, however many newer entries use the same words. A total counts at most the newest 5,000 matching activities; past that, the answer says the real number may be higher.
+
 **Search by meaning.** If your hub has a search model (see [Home Hub](setup-home-hub.md#search-by-meaning)), a question like `when did my knee hurt` also finds entries that say "stiff leg" or "physio". Without a hub, or when it can't be reached, Avchetan searches for the words you used.
 
 ![The Ask tab: a question about lunch, the answer, and the entry it came from](images/capture-on-android-ask.png)

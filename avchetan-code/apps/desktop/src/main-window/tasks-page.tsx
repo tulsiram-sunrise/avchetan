@@ -5,10 +5,9 @@ import {
   type Task,
   type TaskGroup,
 } from '@avchetan/db/sqlite';
-import { localDate } from '@avchetan/shared';
 import { useState } from 'react';
+import { useToday } from '../queries/days';
 import { useAction, useTaskGroup, useTaskGroupCounts } from '../queries/organize';
-import { useServices } from '../services-context';
 import { TaskCheckbox, TaskStatus, taskTitleClass, useTaskMenu } from './task-actions';
 import { TaskPromises } from './task-promises';
 import { ActionError, EditableText, fieldClass, panelClass, QuietButton } from './ui';
@@ -81,8 +80,7 @@ function Group(props: { group: TaskGroup; today: string; count: number }) {
 
 /** Tasks by when they're due; each group shows 50, then "Show more" (finding-and-using-data.md §9). */
 export function TasksPage() {
-  const { timeZone } = useServices();
-  const today = localDate(new Date().toISOString(), timeZone.current());
+  const today = useToday();
   const counts = useTaskGroupCounts(today);
 
   if (counts.data && TASK_GROUPS.every((group) => counts.data[group] === 0)) {

@@ -120,11 +120,13 @@ export {
   taskState,
 } from './client/repos/tasks';
 export {
+  aroundInstants,
   type EntryHit,
   filterLogs,
   type HighlightPart,
   hasFilters,
   highlightParts,
+  instantRange,
   matchQuery,
   type SearchFilters,
   type SearchOptions,

@@ -5,7 +5,7 @@ import { runMigrations } from '../migrations/runner';
 import { sqliteMigrations } from '../migrations/sqlite.generated';
 import type { RemoteChange } from './apply-remote';
 import { seedCategoryId } from './repos/categories';
-import { highlightParts, matchQuery, type SearchFilters } from './search';
+import { highlightParts, instantRange, matchQuery, type SearchFilters } from './search';
 import { getById, SYNCED_TABLES } from './synced';
 
 const local = { includePrivate: true, limit: 50 };
@@ -181,7 +181,78 @@ describe('searchLogs (Ask)', () => {
   });
 });
 
+describe('searchLogs with dates (Ask)', () => {
+  it('applies the dates before the limit', async () => {
+    const { store, entry, advance } = await setup();
+    // The test clock starts on 2026-10-26.
+    const old = await entry('Knee hurt on the stairs');
+    advance(60 * DAY);
+    for (let i = 0; i < 5; i++) {
+      await entry(`Knee better, day ${i}`);
+      advance(1000);
+    }
+    const search = (around?: { from?: string; to?: string }) =>
+      store.queries.searchLogs(store.db, { ...local, text: 'knee', limit: 3, around });
+
+    expect((await search()).map((log) => log.id)).not.toContain(old.id);
+    expect((await search({ from: '2026-10-26', to: '2026-10-26' })).map((log) => log.id)).toEqual([
+      old.id,
+    ]);
+  });
+
+  it('also finds an entry typed later about a day in the range', async () => {
+    const { store, r, entry, advance } = await setup();
+    advance(10 * DAY);
+    const later = await entry('Knee gave out on the run last week');
+    await store.write((tx) =>
+      r.activities.create(tx, {
+        rawLogId: later.id,
+        categoryId: seedCategoryId('workout'),
+        title: 'Run',
+        loggedDate: '2026-10-28',
+      }),
+    );
+    const found = await store.queries.searchLogs(store.db, {
+      ...local,
+      text: 'knee',
+      around: { from: '2026-10-27', to: '2026-10-29' },
+    });
+    expect(found.map((log) => log.id)).toEqual([later.id]);
+  });
+});
+
+describe('instantRange', () => {
+  it('needs a time zone for a date range', () => {
+    expect(instantRange({ from: '2026-11-05', timeZone: 'Asia/Kolkata' }).start).toBe(
+      '2026-11-04T18:30:00.000Z',
+    );
+    expect(instantRange({ tagPath: 'health' })).toEqual({ start: undefined, end: undefined });
+    // A JavaScript caller can still leave the zone out; it no longer means UTC.
+    expect(() => instantRange({ from: '2026-11-05' } as SearchFilters)).toThrow(/time zone/);
+  });
+});
+
 describe('searchTasks', () => {
+  it('sorts a cancelled task with the finished ones', async () => {
+    const { store, r, taskTitles, advance } = await setup();
+    const dropped = await store.write((tx) => r.tasks.create(tx, { title: 'Paint the fence' }));
+    await store.write((tx) => r.tasks.cancel(tx, dropped.id));
+    advance(1000);
+    await store.write((tx) => r.tasks.create(tx, { title: 'Paint the door' }));
+    advance(1000);
+    const done = await store.write((tx) => r.tasks.create(tx, { title: 'Paint the gate' }));
+    await store.write((tx) => r.tasks.complete(tx, done.id));
+    advance(1000);
+    await store.write((tx) => r.tasks.create(tx, { title: 'Paint the shed' }));
+
+    expect(await taskTitles('paint')).toEqual([
+      'Paint the shed',
+      'Paint the door',
+      'Paint the gate',
+      'Paint the fence',
+    ]);
+  });
+
   it('finds titles, open ones first, and hides tasks from private entries while locked', async () => {
     const { store, r, entry, taskTitles, advance } = await setup();
     const secret = await entry('Book the clinic visit', 'local_only');

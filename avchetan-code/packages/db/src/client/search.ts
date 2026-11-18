@@ -114,14 +114,7 @@ async function highlights(
  * one given must hold. An entry matches a tag, category, project or person when it or anything
  * organized from it carries it; a task when it or its entry does.
  */
-export type SearchFilters = {
-  /**
-   * Inclusive local dates. An entry's date is the day it was typed in `timeZone`; a task's is
-   * its due date, or the day it was made when it has none.
-   */
-  from?: LocalDate | undefined;
-  to?: LocalDate | undefined;
-  timeZone?: TimeZone | undefined;
+export type SearchFilters = SearchDates & {
   /** The tag or any tag nested under it (`health` takes `health/knee`). */
   tagPath?: string | undefined;
   categoryId?: string | undefined;
@@ -129,13 +122,71 @@ export type SearchFilters = {
   personId?: string | undefined;
 };
 
+/**
+ * Inclusive local dates. An entry's date is the day it was typed in `timeZone`; a task's is its
+ * due date, or the day it was made when it has none. A range needs the zone: a day starts at a
+ * different instant in each one, and UTC would be wrong for most users.
+ */
+type SearchDates =
+  | { from?: undefined; to?: undefined; timeZone?: TimeZone | undefined }
+  | { from?: LocalDate | undefined; to?: LocalDate | undefined; timeZone: TimeZone };
+
 export type SearchOptions = DataScope & {
   text: string;
   limit: number;
   /** Rows to skip, for "Show more". */
   offset?: number;
   filters?: SearchFilters | undefined;
+  /**
+   * Only entries that may belong to these inclusive local dates (Ask): typed within the range in
+   * some time zone, or with an activity dated in it. A superset: the caller checks each entry's
+   * own date, but the row limit now applies after the dates, not before.
+   */
+  around?: { from?: LocalDate | undefined; to?: LocalDate | undefined } | undefined;
 };
+
+const HOUR_MS = 3_600_000;
+
+/**
+ * Instants holding every entry typed on these local dates in any time zone: zones run from
+ * 14 hours ahead of UTC to 12 behind. `laterDays` widens the end, for entries written a few
+ * days after what they tell.
+ */
+export function aroundInstants(
+  around: { from?: LocalDate | undefined; to?: LocalDate | undefined },
+  laterDays = 0,
+): { start: string | undefined; end: string | undefined } {
+  const at = (day: LocalDate, hours: number) =>
+    new Date(Date.parse(`${day}T00:00:00.000Z`) + hours * HOUR_MS).toISOString();
+  return {
+    start: around.from ? at(around.from, -14) : undefined,
+    end: around.to ? at(addDays(around.to, 1 + laterDays), 12) : undefined,
+  };
+}
+
+/** Entries that may belong to the dates: see `SearchOptions.around`. */
+function aroundCondition(db: ClientDb, around: SearchOptions['around']): SQL | undefined {
+  if (!around?.from && !around?.to) return undefined;
+  const { start, end } = aroundInstants(around);
+  const datedIn = db
+    .select({ id: sql<string>`${activities.rawLogId}` })
+    .from(activities)
+    .where(
+      and(
+        live(activities),
+        isNotNull(activities.rawLogId),
+        around.from ? gte(activities.loggedDate, around.from) : undefined,
+        around.to ? lte(activities.loggedDate, around.to) : undefined,
+      ),
+    );
+  return or(
+    and(
+      start ? gte(rawLogs.capturedAt, start) : undefined,
+      end ? lt(rawLogs.capturedAt, end) : undefined,
+    ),
+    inArray(rawLogs.id, datedIn),
+  );
+}
 
 /** Whether any filter is set. */
 export function hasFilters(filters: SearchFilters | undefined): boolean {
@@ -150,9 +201,15 @@ export function hasFilters(filters: SearchFilters | undefined): boolean {
   );
 }
 
-/** `[start, end)` instants for an inclusive local date range. */
-function instantRange(filters: SearchFilters) {
-  const zone = filters.timeZone ?? 'UTC';
+/** `[start, end)` instants for the filters' inclusive local date range. */
+export function instantRange(filters: SearchFilters | undefined): {
+  start: string | undefined;
+  end: string | undefined;
+} {
+  if (!filters?.from && !filters?.to) return { start: undefined, end: undefined };
+  const zone = filters.timeZone;
+  // The type requires the zone with a date; this guards JavaScript callers.
+  if (!zone) throw new TypeError('A search date range needs a time zone');
   return {
     start: filters.from ? startOfDay(filters.from, zone) : undefined,
     end: filters.to ? startOfDay(addDays(filters.to, 1), zone) : undefined,
@@ -344,6 +401,7 @@ function entryRows(db: ClientDb, query: string, options: SearchOptions) {
         live(rawLogs),
         options.includePrivate ? undefined : eq(rawLogs.privacy, 'normal'),
         entryFilters(db, options.filters),
+        aroundCondition(db, options.around),
       ),
     )
     .orderBy(desc(rawLogs.capturedAt), desc(rawLogs.id))
@@ -353,7 +411,7 @@ function entryRows(db: ClientDb, query: string, options: SearchOptions) {
 
 export type TaskHit = { task: Task; parts: HighlightPart[] };
 
-/** Tasks whose title has every word typed: open ones first, then newest. */
+/** Tasks whose title has every word typed: open ones first, then newest; cancelled count as finished. */
 export async function searchTasks(db: ClientDb, options: SearchOptions): Promise<TaskHit[]> {
   const query = matchQuery(options.text);
   if (!query) return [];
@@ -370,7 +428,12 @@ export async function searchTasks(db: ClientDb, options: SearchOptions): Promise
         taskFilters(db, options.filters),
       ),
     )
-    .orderBy(isNotNull(tasks.completedAt), desc(tasks.createdAt), desc(tasks.id))
+    // Open first; done and cancelled are both finished.
+    .orderBy(
+      sql`(${tasks.completedAt} is not null or ${tasks.cancelledAt} is not null)`,
+      desc(tasks.createdAt),
+      desc(tasks.id),
+    )
     .limit(options.limit)
     .offset(options.offset ?? 0);
   const marked = await highlights(

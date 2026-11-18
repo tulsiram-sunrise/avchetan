@@ -29,6 +29,7 @@ export {
   monthOf,
   monthWeeks,
   moveDates,
+  msUntilNextDay,
   shiftMonth,
   startOfDay,
   weekOf,
