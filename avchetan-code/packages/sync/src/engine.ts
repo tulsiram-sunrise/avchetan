@@ -1,5 +1,5 @@
 import { type DevicePlatform, type ExtractionMode, SYNCED_COLUMNS_FINGERPRINT } from '@avchetan/db';
-import type { ClientStore, RemoteChange, SyncedTableName } from '@avchetan/db/sqlite';
+import type { ClientStore, RemoteChange, SetAsideRow, SyncedTableName } from '@avchetan/db/sqlite';
 import {
   type Cancel,
   createLogger,
@@ -73,10 +73,36 @@ export type SyncEngine = {
   stop: () => void;
 };
 
-function toRemoteChange({ table, row }: { table: string; row: unknown }): RemoteChange {
+/** A pulled row as this app reads it, or null when it can't (ADR-0032). */
+function readRow({ table, row }: { table: string; row: unknown }): RemoteChange | null {
   const parsed = SYNCED_ROW_SCHEMAS[table]?.safeParse(row);
-  if (!parsed?.success) throw new SyncError('bad_response', 'The server sent an invalid row');
-  return { table, row: parsed.data } as RemoteChange;
+  return parsed?.success ? ({ table, row: parsed.data } as RemoteChange) : null;
+}
+
+/**
+ * Splits a pulled page into rows to apply and rows to set aside. A row this app can't read (a
+ * bad ID or timestamp, or a field a newer app sends in a shape this one doesn't know) no longer
+ * fails the whole page: it is kept aside and tried again on every sync.
+ */
+function readPage(changes: readonly { table: string; row: unknown; seq: number }[]) {
+  const known: RemoteChange[] = [];
+  const unreadable: SetAsideRow[] = [];
+  for (const change of changes) {
+    // A newer server may have tables this app doesn't know yet.
+    if (!isSyncedTable(change.table)) continue;
+    const read = readRow(change);
+    if (read) {
+      known.push(read);
+      continue;
+    }
+    const id = (change.row as { id?: unknown } | null)?.id;
+    unreadable.push({
+      table: change.table,
+      id: typeof id === 'string' && id.length <= 64 ? id : `seq:${change.seq}`,
+      row: change.row,
+    });
+  }
+  return { known, unreadable };
 }
 
 /**
@@ -187,6 +213,7 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
     if (refill) log.info('pulling everything', { from: resumeAt });
     let cursor = refill ? resumeAt : Number((await store.sync.getState('pull_cursor')) ?? 0);
     let done = 0;
+    let setAside = 0;
     let reporting = false;
     const startedMs = Date.now();
     try {
@@ -195,9 +222,9 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
           cursor,
           deps.pullPageSize,
         );
-        // A newer server may have tables this app doesn't know yet.
-        const known = changes.filter(({ table }) => isSyncedTable(table)).map(toRemoteChange);
-        await store.sync.applyPage(known, nextCursor, { refill });
+        const { known, unreadable } = readPage(changes);
+        await store.sync.applyPage(known, nextCursor, { refill, setAside: unreadable });
+        setAside += unreadable.length;
         cursor = nextCursor;
         done += changes.length;
         if (!hasMore) break;
@@ -210,6 +237,7 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
     } finally {
       if (reporting) deps.onPullProgress?.(null);
     }
+    if (setAside > 0) log.warn('set aside rows it could not read', { rows: setAside });
     if (refill) {
       await store.sync.setState('pulled_columns', SYNCED_COLUMNS_FINGERPRINT);
       await store.sync.setState('refill_cursor', '');
@@ -228,6 +256,9 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
       await store.sync.setState(REGISTRATION, registration);
     }
     await push(api);
+    // Rows set aside earlier that this app can read now, say after an update.
+    const readable = await store.sync.retrySetAside(readRow);
+    if (readable > 0) log.info('applied rows set aside earlier', { rows: readable });
     await pull(api);
   }
 
@@ -266,7 +297,10 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
       throw error;
     }
 
-    await report('synced', { stuck: await store.sync.stuckCount() });
+    await report('synced', {
+      stuck: await store.sync.stuckCount(),
+      setAside: await store.sync.setAsideCount(),
+    });
     deps.onSynced?.();
     return 'idle';
   }

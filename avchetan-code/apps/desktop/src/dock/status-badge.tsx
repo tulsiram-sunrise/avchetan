@@ -8,7 +8,8 @@ const LABELS: Record<RawLogStatus, { text: string; className: string }> = {
 };
 
 export function StatusBadge(props: { status: RawLogStatus }) {
-  const label = LABELS[props.status];
+  // A status from a newer app shows as plain saved (ADR-0032).
+  const label = LABELS[props.status] ?? LABELS.skipped;
   return (
     <span
       className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${label.className}`}

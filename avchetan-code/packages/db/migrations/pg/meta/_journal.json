@@ -71,6 +71,13 @@
       "when": 1794939401444,
       "tag": "0009_routines",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1794984607584,
+      "tag": "0010_tolerant_enums",
+      "breakpoints": true
     }
   ]
 }

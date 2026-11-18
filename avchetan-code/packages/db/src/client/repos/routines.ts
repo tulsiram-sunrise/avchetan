@@ -11,7 +11,7 @@ import {
   repeatRuleSchema,
   ValidationError,
 } from '@avchetan/shared';
-import { and, asc, eq, isNull, ne } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNull } from 'drizzle-orm';
 import type { RoutineDayStatus, RoutineKind } from '../../schema/enums';
 import { routineDays, routines } from '../../schema/sqlite/tables';
 import type { ClientDb, Tx } from '../database';
@@ -150,7 +150,14 @@ export function routinesRepo(deps: RepoDeps) {
       const active = await tx
         .select()
         .from(routines)
-        .where(and(live(routines), isNull(routines.pausedAt), ne(routines.kind, 'task')));
+        // Listed, not "not task": a kind from a newer app makes no days here (ADR-0032).
+        .where(
+          and(
+            live(routines),
+            isNull(routines.pausedAt),
+            inArray(routines.kind, ['assumed', 'confirm']),
+          ),
+        );
       const made: RoutineDay[] = [];
       for (const routine of active) {
         const rule = routineRule(routine);

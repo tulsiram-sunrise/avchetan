@@ -153,6 +153,7 @@ export const ERROR_HELP = {
   forbidden: at('other_errors', BUG),
   clock_skew: at('clock_skew'),
   sync_issue: at('sync_issue'),
+  sync_set_aside: at('sync_set_aside'),
   not_configured: at('not_configured', 'Set up Sync on this device first'),
   untrusted_local_network: at('untrusted_local_network'),
   insecure_server_url: at('insecure_server_url'),

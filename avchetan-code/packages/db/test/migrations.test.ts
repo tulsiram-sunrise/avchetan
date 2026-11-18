@@ -110,17 +110,29 @@ describe('Postgres (PGlite) migrations', { timeout: 30_000 }, () => {
     await pg.close();
   });
 
-  it('enforces enum CHECK constraints', async () => {
+  it('stores an enum value from a newer app on synced tables (ADR-0032)', async () => {
+    const { pg, driver } = await createTestPglite();
+    await runMigrations(driver, pgMigrations, { now });
+    await pg.query(
+      `INSERT INTO raw_logs (id, created_at, updated_at, updated_by_device, content, captured_at,
+       captured_tz, source, status, origin_device_id)
+       VALUES ('00000000-0000-7000-8000-000000000001', now(), now(), 'dev-1', 'x', now(),
+       'UTC', 'mobile_share', 'waiting_for_hub', 'dev-1')`,
+    );
+    const { rows } = await pg.query<{ source: string }>('SELECT source FROM raw_logs');
+    expect(rows).toEqual([{ source: 'mobile_share' }]);
+    await pg.close();
+  });
+
+  it('keeps enum CHECK constraints on server-only tables', async () => {
     const { pg, driver } = await createTestPglite();
     await runMigrations(driver, pgMigrations, { now });
     await expect(
       pg.query(
-        `INSERT INTO raw_logs (id, created_at, updated_at, updated_by_device, content, captured_at,
-         captured_tz, source, status, origin_device_id)
-         VALUES ('00000000-0000-7000-8000-000000000001', now(), now(), 'dev-1', 'x', now(),
-         'UTC', 'desktop_text', 'not_a_status', 'dev-1')`,
+        `INSERT INTO devices (id, name, platform, extraction_mode, created_at, last_pull_cursor)
+         VALUES ('00000000-0000-7000-8000-000000000001', 'x', 'toaster', 'self', now(), 0)`,
       ),
-    ).rejects.toThrow(/raw_logs_status_check/);
+    ).rejects.toThrow(/devices_platform_check/);
     await pg.close();
   });
 

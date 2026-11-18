@@ -18,7 +18,7 @@ const base = {
   lastSyncedAt: hoursAgo(30),
   waiting: 12,
   oldestWaitingAt: hoursAgo(25),
-  status: { state: 'server_unreachable', clockSkew: false, stuck: 0 } as const,
+  status: { state: 'server_unreachable', clockSkew: false, stuck: 0, setAside: 0 } as const,
   nowMs: NOW_MS,
 };
 const unreachable = { fix: SYNC_WARNING_FIX, helpCode: 'server_unreachable' };

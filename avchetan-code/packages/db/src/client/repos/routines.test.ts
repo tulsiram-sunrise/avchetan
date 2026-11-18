@@ -202,6 +202,20 @@ describe('days of a routine', () => {
   });
 });
 
+describe('a routine from a newer app (ADR-0032)', () => {
+  it('makes no days for a kind it does not know', async () => {
+    const pc = await oneDevice();
+    const phone = await oneDevice();
+    const routine = await pc.store.write((tx) => pc.store.repos.routines.create(tx, plants));
+    const newer = { ...routine, kind: 'from_a_newer_app' } as unknown as typeof routine;
+    await phone.store.sync.applyRemote([{ table: 'routines', row: newer }]);
+
+    expect(
+      await phone.store.write((tx) => phone.store.repos.routines.ensureDays(tx, TODAY)),
+    ).toEqual([]);
+  });
+});
+
 describe('days on two devices', () => {
   it('keeps a tick when another device makes the same day later', async () => {
     const pc = await openTestStore({ start: START, newId: () => crypto.randomUUID() });

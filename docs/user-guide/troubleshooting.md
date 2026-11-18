@@ -43,6 +43,9 @@ Problems come first, each with its fix and a **Help** link to its section below.
 ## sync_issue
 **"Changes keep failing to sync."** The server refused these changes ten times, so they're waiting and nothing is lost. Check that both devices run the same version of Avchetan, then report it if it doesn't clear.
 
+## sync_set_aside
+**"Changes from another device can't be read here. Update Avchetan on this device."** Another device sent something this version of Avchetan doesn't understand yet, usually because that device runs a newer version. Sync carries on with everything else, and the changes are kept on this device, not lost. Update Avchetan here ([install and update](install-and-update.md)) and they show up at the next sync. If every device already runs the same version, report it.
+
 ## not_configured
 **"Set up Sync on this device first."** Pairing a phone, changing the token and asking your hub all need this device connected to a hub or server. On the PC, fill in **Settings → Hub & sync → Sync**; on the phone, use **More → Sync → Scan pairing code** ([Pair your phone](pair-your-phone.md)).
 

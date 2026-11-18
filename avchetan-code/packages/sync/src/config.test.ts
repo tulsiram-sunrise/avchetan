@@ -34,7 +34,7 @@ describe('assertSafeServerUrl', () => {
 });
 
 describe('describeSync', () => {
-  const ok = { state: 'synced', clockSkew: false, stuck: 0 } as const;
+  const ok = { state: 'synced', clockSkew: false, stuck: 0, setAside: 0 } as const;
 
   it('says all is well', () => {
     expect(describeSync(ok)).toEqual({ text: 'Up to date.', helpCode: null });

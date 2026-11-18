@@ -90,5 +90,11 @@ export const sqliteMigrations: readonly Migration[] = [
       "CREATE INDEX `routine_days_routine_id_idx` ON `routine_days` (`routine_id`);",
       "CREATE TABLE `routines` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`created_at` text NOT NULL,\n\t`updated_at` text NOT NULL,\n\t`updated_by_device` text NOT NULL,\n\t`deleted_at` text,\n\t`title` text NOT NULL,\n\t`kind` text NOT NULL,\n\t`repeat_rule` text NOT NULL,\n\t`window_start` text,\n\t`window_end` text,\n\t`category_id` text,\n\t`tag_id` text,\n\t`paused_at` text\n);"
     ]
+  },
+  {
+    "tag": "0006_sync_set_aside",
+    "statements": [
+      "CREATE TABLE `sync_set_aside` (\n\t`table_name` text NOT NULL,\n\t`record_id` text NOT NULL,\n\t`row` text NOT NULL,\n\t`set_aside_at` text NOT NULL,\n\tPRIMARY KEY(`table_name`, `record_id`)\n);"
+    ]
   }
 ];

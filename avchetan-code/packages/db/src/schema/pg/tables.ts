@@ -20,8 +20,9 @@ import * as E from '../enums';
 
 /**
  * Server (Postgres / PGlite) schema. Mirrors the SQLite schema for synced tables and adds
- * `server_seq` (pull cursor) and `created_on_server_at`. Enums are text + CHECK (no pg
- * enums: easier migrations). No UNIQUE constraints besides primary keys on synced tables
+ * `server_seq` (pull cursor) and `created_on_server_at`. Enums are text (no pg enums: easier
+ * migrations). Synced enum columns have no CHECK, so a hub stores and passes on a value from a
+ * newer app (ADR-0032); server-only ones keep it. No UNIQUE constraints besides primary keys on synced tables
  * (docs/conventions/database.md); foreign keys are logical only (ADR-0011).
  *
  * `log_embeddings` (pgvector) is added in Phase 5, when the embedding dimension is
@@ -91,9 +92,6 @@ export const rawLogs = pgTable(
     seqIndex('raw_logs', t),
     index('raw_logs_status_captured_at_idx').on(t.status, t.capturedAt),
     index('raw_logs_captured_at_idx').on(t.capturedAt),
-    check('raw_logs_source_check', enumCheck(t.source, E.RAW_LOG_SOURCES)),
-    check('raw_logs_privacy_check', enumCheck(t.privacy, E.RAW_LOG_PRIVACY)),
-    check('raw_logs_status_check', enumCheck(t.status, E.RAW_LOG_STATUSES)),
   ],
 ).enableRLS();
 
@@ -111,11 +109,7 @@ export const categories = pgTable(
     mergedIntoId: uuid('merged_into_id'),
     archivedAt: instant('archived_at'),
   },
-  (t) => [
-    seqIndex('categories', t),
-    index('categories_slug_idx').on(t.slug),
-    check('categories_origin_check', enumCheck(t.origin, E.CATEGORY_ORIGINS)),
-  ],
+  (t) => [seqIndex('categories', t), index('categories_slug_idx').on(t.slug)],
 ).enableRLS();
 
 export const projects = pgTable(
@@ -153,7 +147,6 @@ export const activities = pgTable(
     index('activities_category_id_logged_date_idx').on(t.categoryId, t.loggedDate),
     index('activities_raw_log_id_idx').on(t.rawLogId),
     index('activities_project_id_idx').on(t.projectId),
-    check('activities_origin_check', enumCheck(t.origin, E.ROW_ORIGINS)),
   ],
 ).enableRLS();
 
@@ -179,7 +172,6 @@ export const tasks = pgTable(
     seqIndex('tasks', t),
     index('tasks_completed_at_due_date_idx').on(t.completedAt, t.dueDate),
     index('tasks_raw_log_id_idx').on(t.rawLogId),
-    check('tasks_origin_check', enumCheck(t.origin, E.ROW_ORIGINS)),
   ],
 ).enableRLS();
 
@@ -216,7 +208,6 @@ export const entityTags = pgTable(
     seqIndex('entity_tags', t),
     index('entity_tags_target_idx').on(t.targetType, t.targetId),
     index('entity_tags_tag_id_idx').on(t.tagId),
-    check('entity_tags_target_type_check', enumCheck(t.targetType, E.LINK_TARGET_TYPES)),
   ],
 ).enableRLS();
 
@@ -233,7 +224,6 @@ export const entities = pgTable(
   (t) => [
     seqIndex('entities', t),
     index('entities_kind_normalized_name_idx').on(t.kind, t.normalizedName),
-    check('entities_kind_check', enumCheck(t.kind, E.ENTITY_KINDS)),
   ],
 ).enableRLS();
 
@@ -250,8 +240,6 @@ export const entityMentions = pgTable(
     seqIndex('entity_mentions', t),
     index('entity_mentions_entity_id_idx').on(t.entityId),
     index('entity_mentions_target_idx').on(t.targetType, t.targetId),
-    check('entity_mentions_target_type_check', enumCheck(t.targetType, E.LINK_TARGET_TYPES)),
-    check('entity_mentions_role_check', enumCheck(t.role, E.MENTION_ROLES)),
   ],
 ).enableRLS();
 
@@ -282,10 +270,7 @@ export const routines = pgTable(
     tagId: uuid('tag_id'),
     pausedAt: instant('paused_at'),
   },
-  (t) => [
-    seqIndex('routines', t),
-    check('routines_kind_check', enumCheck(t.kind, E.ROUTINE_KINDS)),
-  ],
+  (t) => [seqIndex('routines', t)],
 ).enableRLS();
 
 export const routineDays = pgTable(
@@ -302,7 +287,6 @@ export const routineDays = pgTable(
     seqIndex('routine_days', t),
     index('routine_days_scheduled_date_idx').on(t.scheduledDate),
     index('routine_days_routine_id_idx').on(t.routineId),
-    check('routine_days_status_check', enumCheck(t.status, E.ROUTINE_DAY_STATUSES)),
   ],
 ).enableRLS();
 
