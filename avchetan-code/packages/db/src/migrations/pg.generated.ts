@@ -128,5 +128,22 @@ export const pgMigrations: readonly Migration[] = [
       "CREATE INDEX \"routine_days_routine_id_idx\" ON \"routine_days\" USING btree (\"routine_id\");",
       "CREATE INDEX \"routines_server_seq_idx\" ON \"routines\" USING btree (\"server_seq\");"
     ]
+  },
+  {
+    "tag": "0010_tolerant_enums",
+    "statements": [
+      "ALTER TABLE \"activities\" DROP CONSTRAINT \"activities_origin_check\";",
+      "ALTER TABLE \"categories\" DROP CONSTRAINT \"categories_origin_check\";",
+      "ALTER TABLE \"entities\" DROP CONSTRAINT \"entities_kind_check\";",
+      "ALTER TABLE \"entity_mentions\" DROP CONSTRAINT \"entity_mentions_target_type_check\";",
+      "ALTER TABLE \"entity_mentions\" DROP CONSTRAINT \"entity_mentions_role_check\";",
+      "ALTER TABLE \"entity_tags\" DROP CONSTRAINT \"entity_tags_target_type_check\";",
+      "ALTER TABLE \"raw_logs\" DROP CONSTRAINT \"raw_logs_source_check\";",
+      "ALTER TABLE \"raw_logs\" DROP CONSTRAINT \"raw_logs_privacy_check\";",
+      "ALTER TABLE \"raw_logs\" DROP CONSTRAINT \"raw_logs_status_check\";",
+      "ALTER TABLE \"routine_days\" DROP CONSTRAINT \"routine_days_status_check\";",
+      "ALTER TABLE \"routines\" DROP CONSTRAINT \"routines_kind_check\";",
+      "ALTER TABLE \"tasks\" DROP CONSTRAINT \"tasks_origin_check\";"
+    ]
   }
 ];

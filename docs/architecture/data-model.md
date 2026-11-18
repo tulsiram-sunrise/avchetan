@@ -7,7 +7,7 @@ Single logical schema implemented twice: SQLite (clients) and Postgres (server).
 | Class | Tables | Synced? |
 |---|---|---|
 | **Synced entities** | `raw_logs`, `categories`, `projects`, `activities`, `tasks`, `tags`, `entity_tags`, `entities`, `entity_mentions`, `context_rules` | Yes |
-| **Client-local** | `sync_outbox`, `sync_state`, `settings`, `llm_runs`, `ask_history`, `extraction_corrections`; the search index `search_rows` + `search_index` (FTS5, made by migration and triggers, not in the Drizzle schema: [ADR-0029](../decisions/0029-local-search-index.md)) | No |
+| **Client-local** | `sync_outbox`, `sync_set_aside`, `sync_state`, `settings`, `llm_runs`, `ask_history`, `extraction_corrections`; the search index `search_rows` + `search_index` (FTS5, made by migration and triggers, not in the Drizzle schema: [ADR-0029](../decisions/0029-local-search-index.md)) | No |
 | **Server-only** | `devices`, `server_meta`, `log_embeddings`, `server_jobs` | No (server) |
 
 ## Common sync columns (every synced table)
@@ -214,6 +214,7 @@ ID = `derivedId('routine_day', routine_id, scheduled_date)`. Made only on the da
 | Table | Columns | Purpose |
 |---|---|---|
 | `sync_outbox` | `table_name`, `record_id` (PK pair), `enqueued_at`, `attempts`, `last_error` | Pointer to changed records; payload read at push time. Coalesces repeated edits ([sync-protocol](sync-protocol.md#outbox)) |
+| `sync_set_aside` | `table_name`, `record_id` (PK pair), `row` (JSON), `set_aside_at` | Pulled rows this app couldn't read, tried again on every sync ([ADR-0032](../decisions/0032-sync-tolerates-unknown-values.md)) |
 | `sync_state` | `key` PK, `value` | `device_id`, `pull_cursor`, `last_push_at`, `last_pull_at`, `clock_last` |
 | `settings` | `key` PK, `value` JSON | Non-secret settings (model slots, hotkeys, server URL). Secrets are in the keychain |
 | `llm_runs` | `id`, `raw_log_id?`, `purpose`, `provider`, `model`, `latency_ms`, `input_tokens`, `output_tokens`, `ok`, `error_code`, `created_at` | Local audit/cost view; no prompt content |

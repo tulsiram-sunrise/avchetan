@@ -1,6 +1,6 @@
 # 0031 — A routine's days are derived rows made on the day, with a fixed early version
 
-- **Status:** Accepted
+- **Status:** Accepted. Its strict check of a repeat rule arriving through sync is superseded by [ADR-0032](0032-sync-tolerates-unknown-values.md).
 - **Date:** 2026-11-17
 - **Builds on:** [ADR-0004](0004-outbox-sync-lww.md) (LWW sync), [ADR-0006](0006-uuidv7-and-deterministic-ids.md) (derived IDs), [ADR-0030](0030-repeat-rules-json-own-engine.md) (repeat rules), [tasks, routines and reminders §3](../product/tasks-routines-reminders.md#3-routines)
 

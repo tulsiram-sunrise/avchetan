@@ -34,7 +34,8 @@ Short records of significant decisions: context, decision, consequences. Accepte
 | [0028](0028-app-lock-device-auth.md) | App lock uses the device's own lock and leaves capture open | Accepted |
 | [0029](0029-local-search-index.md) | Plain search uses a local full-text index that isn't synced | Accepted |
 | [0030](0030-repeat-rules-json-own-engine.md) | Repeat rules are a Zod-checked JSON object, computed by our own code | Accepted |
-| [0031](0031-routine-days-derived-rows.md) | A routine's days are derived rows made on the day, with a fixed early version | Accepted |
+| [0031](0031-routine-days-derived-rows.md) | A routine's days are derived rows made on the day, with a fixed early version | Accepted (its strict sync check of the rule superseded by 0032) |
+| [0032](0032-sync-tolerates-unknown-values.md) | Sync passes on values it doesn't know, and sets aside rows it can't read | Accepted |
 
 ## Template
 

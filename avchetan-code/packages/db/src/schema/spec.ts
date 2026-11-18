@@ -202,6 +202,16 @@ export const TABLES = {
       last_error: opt('text'),
     },
   },
+  /** Pulled rows this app couldn't read, tried again on every sync (ADR-0032). */
+  sync_set_aside: {
+    scope: 'local',
+    columns: {
+      table_name: req('text'),
+      record_id: req('text'),
+      row: req('json'),
+      set_aside_at: req('instant'),
+    },
+  },
   sync_state: {
     scope: 'local',
     columns: { key: req('text'), value: req('text') },

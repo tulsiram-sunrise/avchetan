@@ -19,10 +19,17 @@ export const syncStatusSchema = z.object({
   clockSkew: z.boolean(),
   /** Changes the server keeps refusing, shown as a sync issue. */
   stuck: z.int(),
+  /** Rows from another device this app can't read yet, set aside (ADR-0032). */
+  setAside: z.int().default(0),
 });
 export type SyncStatus = z.infer<typeof syncStatusSchema>;
 
-export const INITIAL_STATUS: SyncStatus = { state: 'not_configured', clockSkew: false, stuck: 0 };
+export const INITIAL_STATUS: SyncStatus = {
+  state: 'not_configured',
+  clockSkew: false,
+  stuck: 0,
+  setAside: 0,
+};
 
 /** The latest result, kept so every screen and window can read it. */
 export async function loadSyncStatus(store: ClientStore): Promise<SyncStatus> {
@@ -62,6 +69,12 @@ export function describeSync(status: SyncStatus): SyncSummary {
   if (status.stuck > 0) {
     return { text: `${status.stuck} changes keep failing to sync.`, helpCode: 'sync_issue' };
   }
+  if (status.setAside > 0) {
+    return {
+      text: `${status.setAside} ${status.setAside === 1 ? 'change' : 'changes'} from another device can’t be read here. Update Avchetan on this device.`,
+      helpCode: 'sync_set_aside',
+    };
+  }
   return STATE_TEXT[status.state];
 }
 
@@ -71,7 +84,7 @@ export type HubDot = 'synced' | 'trying' | 'problem';
 export function hubDot(status: SyncStatus): HubDot | null {
   if (status.state === 'not_configured') return null;
   // Something the user has to fix comes first, as in describeSync.
-  if (status.clockSkew || status.stuck > 0) return 'problem';
+  if (status.clockSkew || status.stuck > 0 || status.setAside > 0) return 'problem';
   if (status.state === 'synced') return 'synced';
   if (status.state === 'syncing' || status.state === 'offline') return 'trying';
   return 'problem';

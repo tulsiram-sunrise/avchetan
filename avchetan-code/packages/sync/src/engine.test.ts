@@ -1,5 +1,5 @@
 import { openTestStore } from '@avchetan/db/testing';
-import type { HttpFetch } from '@avchetan/shared';
+import type { HttpFetch, RepeatRule } from '@avchetan/shared';
 import { FakeNetworkMonitor, ManualScheduler, MemorySecretStore } from '@avchetan/shared/testing';
 import { describe, expect, it, vi } from 'vitest';
 import { saveConnection } from './config';
@@ -351,41 +351,94 @@ describe('pulling', () => {
     expect(await device.status()).toMatchObject({ state: 'synced' });
   });
 
-  // Characterization: what a newer device's value does to this one today. Day 6 of v0.5.0
-  // (tolerant sync) turns both round: the page is taken and the row read with a fallback.
-  it('today: fails the whole page on a pulled row with an enum value it does not know', async () => {
+  // A newer device's values (ADR-0032): taken and passed on, read with a fallback here.
+  it('takes a row with an enum value it does not know, and pushes it back unchanged', async () => {
     const device = await setup();
-    const [first, second] = await rowsFromAnotherDevice(2);
-    device.server.log.push(first as Change, {
-      table: 'tasks',
-      row: { ...(second as Change).row, origin: 'from_a_newer_app' },
-    });
+    const [task] = await rowsFromAnotherDevice(1);
+    const fromANewerApp: Change['row'] = { ...(task as Change).row, origin: 'from_a_newer_app' };
+    device.server.log.push({ table: 'tasks', row: fromANewerApp });
 
     await device.engine.syncNow();
+    expect(await device.status()).toMatchObject({ state: 'synced', setAside: 0 });
+    await device.store.write((tx) =>
+      device.store.repos.tasks.editByUser(tx, String(fromANewerApp.id), { title: 'Renamed' }),
+    );
+    await device.engine.syncNow();
 
-    expect(await device.status()).toMatchObject({ state: 'failed' });
-    expect(await taskTitles(device)).toEqual([]);
-    expect(await device.store.sync.getState('pull_cursor')).not.toBe('2');
+    const pushed = device.server.received.find(({ row }) => row.id === fromANewerApp.id);
+    expect(pushed?.row).toMatchObject({ title: 'Renamed', origin: 'from_a_newer_app' });
   });
 
-  it('today: fails the whole page on a routine whose repeat rule has a field it does not know', async () => {
+  it('keeps a routine whose repeat rule it cannot read, and makes no days for it', async () => {
     const device = await setup();
     const { store } = await openTestStore({ newId: () => crypto.randomUUID() });
-    const routine = await store.write((tx) =>
-      store.repos.routines.create(tx, {
-        title: 'Water plants',
-        kind: 'confirm',
-        repeatRule: { freq: 'weekly', start: '2026-11-16', byWeekday: ['monday'] },
-      }),
+    const rule: RepeatRule = { freq: 'weekly', start: '2026-11-16', byWeekday: ['monday'] };
+    const [readable, newer] = await store.write(async (tx) => [
+      await store.repos.routines.create(tx, { title: 'Read', kind: 'confirm', repeatRule: rule }),
+      await store.repos.routines.create(tx, { title: 'Newer', kind: 'confirm', repeatRule: rule }),
+    ]);
+    device.server.log.push(
+      { table: 'routines', row: readable as Change['row'] },
+      { table: 'routines', row: { ...newer, repeatRule: { ...rule, bySetPos: [1] } } },
     );
+
+    await device.engine.syncNow();
+    const made = await device.store.write((tx) =>
+      device.store.repos.routines.ensureDays(tx, '2026-11-16'),
+    );
+
+    expect(await device.store.repos.routines.list(device.store.db)).toHaveLength(2);
+    expect(made.map((day) => day.routineId)).toEqual([readable?.id]);
+  });
+
+  it('sets aside a row it cannot read, takes the rest of the page, and says so', async () => {
+    const device = await setup();
+    const [first, broken, third] = await rowsFromAnotherDevice(3);
+    device.server.log.push(
+      first as Change,
+      { table: 'tasks', row: { ...(broken as Change).row, updatedAt: 'yesterday' } },
+      third as Change,
+    );
+
+    await device.engine.syncNow();
+
+    expect(await taskTitles(device)).toEqual(['Task 1', 'Task 3']);
+    expect(await device.store.sync.getState('pull_cursor')).toBe('3');
+    expect(await device.status()).toMatchObject({ state: 'synced', setAside: 1 });
+  });
+
+  it('drops a set-aside row when a readable version of it arrives', async () => {
+    const device = await setup();
+    const [task] = await rowsFromAnotherDevice(1);
+    device.server.log.push({ table: 'tasks', row: { ...(task as Change).row, id: 'not-a-uuid' } });
     device.server.log.push({
-      table: 'routines',
-      row: { ...routine, repeatRule: { ...(routine.repeatRule as object), bySetPos: [1] } },
+      table: 'tasks',
+      row: { ...(task as Change).row, updatedAt: 'later' },
+    });
+    await device.engine.syncNow();
+    expect(await device.status()).toMatchObject({ setAside: 2 });
+
+    device.server.log.push(task as Change);
+    await device.engine.syncNow();
+
+    expect(await taskTitles(device)).toEqual(['Task 1']);
+    // The row with the bad ID has no readable version yet, so it stays aside.
+    expect(await device.status()).toMatchObject({ state: 'synced', setAside: 1 });
+  });
+
+  it('applies a set-aside row once it can read it, as after an update', async () => {
+    const device = await setup();
+    const [task] = await rowsFromAnotherDevice(1);
+    // Set aside by an older version of this app, which couldn't read it.
+    await device.store.sync.applyPage([], 0, {
+      setAside: [
+        { table: 'tasks', id: String((task as Change).row.id), row: (task as Change).row },
+      ],
     });
 
     await device.engine.syncNow();
 
-    expect(await device.status()).toMatchObject({ state: 'failed' });
-    expect(await device.store.db.query.routines.findMany()).toEqual([]);
+    expect(await taskTitles(device)).toEqual(['Task 1']);
+    expect(await device.status()).toMatchObject({ state: 'synced', setAside: 0 });
   });
 });

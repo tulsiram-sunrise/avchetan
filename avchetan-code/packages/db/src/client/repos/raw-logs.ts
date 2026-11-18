@@ -214,8 +214,9 @@ export function rawLogsRepo(deps: RepoDeps, tags: ReturnType<typeof tagsRepo>) {
       if (!old || old.deletedAt) throw new ValidationError('not_found', 'Entry no longer exists');
       const next = await repo.capture(tx, {
         ...input,
-        // Editing never makes a private entry normal: that is Make normal's job.
-        privacy: old.privacy === 'local_only' ? 'local_only' : (input.privacy ?? 'normal'),
+        // Editing never makes a private entry normal: that is Make normal's job. Any value but
+        // normal is kept, one from a newer app too (ADR-0032).
+        privacy: old.privacy !== 'normal' ? old.privacy : (input.privacy ?? 'normal'),
         capturedTz: old.capturedTz,
         capturedAt: old.capturedAt,
         explicitTagPaths: [...(input.explicitTagPaths ?? []), ...ruleTagPaths(old.context)],

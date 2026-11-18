@@ -246,6 +246,18 @@ export const syncOutbox = sqliteTable(
   (t) => [primaryKey({ columns: [t.tableName, t.recordId] })],
 );
 
+/** Pulled rows this app couldn't read, tried again on every sync (ADR-0032). */
+export const syncSetAside = sqliteTable(
+  'sync_set_aside',
+  {
+    tableName: text('table_name').notNull(),
+    recordId: text('record_id').notNull(),
+    row: text('row', { mode: 'json' }).$type<unknown>().notNull(),
+    setAsideAt: text('set_aside_at').notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.tableName, t.recordId] })],
+);
+
 export const syncState = sqliteTable('sync_state', {
   key: text('key').primaryKey(),
   value: text('value').notNull(),

@@ -33,12 +33,21 @@ describe('synced row schemas', () => {
     expect(SYNCED_ROW_SCHEMAS.raw_logs?.safeParse(row).success).toBe(false);
   });
 
-  // Characterization: Day 6 of v0.5.0 (tolerant sync) turns this round, so a value from a newer
-  // app passes the wire and is narrowed when it is read.
-  it('today: rejects a value outside an enum', async () => {
-    const row = { ...(await capturedRow()), status: 'nonsense' };
+  it('passes on an enum value from a newer app unchanged (ADR-0032)', async () => {
+    const row = { ...(await capturedRow()), source: 'mobile_share', status: 'waiting_for_hub' };
 
-    expect(SYNCED_ROW_SCHEMAS.raw_logs?.safeParse(row).success).toBe(false);
+    expect(SYNCED_ROW_SCHEMAS.raw_logs?.parse(row)).toEqual(row);
+  });
+
+  it('still rejects an enum value no app would write', async () => {
+    const row = await capturedRow();
+
+    for (const status of ['', 'Processed', 'pending llm', 'x'.repeat(65), 7, null]) {
+      expect(
+        SYNCED_ROW_SCHEMAS.raw_logs?.safeParse({ ...row, status }).success,
+        String(status),
+      ).toBe(false);
+    }
   });
 
   it('drops fields it does not know', async () => {
@@ -115,28 +124,27 @@ describe('routine rows', () => {
     expect(SYNCED_ROW_SCHEMAS.routines?.parse(row)).toEqual(row);
   });
 
-  it('checks the repeat rule like one typed in', async () => {
+  it('passes on a repeat rule from a newer app unchanged (ADR-0032)', async () => {
     const row = await routineRow();
-    const badRules = [
+    const newerRules = [
+      { ...(row.repeatRule as object), bySetPos: [1] },
       { freq: 'hourly', start: '2026-11-16' },
-      { freq: 'daily', start: '2026-11-16', byWeekday: ['monday'] },
-      'FREQ=DAILY',
     ];
 
-    for (const repeatRule of badRules) {
-      expect(SYNCED_ROW_SCHEMAS.routines?.safeParse({ ...row, repeatRule }).success).toBe(false);
+    for (const repeatRule of newerRules) {
+      expect(SYNCED_ROW_SCHEMAS.routines?.parse({ ...row, repeatRule })).toEqual({
+        ...row,
+        repeatRule,
+      });
     }
   });
 
-  // Characterization: Day 6 of v0.5.0 (tolerant sync) turns this round, so a rule from a newer
-  // app passes the wire and simply makes no days on this one.
-  it('today: rejects a repeat rule with a field it does not know', async () => {
+  it('still needs the repeat rule to be an object', async () => {
     const row = await routineRow();
-    const fromANewerApp = { ...(row.repeatRule as object), bySetPos: [1] };
 
-    expect(
-      SYNCED_ROW_SCHEMAS.routines?.safeParse({ ...row, repeatRule: fromANewerApp }).success,
-    ).toBe(false);
+    for (const repeatRule of ['FREQ=DAILY', ['daily'], null, 3]) {
+      expect(SYNCED_ROW_SCHEMAS.routines?.safeParse({ ...row, repeatRule }).success).toBe(false);
+    }
   });
 
   it('checks the window times', async () => {

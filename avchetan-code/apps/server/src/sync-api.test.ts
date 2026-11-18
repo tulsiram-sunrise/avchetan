@@ -238,7 +238,7 @@ describe('push and pull', () => {
 
   it('rejects only the row with a problem', async () => {
     const good = await clientRow('good');
-    const bad = { ...(await clientRow('bad')), status: 'nonsense' };
+    const bad = { ...(await clientRow('bad')), status: 'Not A Status' };
 
     const result = await push([
       { table: 'raw_logs', row: good },
@@ -345,9 +345,8 @@ describe('push and pull', () => {
     expect((await pull()).changes.map((c) => c.row)).toEqual([routine, day]);
   });
 
-  // Characterization: Day 6 of v0.5.0 (tolerant sync) turns this round, so the hub stores and
-  // passes on a value from a newer app instead of leaving it stuck in that app's outbox.
-  it('today: refuses a row with an enum value or a repeat-rule field it does not know', async () => {
+  // A newer app's values pass through the hub unchanged (ADR-0032).
+  it('stores and passes on an enum value or a repeat-rule field it does not know', async () => {
     const entry = { ...(await clientRow()), source: 'mobile_share' };
     const { store } = await openTestStore({ start: NOW, newId: () => crypto.randomUUID() });
     const routine = await store.write((tx) =>
@@ -367,11 +366,9 @@ describe('push and pull', () => {
       { table: 'routines', row: newerRule },
     ]);
 
-    expect(result.acked).toEqual([]);
-    expect(result.rejected).toMatchObject([
-      { id: entry.id, code: 'validation' },
-      { id: routine.id, code: 'validation' },
-    ]);
+    expect(result.rejected).toEqual([]);
+    expect(result.acked).toHaveLength(2);
+    expect((await pull()).changes.map((c) => c.row)).toEqual([entry, newerRule]);
   });
 });
 

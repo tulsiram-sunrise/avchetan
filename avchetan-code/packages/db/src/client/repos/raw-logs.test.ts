@@ -235,6 +235,21 @@ describe('private tags (docs/product/private-entries.md)', () => {
     expect(tagged.privacy).toBe('local_only');
   });
 
+  it('Edit text keeps a privacy value from a newer app instead of making it normal', async () => {
+    const { store } = await openTestStore();
+    const log = await store.write((tx) => store.repos.rawLogs.capture(tx, capture('note')));
+    const sealed = { ...log, privacy: 'sealed' } as unknown as typeof log;
+    await store.sync.applyRemote([
+      { table: 'raw_logs', row: { ...sealed, updatedAt: '2026-10-27T00:00:00.000Z' } },
+    ]);
+
+    const edited = await store.write((tx) =>
+      store.repos.rawLogs.replace(tx, log.id, capture('note, longer')),
+    );
+
+    expect(edited.privacy).toBe('sealed');
+  });
+
   it('Make private and Make normal change the entry and enqueue it for sync', async () => {
     const { store } = await openTestStore();
     const log = await store.write((tx) => store.repos.rawLogs.capture(tx, capture('note')));

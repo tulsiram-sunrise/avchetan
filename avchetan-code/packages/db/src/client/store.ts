@@ -38,6 +38,14 @@ import { routinesRepo } from './repos/routines';
 import { tagsRepo } from './repos/tags';
 import { tasksRepo } from './repos/tasks';
 import * as search from './search';
+import {
+  dropSetAside,
+  type ReadRow,
+  retrySetAside,
+  type SetAsideRow,
+  setAside,
+  setAsideCount,
+} from './set-aside';
 import { getById, type RepoDeps, SYNCED_TABLES } from './synced';
 import * as trends from './trends';
 
@@ -137,20 +145,28 @@ export async function openClientStore(options: OpenClientStoreOptions) {
       enqueueEverything: (): Promise<void> => write((tx) => enqueueEverything(tx, clock.now())),
       applyRemote: (changes: readonly RemoteChange[]): Promise<ApplyResult> =>
         database.write((tx) => applyRemoteChanges(tx, changes)),
-      /** One pulled page and its cursor, together: a crash can't skip or repeat part of a page. */
+      /**
+       * One pulled page and its cursor, together: a crash can't skip or repeat part of a page.
+       * Rows this app couldn't read are kept aside in the same transaction (ADR-0032).
+       */
       applyPage: (
         changes: readonly RemoteChange[],
         cursor: number,
-        options: { refill?: boolean } = {},
+        options: { refill?: boolean; setAside?: readonly SetAsideRow[] } = {},
       ): Promise<ApplyResult> =>
         write(async (tx) => {
           const result = await applyRemoteChanges(tx, changes, options);
+          await dropSetAside(tx, changes);
+          if (options.setAside?.length) await setAside(tx, options.setAside, clock.now());
           await setSyncState(tx, 'pull_cursor', String(cursor));
           // A pull of everything resumes from here if it is interrupted (sync engine).
           if (options.refill) await setSyncState(tx, 'refill_cursor', String(cursor));
           for (const { row } of changes) clock.observe(row.updatedAt);
           return result;
         }),
+      /** Applies the set-aside rows this app can read now (after an update). */
+      retrySetAside: (read: ReadRow): Promise<number> => write((tx) => retrySetAside(tx, read)),
+      setAsideCount: () => setAsideCount(database.db),
       getState: (key: SyncStateKey) => getSyncState(database.db, key),
       setState: (key: SyncStateKey, value: string) =>
         database.write((tx) => setSyncState(tx, key, value)),

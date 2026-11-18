@@ -1,17 +1,19 @@
 import { type ColumnSpec, SYNCED_TABLE_NAMES, TABLES, type TableName } from '@avchetan/db';
-import {
-  isUtcInstant,
-  isValidLocalDate,
-  isValidLocalTime,
-  repeatRuleSchema,
-} from '@avchetan/shared';
+import { isUtcInstant, isValidLocalDate, isValidLocalTime } from '@avchetan/shared';
 import { z } from 'zod';
 
 const camelCase = (column: string) =>
   column.replace(/_([a-z])/g, (_, letter: string) => letter.toUpperCase());
 
+/**
+ * An enum value from any version of the app: a newer one may send a value this one doesn't
+ * know yet, which passes on and is narrowed where it is read (ADR-0032). Enum values are always
+ * lowercase snake_case (docs/conventions/naming.md), so anything else is a bad row.
+ */
+export const wireEnumSchema = z.string().regex(/^[a-z][a-z0-9_]{0,63}$/, 'Expected an enum value');
+
 function baseSchema(spec: ColumnSpec): z.ZodType {
-  if (spec.enum) return z.enum(spec.enum as [string, ...string[]]);
+  if (spec.enum) return wireEnumSchema;
   switch (spec.type) {
     case 'uuid':
       return z.uuid();
@@ -38,8 +40,9 @@ function baseSchema(spec: ColumnSpec): z.ZodType {
 
 /** Columns with a tighter check than their logical type, keyed `table.column`. */
 const COLUMN_SCHEMAS: Record<string, z.ZodType> = {
-  // A rule from sync is checked like one typed in (ADR-0030).
-  'routines.repeat_rule': repeatRuleSchema,
+  // Any object: a newer app's rule passes on, and a rule this app can't read makes no days
+  // (routineRule, ADR-0032). Rules typed in are still checked strictly (ADR-0030).
+  'routines.repeat_rule': z.record(z.string(), z.json()),
   'routines.window_start': z.string().refine(isValidLocalTime, 'Expected HH:MM'),
   'routines.window_end': z.string().refine(isValidLocalTime, 'Expected HH:MM'),
 };

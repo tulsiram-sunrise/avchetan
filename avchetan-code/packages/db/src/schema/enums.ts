@@ -1,7 +1,8 @@
 /**
  * Closed value sets used by both dialects, Zod schemas and the parity test.
- * Values are lowercase snake_case (docs/conventions/naming.md). Adding a value is a
- * migration on Postgres (CHECK constraint) and a no-op on SQLite.
+ * Values are lowercase snake_case (docs/conventions/naming.md). Synced columns have no CHECK on
+ * Postgres, and sync passes on a value this app doesn't know (ADR-0032): a new value needs
+ * every reader to handle it before any release writes it. Server-only columns keep a CHECK.
  */
 
 export const RAW_LOG_SOURCES = [

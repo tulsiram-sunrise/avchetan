@@ -25,7 +25,7 @@ Applies to `packages/db` and anything that reads/writes data. Full table definit
 | local date | `text` `YYYY-MM-DD` | `date` (wire: string) |
 | bool | `integer` mode boolean | `boolean` |
 | json | `text` mode json | `jsonb` |
-| enum | `text` + `enum` option | `text` + CHECK constraint (not pg enums — easier migrations) |
+| enum | `text` + `enum` option | `text` (not pg enums — easier migrations); a CHECK constraint only on server-only tables. Synced enum columns have none, so a hub passes on a newer app's value ([ADR-0032](../decisions/0032-sync-tolerates-unknown-values.md)) |
 | int / real | `integer` / `real` | `integer` / `double precision` |
 
 ## Migrations

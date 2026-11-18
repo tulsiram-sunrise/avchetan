@@ -132,6 +132,7 @@ export {
   searchTasks,
   type TaskHit,
 } from './client/search';
+export type { ReadRow, SetAsideRow } from './client/set-aside';
 export { type ClientStore, type OpenClientStoreOptions, openClientStore } from './client/store';
 export {
   getById,

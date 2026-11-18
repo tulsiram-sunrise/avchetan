@@ -9,6 +9,7 @@ const LABELS: Record<RawLogStatus, { text: string; className: string }> = {
 };
 
 export function StatusBadge({ status }: { status: RawLogStatus }) {
-  const { text, className } = LABELS[status];
+  // A status from a newer app shows as plain saved (ADR-0032).
+  const { text, className } = LABELS[status] ?? LABELS.skipped;
   return <Text className={`text-xs font-medium ${className}`}>{text}</Text>;
 }
