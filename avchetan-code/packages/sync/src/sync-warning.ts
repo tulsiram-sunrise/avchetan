@@ -11,7 +11,7 @@ export const SYNC_WARNING_FIX =
   'Check that the PC with your hub is on and Avchetan is running there, and that this device is on the same Wi-Fi or on Tailscale.';
 
 /** Last sync results that name their own fix, so the banner doesn't send the user to the Wi-Fi. */
-const OWN_FIX = new Set(['unauthorized', 'clock_skew', 'sync_issue']);
+const OWN_FIX = new Set(['unauthorized', 'clock_skew', 'sync_issue', 'wrong_server']);
 
 export type SyncWarning = {
   /** The last successful sync, or null when this device never synced. */

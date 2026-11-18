@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { saveConnection } from './config';
 import { createSyncEngine, type PullProgress, type SyncDevice } from './engine';
 import type { PushRejection } from './protocol';
-import { loadSyncStatus } from './status';
+import { describeSync, INITIAL_STATUS, loadSyncStatus } from './status';
 
 /**
  * The engine against a scripted server: no PGlite, no HTTP, so each case runs in milliseconds.
@@ -18,7 +18,13 @@ const SERVER_ID = '0192a000-0000-7000-8000-00000000aaaa';
 const EPOCH = '0192a000-0000-7000-8000-00000000bbbb';
 
 type Change = { table: string; row: Record<string, unknown> };
-type Call = { path: string; query: URLSearchParams; body: unknown };
+type Call = {
+  host: string;
+  path: string;
+  query: URLSearchParams;
+  body: unknown;
+  token: string | null;
+};
 type Scripted = { status: number; body: unknown };
 
 const json = (status: number, body: unknown) =>
@@ -41,6 +47,11 @@ class FakeServer {
   readonly pushed = new Map<string, number>();
   private readonly scripted = new Map<string, (Scripted | Error | 'pass')[]>();
   down = false;
+  /** What health says: change them to play another server, or a restored one. */
+  serverId = SERVER_ID;
+  dataEpoch = EPOCH;
+  /** Other machines at some hosts: they answer health as another server, and nothing else. */
+  readonly strangers = new Map<string, string>();
 
   /** The next answer to `path`: an Error never gets there, 'pass' answers as usual. */
   next(path: string, answer: Scripted | Error | 'pass'): void {
@@ -56,8 +67,13 @@ class FakeServer {
   readonly fetch: HttpFetch = async (input, init) => {
     const url = new globalThis.URL(String(input));
     const body: unknown = init?.body ? JSON.parse(String(init.body)) : undefined;
-    this.calls.push({ path: url.pathname, query: url.searchParams, body });
+    const token = new Headers(init?.headers).get('Authorization');
+    this.calls.push({ host: url.host, path: url.pathname, query: url.searchParams, body, token });
     if (this.down) throw new TypeError('fetch failed');
+    const stranger = this.strangers.get(url.host);
+    if (stranger) {
+      return json(200, { status: 'ok', version: 'other', serverId: stranger, protocol: 1 });
+    }
     const script = this.scripted.get(url.pathname)?.shift();
     if (script instanceof Error) throw script;
     if (script && script !== 'pass') return json(script.status, script.body);
@@ -71,8 +87,8 @@ class FakeServer {
         return {
           status: 'ok',
           version: 'test',
-          serverId: SERVER_ID,
-          dataEpoch: EPOCH,
+          serverId: this.serverId,
+          dataEpoch: this.dataEpoch,
           protocol: 1,
         };
       case '/v1/devices/register':
@@ -111,7 +127,7 @@ class FakeServer {
   }
 }
 
-type SetupOptions = { pullPageSize?: number; online?: boolean };
+type SetupOptions = { pullPageSize?: number; pushBatchSize?: number; online?: boolean };
 
 async function setup(options: SetupOptions = {}) {
   const server = new FakeServer();
@@ -131,6 +147,7 @@ async function setup(options: SetupOptions = {}) {
     device: async () => device,
     onPullProgress: (value) => progress.push(value),
     ...(options.pullPageSize ? { pullPageSize: options.pullPageSize } : {}),
+    ...(options.pushBatchSize ? { pushBatchSize: options.pushBatchSize } : {}),
   });
   return {
     server,
@@ -290,14 +307,30 @@ describe('pushing', () => {
 
     await device.engine.syncNow();
 
-    // Two full batches, then the refused row alone, after which the engine gives up for now.
-    expect(device.server.count('/v1/sync/push')).toBe(3);
+    // One walk through the outbox: two batches, and the refused row went once.
+    expect(device.server.count('/v1/sync/push')).toBe(2);
     expect(device.server.received.filter(({ table }) => table === 'tasks')).toHaveLength(520);
     expect(await device.store.sync.listOutbox()).toHaveLength(1);
-    // Today a refused row goes again in every batch of the same sync, so a backlog of ten
-    // batches uses up its 10 tries at once and it is stuck. Day 7 of v0.5.0 turns this round:
-    // once per sync.
-    expect(device.server.pushed.get(first.id)).toBe(3);
+    expect(device.server.pushed.get(first.id)).toBe(1);
+  });
+
+  it('tries a refused row once per sync, however long the backlog', async () => {
+    // Batches of 10, so 130 rows are 13 batches: more than a row's 10 tries.
+    const device = await setup({ pushBatchSize: 10 });
+    const first = await device.addTask('Refused for now');
+    device.server.refused.set(first.id, 'clock_skew');
+    await device.store.write(async (tx) => {
+      for (let n = 1; n <= 130; n += 1)
+        await device.store.repos.tasks.create(tx, { title: `${n}` });
+    });
+
+    await device.engine.syncNow();
+    expect(device.server.pushed.get(first.id)).toBe(1);
+    expect(await device.status()).toMatchObject({ stuck: 0, clockSkew: true });
+
+    device.server.refused.delete(first.id);
+    await device.engine.syncNow();
+    expect(await device.store.sync.listOutbox()).toEqual([]);
   });
 });
 
@@ -440,5 +473,149 @@ describe('pulling', () => {
 
     expect(await taskTitles(device)).toEqual(['Task 1']);
     expect(await device.status()).toMatchObject({ state: 'synced', setAside: 0 });
+  });
+});
+
+describe('the server a device expects', () => {
+  const OTHER = '0192a000-0000-7000-8000-00000000cccc';
+  const HOME = 'https://hub.test';
+
+  it('skips another machine at the home address and reaches its hub at the next one', async () => {
+    const device = await setup();
+    await saveConnection(device.store, new MemorySecretStore(), {
+      urls: ['http://192.168.1.5:8787', HOME],
+      token: TOKEN,
+      trustLocalNetwork: true,
+      serverId: SERVER_ID,
+    });
+    device.server.strangers.set('192.168.1.5:8787', OTHER);
+
+    await device.engine.syncNow();
+
+    expect(await device.status()).toMatchObject({ state: 'synced' });
+    const atCafe = device.server.calls.filter((call) => call.host === '192.168.1.5:8787');
+    expect(atCafe.map((call) => [call.path, call.token])).toEqual([['/v1/health', null]]);
+  });
+
+  it('sends nothing to a different server at a saved address, and says to pair again', async () => {
+    const device = await setup();
+    await device.engine.syncNow();
+    await device.addTask('Private plans');
+    device.server.calls.length = 0;
+    device.server.serverId = OTHER;
+
+    await device.engine.syncNow();
+
+    expect(device.server.calls.map((call) => [call.path, call.token])).toEqual([
+      ['/v1/health', null],
+    ]);
+    expect(await device.status()).toMatchObject({
+      state: 'wrong_server',
+      errorCode: 'wrong_server',
+    });
+    expect(describeSync(await device.status())).toEqual({
+      text: 'A different server answered at this address. Pair again.',
+      helpCode: 'wrong_server',
+    });
+    expect(await device.store.sync.listOutbox()).toHaveLength(1);
+  });
+
+  it('expects the server it last synced with, on a device from before this was kept', async () => {
+    const device = await setup();
+    await device.engine.syncNow();
+    device.raw.prepare("DELETE FROM sync_state WHERE key = 'expected_server_id'").run();
+    device.server.serverId = OTHER;
+
+    await device.engine.syncNow();
+
+    expect(await device.status()).toMatchObject({ state: 'wrong_server' });
+  });
+
+  it('expects the server a pairing code names, from the first sync', async () => {
+    const device = await setup();
+    await saveConnection(device.store, new MemorySecretStore(), {
+      urls: [HOME],
+      token: TOKEN,
+      trustLocalNetwork: false,
+      serverId: OTHER,
+    });
+
+    await device.engine.syncNow();
+
+    expect(await device.status()).toMatchObject({ state: 'wrong_server' });
+    expect(device.server.count('/v1/devices/register')).toBe(0);
+  });
+
+  it('moves to the server at newly typed addresses, and sends it every row', async () => {
+    const device = await setup();
+    await device.addTask('Kept');
+    await device.engine.syncNow();
+    device.server.serverId = OTHER;
+    device.server.received.length = 0;
+    await saveConnection(device.store, new MemorySecretStore(), {
+      urls: ['https://new-hub.test'],
+      token: TOKEN,
+      trustLocalNetwork: false,
+    });
+
+    await device.engine.syncNow();
+
+    expect(await device.status()).toMatchObject({ state: 'synced' });
+    expect(device.server.received.map(({ row }) => row.title)).toContain('Kept');
+    expect(await device.store.sync.getState('expected_server_id')).toBe(OTHER);
+    expect(device.server.count('/v1/devices/register')).toBe(2);
+  });
+
+  it('moves to a rebuilt server at the same address once the user saves the connection', async () => {
+    const device = await setup();
+    await device.engine.syncNow();
+    device.server.serverId = OTHER;
+    await device.engine.syncNow();
+    expect(await device.status()).toMatchObject({ state: 'wrong_server' });
+
+    await saveConnection(device.store, new MemorySecretStore(), {
+      urls: [HOME],
+      token: TOKEN,
+      trustLocalNetwork: false,
+    });
+    await device.engine.syncNow();
+
+    expect(await device.status()).toMatchObject({ state: 'synced' });
+    expect(await device.store.sync.getState('expected_server_id')).toBe(OTHER);
+  });
+
+  it('carries on with a restored server, sending every row again', async () => {
+    const device = await setup();
+    await device.addTask('Kept');
+    await device.engine.syncNow();
+    device.server.dataEpoch = '0192a000-0000-7000-8000-00000000dddd';
+    device.server.received.length = 0;
+
+    await device.engine.syncNow();
+
+    expect(await device.status()).toMatchObject({ state: 'synced' });
+    expect(device.server.received.map(({ row }) => row.title)).toContain('Kept');
+  });
+});
+
+describe('the sync status', () => {
+  it('keeps why the last sync failed, and forgets it once one succeeds', async () => {
+    const device = await setup();
+    device.server.next('/v1/devices/register', failure(500, 'rate_limited'));
+
+    await device.engine.syncNow();
+    const failed = await device.status();
+    expect(failed).toMatchObject({ state: 'failed', errorCode: 'rate_limited' });
+    expect(describeSync(failed).helpCode).toBe('rate_limited');
+
+    await device.engine.syncNow();
+    expect(await device.status()).toMatchObject({ state: 'synced', errorCode: null });
+  });
+
+  it('reads a saved status that was cut short as no status', async () => {
+    const device = await setup();
+    await device.store.sync.setState('status', '{"state":"syn');
+
+    expect(await device.status()).toEqual(INITIAL_STATUS);
   });
 });

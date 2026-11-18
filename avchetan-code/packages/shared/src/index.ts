@@ -88,7 +88,7 @@ export { createLoop } from './jobs/single-flight-loop';
 export { TimerScheduler } from './jobs/timer-scheduler';
 export type { LogFields, Logger, LogLevel, LogRecord, LogSink } from './logger';
 export { configureLogging, consoleSink, createLogger } from './logger';
-export { isOnThisDevice, isPrivateNetwork, isTailscale } from './network';
+export { ipv4Parts, isOnThisDevice, isPrivateNetwork, isTailscale } from './network';
 export {
   describeRepeatRule,
   isOccurrence,

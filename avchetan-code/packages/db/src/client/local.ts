@@ -7,7 +7,13 @@ export type SyncStateKey =
   | 'device_id'
   | 'clock_last'
   | 'pull_cursor'
+  /** The server this device last synced with. */
   | 'server_id'
+  /**
+   * The server this device expects at its saved addresses: the one in the pairing code, or the
+   * first that answered after the addresses were typed in. Another one stops sync (wrong_server).
+   */
+  | 'expected_server_id'
   /** The server's data epoch when this device last synced (sync-protocol.md). */
   | 'data_epoch'
   /** The server and device details last registered there, as JSON. */

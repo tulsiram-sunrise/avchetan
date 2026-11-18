@@ -1,4 +1,4 @@
-import { type ClientStore, getSetting, setSetting } from '@avchetan/db/sqlite';
+import { type ClientStore, getSetting, setSetting, setSyncState } from '@avchetan/db/sqlite';
 import {
   createLogger,
   isOnThisDevice,
@@ -45,26 +45,45 @@ export function assertSafeServerUrl(url: string, trustLocalNetwork: boolean): vo
   throw new ValidationError('insecure_server_url', 'This address needs https://');
 }
 
-export type Connection = { urls: readonly string[]; token: string; trustLocalNetwork: boolean };
+export type Connection = {
+  urls: readonly string[];
+  token: string;
+  trustLocalNetwork: boolean;
+  /** The server these addresses belong to, when known (a pairing code names it). */
+  serverId?: string;
+};
 
-/** The token goes first: the engine may start as soon as the addresses exist. */
+/**
+ * The token goes first: the engine may start as soon as the addresses exist.
+ *
+ * Sync only talks to the server this device expects (`expected_server_id`): the one a pairing
+ * code names, or else the first to answer after the connection is saved. Saving is always the
+ * user's own act (Settings, pairing, the hub's switch or port), so it may move to a new server,
+ * even at the same address; a sync in the background never does.
+ */
 export async function saveConnection(
   store: ClientStore,
   secrets: Pick<SecretStore, 'set'>,
-  { urls, token, trustLocalNetwork }: Connection,
+  { urls, token, trustLocalNetwork, serverId }: Connection,
 ): Promise<void> {
   const cleaned = serverUrlsSchema.parse(
     urls.map((url) => url.trim().replace(/\/+$/, '')).filter((url) => url.length > 0),
   );
   for (const url of cleaned) assertSafeServerUrl(url, trustLocalNetwork);
   if (token) await secrets.set(SYNC_TOKEN_SECRET, token.trim());
-  await store.write((tx) => setSetting(tx, SERVER_URLS_SETTING, cleaned, store.clock.now()));
+  await store.write(async (tx) => {
+    await setSetting(tx, SERVER_URLS_SETTING, cleaned, store.clock.now());
+    await setSyncState(tx, 'expected_server_id', serverId ?? '');
+  });
 }
 
 export async function removeConnection(
   store: ClientStore,
   secrets: Pick<SecretStore, 'delete'>,
 ): Promise<void> {
-  await store.write((tx) => setSetting(tx, SERVER_URLS_SETTING, [], store.clock.now()));
+  await store.write(async (tx) => {
+    await setSetting(tx, SERVER_URLS_SETTING, [], store.clock.now());
+    await setSyncState(tx, 'expected_server_id', '');
+  });
   await secrets.delete(SYNC_TOKEN_SECRET);
 }

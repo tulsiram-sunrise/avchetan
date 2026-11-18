@@ -8,6 +8,7 @@ describe('hubDot', () => {
     clockSkew: false,
     stuck: 0,
     setAside: 0,
+    errorCode: null,
     ...extra,
   });
 
@@ -26,7 +27,13 @@ describe('hubDot', () => {
 });
 
 describe('describeSync', () => {
-  const synced: SyncStatus = { state: 'synced', clockSkew: false, stuck: 0, setAside: 0 };
+  const synced: SyncStatus = {
+    state: 'synced',
+    clockSkew: false,
+    stuck: 0,
+    setAside: 0,
+    errorCode: null,
+  };
 
   it('says when rows from another device were set aside, and how to fix it', () => {
     expect(describeSync({ ...synced, setAside: 1 })).toEqual({
@@ -54,6 +61,7 @@ describe('loadSyncStatus', () => {
       clockSkew: false,
       stuck: 0,
       setAside: 0,
+      errorCode: null,
     });
   });
 });

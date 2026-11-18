@@ -28,6 +28,7 @@ Vitest everywhere TS runs. Tests live beside source (`foo.ts` → `foo.test.ts`)
 - **A new repository method goes in the table** of `packages/db/src/client/repos/invariants.test.ts` (`WRITES`, and a new read in `READS`). The table checks, for every method at once, that each row it changes gets a newer `updated_at`, this device's ID and one outbox pointer, that a rollback leaves nothing, and that reads hide deleted rows.
 - **Characterization tests** pin down behaviour that a later change will turn round. Name them `today: …` and say in a comment which change turns them, so that change updates them on purpose.
 - **Property tests** (`fast-check`) for rules that must hold for any input: orderings, convergence, parsers. Keep the generated values narrow enough to hit ties and edges.
+- **Turbo caches tests.** A package's `typecheck` and `test` depend on its dependencies' `typecheck` (`turbo.json`), so a change in `packages/*` runs the apps' checks again. Without that, a change in `packages/sync` once replayed the server's old passing tests locally while CI failed. When in doubt, `pnpm turbo run test --force`.
 - **Component tests** run in `happy-dom`: put `// @vitest-environment happy-dom` at the top of the `*.test.tsx` file (the default environment stays `node`), use Testing Library's `render`/`screen`, and `cleanup()` after each test.
 
 ## Commands

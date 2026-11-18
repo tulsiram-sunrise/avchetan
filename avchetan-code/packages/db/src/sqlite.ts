@@ -42,7 +42,7 @@ export {
   setSyncState,
 } from './client/local';
 export { compareVersions, type RowVersion } from './client/lww';
-export { ackOutbox, listOutbox, type OutboxEntry } from './client/outbox';
+export { ackOutbox, listOutbox, type OutboxEntry, type OutboxPosition } from './client/outbox';
 export type {
   DuplicatePair,
   EntitySummary,
