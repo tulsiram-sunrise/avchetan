@@ -136,6 +136,42 @@ describe('/undo', () => {
     expect(deps.changed).toHaveBeenCalled();
   });
 
+  it('undoes what its line named, even if something was saved since', async () => {
+    await addTask('Water the plants');
+    await run('/done water');
+    const shown = await plan('/undo');
+    expect(shown).toMatchObject({ label: 'Undo: reopen “Water the plants”' });
+    const rawLog = await store.write((tx) =>
+      store.repos.rawLogs.capture(tx, {
+        content: 'Tea',
+        source: 'desktop_text',
+        capturedTz: 'UTC',
+      }),
+    );
+    rememberCapture(deps, rawLog);
+
+    if (shown.kind !== 'run') throw new Error('expected a run plan');
+    expect((await shown.run()).message).toBe('Reopened: Water the plants');
+    // The entry saved since is still there to undo.
+    expect(await plan('/undo')).toMatchObject({ label: 'Undo: delete “Tea”' });
+  });
+
+  it('keeps a change on the list when its undo fails', async () => {
+    let fail = true;
+    deps.undo.push({
+      label: 'flaky',
+      undo: async () => {
+        if (fail) throw new Error('disk busy');
+        return 'Undone';
+      },
+    });
+    await expect(run('/undo')).rejects.toThrow('disk busy');
+    expect(await plan('/undo')).toMatchObject({ label: 'Undo: flaky' });
+    fail = false;
+    expect((await run('/undo')).message).toBe('Undone');
+    expect(deps.undo.size).toBe(0);
+  });
+
   it('undoes the newest first: an entry saved after a /done', async () => {
     await addTask('Water the plants');
     await run('/done water');

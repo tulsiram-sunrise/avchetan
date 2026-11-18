@@ -229,7 +229,7 @@ If the lock was on and you removed the device's lock, Avchetan turned the app lo
 **"The built-in hub already has data."** Avchetan never overwrites a hub's data. To use other data instead, turn the hub off, quit Avchetan, rename `%APPDATA%\app.avchetan\hub\pglite-data`, and try again.
 
 ## hub_restore_failed
-**"The backup couldn't be restored; the hub kept its data."** Nothing changed: the hub is back on the data it had. Open **Recent hub log** for the reason. Try an older backup, or check that the disk isn't full.
+**"The backup couldn't be restored; the hub kept its data."** Nothing changed: the hub is back on the data it had, and running again if it was on. Open **Recent hub log** for the reason. Try an older backup, or check that the disk isn't full.
 
 ## hub_backup_invalid
 **"Not a hub backup, or that backup is gone."** The file was renamed or deleted. Close and reopen **Hub backups** to see the backups that are there.

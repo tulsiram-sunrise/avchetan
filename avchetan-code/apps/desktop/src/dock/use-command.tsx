@@ -9,7 +9,7 @@ import {
 } from '@avchetan/core';
 import { createLogger, toAppError } from '@avchetan/shared';
 import { useQuery } from '@tanstack/react-query';
-import { type KeyboardEvent, type ReactNode, useEffect, useMemo, useState } from 'react';
+import { type KeyboardEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { HelpLink } from '../help-link';
 import { emitAppEvent } from '../native/events';
 import { useOpenTasks } from '../queries/organize';
@@ -68,6 +68,9 @@ export function useCommand(
   const [error, setError] = useState<{ code: string; message: string } | null>(null);
   const [choice, setChoice] = useState(0);
   const [undoVisible, setUndoVisible] = useState(false);
+  // The text as it is now, for work that finishes after an await: the box may have changed.
+  const current = useRef(draft);
+  current.current = draft;
 
   const active = isCommand(draft);
   const parsed = active ? parseCommand(draft, learning.data?.aliases ?? {}) : null;
@@ -98,6 +101,7 @@ export function useCommand(
   }, [result]);
 
   async function execute(run: () => Promise<CommandOutcome>, fromReading: Reading | null) {
+    const ranOn = current.current;
     setBusy('running');
     setError(null);
     try {
@@ -105,7 +109,8 @@ export function useCommand(
         ? await confirmReading(store, fromReading.input, fromReading.reading, run)
         : { ...(await run()), alias: null };
       setResult(outcome);
-      setDraft('');
+      // Text typed while it ran is new: keep it.
+      if (current.current === ranOn) setDraft('');
       setReading(null);
       if (fromReading) {
         // Settings → Commands in the main window shows what was learned.
@@ -126,7 +131,11 @@ export function useCommand(
     setBusy('reading');
     setError(null);
     try {
+      const askedOn = current.current;
       const read = await readCommand(services, input);
+      // The text changed while the AI read it: this reading is for words no longer there, and
+      // Enter must not run it (and wipe the new text).
+      if (current.current !== askedOn) return;
       const next = planFor(deps, read.command, read.text, openTasks.data ?? []);
       if (next.kind === 'error') setError({ code: next.code, message: next.message });
       else setReading({ input, reading: read, plan: next });
@@ -179,15 +188,20 @@ export function useCommand(
     else setDraft(`/${name} `);
   }
 
-  /** Ctrl+Z in an empty box, the same as `/undo`. */
-  async function undoLast() {
-    const entry = undoStack.pop();
+  /**
+   * Ctrl+Z in an empty box, the same as `/undo`; or, with `undo`, a result's Undo button, which
+   * takes back that result's change even if another was made since. A failed undo stays listed.
+   */
+  async function undoLast(undo?: CommandOutcome['undo']) {
+    const entry = undo ? undoStack.find(undo) : undoStack.peek();
     if (!entry) {
-      setResult({ message: 'Nothing to undo since Avchetan started', undo: null, alias: null });
+      const message = undo ? 'Already undone' : 'Nothing to undo since Avchetan started';
+      setResult({ message, undo: null, alias: null });
       return;
     }
     try {
-      setResult({ message: await entry.undo(), undo: null, alias: null });
+      const message = await undoStack.run(entry);
+      setResult({ message: message ?? 'Already undone', undo: null, alias: null });
     } catch (thrown) {
       const { code, message } = toAppError(thrown);
       setError({ code, message });
@@ -252,7 +266,7 @@ export function useCommand(
             <button
               type="button"
               className="rounded border border-line px-1.5 py-0.5 text-ink hover:bg-surface-raised"
-              onClick={() => void undoLast()}
+              onClick={() => void undoLast(result.undo)}
             >
               Undo
             </button>
@@ -291,7 +305,7 @@ function PlanLine({ plan, choice }: { plan: CommandPlan; choice: number }) {
           <ul>
             {plan.options.map((option, index) => (
               <li
-                key={option.label}
+                key={option.key}
                 className={index === choice ? 'font-medium text-accent' : 'text-ink'}
               >
                 {index === choice ? '› ' : '  '}
