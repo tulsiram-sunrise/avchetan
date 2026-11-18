@@ -240,6 +240,16 @@ export default function LogScreen() {
       </View>
     );
   }
+  if (detail.isError) {
+    // Before, a failed read left a blank page.
+    return (
+      <View className="flex-1 gap-3 bg-surface p-6">
+        <Text className="text-sm text-ink">Couldn't open this entry.</Text>
+        <Failure error={detail.error} />
+        <Button label="Try again" onPress={() => void detail.refetch()} />
+      </View>
+    );
+  }
   if (!detail.data) return <View className="flex-1 bg-surface" />;
   const { rawLog, activities, tasks } = detail.data;
 

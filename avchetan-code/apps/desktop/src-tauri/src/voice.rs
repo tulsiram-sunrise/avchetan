@@ -147,7 +147,9 @@ pub struct StartRequest {
 
 /// Starts recording. Errors about the microphone or a missing model come back here; what
 /// happens after (text, or a transcription error) comes as events to the calling window.
-#[tauri::command]
+/// `async`, like stop and cancel: opening a microphone takes a moment, and a command without it
+/// runs on the main thread, where the windows would wait for it.
+#[tauri::command(async)]
 pub fn voice_start<R: Runtime>(
     app: AppHandle<R>,
     window: Window<R>,
@@ -252,13 +254,13 @@ pub fn voice_start<R: Runtime>(
 }
 
 /// Stops recording and turns it into text.
-#[tauri::command]
+#[tauri::command(async)]
 pub fn voice_stop(state: State<'_, VoiceState>) -> CommandResult<()> {
     finish(&state, Finish::Transcribe)
 }
 
 /// Stops recording and throws the audio away.
-#[tauri::command]
+#[tauri::command(async)]
 pub fn voice_cancel(state: State<'_, VoiceState>) -> CommandResult<()> {
     finish(&state, Finish::Cancel)
 }
@@ -475,25 +477,31 @@ fn transcribe(
     audio: &[f32],
 ) -> Result<String, &'static str> {
     used.fetch_add(1, Ordering::SeqCst);
-    let context = {
-        let mut inner = shared.lock().map_err(|_| "transcription_failed")?;
-        match &inner.model {
-            Some(model) if model.path == path => Arc::clone(&model.context),
-            _ => {
-                let path_str = path.to_str().ok_or("transcription_failed")?;
-                let context =
-                    WhisperContext::new_with_params(path_str, WhisperContextParameters::default())
-                        .map_err(|error| {
-                            eprintln!("[avchetan] speech model didn't load: {error}");
-                            "transcription_failed"
-                        })?;
-                let context = Arc::new(context);
-                inner.model = Some(LoadedModel {
-                    path: path.to_owned(),
-                    context: Arc::clone(&context),
-                });
-                context
-            }
+    let loaded = shared
+        .lock()
+        .map_err(|_| "transcription_failed")?
+        .model
+        .as_ref()
+        .filter(|model| model.path == path)
+        .map(|model| Arc::clone(&model.context));
+    let context = match loaded {
+        Some(context) => context,
+        None => {
+            // Loading takes seconds: outside the lock, so stop, cancel and a new recording
+            // don't wait for it.
+            let path_str = path.to_str().ok_or("transcription_failed")?;
+            let context =
+                WhisperContext::new_with_params(path_str, WhisperContextParameters::default())
+                    .map_err(|error| {
+                        eprintln!("[avchetan] speech model didn't load: {error}");
+                        "transcription_failed"
+                    })?;
+            let context = Arc::new(context);
+            shared.lock().map_err(|_| "transcription_failed")?.model = Some(LoadedModel {
+                path: path.to_owned(),
+                context: Arc::clone(&context),
+            });
+            context
         }
     };
     let mut state = context.create_state().map_err(|_| "transcription_failed")?;
@@ -744,16 +752,18 @@ pub async fn voice_model_download<R: Runtime>(
     let partial = path.with_extension("bin.part");
     let result = download(&app, &state, &request, &partial, &expected).await;
     state.downloading.store(false, Ordering::SeqCst);
-    match result {
-        Ok(()) => fs::rename(&partial, &path).map_err(|error| {
-            let _ = fs::remove_file(&partial);
-            failed(format!("couldn't save the model: {error}"))
-        }),
-        Err(error) => {
-            let _ = fs::remove_file(&partial);
-            Err(error)
+    let saved = match result {
+        Ok(()) => {
+            let (from, to) = (partial.clone(), path);
+            on_blocking(move || fs::rename(from, to)).await
         }
+        Err(error) => Err(error),
+    };
+    if saved.is_err() {
+        let leftover = partial.clone();
+        let _ = on_blocking(move || fs::remove_file(leftover)).await;
     }
+    saved
 }
 
 #[tauri::command]
@@ -765,6 +775,17 @@ fn failed(message: impl Into<String>) -> CommandError {
     CommandError::new("speech_model_download_failed", message)
 }
 
+/// File work for a download, on a thread meant for blocking: a disk write on the async
+/// runtime's own threads holds up every other async command while it waits.
+async fn on_blocking<T: Send + 'static>(
+    work: impl FnOnce() -> std::io::Result<T> + Send + 'static,
+) -> CommandResult<T> {
+    tauri::async_runtime::spawn_blocking(work)
+        .await
+        .map_err(|e| failed(format!("model file: {e}")))?
+        .map_err(|e| failed(format!("model file: {e}")))
+}
+
 async fn download<R: Runtime>(
     app: &AppHandle<R>,
     state: &VoiceState,
@@ -772,13 +793,17 @@ async fn download<R: Runtime>(
     partial: &Path,
     expected: &str,
 ) -> CommandResult<()> {
-    fs::create_dir_all(&state.models_dir).map_err(|e| failed(format!("models folder: {e}")))?;
+    let (folder, part) = (state.models_dir.clone(), partial.to_owned());
+    let mut file = on_blocking(move || {
+        fs::create_dir_all(folder)?;
+        File::create(part)
+    })
+    .await?;
     let mut response = reqwest::get(&request.url)
         .await
         .and_then(reqwest::Response::error_for_status)
         .map_err(|e| failed(format!("download: {e}")))?;
     let total = response.content_length().unwrap_or(request.size_bytes);
-    let mut file = File::create(partial).map_err(|e| failed(format!("model file: {e}")))?;
     let mut hasher = Sha256::new();
     let mut received = 0u64;
     let mut last_emit = Instant::now();
@@ -796,9 +821,14 @@ async fn download<R: Runtime>(
             return Err(CommandError::new("cancelled", "download cancelled"));
         }
         hasher.update(&chunk);
-        file.write_all(&chunk)
-            .map_err(|e| failed(format!("model file: {e}")))?;
-        received += chunk.len() as u64;
+        let size = chunk.len() as u64;
+        file = on_blocking(move || {
+            let mut open = file;
+            open.write_all(&chunk)?;
+            Ok(open)
+        })
+        .await?;
+        received += size;
         if received > request.size_bytes.saturating_mul(2) {
             return Err(failed("the download is larger than expected"));
         }
@@ -807,9 +837,12 @@ async fn download<R: Runtime>(
             last_emit = Instant::now();
         }
     }
-    file.flush()
-        .and_then(|()| file.sync_all())
-        .map_err(|e| failed(format!("model file: {e}")))?;
+    on_blocking(move || {
+        let mut open = file;
+        open.flush()?;
+        open.sync_all()
+    })
+    .await?;
     let actual = to_hex(&hasher.finalize());
     if actual != expected {
         return Err(failed("the downloaded model didn't match its checksum"));

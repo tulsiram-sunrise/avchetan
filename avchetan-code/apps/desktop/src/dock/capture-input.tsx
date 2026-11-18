@@ -6,7 +6,6 @@ import {
   captureText,
   LOCK_FREE_COMMANDS,
   parseCommand,
-  rankCommands,
 } from '@avchetan/core';
 import type { EntryHit } from '@avchetan/db/sqlite';
 import { toAppError } from '@avchetan/shared';
@@ -19,7 +18,8 @@ import { useSubmitKey } from '../queries/settings';
 import { unlockMessage } from '../services/app-lock';
 import { askQuestion, isQuestion, questionText } from '../services/ask';
 import { commandDeps, rememberCapture } from '../services/commands';
-import { type DockListKind, dockKey } from '../services/dock-keys';
+import { dockKey } from '../services/dock-keys';
+import { dockState } from '../services/dock-state';
 import { DEFAULT_SUBMIT_KEY, isSubmitPress, submitHint } from '../services/submit-key';
 import { useServices } from '../services-context';
 import { type AskState, useDockStore } from '../stores/dock-store';
@@ -65,6 +65,16 @@ export function CaptureInput(props: {
   const services = useServices();
   const captureMutation = useCaptureMutation();
   const [errorCode, setErrorCode] = useState<string | null>(null);
+  /** An unlock or a command that failed outside the command panel: shown, never dropped. */
+  const [failure, setFailure] = useState<{ code: string; message: string } | null>(null);
+  /** Runs a key's or a click's work, showing what it throws instead of losing it. */
+  const shown = (work: () => Promise<unknown>) => {
+    setFailure(null);
+    work().catch((thrown: unknown) => {
+      const { code, message } = toAppError(thrown);
+      setFailure({ code, message });
+    });
+  };
   // 'Saved · Ctrl+Z to take back' for a few seconds after Enter (capture-box-redesign.md §6).
   const [saved, setSaved] = useState(false);
   useEffect(() => {
@@ -85,56 +95,30 @@ export function CaptureInput(props: {
   const locked = isHidden(useLockStatus());
   const unlock = useUnlock();
   // /lock, /unlock and /settings show nothing written before, nor does the list of commands
-  // while a name is being typed; they work while locked. Learned aliases aren't applied here, so
-  // an alias waits for an unlock like any other command.
+  // while a name is being typed; they work while locked (services/dock-state.ts).
   const typed = command.active ? parseCommand(draft) : null;
-  const lockFree =
-    typed !== null &&
-    (typed.command
-      ? LOCK_FREE_COMMANDS.has(typed.command)
-      : !typed.text && rankCommands(typed.word).length > 0);
-  /** Ask and the other commands show what was written before, so they wait for an unlock. */
-  const needsUnlock = locked && (askMode || (command.active && !lockFree));
-  const commandPanelShown = !needsUnlock && !(locked && !lockFree);
-
-  // The list ↑/↓ move through: the one showing under the box (dock-app.tsx).
   // `/find words`: the first matches (find-results.tsx); the same query, so no second read.
   const words = findWords(draft);
   const found = useDockFind(words).data ?? NO_HITS;
-  const listKind: DockListKind | null = command.active
-    ? commandPanelShown && command.suggestions.length > 0
-      ? 'commands'
-      : commandPanelShown && words && found.length > 0
-        ? 'found'
-        : null
-    : locked
-      ? null
-      : ask
-        ? ask.sources.length > 0
-          ? 'sources'
-          : null
-        : recent.length > 0
-          ? 'entries'
-          : null;
-  const listRows =
-    listKind === 'commands'
-      ? command.suggestions.length
-      : listKind === 'sources'
-        ? (ask?.sources.length ?? 0)
-        : listKind === 'entries'
-          ? recent.length
-          : listKind === 'found'
-            ? found.length
-            : 0;
-  const picked = listKind !== null && highlight !== null && highlight < listRows ? highlight : null;
-  /** The command list shows its first row lit, the best match, until ↑/↓ pick another. */
-  const lit = picked ?? (listKind === 'commands' ? 0 : null);
+  const { needsUnlock, commandPanelShown, listKind, listRows, picked, lit } = dockState({
+    locked,
+    askMode,
+    typed,
+    suggestions: command.suggestions.length,
+    findWords: words,
+    found: found.length,
+    askSources: ask ? ask.sources.length : null,
+    recent: recent.length,
+    highlight,
+  });
   /** What Enter runs while a command name is being typed: the best match ("/ulk" → /unlock). */
   const bestCommand = typed?.word ? command.suggestions[0] : undefined;
 
   // New text or another list starts again from the box.
   // biome-ignore lint/correctness/useExhaustiveDependencies: reset on each change
   useEffect(() => setHighlight(null), [draft, listKind, setHighlight]);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: new text clears an old failure
+  useEffect(() => setFailure(null), [draft]);
 
   /** Runs only after an unlock when locked; false when the unlock didn't happen. */
   async function unlockFirst(reason: string): Promise<boolean> {
@@ -185,7 +169,7 @@ export function CaptureInput(props: {
       case 'open':
         if (listKind === 'commands') {
           const name = command.suggestions[action.row];
-          if (name) void chooseCommand(name);
+          if (name) shown(() => chooseCommand(name));
         } else if (listKind === 'sources') {
           const source = ask?.sources[action.row];
           if (source) openEntryDay(services.platform, source.rawLog);
@@ -199,9 +183,9 @@ export function CaptureInput(props: {
         break;
       case 'undo':
         setSaved(false);
-        void unlockFirst('Unlock Avchetan to take back an entry').then((ok) =>
-          ok ? command.undoLast() : undefined,
-        );
+        shown(async () => {
+          if (await unlockFirst('Unlock Avchetan to take back an entry')) await command.undoLast();
+        });
         break;
       case 'close_panel':
         setAsk(null);
@@ -292,7 +276,7 @@ export function CaptureInput(props: {
               isSubmitPress({ ...press, isComposing: event.nativeEvent.isComposing }, submitKey)
             ) {
               event.preventDefault();
-              void submit();
+              shown(submit);
             }
           }}
           className="max-h-40 min-w-0 flex-1 resize-none overflow-y-auto bg-transparent [scrollbar-width:thin] px-1 py-1 text-lg leading-7 outline-none placeholder:text-ink-muted/70"
@@ -331,6 +315,11 @@ export function CaptureInput(props: {
           <WindowContextLine />
           <ClipboardLine />
         </>
+      ) : null}
+      {failure ? (
+        <p role="alert" className="px-1 pt-1 text-xs text-danger">
+          {failure.message}. <HelpLink code={failure.code} />
+        </p>
       ) : null}
       {errorCode ? (
         <p role="alert" className="px-1 pt-1 text-xs text-danger">

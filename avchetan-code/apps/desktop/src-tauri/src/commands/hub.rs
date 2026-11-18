@@ -144,6 +144,9 @@ struct Inner {
 pub struct HubState {
     dir: PathBuf,
     inner: Arc<Mutex<Inner>>,
+    /// Held for a whole settings change, import or restore, so one can't run in the middle of
+    /// another (an import while a new setting starts the hub on the same folder).
+    operations: Arc<Mutex<()>>,
 }
 
 impl HubState {
@@ -168,7 +171,14 @@ impl HubState {
                 error: None,
                 logs: VecDeque::new(),
             })),
+            operations: Arc::new(Mutex::new(())),
         }
+    }
+
+    fn one_operation(&self) -> MutexGuard<'_, ()> {
+        self.operations
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
     }
 
     fn lock(&self) -> MutexGuard<'_, Inner> {
@@ -203,16 +213,29 @@ impl HubState {
     }
 
     fn start(&self, restarting: bool) {
+        let (generation, config) = {
+            let mut inner = self.lock();
+            inner.generation += 1;
+            if !restarting {
+                inner.restarts = 0;
+                inner.quick_crashes = 0;
+            }
+            inner.error = None;
+            inner.phase = Phase::Starting;
+            (inner.generation, inner.config.clone())
+        };
+        // Reading the keychain and starting a program take a while: not under the lock, so the
+        // status and the log readers never wait on them.
+        let spawned = spawn(&self.dir, &config);
         let mut inner = self.lock();
-        inner.generation += 1;
-        let generation = inner.generation;
-        if !restarting {
-            inner.restarts = 0;
-            inner.quick_crashes = 0;
+        if inner.generation != generation {
+            // Stopped or started again meanwhile: this process isn't wanted.
+            if let Ok(child) = spawned {
+                stop_child(child);
+            }
+            return;
         }
-        inner.error = None;
-        inner.phase = Phase::Starting;
-        match spawn(&self.dir, &inner.config) {
+        match spawned {
             Ok(mut child) => {
                 inner.stdin = child.stdin.take();
                 for stream in [
@@ -274,7 +297,15 @@ impl HubState {
             let exited = match inner.child.as_mut().map(Child::try_wait) {
                 Some(Ok(None)) => continue,
                 Some(Ok(Some(status))) => status.code(),
-                Some(Err(_)) | None => None,
+                Some(Err(_)) => {
+                    // Its state can't be read: stop it, rather than leave it running unwatched
+                    // beside the one started next.
+                    if let Some(child) = inner.child.take() {
+                        stop_child(child);
+                    }
+                    None
+                }
+                None => None,
             };
             inner.child = None;
             inner.stdin = None;
@@ -328,6 +359,7 @@ impl HubState {
 
     fn configure(&self, config: HubConfig) -> CommandResult<()> {
         config.validate()?;
+        let _operation = self.one_operation();
         fs::create_dir_all(&self.dir).map_err(io_failed("hub_config_failed"))?;
         let text = serde_json::to_string_pretty(&config)
             .map_err(|error| CommandError::new("hub_config_failed", error.to_string()))?;
@@ -342,6 +374,8 @@ impl HubState {
     }
 
     fn import(&self, source: &Path) -> CommandResult<()> {
+        // Held to the end, so the hub can't be turned on while the data is copied in.
+        let _operation = self.one_operation();
         if self.lock().phase != Phase::Off {
             return Err(CommandError::new(
                 "hub_running",
@@ -375,9 +409,19 @@ impl HubState {
             ));
         }
         let program = program_path()?;
+        let _operation = self.one_operation();
         let was_on = self.lock().config.enabled;
         self.stop();
+        let result = self.restore_stopped(&program, &snapshot);
+        // Whatever happened, a hub that was on runs again: on the restored data, or on its own.
+        if was_on {
+            self.start(false);
+        }
+        result
+    }
 
+    /// The restore itself, with the hub stopped. On failure the data folder is put back.
+    fn restore_stopped(&self, program: &Path, snapshot: &Path) -> CommandResult<()> {
         let data = self.data_dir();
         let aside = self
             .dir
@@ -385,8 +429,8 @@ impl HubState {
         if data.exists() {
             fs::rename(&data, &aside).map_err(io_failed("hub_restore_failed"))?;
         }
-        let output = hub_command(&program, &data)
-            .env("RESTORE_SNAPSHOT", &snapshot)
+        let output = hub_command(program, &data)
+            .env("RESTORE_SNAPSHOT", snapshot)
             .stdin(Stdio::null())
             .output();
         let restored = matches!(&output, Ok(output) if output.status.success());
@@ -401,9 +445,6 @@ impl HubState {
             if aside.exists() {
                 crate::error::warn_on_err("undo restore", fs::rename(&aside, &data));
             }
-        }
-        if was_on {
-            self.start(false);
         }
         if restored {
             Ok(())
@@ -464,6 +505,13 @@ fn unix_seconds() -> u64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map_or(0, |elapsed| elapsed.as_secs())
+}
+
+/// Stops a process that isn't wanted: closes its stdin, then kills it.
+fn stop_child(mut child: Child) {
+    drop(child.stdin.take());
+    crate::error::warn_on_err("stop hub", child.kill());
+    crate::error::warn_on_err("stop hub", child.wait());
 }
 
 fn remove_dir_if_present(path: &Path) -> std::io::Result<()> {
@@ -805,6 +853,20 @@ mod tests {
         assert!(dir.join("hub").join(RESET_EPOCH_MARKER).is_file());
         remove_if_present(&dir.join("hub").join(RESET_EPOCH_MARKER)).unwrap();
         remove_if_present(&dir.join("hub").join(RESET_EPOCH_MARKER)).unwrap();
+    }
+
+    #[test]
+    fn a_failed_restore_puts_the_data_back() {
+        let dir = temp_dir("restore-fails");
+        let state = HubState::load(dir.join("hub"));
+        fake_hub_data(&state.data_dir());
+        // No program there: the restore can't run.
+        let missing = dir.join("no-such-hub-program");
+
+        let result = state.restore_stopped(&missing, &dir.join("hub-2026-11-01.tar.gz"));
+
+        assert_eq!(result.unwrap_err().code, "hub_restore_failed");
+        assert!(has_entries(&state.data_dir()));
     }
 
     #[test]

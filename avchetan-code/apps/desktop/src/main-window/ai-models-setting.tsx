@@ -213,6 +213,9 @@ function HubModelLine({ job, connected }: { job: 'organizing' | 'answers'; conne
 
 function SlotSetting({ slot }: { slot: ModelSlot }) {
   const saved = useSlotModel(slot);
+  // Kept here: saving changes the saved model, which remounts the form below, and *Saved.*
+  // has to outlive that.
+  const [justSaved, setJustSaved] = useState(false);
   // Remounts once loaded, so the form starts from the saved model.
   return saved.isSuccess ? (
     <AiModelsForm
@@ -221,6 +224,8 @@ function SlotSetting({ slot }: { slot: ModelSlot }) {
       savedProvider={saved.data?.provider}
       savedModel={saved.data?.model}
       savedBaseUrl={saved.data?.baseUrl}
+      justSaved={justSaved}
+      onSavedChange={setJustSaved}
     />
   ) : null;
 }
@@ -266,6 +271,9 @@ function AiModelsForm(props: {
   savedProvider: LlmProvider | undefined;
   savedModel: string | undefined;
   savedBaseUrl: string | undefined;
+  /** The last Save worked, and nothing was changed since. */
+  justSaved: boolean;
+  onSavedChange: (saved: boolean) => void;
 }) {
   const [provider, setProvider] = useState<LlmProvider>(props.savedProvider ?? 'groq');
   const [model, setModel] = useState(props.savedModel ?? suggestedModel(provider, props.slot));
@@ -301,6 +309,7 @@ function AiModelsForm(props: {
   function reset() {
     test.reset();
     save.reset();
+    props.onSavedChange(false);
   }
 
   function chooseProvider(next: LlmProvider) {
@@ -439,7 +448,15 @@ function AiModelsForm(props: {
           disabled={!ready || busy || unchanged}
           onClick={() => {
             reset();
-            save.mutate(draft, { onSuccess: () => setApiKey('') });
+            // The promise, not mutate's callback: that one is skipped once the form remounts.
+            save.mutateAsync(draft).then(
+              () => {
+                setApiKey('');
+                props.onSavedChange(true);
+              },
+              // Shown from save.error below.
+              () => undefined,
+            );
           }}
         >
           {save.isPending ? 'Saving…' : 'Save'}
@@ -463,7 +480,7 @@ function AiModelsForm(props: {
           It works. The model answered in {(test.data.latencyMs / 1000).toFixed(1)} s.
         </p>
       ) : null}
-      {save.isSuccess ? (
+      {save.isSuccess || props.justSaved ? (
         <p role="status" className="text-sm">
           Saved.
         </p>

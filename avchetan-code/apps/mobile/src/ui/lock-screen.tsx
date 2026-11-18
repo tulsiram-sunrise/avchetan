@@ -76,5 +76,5 @@ export function lockedScreenLayout({
 
 function LockGate({ children }: { children: ReactNode }) {
   const locked = useAppLock((state) => state.locked);
-  return locked ? <LockScreen /> : <>{children}</>;
+  return locked ? <LockScreen /> : children;
 }

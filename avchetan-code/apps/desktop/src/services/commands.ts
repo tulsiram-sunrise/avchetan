@@ -43,32 +43,48 @@ export type CommandPlan =
   | {
       kind: 'choose';
       label: string;
-      options: { label: string; run: () => Promise<CommandOutcome> }[];
+      /** `key`: the task's ID, as two tasks can share a title. */
+      options: { key: string; label: string; run: () => Promise<CommandOutcome> }[];
     }
   /** Not a command: Enter asks the AI to read it. */
   | { kind: 'ask_ai'; input: string }
   | { kind: 'error'; code: string; message: string };
 
+/** One change that can be taken back. `label` says what undoing does: `reopen “Call the plumber”`. */
+export type UndoEntry = { label: string; undo: () => Promise<string> };
+
 /** Undo for this session of the capture box. */
 export type UndoStack = {
-  /** `label` says what undoing does, e.g. `reopen “Call the plumber”`. */
-  push(entry: { label: string; undo: () => Promise<string> }): void;
-  pop(): { label: string; undo: () => Promise<string> } | undefined;
-  peek(): { label: string; undo: () => Promise<string> } | undefined;
+  push(entry: UndoEntry): void;
+  peek(): UndoEntry | undefined;
+  /** The entry whose undo is this function: the one a result's Undo button belongs to. */
+  find(undo: UndoEntry['undo']): UndoEntry | undefined;
+  /**
+   * Undoes this entry and only then takes it off the list: an undo that fails stays, to try
+   * again. Undefined when it was already undone.
+   */
+  run(entry: UndoEntry): Promise<string | undefined>;
   readonly size: number;
 };
 
 const MAX_UNDO = 20;
 
 export function createUndoStack(): UndoStack {
-  const entries: { label: string; undo: () => Promise<string> }[] = [];
+  const entries: UndoEntry[] = [];
   return {
     push(entry) {
       entries.push(entry);
       if (entries.length > MAX_UNDO) entries.shift();
     },
-    pop: () => entries.pop(),
     peek: () => entries.at(-1),
+    find: (undo) => entries.find((entry) => entry.undo === undo),
+    async run(entry) {
+      if (!entries.includes(entry)) return undefined;
+      const message = await entry.undo();
+      const index = entries.indexOf(entry);
+      if (index >= 0) entries.splice(index, 1);
+      return message;
+    },
     get size() {
       return entries.length;
     },
@@ -249,7 +265,11 @@ export function planFor(
       return {
         kind: 'choose',
         label: 'Several tasks match. ↑↓ to pick, Enter to mark it done',
-        options: match.tasks.map((task) => ({ label: task.title, run: doneTask(deps, task) })),
+        options: match.tasks.map((task) => ({
+          key: task.id,
+          label: task.title,
+          run: doneTask(deps, task),
+        })),
       };
     }
     case 'find': {
@@ -288,14 +308,14 @@ export function planFor(
     case 'undo': {
       const top = deps.undo.peek();
       if (!top) return { kind: 'hint', text: 'Nothing to undo since Avchetan started' };
-      const last = deps.undo.pop.bind(deps.undo);
+      const stack = deps.undo;
       return {
         kind: 'run',
         label: `Undo: ${top.label}`,
+        // The change the label names, even if another one was made since the line was shown.
         async run() {
-          const entry = last();
-          if (!entry) return { message: 'Nothing to undo', undo: null };
-          return { message: await entry.undo(), undo: null };
+          const message = await stack.run(top);
+          return { message: message ?? 'Already undone', undo: null };
         },
       };
     }

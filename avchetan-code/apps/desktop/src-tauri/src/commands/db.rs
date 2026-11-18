@@ -69,6 +69,9 @@ fn harden(connection: &Connection) -> rusqlite::Result<()> {
     Ok(())
 }
 
+/// Compiled statements kept per connection.
+const STATEMENT_CACHE: usize = 256;
+
 fn open_connection(path: &Path) -> CommandResult<Connection> {
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent).map_err(open_failed)?;
@@ -93,6 +96,9 @@ fn open_connection(path: &Path) -> CommandResult<Connection> {
     connection
         .pragma_update(None, "cache_size", -32_768)
         .map_err(open_failed)?;
+    // The webview sends the same few hundred queries again and again; each is compiled once
+    // per connection and kept (prepare_cached), instead of compiled on every call.
+    connection.set_prepared_statement_cache_capacity(STATEMENT_CACHE);
     Ok(connection)
 }
 
@@ -157,7 +163,9 @@ pub struct Statement {
 
 /// Executes a statement, discarding any rows it returns (PRAGMAs return some).
 fn execute(connection: &Connection, statement: Statement) -> CommandResult<()> {
-    let mut prepared = connection.prepare(&statement.sql).map_err(query_failed)?;
+    let mut prepared = connection
+        .prepare_cached(&statement.sql)
+        .map_err(query_failed)?;
     let mut rows = prepared
         .query(params_from_iter(to_sql_values(statement.params)?))
         .map_err(query_failed)?;
@@ -168,13 +176,17 @@ fn execute(connection: &Connection, statement: Statement) -> CommandResult<()> {
 /// Runs a query and returns rows as arrays of column values, in select order (what
 /// Drizzle's sqlite-proxy driver expects).
 fn query(connection: &Connection, statement: Statement) -> CommandResult<Vec<Vec<Json>>> {
-    let mut prepared = connection.prepare(&statement.sql).map_err(query_failed)?;
-    let column_count = prepared.column_count();
+    let mut prepared = connection
+        .prepare_cached(&statement.sql)
+        .map_err(query_failed)?;
     let mut rows = prepared
         .query(params_from_iter(to_sql_values(statement.params)?))
         .map_err(query_failed)?;
     let mut result = Vec::new();
     while let Some(row) = rows.next().map_err(query_failed)? {
+        // Counted on the row: a kept `SELECT *` is compiled again by SQLite after a migration
+        // changes the table, and its column count is only right once it has run.
+        let column_count = row.as_ref().column_count();
         let mut values = Vec::with_capacity(column_count);
         for index in 0..column_count {
             values.push(to_json(row.get_ref(index).map_err(query_failed)?));
@@ -244,6 +256,40 @@ mod tests {
     use rusqlite::Connection;
 
     /// A statement from the webview can't attach another file or rewrite the schema directly.
+    #[test]
+    fn a_kept_statement_sees_a_column_added_since() {
+        let connection = Connection::open_in_memory().unwrap();
+        let run = |sql: &str| {
+            super::execute(
+                &connection,
+                super::Statement {
+                    sql: sql.into(),
+                    params: vec![],
+                },
+            )
+            .unwrap();
+        };
+        let select = || {
+            super::query(
+                &connection,
+                super::Statement {
+                    sql: "SELECT * FROM notes".into(),
+                    params: vec![],
+                },
+            )
+            .unwrap()
+        };
+        run("CREATE TABLE notes (id TEXT)");
+        run("INSERT INTO notes VALUES ('a')");
+        assert_eq!(select(), vec![vec![super::Json::from("a")]]);
+
+        run("ALTER TABLE notes ADD COLUMN body TEXT DEFAULT 'b'");
+        assert_eq!(
+            select(),
+            vec![vec![super::Json::from("a"), super::Json::from("b")]]
+        );
+    }
+
     #[test]
     fn hardened_connection_refuses_attach_and_schema_writes() {
         let dir = std::env::temp_dir().join(format!("avchetan-harden-{}", std::process::id()));
