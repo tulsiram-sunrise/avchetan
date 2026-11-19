@@ -206,9 +206,12 @@ jobs:
         with:
           components: rustfmt, clippy
 
+      # Keyed by the runner image: whisper-rs-sys keeps a CMake cache with the compiler's full path,
+      # which a new image (a newer Visual Studio) no longer has (failed 2026-11-19).
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           workspaces: avchetan-code/apps/desktop/src-tauri
+          key: ${{ env.ImageVersion }}
 
       # tauri::generate_context! expects frontendDist to exist; the web assets aren't needed for linting.
       - run: New-Item -ItemType Directory -Force ../dist

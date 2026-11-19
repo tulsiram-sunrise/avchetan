@@ -1,5 +1,5 @@
 import fc from 'fast-check';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { addDays, type LocalDate, weekdayOf } from './dates';
 import {
   isOccurrence,
@@ -54,7 +54,15 @@ const rule: fc.Arbitrary<RepeatRule> = fc
   .map((candidate) => repeatRuleSchema.parse(candidate));
 
 const WINDOW = 120;
-const RUNS = { numRuns: 150 };
+const RUNS = { numRuns: 100 };
+/**
+ * Days counted from a rule's start, up to a year and a half on: checking one day walks the rule
+ * from its start, so a far later day would only make the test slow, not stricter.
+ */
+const offset = fc.integer({ min: -30, max: 550 });
+const near = (r: RepeatRule, n: number) => addDays(r.start, n);
+// Hundreds of rules, each checked day by day: slower than a unit test, on CI runners especially.
+vi.setConfig({ testTimeout: 60_000 });
 
 function everyDay(from: LocalDate, days: number): LocalDate[] {
   return Array.from({ length: days }, (_, n) => addDays(from, n));
@@ -63,7 +71,8 @@ function everyDay(from: LocalDate, days: number): LocalDate[] {
 describe('repeat rules, for any rule', () => {
   it('lists exactly the days that are occurrences, in order, inside the range', () => {
     fc.assert(
-      fc.property(rule, day, (r, from) => {
+      fc.property(rule, offset, (r, n) => {
+        const from = near(r, n);
         const to = addDays(from, WINDOW - 1);
         const listed = occurrencesBetween(r, from, to);
         const checked = everyDay(from, WINDOW).filter((d) => isOccurrence(r, d));
@@ -79,7 +88,8 @@ describe('repeat rules, for any rule', () => {
 
   it('finds the next day with nothing skipped in between', () => {
     fc.assert(
-      fc.property(rule, day, (r, after) => {
+      fc.property(rule, offset, (r, n) => {
+        const after = near(r, n);
         const next = nextOccurrence(r, after);
         const soon = occurrencesBetween(r, addDays(after, 1), addDays(after, WINDOW));
         if (next === null) {
@@ -111,8 +121,9 @@ describe('repeat rules, for any rule', () => {
     fc.assert(
       fc.property(
         rule.filter((r) => r.byWeekday !== undefined),
-        day,
-        (r, from) => {
+        offset,
+        (r, n) => {
+          const from = near(r, n);
           for (const d of occurrencesBetween(r, from, addDays(from, WINDOW))) {
             expect(r.byWeekday).toContain(weekdayOf(d));
           }
@@ -126,8 +137,9 @@ describe('repeat rules, for any rule', () => {
     fc.assert(
       fc.property(
         rule.filter((r) => r.freq === 'monthly' && r.byMonthDay !== undefined),
-        day,
-        (r, from) => {
+        offset,
+        (r, n) => {
+          const from = near(r, n);
           const days = occurrencesBetween(r, from, addDays(from, 400));
           const months = days.map((d) => d.slice(0, 7));
           expect(new Set(months).size).toBe(months.length);

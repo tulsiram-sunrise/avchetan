@@ -78,9 +78,12 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # stable
 
+      # Keyed by the runner image: whisper-rs-sys keeps a CMake cache with the compiler's full path,
+      # which a new image (a newer Visual Studio) no longer has (failed 2026-11-19).
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           workspaces: avchetan-code/apps/desktop/src-tauri
+          key: ${{ env.ImageVersion }}
 
       - run: pnpm install --frozen-lockfile
 
