@@ -13,6 +13,11 @@ updates:
   - package-ecosystem: docker
     directories:
       - /avchetan-code/apps/server
+    # Major versions (Node 26, Postgres 19, Caddy 3) are moved to by hand: they change what the
+    # images contain (Node 26 has no corepack) and the docs name the versions.
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     schedule:
       interval: monthly
     groups:
@@ -22,6 +27,11 @@ updates:
     directories:
       - /avchetan-code/apps/server
       - /avchetan-code/deploy/cloud
+    # Major versions (Node 26, Postgres 19, Caddy 3) are moved to by hand: they change what the
+    # images contain (Node 26 has no corepack) and the docs name the versions.
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     schedule:
       interval: monthly
     groups:
