@@ -280,6 +280,12 @@ If the lock was on and you removed the device's lock, Avchetan turned the app lo
 1. Quit Avchetan (on Windows: right-click the tray icon → **Quit Avchetan**; on Android: close it from recent apps) and open it again.
 2. Run the [Setup check](#setup-check).
 3. If it happens again, [report it on GitHub](https://github.com/tulsiram-sunrise/avchetan/issues/new?template=bug-report.yml) (Windows: **Settings → General → About → Report a problem**; Android: **More → Report a problem**), with the error text and what you were doing. Don't include your entries or tokens.
+4. If asked for the log, attach it (see [The log](#the-log)).
+
+## The log
+Avchetan keeps a log of what it did and the error codes it met: IDs, counts and times, never what you wrote, your keys or your tokens.
+- **Windows:** **Settings → General → Open log folder** opens the folder (`%LOCALAPPDATA%\app.avchetan\logs`). `avchetan.log` is the current file; up to four older ones are kept, about 1 MB each, and older ones are deleted. Times are in UTC. Attach `avchetan.log` to the report.
+- **Android:** **More → Log** shows what the app did since you opened it, newest first. Tap **Share** to send it (for example to an email you then attach to the report). It is kept only while the app is open and never saved to the phone's storage.
 
 ## Entries stay "pending"
 Normal when offline or when the hub is unreachable. They are processed automatically later. If they stay pending while everything is connected, open **Review** in the main window: it shows the reason for each entry.

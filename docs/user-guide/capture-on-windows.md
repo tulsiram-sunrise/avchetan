@@ -108,6 +108,7 @@ On **Capture box**:
 On **General**:
 - **Start with Windows:** leave this on so the shortcut works right after you sign in.
 - **Time zone:** Avchetan follows Windows. Choose a zone here if your entries should use a different one. A day ends at midnight.
+- **Open log folder** (under About): the log of what Avchetan did, to attach to a problem report ([The log](troubleshooting.md#the-log)).
 
 ## Ask about your entries
 

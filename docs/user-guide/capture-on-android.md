@@ -76,7 +76,7 @@ An entry's tags show under it on **Days**; tap one to open the tag's page. **Mor
 
 ## The More tab
 
-**More** is grouped: **Your stuff** (People, Tags, Projects, Trends), **AI and capture** (AI models, Voice, Daily brief, What Avchetan learned), **Privacy** (App lock, Private tags), **Connection and data** (Sync, Your data, Setup check) and **Help** (User guide, Report a problem, Run setup again).
+**More** is grouped: **Your stuff** (People, Tags, Projects, Trends), **AI and capture** (AI models, Voice, Daily brief, What Avchetan learned), **Privacy** (App lock, Private tags), **Connection and data** (Sync, Your data, Setup check) and **Help** (User guide, Report a problem, Log, Run setup again).
 
 ## Change or fix an entry
 

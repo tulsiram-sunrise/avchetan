@@ -7,8 +7,8 @@
 #   image on GitHub's container registry (ghcr.io/<owner>/avchetan-server), and a *draft* GitHub
 #   release with both files, their SHA-256 sums and the install notes (.github/release-notes.md),
 #   which the maintainer reads and publishes.
-# The APK is signed with the release key from repository secrets (ADR-0018); without them the
-# job fails rather than publish a debug-signed APK.
+# The APK is signed with the release key from the `android-signing` environment's secrets
+# (ADR-0018); without them the job fails rather than publish a debug-signed APK.
 name: Release
 
 on:
@@ -37,8 +37,8 @@ jobs:
     name: Version
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           package-manager-cache: false
@@ -63,22 +63,22 @@ jobs:
       # whisper-rs-sys generates its bindings with libclang (voice capture); the runner image has LLVM.
       LIBCLANG_PATH: "C:/Program Files/LLVM/bin"
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
         with:
           package_json_file: avchetan-code/package.json
           cache: true
           cache_dependency_path: avchetan-code/pnpm-lock.yaml
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           package-manager-cache: false
 
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # stable
 
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           workspaces: avchetan-code/apps/desktop/src-tauri
 
@@ -87,7 +87,7 @@ jobs:
       # Tauri downloads its installer tool (NSIS) on every build, and a GitHub download outage
       # failed the release on 2026-11-08. The cache helps a re-run on the same branch (caches
       # from other release branches aren't shared); the retries below ride out short outages.
-      - uses: actions/cache@v6
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/AppData/Local/tauri
           key: tauri-tools-${{ runner.os }}-${{ hashFiles('avchetan-code/apps/desktop/package.json') }}
@@ -114,7 +114,7 @@ jobs:
           cp apps/desktop/src-tauri/target/release/bundle/nsis/*-setup.exe \
             "../out/avchetan-${GITHUB_REF_NAME//\//-}-windows-x64-setup.exe"
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: avchetan-windows
           path: out/*.exe
@@ -127,25 +127,28 @@ jobs:
       (github.event_name == 'workflow_dispatch' && inputs.android) ||
       startsWith(github.ref, 'refs/tags/v') ||
       contains(github.ref_name, 'android')
+    # The signing key's secrets live in this environment, which only `master`, `release/**` and
+    # `v*` tags may use (docs/conventions/releasing.md): no other branch or workflow can read them.
+    environment: android-signing
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: avchetan-code
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
         with:
           package_json_file: avchetan-code/package.json
           cache: true
           cache_dependency_path: avchetan-code/pnpm-lock.yaml
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           package-manager-cache: false
 
-      - uses: actions/setup-java@v6
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         with:
           distribution: temurin
           java-version: 21
@@ -153,7 +156,7 @@ jobs:
       # Keeps Gradle and its dependencies for a re-run on the same branch: a gradle.org outage
       # failed the release on 2026-11-08. Release branches and tags aren't the default branch,
       # so writing the cache has to be allowed. The APK step also retries the download.
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
         with:
           cache-read-only: false
 
@@ -224,7 +227,7 @@ jobs:
           mkdir -p "$GITHUB_WORKSPACE/out"
           cp "$apk" "$GITHUB_WORKSPACE/out/avchetan-${GITHUB_REF_NAME//\//-}-android.apk"
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: avchetan-android
           path: out/*.apk
@@ -239,11 +242,11 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: docker/setup-buildx-action@v4
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
-      - uses: docker/login-action@v4
+      - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -251,7 +254,7 @@ jobs:
 
       # v0.2.0 → tags 0.2.0, 0.2 and latest. The source label links the image to this repository.
       - id: meta
-        uses: docker/metadata-action@v6
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
           images: ghcr.io/${{ github.repository_owner }}/avchetan-server
           tags: |
@@ -261,7 +264,7 @@ jobs:
             org.opencontainers.image.title=Avchetan server
             org.opencontainers.image.licenses=AGPL-3.0-or-later
 
-      - uses: docker/build-push-action@v7
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: avchetan-code
           file: avchetan-code/apps/server/Dockerfile
@@ -277,13 +280,13 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           sparse-checkout: .github/release-notes.md
           sparse-checkout-cone-mode: false
 
       # Only the two builds: the image job also leaves a Docker build record as an artifact.
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: avchetan-*
           path: out

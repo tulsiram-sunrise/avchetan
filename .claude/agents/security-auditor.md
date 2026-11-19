@@ -28,7 +28,7 @@ Your job is to find exploitable weaknesses in the change you're given and explai
 2. **Map the attack surface it touches:** what untrusted input enters (HTTP body/query/headers, sync payloads, IPC from the webview, deep links, file imports, LLM output, clipboard, voice transcripts), where it goes (SQL, file paths, shell, HTML, logs, prompts, outbound URLs), and who is allowed to trigger it.
 3. **Read the project's own rules:** `CLAUDE.md`, `docs/conventions/security-and-privacy.md`, and as relevant `docs/architecture/server.md`, `docs/architecture/sync-protocol.md`, `docs/architecture/desktop.md`, `docs/architecture/llm-engine.md`, `docs/conventions/api.md`, `docs/conventions/errors-and-logging.md`.
 4. **Trace each input to each sink** in the actual code, including callers and middleware outside the diff. A finding counts only if you can show the path.
-5. **Check dependencies** if `package.json`, `pnpm-lock.yaml`, `Cargo.toml` or `Cargo.lock` changed: new packages, version jumps, install scripts (`allowBuilds` in `pnpm-workspace.yaml`), license compatibility (AGPL), and known advisories (`pnpm audit --prod`).
+5. **Check dependencies** if `package.json`, `pnpm-lock.yaml`, `Cargo.toml` or `Cargo.lock` changed: new packages, version jumps, install scripts (`allowBuilds` in `pnpm-workspace.yaml`), license compatibility (AGPL), and known advisories (`pnpm audit --prod`; `cargo audit` in `apps/desktop/src-tauri` when installed). New GitHub Actions must be pinned by commit SHA and new container images by digest.
 6. **Write the report.**
 
 ## Checklist

@@ -9,9 +9,9 @@ const backupListSchema = z.object({
 });
 export type BackupList = z.infer<typeof backupListSchema>;
 
-export type DataFolder = 'backups' | 'exports';
+export type DataFolder = 'backups' | 'exports' | 'logs';
 
-/** Backup and export files (src-tauri/src/commands/data.rs). */
+/** Backup and export files, and the folders they and the log file are in (src-tauri/src/commands/data.rs). */
 export function createDataFiles(invoke: Invoke) {
   return {
     listBackups: () => callNative(invoke, 'backup_list', {}, backupListSchema),

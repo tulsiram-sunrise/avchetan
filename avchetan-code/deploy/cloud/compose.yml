@@ -8,7 +8,7 @@ name: avchetan-cloud
 
 services:
   postgres:
-    image: pgvector/pgvector:0.8.6-pg18
+    image: pgvector/pgvector:0.8.6-pg18@sha256:2ba9ca5f2e7daa0f0e7723cba1ee9167bab54efd3640516a44ac1a928dd67e7a
     restart: unless-stopped
     environment:
       POSTGRES_USER: avchetan
@@ -55,7 +55,7 @@ services:
         condition: service_healthy
 
   caddy:
-    image: caddy:2.11.7-alpine
+    image: caddy:2.11.7-alpine@sha256:e70b164da81ef698b3ad19af799ea6086ce6d9e48ed4079eb9fe26f6fbf14ee5
     restart: unless-stopped
     environment:
       DOMAIN: ${DOMAIN}
@@ -72,7 +72,7 @@ services:
 
   # A compressed dump of the database each day; the newest 7 are kept in the backups volume.
   backup:
-    image: pgvector/pgvector:0.8.6-pg18
+    image: pgvector/pgvector:0.8.6-pg18@sha256:2ba9ca5f2e7daa0f0e7723cba1ee9167bab54efd3640516a44ac1a928dd67e7a
     restart: unless-stopped
     environment:
       PGHOST: postgres

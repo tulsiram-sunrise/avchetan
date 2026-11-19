@@ -23,15 +23,15 @@ jobs:
     env:
       LEFTHOOK: 0
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
         with:
           package_json_file: avchetan-code/package.json
           cache: true
           cache_dependency_path: avchetan-code/pnpm-lock.yaml
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           package-manager-cache: false
@@ -44,6 +44,9 @@ jobs:
         env:
           EXPO_NO_TELEMETRY: 1
       - run: pnpm licenses:check
+      # Known advisories in production dependencies. The few ignored ones are listed, with the
+      # reason, under auditConfig in pnpm-workspace.yaml.
+      - run: pnpm audit --prod
       - run: pnpm docs:check-links
       - run: pnpm errors:check
       - run: pnpm version:check
@@ -59,7 +62,7 @@ jobs:
     services:
       # The same image as apps/server/compose.yml. Reachable only inside this job, so no password.
       postgres:
-        image: pgvector/pgvector:0.8.6-pg18
+        image: pgvector/pgvector:0.8.6-pg18@sha256:2ba9ca5f2e7daa0f0e7723cba1ee9167bab54efd3640516a44ac1a928dd67e7a
         env:
           POSTGRES_HOST_AUTH_METHOD: trust
         ports:
@@ -70,15 +73,15 @@ jobs:
           --health-timeout 5s
           --health-retries 15
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
         with:
           package_json_file: avchetan-code/package.json
           cache: true
           cache_dependency_path: avchetan-code/pnpm-lock.yaml
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           package-manager-cache: false
@@ -112,7 +115,7 @@ jobs:
       run:
         working-directory: avchetan-code
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       # localhost: Caddy serves HTTPS with its own local certificate instead of Let's Encrypt.
       - name: Start Postgres, the server, Caddy and the backups
@@ -143,19 +146,33 @@ jobs:
     name: Secret scan (full history)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-      - uses: gitleaks/gitleaks-action@v3
+      - uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  rust-audit:
+    name: Desktop shell's crates (cargo audit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: taiki-e/install-action@75a7c0f87bd666af3cdb75c5b9e9d03ab6044e6f # v2.90.6
+        with:
+          tool: cargo-audit
+      # Fails on a known vulnerability (RustSec) in Cargo.lock. Warnings (unmaintained, unsound or
+      # yanked crates, all deep in Tauri's tree in 2026-11) are printed, not failed: they have no
+      # fix to take. To accept a vulnerability, list it with the reason in .cargo/audit.toml there.
+      - run: cargo audit
+        working-directory: avchetan-code/apps/desktop/src-tauri
 
   dco:
     name: DCO sign-off
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
       - name: Every commit in the pull request is signed off
@@ -183,13 +200,13 @@ jobs:
       # whisper-rs-sys generates its bindings with libclang (voice capture); the runner image has LLVM.
       LIBCLANG_PATH: "C:/Program Files/LLVM/bin"
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # stable
         with:
           components: rustfmt, clippy
 
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           workspaces: avchetan-code/apps/desktop/src-tauri
 

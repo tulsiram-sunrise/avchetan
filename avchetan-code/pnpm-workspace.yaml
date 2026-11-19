@@ -13,3 +13,15 @@ saveExact: true
 overrides:
   "@expo/log-box": 58.0.13
   "@expo/metro-runtime": 58.0.15
+  # A fixed node-forge (TLS and signature checks) inside Expo's tools; remove when Expo requires it.
+  "node-forge@<1.4.3": 1.4.3
+
+# `pnpm audit --prod` in CI (docs/conventions/security-and-privacy.md). Each ignored advisory is only in
+# Expo's build tools (the CLI, config plugins, Metro config), which run on the developer's PC and
+# in CI, never in the APK, the PC app or the server, and has no fix on Expo 58's major versions.
+# Review when upgrading Expo.
+auditConfig:
+  ignoreGhsas:
+    - GHSA-mrhx-c7xc-m3w5 # zod 3 in @expo/cli
+    - GHSA-3g3m-2fjr-6pw4 # glob in @expo/config and others
+    - GHSA-g3hv-75wg-m249 # minimatch in glob and @expo/fingerprint

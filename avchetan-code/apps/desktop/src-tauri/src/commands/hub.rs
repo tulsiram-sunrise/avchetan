@@ -282,6 +282,11 @@ impl HubState {
                     remove_if_present(&self.dir.join(RESET_EPOCH_MARKER)),
                 );
             }
+            // Its logger's lines (`[scope] …`: IDs, counts, codes) also go to the log file; other
+            // output, such as a crash's stack, stays only in Settings' list.
+            if line.starts_with('[') {
+                log::info!(target: "hub", "{line}");
+            }
             push_log(&mut inner.logs, line);
         }
     }

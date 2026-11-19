@@ -15,6 +15,42 @@ mod windows;
 
 use tauri::{Manager, RunEvent};
 use tauri_plugin_autostart::MacosLauncher;
+use tauri_plugin_log::{RotationStrategy, Target, TargetKind, TimezoneStrategy};
+
+/// Largest log file before it is rotated, and how many old files are kept: about 5 MB in all.
+const LOG_FILE_BYTES: u128 = 1_000_000;
+const LOG_FILES_KEPT: usize = 4;
+
+/// The log file (docs/conventions/errors-and-logging.md): `avchetan.log` in the app's log folder,
+/// which Settings → Open log folder shows. The shell's `log::` lines and the webviews' logger
+/// (src/platform/log-sink.ts) both go there. IDs, counts and codes only, never what was written.
+fn log_plugin() -> tauri::plugin::TauriPlugin<tauri::Wry> {
+    let mut targets = vec![Target::new(TargetKind::LogDir {
+        file_name: Some("avchetan".into()),
+    })];
+    if cfg!(debug_assertions) {
+        targets.push(Target::new(TargetKind::Stdout));
+    }
+    let level = if cfg!(debug_assertions) {
+        log::LevelFilter::Debug
+    } else {
+        log::LevelFilter::Info
+    };
+    tauri_plugin_log::Builder::new()
+        .clear_targets()
+        .targets(targets)
+        .level(level)
+        // Libraries' details (requests, window events) stay out even in development.
+        .level_for("hyper", log::LevelFilter::Warn)
+        .level_for("hyper_util", log::LevelFilter::Warn)
+        .level_for("reqwest", log::LevelFilter::Warn)
+        .level_for("tao", log::LevelFilter::Warn)
+        .level_for("tracing", log::LevelFilter::Warn)
+        .max_file_size(LOG_FILE_BYTES)
+        .rotation_strategy(RotationStrategy::KeepSome(LOG_FILES_KEPT))
+        .timezone_strategy(TimezoneStrategy::UseUtc)
+        .build()
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -23,6 +59,8 @@ pub fn run() {
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             windows::show_dock(app);
         }))
+        // Second, so everything after it, the webviews included, can log.
+        .plugin(log_plugin())
         .plugin(tauri_plugin_autostart::init(
             MacosLauncher::LaunchAgent,
             None,
@@ -37,6 +75,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(hotkey::plugin())
         .setup(|app| {
+            log::info!("started, version {}", app.package_info().version);
             // Before anything reads a secret, such as the hub's token at start.
             commands::secrets::use_service(&app.config().identifier);
             let data_dir = app.path().app_data_dir()?;

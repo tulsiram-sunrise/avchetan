@@ -14,7 +14,10 @@
 ## Logging
 
 - `createLogger(scope)` from `@avchetan/shared/logger` → `{ debug, info, warn, error }` with structured fields: `log.info('push done', { acked: 12, rejected: 0, ms: 140 })`.
-- Implementations: desktop → console in dev + rotating file via `tauri-plugin-log` in prod; mobile → console (dev) + in-memory ring buffer viewable in settings; server → pino JSON to stdout.
+- Implementations:
+  - **Desktop:** one rotating file, `avchetan.log` in the app's log folder (`%LOCALAPPDATA%\<identifier>\logs`; about 1 MB a file, 4 old files kept, UTC times), through `tauri-plugin-log` (`log_plugin` in `src-tauri/src/lib.rs`). The Rust shell logs with the `log` crate (`log::warn!`, never `eprintln!`); the webviews' logger writes there through `src/platform/log-sink.ts`; the built-in hub's logger lines (`[scope] …`) go there under the `hub` target. Info and up in a release build, debug and the console too in development. **Settings → General → Open log folder.**
+  - **Mobile:** the last 500 records in memory (`src/platform/app-log.ts`, imported first by `app/_layout.tsx`), shown, shared and cleared in **More → Log**; nothing written to storage, gone when Android closes the app. Console too in development.
+  - **Server:** JSON lines to stdout (`docker logs`).
 - Levels: `error` (needs attention), `warn` (degraded, recovered), `info` (lifecycle: sync cycles, jobs, startup), `debug` (details, dev only).
 - **Privacy:** never log log content, task titles, prompts, model responses, API keys, tokens, clipboard or window titles at `info`+. `debug` may include content only when the developer setting "verbose content logging" is enabled locally; it is never enabled on the server.
 - Always include IDs (`rawLogId`, `requestId`, `deviceId`), counts and durations instead.

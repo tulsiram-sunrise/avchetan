@@ -29,7 +29,8 @@ Single user, but the data is intimate (health, moods, relationships) and API key
 - **Token rotation only on the hub's own machine** (loopback, `token_rotate_remote` otherwise), logged at `warn`, so a stolen token can't lock the owner out. A token the server makes itself is saved to `SYNC_TOKEN_FILE` (owner-only, `/secrets` in Docker, outside the data that snapshots copy), never printed. The guides make the token up front (`SYNC_TOKEN`) where they can.
 - A push that deletes 50 rows or more is logged at `warn` with its count. An answer that fails sends its code and a fixed message, never the provider's text; startup failures log a code.
 - Least-privilege DB user (no superuser; extension created by migration owner once).
-- Dependencies scanned (`pnpm audit` in CI, Renovate/Dependabot later).
+- Dependencies scanned in CI: `pnpm audit --prod` (ignored advisories are listed with the reason under `auditConfig` in `pnpm-workspace.yaml`) and `cargo audit` for the desktop shell (fails on vulnerabilities; unmaintained or yanked crates deep in Tauri's tree are printed as warnings).
+- **Pinned supply chain:** every GitHub Action is pinned by commit SHA (its version in a comment) and every container image by digest (`image:tag@sha256:…`); Dependabot (`.github/dependabot.yml`) proposes updates once a month. The Android signing key is readable only through the `android-signing` environment ([releasing](releasing.md#the-android-release-key)).
 
 ## Data sent to LLM providers
 

@@ -1,0 +1,29 @@
+# Keeps the pinned actions (commit SHAs) and container images (digests) current: once a month, one
+# pull request per ecosystem. npm and Cargo dependencies are updated by hand (exact versions,
+# pnpm's release-age check); `pnpm audit` and `cargo audit` in CI flag the ones with advisories.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ["*"]
+  - package-ecosystem: docker
+    directories:
+      - /avchetan-code/apps/server
+    schedule:
+      interval: monthly
+    groups:
+      server-image:
+        patterns: ["*"]
+  - package-ecosystem: docker-compose
+    directories:
+      - /avchetan-code/apps/server
+      - /avchetan-code/deploy/cloud
+    schedule:
+      interval: monthly
+    groups:
+      compose-images:
+        patterns: ["*"]
