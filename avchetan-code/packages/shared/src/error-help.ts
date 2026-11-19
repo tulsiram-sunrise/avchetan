@@ -27,6 +27,8 @@ export const ERROR_HELP = {
   invalid_name: own(),
   invalid_port: own(),
   invalid_progress: own('Partly done takes a percentage from 1 to 99'),
+  // A starter key this version doesn't know: only a stale window can send one.
+  invalid_starter: at('other_errors', 'The app needs a restart'),
   invalid_repeat: own('That repeat isn’t valid. Check its days, start and end'),
   invalid_tag: own(),
   invalid_title: own(),

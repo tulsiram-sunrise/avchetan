@@ -1,11 +1,21 @@
 import {
   buildCaptureInput,
   EXTRACTION_PROMPT_VERSION,
+  findStarter,
   normalizeMetrics,
   normalizeTagPath,
+  starterFields,
 } from '@avchetan/core';
 import type { ClientStore } from '@avchetan/db/sqlite';
-import { AppError, createLogger, newId, toAppError } from '@avchetan/shared';
+import {
+  AppError,
+  createLogger,
+  isValidLocalDate,
+  newId,
+  repeatRuleSchema,
+  toAppError,
+  ValidationError,
+} from '@avchetan/shared';
 import { z } from 'zod';
 
 const log = createLogger('actions');
@@ -22,6 +32,14 @@ const ruleFields = z.object({
   projectId: z.string().nullable(),
   tagPaths: z.array(z.string()),
   enabled: z.boolean(),
+});
+const localDateSchema = z.string().refine(isValidLocalDate, 'Invalid date');
+const routineFields = z.object({
+  title: z.string(),
+  kind: z.enum(['assumed', 'confirm']),
+  repeatRule: repeatRuleSchema,
+  windowStart: z.string().nullable(),
+  windowEnd: z.string().nullable(),
 });
 
 type Action<S extends z.ZodType> = {
@@ -205,6 +223,50 @@ const ACTIONS = {
       store.write((tx) =>
         store.repos.entities.unlinkPromise(tx, { taskId, ...(entityId ? { entityId } : {}) }),
       ),
+  ),
+
+  // Routines (product/tasks-routines-reminders.md §3). Each write that can make a routine fall on
+  // today also makes today's day, in the same transaction, so the checklist is right at once.
+  'routine.create': action(
+    routineFields.extend({ today: localDateSchema }),
+    (store, { today, ...fields }) =>
+      store.write(async (tx) => {
+        const routine = await store.repos.routines.create(tx, fields);
+        await store.repos.routines.ensureDays(tx, today);
+        return routine;
+      }),
+  ),
+  'routine.update': action(
+    idArgs.extend(routineFields.shape).extend({ today: localDateSchema }),
+    (store, { id, today, ...fields }) =>
+      store.write(async (tx) => {
+        await store.repos.routines.update(tx, id, fields);
+        await store.repos.routines.ensureDays(tx, today);
+      }),
+  ),
+  'routine.addStarters': action(
+    z.object({ keys: z.array(z.string()).min(1), today: localDateSchema }),
+    (store, { keys, today }) =>
+      store.write(async (tx) => {
+        for (const key of keys) {
+          const starter = findStarter(key);
+          if (!starter) throw new ValidationError('invalid_starter', 'The app needs a restart');
+          await store.repos.routines.addStarter(tx, key, starterFields(starter, today));
+        }
+        await store.repos.routines.ensureDays(tx, today);
+      }),
+  ),
+  'routine.pause': action(idArgs, (store, { id }) =>
+    store.write((tx) => store.repos.routines.pause(tx, id)),
+  ),
+  'routine.resume': action(idArgs.extend({ today: localDateSchema }), (store, { id, today }) =>
+    store.write(async (tx) => {
+      await store.repos.routines.resume(tx, id);
+      await store.repos.routines.ensureDays(tx, today);
+    }),
+  ),
+  'routine.delete': action(idArgs, (store, { id }) =>
+    store.write((tx) => store.repos.routines.remove(tx, id)),
   ),
 
   'contextRule.create': action(ruleFields, (store, fields) =>

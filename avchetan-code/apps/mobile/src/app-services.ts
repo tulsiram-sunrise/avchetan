@@ -1,6 +1,6 @@
 import type { PendingProcessor } from '@avchetan/core';
-import { type ClientStore, openClientStore } from '@avchetan/db/sqlite';
-import { createLogger } from '@avchetan/shared';
+import { type ClientStore, openClientStore, startRoutineDays } from '@avchetan/db/sqlite';
+import { createLogger, localDate, systemTimeZone } from '@avchetan/shared';
 import type { SyncEngine } from '@avchetan/sync';
 import { AppState } from 'react-native';
 import { createExpoPlatform, type Platform } from './platform';
@@ -36,6 +36,13 @@ async function openAppServices(platform: Platform): Promise<AppServices> {
   });
   const sync = createSyncService(store, platform, extraction);
   startBackups({ store, platform });
+  // Today's routine days (ADR-0031), and the next day's once the date changes while open.
+  startRoutineDays({
+    store,
+    scheduler: platform.scheduler,
+    today: () => localDate(store.clock.now(), systemTimeZone()),
+    onMade: refreshAll,
+  });
   return {
     platform,
     store,

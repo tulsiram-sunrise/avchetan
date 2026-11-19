@@ -119,6 +119,7 @@ export {
   type TaskState,
   taskState,
 } from './client/repos/tasks';
+export { type RoutineDaysOptions, startRoutineDays } from './client/routine-days';
 export {
   aroundInstants,
   type EntryHit,

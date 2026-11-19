@@ -76,7 +76,7 @@ An entry's tags show under it on **Days**; tap one to open the tag's page. **Mor
 
 ## The More tab
 
-**More** is grouped: **Your stuff** (People, Tags, Projects, Trends), **AI and capture** (AI models, Voice, Daily brief, What Avchetan learned), **Privacy** (App lock, Private tags), **Connection and data** (Sync, Your data, Setup check) and **Help** (User guide, Report a problem, Log, Run setup again).
+**More** is grouped: **Your stuff** (Routines, People, Tags, Projects, Trends), **AI and capture** (AI models, Voice, Daily brief, What Avchetan learned), **Privacy** (App lock, Private tags), **Connection and data** (Sync, Your data, Setup check) and **Help** (User guide, Report a problem, Log, Run setup again).
 
 ## Change or fix an entry
 
@@ -111,6 +111,16 @@ Tasks found in your entries appear on the **Tasks** tab: *Overdue*, *Today*, *Co
 - Each group shows how many it holds and its first 50; tap **Show more** for the next 50. People and a person's entries work the same way.
 
 ![The Tasks tab listing two tasks with their due dates](images/capture-on-android-tasks.png)
+
+## Routines
+
+**More → Routines** lists your regular chores and schedule. Tap **New routine**, or a routine to change it:
+- **Tick it off** is for chores you do, such as watering the plants. **Assumed** is for things that happen unless an entry says otherwise, such as sleep or work hours.
+- **Repeats every** day, week, month or year, with **How many** for every 2 or 3. Weekly picks the days; monthly and yearly pick a day number (the 31st falls back to a shorter month's last day) or a weekday such as *the last Friday*. **Ends** never, on a date, or after a number of times.
+- **At a time** adds a time window such as *23:00–07:00* (it may end the next morning).
+- **Pause** stops it without losing it; **Delete** can be undone for 10 seconds from the bar at the bottom.
+
+The first time you open Routines it offers **ideas** (drink water, walk or exercise, water plants, sleep, work hours and more). Nothing is added until you turn one on and tap **Add**; **Ideas** brings the list back later. A routine's day appears each day it falls on, from the day you add it; past days are never filled in.
 
 ## Search
 
