@@ -12,6 +12,7 @@ import { KeysSheet } from './keys-sheet';
 import { PeoplePage } from './people-page';
 import { ProjectsPage } from './projects-page';
 import { ReviewPage } from './review-page';
+import { RoutinesPage } from './routines-page';
 import { SearchPage } from './search-page';
 import { SettingsPage } from './settings-page';
 import { SetupPage } from './setup-page';
@@ -25,6 +26,7 @@ const VIEWS: { id: MainView; label: string; hint?: string }[] = [
   { id: 'timeline', label: 'Days' },
   { id: 'search', label: 'Search', hint: 'Ctrl+F' },
   { id: 'tasks', label: 'Tasks' },
+  { id: 'routines', label: 'Routines' },
   { id: 'people', label: 'People' },
   { id: 'review', label: 'Review' },
   { id: 'trends', label: 'Trends' },
@@ -135,6 +137,8 @@ export function MainApp(props: {
         );
       case 'tasks':
         return <TasksPage />;
+      case 'routines':
+        return <RoutinesPage />;
       case 'people':
         return <PeoplePage requestedPerson={target.personId} />;
       case 'review':

@@ -259,3 +259,71 @@ describe('days on two devices', () => {
     expect(phoneDays).toEqual(pcDays);
   });
 });
+
+describe('days at the edges of time zones', () => {
+  it('ticks today from the first minute in UTC+14 and the last minute in UTC−12', async () => {
+    // 00:01 on 17 November in Kiribati (UTC+14) is 10:01 on the 16th in UTC.
+    const east = await openTestStore({ start: '2026-11-16T10:01:00.000Z' });
+    // 23:59 on 17 November on Baker Island (UTC−12) is 11:59 on the 18th in UTC.
+    const west = await openTestStore({ start: '2026-11-18T11:59:00.000Z' });
+    for (const { store } of [east, west]) {
+      const routine = await store.write((tx) => store.repos.routines.create(tx, plants));
+      const [made] = await store.write((tx) => store.repos.routines.ensureDays(tx, TODAY));
+      const ticked = await store.write((tx) =>
+        store.repos.routines.setDayStatus(tx, routine.id, TODAY, 'done'),
+      );
+      // The made day's version is older than the tick in both places.
+      expect(made?.updatedAt).toBe(madeDayVersion(TODAY));
+      expect(ticked.updatedAt > madeDayVersion(TODAY)).toBe(true);
+      expect(ticked.status).toBe('done');
+    }
+  });
+
+  it('still refuses tomorrow in UTC+14, where tomorrow starts soonest', async () => {
+    const { store } = await openTestStore({ start: '2026-11-16T10:01:00.000Z' });
+    const routine = await store.write((tx) => store.repos.routines.create(tx, plants));
+    await expect(
+      store.write((tx) => store.repos.routines.setDayStatus(tx, routine.id, '2026-11-18', 'done')),
+    ).rejects.toMatchObject({ code: 'invalid_date' });
+  });
+});
+
+describe('a routine whose rule cannot be read', () => {
+  it('makes no days for it, still makes the others, and shows it as unreadable', async () => {
+    const { store, raw } = await openTestStore({ start: START });
+    const routines = store.repos.routines;
+    const odd = await store.write((tx) => routines.create(tx, plants));
+    const read = await store.write((tx) => routines.create(tx, { ...plants, title: 'Read' }));
+    // A rule from a newer app, as sync would store it (ADR-0032).
+    raw
+      .prepare('UPDATE routines SET repeat_rule = ? WHERE id = ?')
+      .run(JSON.stringify({ freq: 'hourly', start: '2026-11-01' }), odd.id);
+
+    const made = await store.write((tx) => routines.ensureDays(tx, TODAY));
+
+    expect(made.map((day) => day.routineId)).toEqual([read.id]);
+    const stored = await routines.getById(store.db, odd.id);
+    expect(stored && routineRule(stored)).toBeNull();
+  });
+});
+
+describe('pausing and resuming', () => {
+  it('keeps the days already made, makes none while paused and again after resuming', async () => {
+    const { store, advance } = await oneDevice();
+    const routines = store.repos.routines;
+    const water = await store.write((tx) => routines.create(tx, plants));
+    await store.write((tx) => routines.ensureDays(tx, TODAY));
+    await store.write((tx) => routines.pause(tx, water.id));
+
+    advance(24 * 60 * 60 * 1000);
+    const whilePaused = await store.write((tx) => routines.ensureDays(tx, '2026-11-18'));
+    await store.write((tx) => routines.resume(tx, water.id));
+    advance(24 * 60 * 60 * 1000);
+    const afterResume = await store.write((tx) => routines.ensureDays(tx, '2026-11-19'));
+
+    expect(whilePaused).toEqual([]);
+    expect(await routines.daysOn(store.db, TODAY)).toHaveLength(1);
+    expect(afterResume.map((day) => day.scheduledDate)).toEqual(['2026-11-19']);
+    expect((await routines.getById(store.db, water.id))?.pausedAt).toBeNull();
+  });
+});

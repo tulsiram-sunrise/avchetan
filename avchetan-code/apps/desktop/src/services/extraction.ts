@@ -15,6 +15,8 @@ const DATA_TABLES = [
   'projects',
   'context_rules',
   'entities',
+  'routines',
+  'routine_days',
 ];
 
 /** Other windows refetch; the tray shows the new pending count. */

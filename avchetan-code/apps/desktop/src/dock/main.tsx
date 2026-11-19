@@ -1,4 +1,5 @@
-import { createLogger } from '@avchetan/shared';
+import { startRoutineDays } from '@avchetan/db/sqlite';
+import { createLogger, localDate } from '@avchetan/shared';
 import { enable } from '@tauri-apps/plugin-autostart';
 import type { AppServices } from '../app-services';
 import { bootstrap } from '../bootstrap';
@@ -79,6 +80,13 @@ void bootstrap(
       services.brief.makeNow(day).catch(() => undefined);
     }).catch(() => log.warn('could not subscribe to brief requests'));
     startBackups(services);
+    // Today's routine days (ADR-0031), and each new day's once the date changes.
+    startRoutineDays({
+      store: services.store,
+      scheduler: services.platform.scheduler,
+      today: () => localDate(services.store.clock.now(), services.timeZone.current()),
+      onMade: () => void announce(services.store, services.platform),
+    });
     // A changed model or key may clear whatever the queue is waiting for.
     onAppEvent('logs:changed', ({ tables }) => {
       if (!tables.includes('settings')) return;

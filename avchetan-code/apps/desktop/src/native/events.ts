@@ -13,6 +13,7 @@ export const mainViewSchema = z.enum([
   'timeline',
   'search',
   'tasks',
+  'routines',
   'people',
   'review',
   'trends',

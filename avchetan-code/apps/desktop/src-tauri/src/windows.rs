@@ -19,10 +19,11 @@ pub const MAIN: &str = "main";
 
 /// The main window's pages (`mainViewSchema` in src/native/events.ts). Only these are put into
 /// the script that opens a new main window.
-pub const MAIN_VIEWS: [&str; 12] = [
+pub const MAIN_VIEWS: [&str; 13] = [
     "timeline",
     "search",
     "tasks",
+    "routines",
     "people",
     "review",
     "trends",

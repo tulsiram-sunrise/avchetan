@@ -309,6 +309,18 @@ export {
   type ProviderDeps,
 } from './providers/registry';
 export {
+  describeRoutine,
+  draftFromRule,
+  findStarter,
+  newRuleDraft,
+  ROUTINE_STARTERS,
+  type RoutineStarter,
+  type RuleDraft,
+  type RuleFromDraft,
+  ruleFromDraft,
+  starterFields,
+} from './routines';
+export {
   DATE_PRESET_LABELS,
   DATE_PRESETS,
   type DatePreset,
