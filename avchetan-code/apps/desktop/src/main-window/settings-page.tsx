@@ -29,7 +29,7 @@ import { PrivateTagsSetting } from './private-tags-setting';
 import { SeeThroughSetting } from './see-through-setting';
 import { loadSettingsTab, SETTINGS_TABS, type SettingsTab, saveSettingsTab } from './settings-tabs';
 import { SyncSetting } from './sync-setting';
-import { QuietButton } from './ui';
+import { ActionError, QuietButton } from './ui';
 import { UsageSetting } from './usage-setting';
 import { VoiceSetting } from './voice-setting';
 import { WindowContextSetting } from './window-context-setting';
@@ -159,7 +159,9 @@ export function SettingsPage() {
 }
 
 function AboutSetting() {
+  const { files } = useServices().platform;
   const version = useQuery({ queryKey: ['native', 'version'], queryFn: getVersion });
+  const openLogs = useMutation({ mutationFn: () => files.openFolder('logs') });
   const open = (url: string) => () =>
     void openExternal(url).catch(() => log.warn('could not open a link'));
 
@@ -171,6 +173,14 @@ function AboutSetting() {
         <QuietButton onClick={open(`${GUIDE_URL}/`)}>User guide</QuietButton>
         <QuietButton onClick={open(REPORT_PROBLEM_URL)}>Report a problem</QuietButton>
       </div>
+      <p className="pt-2 text-sm text-ink-muted">
+        The log records what Avchetan did and any error codes, never what you wrote. Attach it to a
+        problem report when asked.
+      </p>
+      <div className="flex gap-2">
+        <QuietButton onClick={() => openLogs.mutate()}>Open log folder</QuietButton>
+      </div>
+      <ActionError errors={[openLogs.error]} />
     </section>
   );
 }

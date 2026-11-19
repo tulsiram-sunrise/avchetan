@@ -19,6 +19,8 @@ const RUST_NOT_CODES = new Set([
   'foreign_keys',
   'journal_mode',
   'trusted_schema',
+  // A crate name in the log level filters (src-tauri/src/lib.rs).
+  'hyper_util',
   'snake_case',
   'not_text',
 ]);

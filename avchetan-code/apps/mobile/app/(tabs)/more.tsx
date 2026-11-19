@@ -88,6 +88,11 @@ const GROUPS: { title: string; items: Item[] }[] = [
         failure: 'could not open the issue form',
       },
       {
+        title: 'Log',
+        hint: 'What the app did, to share with a problem report.',
+        href: '/settings/log',
+      },
+      {
         title: 'Run setup again',
         hint: 'Choose how this phone syncs and organizes.',
         href: '/setup',

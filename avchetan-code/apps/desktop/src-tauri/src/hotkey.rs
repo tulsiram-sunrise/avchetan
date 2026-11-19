@@ -291,7 +291,7 @@ pub fn register_default<R: Runtime>(app: &AppHandle<R>) {
     let state = app.state::<HotkeyState>();
     let status = register(app, &state, Which::Dock, DEFAULT_SHORTCUT);
     if !status.registered {
-        eprintln!("[avchetan] default shortcut unavailable");
+        log::warn!("default shortcut unavailable");
     }
 }
 

@@ -389,7 +389,7 @@ where
                 }
             }
         },
-        |error| eprintln!("[avchetan] microphone: {error}"),
+        |error| log::warn!("microphone: {error}"),
         None,
     )
 }
@@ -493,7 +493,7 @@ fn transcribe(
             let context =
                 WhisperContext::new_with_params(path_str, WhisperContextParameters::default())
                     .map_err(|error| {
-                        eprintln!("[avchetan] speech model didn't load: {error}");
+                        log::error!("speech model didn't load: {error}");
                         "transcription_failed"
                     })?;
             let context = Arc::new(context);
@@ -524,7 +524,7 @@ fn transcribe(
     params.set_print_realtime(false);
     params.set_print_timestamps(false);
     state.full(params, audio).map_err(|error| {
-        eprintln!("[avchetan] transcription failed: {error}");
+        log::error!("transcription failed: {error}");
         "transcription_failed"
     })?;
     let mut text = String::new();
@@ -557,7 +557,7 @@ fn detect_english_or_hindi(
     match probabilities {
         Ok(probabilities) => pick_english_or_hindi(&probabilities),
         Err(error) => {
-            eprintln!("[avchetan] language detection failed: {error}");
+            log::warn!("language detection failed: {error}");
             "hi"
         }
     }

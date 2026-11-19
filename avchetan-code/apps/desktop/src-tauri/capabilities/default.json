@@ -9,6 +9,7 @@
     "autostart:allow-disable",
     "autostart:allow-is-enabled",
     "dialog:allow-open",
+    "log:allow-log",
     {
       "identifier": "http:default",
       "allow": [

@@ -201,9 +201,10 @@ pub fn export_write(
 pub enum DataFolder {
     Backups,
     Exports,
+    Logs,
 }
 
-/// Opens the backups or exports folder in the file manager.
+/// Opens the backups, exports or log folder in the file manager.
 #[tauri::command(async)]
 pub fn data_folder_open(
     app: AppHandle,
@@ -217,6 +218,10 @@ pub fn data_folder_open(
             .document_dir()
             .map_err(|error| CommandError::new("open_failed", error.to_string()))?
             .join(EXPORTS_FOLDER),
+        DataFolder::Logs => app
+            .path()
+            .app_log_dir()
+            .map_err(|error| CommandError::new("open_failed", error.to_string()))?,
     };
     fs::create_dir_all(&dir).map_err(io_failed("open_failed"))?;
     app.opener()

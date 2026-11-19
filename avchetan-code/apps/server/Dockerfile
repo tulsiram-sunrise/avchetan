@@ -2,7 +2,7 @@
 #   docker build -f apps/server/Dockerfile -t avchetan-server .
 # Runs on Postgres (DB_DRIVER=postgres, DATABASE_URL) or on PGlite in /data (DB_DRIVER=pglite).
 
-FROM node:24.22.1-slim AS build
+FROM node:24.22.1-slim@sha256:be8204d4bd327363357f532187b752ff62759c31bedf98e9e18fc08c9cbd605c AS build
 WORKDIR /repo
 RUN corepack enable
 # Manifests first, so the install layer is reused until a dependency changes.
@@ -25,7 +25,7 @@ RUN pnpm --filter @avchetan/server build \
   && cp apps/server/dist/server.mjs apps/server/dist/server.mjs.map /out/ \
   && cp -rL apps/server/node_modules/@electric-sql/pglite apps/server/node_modules/@electric-sql/pglite-pgvector /out/node_modules/@electric-sql/
 
-FROM node:24.22.1-slim
+FROM node:24.22.1-slim@sha256:be8204d4bd327363357f532187b752ff62759c31bedf98e9e18fc08c9cbd605c
 ENV NODE_ENV=production \
   PGLITE_DATA_DIR=/data \
   BACKUP_DIR=/backups \

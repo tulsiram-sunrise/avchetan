@@ -7,7 +7,7 @@ How the Windows installer and the Android APK are built and published. The build
 | File | How |
 |---|---|
 | `avchetan-<tag>-windows-x64-setup.exe` | NSIS installer from `pnpm --filter @avchetan/desktop build:release`. The release config (`src-tauri/tauri.release.conf.json`) adds the hub program (`build:sidecar`, [ADR-0024](../decisions/0024-hub-sidecar-node-single-executable.md)) as `avchetan-hub.exe` beside the app, and PGlite's folders as `node_modules\`. Not code-signed yet, so Windows SmartScreen warns on first run ([ADR-0026](../decisions/0026-github-releases-unsigned-windows-first.md), [below](#windows-code-signing)). |
-| `avchetan-<tag>-android.apk` | `expo prebuild`, then Gradle `assembleRelease`, signed with the **release key** from repository secrets. The job fails rather than publish an APK signed with the debug key. Its `versionCode` is the workflow's run number, so each APK updates the one before it; its `versionName` is the version in `app.json`. |
+| `avchetan-<tag>-android.apk` | `expo prebuild`, then Gradle `assembleRelease`, signed with the **release key** from the `android-signing` environment's secrets. The job fails rather than publish an APK signed with the debug key. Its `versionCode` is the workflow's run number, so each APK updates the one before it; its `versionName` is the version in `app.json`. |
 | `SHA256SUMS.txt` | Checksums of both, on tagged releases. |
 | `ghcr.io/tulsiram-sunrise/avchetan-server:<version>` | The server's Docker image (`apps/server/Dockerfile`), on tagged releases, also tagged `<major>.<minor>` and `latest`. |
 
@@ -32,14 +32,15 @@ Created once, by the maintainer, outside the repository ([ADR-0018](../decisions
    keytool -genkeypair -v -storetype PKCS12 -keystore "$env:USERPROFILE\avchetan-release.jks" -alias avchetan -keyalg RSA -keysize 4096 -validity 10000
    ```
 2. Back up `avchetan-release.jks` and its password in two places.
-3. Give it to GitHub as repository secrets. Each `gh secret set` without a value asks for it, so it never lands in the shell history:
+3. Make the `android-signing` environment, which only `master`, `release/**` branches and `v*` tags may use, so a workflow changed on any other branch can't read the key. On GitHub: **Settings → Environments → New environment**, name it `android-signing`, then under **Deployment branches and tags** choose **Selected branches and tags** and add the branch rules `master` and `release/**` and the tag rule `v*`.
+4. Give the key to that environment as secrets. Each `gh secret set` without a value asks for it, so it never lands in the shell history:
    ```powershell
-   [Convert]::ToBase64String([IO.File]::ReadAllBytes("$env:USERPROFILE\avchetan-release.jks")) | gh secret set ANDROID_KEYSTORE_BASE64
-   gh secret set ANDROID_KEYSTORE_PASSWORD
-   gh secret set ANDROID_KEY_PASSWORD
-   "avchetan" | gh secret set ANDROID_KEY_ALIAS
+   [Convert]::ToBase64String([IO.File]::ReadAllBytes("$env:USERPROFILE\avchetan-release.jks")) | gh secret set ANDROID_KEYSTORE_BASE64 --env android-signing
+   gh secret set ANDROID_KEYSTORE_PASSWORD --env android-signing
+   gh secret set ANDROID_KEY_PASSWORD --env android-signing
+   "avchetan" | gh secret set ANDROID_KEY_ALIAS --env android-signing
    ```
-   With a PKCS12 keystore, the key password is the same as the keystore password.
+   With a PKCS12 keystore, the key password is the same as the keystore password. Until v0.5.0 these were repository secrets, which a workflow on any branch can read: once a test build works with the environment's secrets, delete the repository ones (`gh secret delete ANDROID_KEYSTORE_BASE64`, and the same for the other three).
 
 A phone that has a debug-signed build (any APK built on a PC) can't install a release-signed one over it. Uninstall first; the data comes back when it syncs with the hub again, so sync before uninstalling.
 

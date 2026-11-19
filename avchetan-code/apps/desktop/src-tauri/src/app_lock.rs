@@ -381,7 +381,7 @@ mod hello {
                 ) => Outcome::Unavailable,
                 Ok(_) => Outcome::Failed,
                 Err(error) => {
-                    eprintln!("[avchetan] windows hello failed: {}", error.code());
+                    log::warn!("windows hello failed: {}", error.code());
                     Outcome::Failed
                 }
             }
@@ -478,11 +478,11 @@ pub fn watch_session<R: Runtime>(app: &AppHandle<R>) {
             std::ptr::null(),
         );
         if hwnd.is_null() {
-            eprintln!("[avchetan] session watch: no window");
+            log::warn!("session watch: no window");
             return;
         }
         if WTSRegisterSessionNotification(hwnd, NOTIFY_FOR_THIS_SESSION) == 0 {
-            eprintln!("[avchetan] session watch: not registered");
+            log::warn!("session watch: not registered");
         }
         let mut message: MSG = std::mem::zeroed();
         while GetMessageW(&mut message, std::ptr::null_mut(), 0, 0) > 0 {

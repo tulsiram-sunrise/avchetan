@@ -5,6 +5,7 @@ import { createRoot } from 'react-dom/client';
 import { type AppServices, openAppServices } from './app-services';
 import { HelpLink } from './help-link';
 import { createTauriPlatform } from './platform';
+import { createDesktopLogSink, pluginLogWriter } from './platform/log-sink';
 import { ServicesProvider } from './services-context';
 import './styles.css';
 
@@ -15,7 +16,10 @@ export async function bootstrap(
   render: (services: AppServices) => ReactNode,
   beforeRender?: (services: AppServices) => Promise<void>,
 ): Promise<void> {
-  configureLogging({ level: import.meta.env.DEV ? 'debug' : 'info' });
+  configureLogging({
+    level: import.meta.env.DEV ? 'debug' : 'info',
+    sink: createDesktopLogSink({ write: pluginLogWriter, console: import.meta.env.DEV }),
+  });
   const container = document.getElementById('root');
   if (!container) throw new Error('missing #root');
   const root = createRoot(container);

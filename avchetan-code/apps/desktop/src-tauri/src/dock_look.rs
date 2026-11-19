@@ -86,7 +86,7 @@ fn round_corners<R: Runtime>(dock: &WebviewWindow<R>) {
         )
     };
     if result != 0 {
-        eprintln!("[avchetan] dock corners: {result:#x}");
+        log::warn!("dock corners: {result:#x}");
     }
 }
 
