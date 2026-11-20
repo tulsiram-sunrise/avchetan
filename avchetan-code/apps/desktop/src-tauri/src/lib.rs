@@ -8,6 +8,7 @@ mod context;
 mod dock_look;
 mod error;
 mod hotkey;
+mod mdns;
 mod notify;
 mod tray;
 mod voice;

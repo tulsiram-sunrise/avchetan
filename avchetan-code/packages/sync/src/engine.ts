@@ -22,7 +22,14 @@ import {
 } from '@avchetan/shared';
 import { createApiClient } from './api-client';
 import { loadServerUrls, SYNC_TOKEN_SECRET } from './config';
-import { findServer, learnedDue, loadLearned, saveLearned, usableLearned } from './find-server';
+import {
+  type FoundServer,
+  findServer,
+  learnedDue,
+  loadLearned,
+  saveLearned,
+  usableLearned,
+} from './find-server';
 import {
   type HealthResponse,
   isSyncedTable,
@@ -59,6 +66,11 @@ export type SyncEngineDeps = {
   device: SyncDevice | (() => Promise<SyncDevice>);
   /** Rows changed here, so the UI can refresh and the pending processor can look again. */
   onSynced?: () => void;
+  /**
+   * Looks for hubs on the local network (mDNS, §15) when no known address answers: addresses to
+   * try, each of which must prove it is this device's hub (ADR-0033). The phone has it.
+   */
+  discover?: () => Promise<string[]>;
   /**
    * A long download (more than one page): changes taken so far of all there are, after each
    * page; null when it ends, however it ends. Only from servers that say what remains.
@@ -309,6 +321,70 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
     }
   }
 
+  /** One sync with the hub found at `server`. */
+  async function syncAt(
+    server: FoundServer,
+    token: string,
+    urls: readonly string[],
+  ): Promise<LoopRunResult> {
+    const { serverId } = server.health;
+    await followServer(server.health);
+
+    try {
+      await cycle(server.baseUrl, serverId, token);
+    } catch (error) {
+      const { code } = toAppError(error);
+      if (code === 'unauthorized') {
+        await report('unauthorized', { errorCode: code });
+        return 'idle';
+      }
+      // The server forgot this device, for example after a restore. Register again next time.
+      if (code === 'unknown_device') await store.sync.setState(REGISTRATION, '');
+      await report('failed', { errorCode: code });
+      throw error;
+    }
+
+    if (learnedDue(await loadLearned(store), store.clock.now())) {
+      await learnWhereHubIs(server.baseUrl, serverId, token, urls);
+    }
+
+    await report('synced', {
+      errorCode: null,
+      stuck: await store.sync.stuckCount(),
+      setAside: await store.sync.setAsideCount(),
+    });
+    deps.onSynced?.();
+    return 'idle';
+  }
+
+  /**
+   * The last try when no known address answered: hubs announcing themselves on this network.
+   * One that proves itself is remembered with the learned addresses for next time.
+   */
+  async function discoverHub(urls: readonly string[], token: string): Promise<FoundServer | null> {
+    if (!deps.discover) return null;
+    let found: string[];
+    try {
+      found = usableLearned(await deps.discover(), urls);
+    } catch (error) {
+      log.debug('could not look for the hub on this network', { code: toAppError(error).code });
+      return null;
+    }
+    if (found.length === 0) return null;
+    const result = await findServer({
+      fetch,
+      saved: [],
+      learned: found,
+      expected: await expectedServer(),
+      token,
+    });
+    if (!result || typeof result === 'string') return null;
+    const known = (await loadLearned(store))?.urls ?? [];
+    await saveLearned(store, usableLearned([result.baseUrl, ...known], urls));
+    log.info('found the hub on this network');
+    return result;
+  }
+
   async function run(): Promise<LoopRunResult> {
     const urls = await loadServerUrls(store);
     const token = await secrets.get(SYNC_TOKEN_SECRET);
@@ -341,36 +417,12 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
       return 'idle';
     }
     if (!server) {
+      const discovered = await discoverHub(urls, token);
+      if (discovered) return syncAt(discovered, token, urls);
       await report('server_unreachable', { errorCode: 'server_unreachable' });
       throw new SyncError('server_unreachable', 'No address of the server answered');
     }
-    const { serverId } = server.health;
-    await followServer(server.health);
-
-    try {
-      await cycle(server.baseUrl, serverId, token);
-    } catch (error) {
-      const { code } = toAppError(error);
-      if (code === 'unauthorized') {
-        await report('unauthorized', { errorCode: code });
-        return 'idle';
-      }
-      // The server forgot this device, for example after a restore. Register again next time.
-      if (code === 'unknown_device') await store.sync.setState(REGISTRATION, '');
-      await report('failed', { errorCode: code });
-      throw error;
-    }
-
-    if (learnedDue(learned, store.clock.now()))
-      await learnWhereHubIs(server.baseUrl, serverId, token, urls);
-
-    await report('synced', {
-      errorCode: null,
-      stuck: await store.sync.stuckCount(),
-      setAside: await store.sync.setAsideCount(),
-    });
-    deps.onSynced?.();
-    return 'idle';
+    return syncAt(server, token, urls);
   }
 
   const loop = createLoop({
