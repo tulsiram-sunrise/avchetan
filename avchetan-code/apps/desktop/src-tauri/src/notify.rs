@@ -130,9 +130,15 @@ mod tests {
 
     #[test]
     fn reminder_titles_are_trimmed_and_cut() {
-        assert_eq!(reminder_title("  Call the dentist "), Some("Call the dentist".into()));
+        assert_eq!(
+            reminder_title("  Call the dentist "),
+            Some("Call the dentist".into())
+        );
         assert_eq!(reminder_title("   "), None);
         let long = "a".repeat(500);
-        assert_eq!(reminder_title(&long).map(|t| t.len()), Some(MAX_REMINDER_TITLE));
+        assert_eq!(
+            reminder_title(&long).map(|t| t.len()),
+            Some(MAX_REMINDER_TITLE)
+        );
     }
 }

@@ -1,4 +1,5 @@
 import { openTestStore } from '@avchetan/db/testing';
+import { formatDueDate } from '@avchetan/shared';
 import { describe, expect, it } from 'vitest';
 import {
   describeReminder,
@@ -66,7 +67,8 @@ describe('task reminders (§7)', () => {
     expect(describeReminder('2026-11-20T10:30:00.000Z', '2026-11-20', zone)).toBe('Today 16:00');
     expect(describeReminder('2026-11-21T03:30:00.000Z', '2026-11-20', zone)).toBe('Tomorrow 09:00');
     expect(describeReminder('2026-11-23T10:30:00.000Z', '2026-11-20', zone)).toBe(
-      'Mon, 23 Nov 16:00',
+      // The day's words follow this machine's language, as everywhere else dates are shown.
+      `${formatDueDate('2026-11-23', '2026-11-20')} 16:00`,
     );
   });
 
