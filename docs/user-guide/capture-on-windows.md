@@ -187,6 +187,8 @@ A tag's page includes the tags nested under it: `#health` also shows entries tag
 
 A number the AI got wrong shows wrong here too: fix it with **Edit numbers** on **Days** ([Fix the numbers](corrections.md#fix-the-numbers)). Nothing to show yet? Log *ran 5 km* or *slept 7 hours* and it appears.
 
+**Sleep without counting it yourself.** Say when you go to bed and when you wake up, in one entry or two: *going to sleep now* at night, then *woke up at 6:40* in the morning, or the next morning *slept at 11:30 last night, up at 6:40*. Avchetan works out the hours between them and adds them to the wake-up as **Sleep**, on the day you woke. It needs a time for both (a stated time, or *now*); a gap under 2 hours counts as a nap and one over 16 hours as a missed entry, so neither becomes a night's sleep. Hours you state yourself (*woke at 7, slept about 6 hours*) are kept as you said them.
+
 ## Check it worked
 
 Press your shortcut, type `Test entry #test` and press your save key. The entry appears at the top of the list, and *Open Avchetan* shows it under today in **Days**.

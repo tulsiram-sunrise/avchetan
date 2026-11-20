@@ -905,5 +905,132 @@
         }
       ]
     }
+  },
+  {
+    "id": "sleep-woke",
+    "text": "woke up at 6:10, slept ok",
+    "at": "2026-03-04T07:00:00.000Z",
+    "expect": {
+      "activities": [
+        {
+          "category": "health",
+          "date": "2026-03-04",
+          "occurredAt": "2026-03-04T06:10:00.000Z",
+          "metrics": {
+            "sleep_event": "wake"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "sleep-bed-now",
+    "text": "going to sleep now, early start tomorrow",
+    "at": "2026-03-04T22:40:00.000Z",
+    "expect": {
+      "activities": [
+        {
+          "category": "health",
+          "date": "2026-03-04",
+          "occurredAt": "2026-03-04T22:40:00.000Z",
+          "metrics": {
+            "sleep_event": "bed"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "sleep-last-night",
+    "text": "slept at 11:45 last night and woke up at 7",
+    "at": "2026-03-04T08:00:00.000Z",
+    "expect": {
+      "activities": [
+        {
+          "category": "health",
+          "date": "2026-03-03",
+          "occurredAt": "2026-03-03T23:45:00.000Z",
+          "metrics": {
+            "sleep_event": "bed"
+          }
+        },
+        {
+          "category": "health",
+          "date": "2026-03-04",
+          "occurredAt": "2026-03-04T07:00:00.000Z",
+          "metrics": {
+            "sleep_event": "wake"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "sleep-hinglish",
+    "text": "abhi so raha hoon, kal jaldi uthna hai",
+    "at": "2026-03-04T23:00:00.000Z",
+    "expect": {
+      "activities": [
+        {
+          "category": "health",
+          "date": "2026-03-04",
+          "occurredAt": "2026-03-04T23:00:00.000Z",
+          "metrics": {
+            "sleep_event": "bed"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "time-stated",
+    "text": "ran 5k at 6:30 this morning",
+    "at": "2026-03-04T09:00:00.000Z",
+    "expect": {
+      "activities": [
+        {
+          "category": "workout",
+          "date": "2026-03-04",
+          "occurredAt": "2026-03-04T06:30:00.000Z",
+          "metrics": {
+            "distance_km": 5
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "time-part-of-day",
+    "text": "ran this morning, 30 min",
+    "at": "2026-03-04T09:00:00.000Z",
+    "expect": {
+      "activities": [
+        {
+          "category": "workout",
+          "date": "2026-03-04",
+          "occurredAt": null,
+          "metrics": {
+            "duration_min": 30
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "time-just-now",
+    "text": "just finished a 45 min swim",
+    "at": "2026-03-04T18:00:00.000Z",
+    "expect": {
+      "activities": [
+        {
+          "category": "workout",
+          "date": "2026-03-04",
+          "occurredAt": "2026-03-04T18:00:00.000Z",
+          "metrics": {
+            "duration_min": 45
+          }
+        }
+      ]
+    }
   }
 ]

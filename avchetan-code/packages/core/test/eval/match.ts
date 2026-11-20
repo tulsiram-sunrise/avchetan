@@ -36,6 +36,9 @@ function activityMisses(
   if (expected.date && actual.loggedDate !== expected.date) {
     misses.push(`date ${actual.loggedDate}, wanted ${expected.date}`);
   }
+  if (expected.occurredAt !== undefined && (actual.occurredAt ?? null) !== expected.occurredAt) {
+    misses.push(`at ${actual.occurredAt ?? null}, wanted ${expected.occurredAt}`);
+  }
   for (const [key, value] of Object.entries(expected.metrics ?? {})) {
     if (!metricMatches(actual.metrics[key], value)) {
       misses.push(`${key} ${String(actual.metrics[key])}, wanted ${value}`);

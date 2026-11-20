@@ -250,7 +250,8 @@ ID = `derivedId('routine_day', routine_id, scheduled_date)`. Made only on the da
 | `protein_g` / `carbs_g` / `fat_g` | number | grams | sum | |
 | `water_ml` | number | ml | sum | |
 | `meal` | enum | `breakfast`, `lunch`, `dinner`, `snack` | | |
-| `sleep_h` | number | hours | average | |
+| `sleep_event` | enum | `bed`, `wake` (set by code from the model's `sleep` field; not shown) | | "woke up at 6:10" |
+| `sleep_h` | number | hours | average | "slept 7 h", or a bed paired with the wake-up after it ([§9](../product/tasks-routines-reminders.md#9-sleep-hours)) |
 | `sleep_quality` | int | 1–5 | average | |
 | `energy` | int | 1–5 | average | "low energy" → 2 |
 | `mood` | int | 1–5 | average | |

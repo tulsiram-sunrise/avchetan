@@ -310,7 +310,7 @@
     "activities": [
       {
         "category": "health",
-        "title": "Sleep",
+        "title": "Slept last night",
         "notes": null,
         "metrics": [
           {
@@ -320,6 +320,8 @@
         ],
         "exercises": [],
         "loggedDate": "2026-03-03",
+        "occurredAt": null,
+        "sleep": "wake",
         "project": null,
         "inferredTags": []
       }
@@ -328,6 +330,7 @@
     "newCategory": null,
     "logTags": [],
     "entities": [],
+    "choresDone": [],
     "skip": null
   },
   "health-pain": {
@@ -986,6 +989,170 @@
         "remindAt": null
       }
     ],
+    "newCategory": null,
+    "logTags": [],
+    "entities": [],
+    "choresDone": [],
+    "skip": null
+  },
+  "sleep-woke": {
+    "activities": [
+      {
+        "category": "health",
+        "title": "Woke up",
+        "notes": null,
+        "metrics": [],
+        "exercises": [],
+        "loggedDate": "2026-03-04",
+        "occurredAt": "06:10",
+        "sleep": "wake",
+        "project": null,
+        "inferredTags": []
+      }
+    ],
+    "tasks": [],
+    "newCategory": null,
+    "logTags": [],
+    "entities": [],
+    "choresDone": [],
+    "skip": null
+  },
+  "sleep-bed-now": {
+    "activities": [
+      {
+        "category": "health",
+        "title": "Went to bed",
+        "notes": null,
+        "metrics": [],
+        "exercises": [],
+        "loggedDate": "2026-03-04",
+        "occurredAt": "now",
+        "sleep": "bed",
+        "project": null,
+        "inferredTags": []
+      }
+    ],
+    "tasks": [],
+    "newCategory": null,
+    "logTags": [],
+    "entities": [],
+    "choresDone": [],
+    "skip": null
+  },
+  "sleep-last-night": {
+    "activities": [
+      {
+        "category": "health",
+        "title": "Went to bed",
+        "notes": null,
+        "metrics": [],
+        "exercises": [],
+        "loggedDate": "2026-03-03",
+        "occurredAt": "23:45",
+        "sleep": "bed",
+        "project": null,
+        "inferredTags": []
+      },
+      {
+        "category": "health",
+        "title": "Woke up",
+        "notes": null,
+        "metrics": [
+          {
+            "key": "sleep",
+            "value": "woke"
+          }
+        ],
+        "exercises": [],
+        "loggedDate": "2026-03-04",
+        "occurredAt": "07:00",
+        "sleep": "wake",
+        "project": null,
+        "inferredTags": []
+      }
+    ],
+    "tasks": [],
+    "newCategory": null,
+    "logTags": [],
+    "entities": [],
+    "choresDone": [],
+    "skip": null
+  },
+  "time-stated": {
+    "activities": [
+      {
+        "category": "workout",
+        "title": "Morning run",
+        "notes": null,
+        "metrics": [
+          {
+            "key": "distance_km",
+            "value": "5"
+          }
+        ],
+        "exercises": [],
+        "loggedDate": "2026-03-04",
+        "occurredAt": "06:30",
+        "sleep": null,
+        "project": null,
+        "inferredTags": ["running"]
+      }
+    ],
+    "tasks": [],
+    "newCategory": null,
+    "logTags": [],
+    "entities": [],
+    "choresDone": [],
+    "skip": null
+  },
+  "time-part-of-day": {
+    "activities": [
+      {
+        "category": "workout",
+        "title": "Morning run",
+        "notes": null,
+        "metrics": [
+          {
+            "key": "duration_min",
+            "value": "30"
+          }
+        ],
+        "exercises": [],
+        "loggedDate": "2026-03-04",
+        "occurredAt": null,
+        "sleep": null,
+        "project": null,
+        "inferredTags": ["running"]
+      }
+    ],
+    "tasks": [],
+    "newCategory": null,
+    "logTags": [],
+    "entities": [],
+    "choresDone": [],
+    "skip": null
+  },
+  "time-just-now": {
+    "activities": [
+      {
+        "category": "workout",
+        "title": "Swim",
+        "notes": null,
+        "metrics": [
+          {
+            "key": "duration_min",
+            "value": "45"
+          }
+        ],
+        "exercises": [],
+        "loggedDate": "2026-03-04",
+        "occurredAt": "now",
+        "sleep": null,
+        "project": null,
+        "inferredTags": ["swimming"]
+      }
+    ],
+    "tasks": [],
     "newCategory": null,
     "logTags": [],
     "entities": [],

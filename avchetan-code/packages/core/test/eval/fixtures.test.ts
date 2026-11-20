@@ -42,12 +42,23 @@ describe('recorded extraction answers', () => {
     expect(Object.keys(answers).length).toBeGreaterThanOrEqual(30);
   });
 
-  /** Answers recorded before extraction v6 have no choresDone, before v7 no remindAt. */
+  /**
+   * Answers recorded before extraction v6 have no choresDone, before v7 no remindAt, before v8
+   * no occurredAt or sleep.
+   */
   const upgraded = (answer: unknown) => {
-    const { tasks = [], ...rest } = answer as { tasks?: object[] };
+    const {
+      tasks = [],
+      activities = [],
+      ...rest
+    } = answer as {
+      tasks?: object[];
+      activities?: object[];
+    };
     return {
       choresDone: [],
       ...rest,
+      activities: activities.map((item) => ({ occurredAt: null, sleep: null, ...item })),
       tasks: tasks.map((task) => ({ remindAt: null, ...task })),
     };
   };

@@ -211,6 +211,13 @@ export const METRICS: readonly MetricSpec[] = [
     aliases: { meal: 1, meal_type: 1 },
   },
   {
+    // Set by code from the model's `sleep` field, never a metric the model writes (§9).
+    key: 'sleep_event',
+    type: 'enum',
+    values: ['bed', 'wake'],
+    aliases: { sleep_event: 1 },
+  },
+  {
     key: 'sleep_h',
     type: 'number',
     aggregate: 'average',

@@ -8,6 +8,8 @@ const expectedActivity = z.object({
   /** A slug, any of several, or "new" for a category the model proposed. */
   category: z.union([z.string(), z.array(z.string())]).optional(),
   date: z.string().optional(),
+  /** When it happened as a UTC instant (fixtures are in UTC), or null for unknown (§9). */
+  occurredAt: z.string().nullable().optional(),
   metrics: z.record(z.string(), z.union([z.number(), z.string()])).optional(),
   exercises: z.array(z.string()).optional(),
   project: z.string().optional(),

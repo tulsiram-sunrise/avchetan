@@ -63,13 +63,15 @@ Input assembled by `buildExtractionInput(rawLog, vocabulary)`:
 - Context hints: `raw_logs.context` (active app, rule matches) when present.
 - Open chores: titles of the confirm routines still open on the log's local day (`loadOpenChores`), as an *Open chores today* line right before the entry, only when there are some (prompt v6, [tasks-routines-reminders §5](../product/tasks-routines-reminders.md#5-chores-ticked-from-entries)).
 - Reminders (prompt v7, [§8](../product/tasks-routines-reminders.md#8-reminders-from-what-you-type)): a task's `remindAt` is the local `HH:MM` the entry asks to be reminded at. `normalize.ts` (`plannedReminder`) makes the UTC instant on the task's day in the log's `captured_tz`, takes today when the entry names no day (`namesNoDay`), drops a time already past when the entry was written, and gives a task with no date the reminder's day. Apply sets `remind_at` only on a task that has none, so organizing again never moves a reminder.
+- When and sleep (prompt v8, [§9](../product/tasks-routines-reminders.md#9-sleep-hours)): an activity's `occurredAt` is the local `HH:MM` the entry states, or `"now"` when it is happening now or just ended; `sleep` is `bed` or `wake`. `normalize.ts` (`plannedOccurrence`) makes `occurred_at` on the activity's day in `captured_tz`, or the capture instant for `"now"` (only on today), and moves a stated time more than 5 minutes after the capture to the night before (an activity has already happened). The mark is stored as the `sleep_event` metric. After apply, `pairSleep` (`packages/db`, `repos/sleep.ts`) gives each wake-up with no `sleep_h` the hours since the latest bed in the 16 hours before it, unless another wake-up lies between them or the gap is under 2 hours (a nap); a bed organized after its wake-up pairs too. A user-edited wake-up is never changed. Pairing runs only where the entry is organized; a bed and a wake-up organized on two different devices are paired when either is organized again.
 - The raw content and the already-parsed explicit tags.
 
 Output: one structured object validated by the **extraction envelope** schema:
 
 ```
 ExtractionResult {
-  activities: [{ category, title, notes|null, metrics: [{key, value}], exercises[], loggedDate, project|null, inferredTags[] }]
+  activities: [{ category, title, notes|null, metrics: [{key, value}], exercises[], loggedDate,
+                occurredAt|null, sleep|null, project|null, inferredTags[] }]
   tasks:      [{ title, notes|null, dueDate|null, category|null, project|null, inferredTags[],
                 forPerson|null, waitingOn|null, remindAt|null }]
   newCategory?: { name, description }   // only if no existing category fits; max one per log
@@ -81,7 +83,7 @@ ExtractionResult {
 }
 ```
 
-Every field is required (nullable where it can be absent) so strict JSON-schema providers accept it. `occurredAt` isn't requested yet, because a model can't reliably turn local times into UTC; `occurred_at` stays null.
+Every field is required (nullable where it can be absent) so strict JSON-schema providers accept it. The model never writes UTC: `occurredAt` is a local `HH:MM` or `"now"`, and code makes the instant (below).
 
 The normalized result is an `ExtractionPlan`, applied in one transaction by `store.repos.extraction.apply`. A `!private` entry is only ever sent to a `local` provider; with none configured it is marked `skipped`.
 

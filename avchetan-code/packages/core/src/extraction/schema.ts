@@ -27,6 +27,14 @@ const activitySchema = z.object({
   metrics: z.array(metricSchema),
   exercises: z.array(exerciseSchema).describe('Exercises with their sets, reps and weight'),
   loggedDate: z.string().describe('Local date it happened, YYYY-MM-DD'),
+  occurredAt: z
+    .string()
+    .nullable()
+    .describe('Local time HH:MM it happened, "now" if happening now or just happened, else null'),
+  sleep: z
+    .string()
+    .nullable()
+    .describe('"bed" for going to bed for the night, "wake" for waking up, else null'),
   project: z.string().nullable().describe('An existing project name'),
   inferredTags: z.array(z.string()),
 });

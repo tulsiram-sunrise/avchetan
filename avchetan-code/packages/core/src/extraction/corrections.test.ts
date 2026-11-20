@@ -38,6 +38,8 @@ const swim: ExtractionResult = {
       metrics: [{ key: 'duration_min', value: '40' }],
       exercises: [],
       loggedDate: '2026-10-30',
+      occurredAt: null,
+      sleep: null,
       project: null,
       inferredTags: [],
     },
@@ -266,6 +268,8 @@ describe('dropCopiedItems', () => {
     metrics: [],
     exercises: [],
     loggedDate: '2026-11-06',
+    occurredAt: null,
+    sleep: null,
     project: null,
     inferredTags: [],
   });
