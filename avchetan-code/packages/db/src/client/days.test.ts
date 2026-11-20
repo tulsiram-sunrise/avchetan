@@ -91,8 +91,8 @@ describe('dayTasks', () => {
     }));
     const other = await store.write((tx) => store.repos.tasks.create(tx, { title: 'undated' }));
     await store.write(async (tx) => {
-      await store.repos.tasks.complete(tx, dueDone.id);
-      await store.repos.tasks.complete(tx, other.id);
+      await store.repos.tasks.complete(tx, dueDone.id, '2026-11-20');
+      await store.repos.tasks.complete(tx, other.id, '2026-11-20');
     });
     // Both were completed "now" by the test clock; find that local day.
     const doneTask = (await store.queries.completedTasks(store.db)).find((t) => t.id === other.id);
@@ -243,7 +243,7 @@ describe('rolledOverTasks', () => {
       later: await store.repos.tasks.create(tx, { title: 'later', dueDate: '2026-11-06' }),
       undated: await store.repos.tasks.create(tx, { title: 'undated' }),
     }));
-    await store.write((tx) => store.repos.tasks.complete(tx, done.id));
+    await store.write((tx) => store.repos.tasks.complete(tx, done.id, '2026-11-20'));
 
     const rolled = await store.queries.rolledOverTasks(store.db, {
       day: '2026-11-05',

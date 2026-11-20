@@ -1,6 +1,7 @@
 import {
   daysBetween,
   isValidLocalDate,
+  type LocalDate,
   localDate,
   type TimeZone,
   ValidationError,
@@ -19,6 +20,7 @@ import {
 } from '../synced';
 import { softDeleteLinksTo } from './cascade';
 import { recordCorrection } from './corrections';
+import { checkToday, makeNextRepeat } from './repeat-tasks';
 
 export type Task = Row<typeof tasks>;
 
@@ -101,6 +103,8 @@ export function tasksRepo(deps: RepoDeps) {
         completionNote: null,
         progressPct: null,
         cancelledAt: null,
+        routineId: null,
+        routineDate: null,
       });
     },
 
@@ -146,13 +150,20 @@ export function tasksRepo(deps: RepoDeps) {
       await repo.softDelete(tx, id);
     },
 
-    /** Done, with an optional note on how it went. Finishing a cancelled task un-cancels it. */
-    complete: (tx: Tx, id: string, note?: string | null) =>
-      updateSynced(tx, deps, tasks, id, {
+    /**
+     * Done, with an optional note on how it went. Finishing a cancelled task un-cancels it. A
+     * repeating task makes its next occurrence (never before `today`, the user's local date).
+     */
+    async complete(tx: Tx, id: string, today: LocalDate, note?: string | null): Promise<Task> {
+      checkToday(today);
+      const task = await updateSynced(tx, deps, tasks, id, {
         completedAt: deps.clock.now(),
         cancelledAt: null,
         completionNote: note?.trim() || null,
-      }),
+      });
+      await makeNextRepeat(tx, deps, task, today);
+      return task;
+    },
 
     /** Partly done: the percentage is recorded and the task stays open. */
     partlyDone(tx: Tx, id: string, progressPct: number): Promise<Task> {
@@ -168,13 +179,20 @@ export function tasksRepo(deps: RepoDeps) {
       return updateSynced(tx, deps, tasks, id, { progressPct });
     },
 
-    /** Not going to happen: shown struck through, never counted as missed. */
-    cancel: (tx: Tx, id: string) =>
-      updateSynced(tx, deps, tasks, id, {
+    /**
+     * Not going to happen: shown struck through, never counted as missed. Cancelling one
+     * occurrence of a repeating task still makes the next.
+     */
+    async cancel(tx: Tx, id: string, today: LocalDate): Promise<Task> {
+      checkToday(today);
+      const task = await updateSynced(tx, deps, tasks, id, {
         cancelledAt: deps.clock.now(),
         completedAt: null,
         completionNote: null,
-      }),
+      });
+      await makeNextRepeat(tx, deps, task, today);
+      return task;
+    },
 
     /** Back to open, from done or cancelled. Progress is kept: it was real work. */
     reopen: (tx: Tx, id: string) =>

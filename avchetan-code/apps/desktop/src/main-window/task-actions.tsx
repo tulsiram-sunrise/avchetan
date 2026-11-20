@@ -1,3 +1,4 @@
+import { draftFromRule, newRuleDraft, type RuleDraft, ruleFromDraft } from '@avchetan/core';
 import {
   finishedDaysLate,
   PROGRESS_MAX,
@@ -5,11 +6,13 @@ import {
   type Task,
   taskState,
 } from '@avchetan/db/sqlite';
-import { formatTiming, moveDates } from '@avchetan/shared';
+import { describeRepeatRule, formatTiming, moveDates, repeatRuleSchema } from '@avchetan/shared';
 import { type ReactNode, useState } from 'react';
 import { useToday } from '../queries/days';
 import { useAction } from '../queries/organize';
+import { useTaskRules } from '../queries/routines';
 import { useServices } from '../services-context';
+import { RuleEditor } from './rule-editor';
 import { ActionError, fieldClass, QuietButton } from './ui';
 import { useUndo } from './undo-bar';
 
@@ -34,11 +37,21 @@ export function TaskCheckbox({ task }: { task: Task }) {
 export const taskTitleClass = (task: Task) =>
   taskState(task) === 'open' ? '' : 'text-ink-muted line-through';
 
-/** "Cancelled", "40% done", "2 days late", and the note on how it went. */
+/** How a repeating task repeats ("Every week on Monday"), or null for a one-off task. */
+function useRepeatText(task: Task): string | null {
+  const rules = useTaskRules();
+  const routine = task.routineId ? rules.data?.get(task.routineId) : undefined;
+  const rule = repeatRuleSchema.safeParse(routine?.repeatRule);
+  return rule.success ? describeRepeatRule(rule.data) : null;
+}
+
+/** "Cancelled", "40% done", "2 days late", how it repeats, and the note on how it went. */
 export function TaskStatus({ task }: { task: Task }) {
   const { timeZone } = useServices();
+  const repeat = useRepeatText(task);
   const state = taskState(task);
   const parts: string[] = [];
+  if (repeat) parts.push(`↻ ${repeat}`);
   if (state === 'cancelled') parts.push('Cancelled');
   if (state === 'done') {
     const late = finishedDaysLate(task, timeZone.current());
@@ -58,11 +71,11 @@ export function TaskStatus({ task }: { task: Task }) {
   );
 }
 
-type Mode = 'closed' | 'menu' | 'note' | 'progress';
+type Mode = 'closed' | 'menu' | 'note' | 'progress' | 'repeat';
 
 /**
  * A task's *More* button and the actions it opens (product/tasks-routines-reminders.md §1): done
- * with a note, partly done, move, cancel, reopen and delete (with an undo message).
+ * with a note, partly done, move, repeat (§6), cancel, reopen and delete (with an undo message).
  */
 export function useTaskMenu(task: Task) {
   const [mode, setMode] = useState<Mode>('closed');
@@ -76,6 +89,12 @@ export function useTaskMenu(task: Task) {
   const cancel = useAction('task.cancel');
   const reopen = useAction('task.setDone');
   const move = useAction('task.edit');
+  const repeat = useAction('task.repeat');
+  const stopRepeating = useAction('task.stopRepeating');
+  const rules = useTaskRules();
+  const currentRule = task.routineId ? rules.data?.get(task.routineId) : undefined;
+  const parsedRule = repeatRuleSchema.safeParse(currentRule?.repeatRule);
+  const [draft, setDraft] = useState<RuleDraft | null>(null);
   const close = () => setMode('closed');
   const open = taskState(task) === 'open';
   const { tomorrow, nextWeek } = moveDates(today);
@@ -124,6 +143,18 @@ export function useTaskMenu(task: Task) {
             if (event.target.value) moveTo(event.target.value);
           }}
         />
+        <QuietButton
+          onClick={() => {
+            setDraft(
+              parsedRule.success
+                ? draftFromRule(parsedRule.data)
+                : newRuleDraft(task.dueDate ?? today),
+            );
+            setMode('repeat');
+          }}
+        >
+          {parsedRule.success ? 'Change repeat…' : 'Repeat…'}
+        </QuietButton>
         <QuietButton
           disabled={cancel.isPending}
           onClick={() => cancel.mutate({ id: task.id }, { onSuccess: close })}
@@ -174,6 +205,43 @@ export function useTaskMenu(task: Task) {
         <QuietButton onClick={() => setMode('menu')}>Back</QuietButton>
       </form>
     );
+  } else if (mode === 'repeat' && draft) {
+    const result = ruleFromDraft(draft);
+    panel = (
+      <form
+        className="flex flex-col gap-2"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (result.ok)
+            repeat.mutate({ id: task.id, repeatRule: result.rule }, { onSuccess: close });
+        }}
+      >
+        <RuleEditor draft={draft} onChange={setDraft} />
+        <p className={`text-xs ${result.ok ? 'text-ink-muted' : 'text-danger'}`}>
+          {result.ok
+            ? `${describeRepeatRule(result.rule)}. When you finish or cancel one, the next appears.`
+            : result.problem}
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="submit"
+            disabled={!result.ok || repeat.isPending}
+            className="rounded-lg bg-accent px-2 py-1 text-xs text-white disabled:opacity-50"
+          >
+            Save
+          </button>
+          {parsedRule.success ? (
+            <QuietButton
+              disabled={stopRepeating.isPending}
+              onClick={() => stopRepeating.mutate({ id: task.id }, { onSuccess: close })}
+            >
+              Stop repeating
+            </QuietButton>
+          ) : null}
+          <QuietButton onClick={() => setMode('menu')}>Back</QuietButton>
+        </div>
+      </form>
+    );
   } else if (mode === 'progress') {
     const pct = Number(progress);
     const valid = Number.isInteger(pct) && pct >= PROGRESS_MIN && pct <= PROGRESS_MAX;
@@ -220,7 +288,17 @@ export function useTaskMenu(task: Task) {
   }
 
   const errors = (
-    <ActionError errors={[finish.error, partly.error, cancel.error, reopen.error, move.error]} />
+    <ActionError
+      errors={[
+        finish.error,
+        partly.error,
+        cancel.error,
+        reopen.error,
+        move.error,
+        repeat.error,
+        stopRepeating.error,
+      ]}
+    />
   );
   return {
     button,

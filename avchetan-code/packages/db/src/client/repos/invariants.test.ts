@@ -125,9 +125,10 @@ const WRITES: Record<string, Write> = {
 
   'tasks.create': (s, tx) => s.repos.tasks.create(tx, { title: 'Call the bank' }),
   'tasks.editByUser': (s, tx, f) => s.repos.tasks.editByUser(tx, f.task.id, { title: 'Pay it' }),
-  'tasks.complete': (s, tx, f) => s.repos.tasks.complete(tx, f.task.id, 'Paid online'),
+  'tasks.complete': (s, tx, f) =>
+    s.repos.tasks.complete(tx, f.task.id, '2026-11-20', 'Paid online'),
   'tasks.partlyDone': (s, tx, f) => s.repos.tasks.partlyDone(tx, f.task.id, 40),
-  'tasks.cancel': (s, tx, f) => s.repos.tasks.cancel(tx, f.task.id),
+  'tasks.cancel': (s, tx, f) => s.repos.tasks.cancel(tx, f.task.id, '2026-11-20'),
   'tasks.deleteByUser': (s, tx, f) => s.repos.tasks.deleteByUser(tx, f.task.id),
   'tasks.softDelete': (s, tx, f) => s.repos.tasks.softDelete(tx, f.task.id),
 
@@ -216,6 +217,16 @@ const WRITES: Record<string, Write> = {
   'routines.pause': (s, tx, f) => s.repos.routines.pause(tx, f.routine.id),
   'routines.remove': (s, tx, f) => s.repos.routines.remove(tx, f.routine.id),
   'routines.ensureDays': (s, tx) => s.repos.routines.ensureDays(tx, TODAY),
+  'routines.repeatTask': (s, tx, f) =>
+    s.repos.routines.repeatTask(tx, f.task.id, { freq: 'daily', start: TODAY }, TODAY),
+  'routines.stopRepeating': async (s, tx, f) => {
+    await s.repos.routines.repeatTask(tx, f.task.id, { freq: 'daily', start: TODAY }, TODAY);
+    await s.repos.routines.stopRepeating(tx, f.task.id);
+  },
+  'tasks.complete (repeating)': async (s, tx, f) => {
+    await s.repos.routines.repeatTask(tx, f.task.id, { freq: 'daily', start: TODAY }, TODAY);
+    await s.repos.tasks.complete(tx, f.task.id, TODAY);
+  },
   'routines.tickFromEntry': async (s, tx, f) => {
     await s.repos.routines.ensureDays(tx, TODAY);
     expect(await s.repos.routines.tickFromEntry(tx, f.routine.id, TODAY, f.log.id)).toBe(true);
@@ -331,7 +342,7 @@ const READS: Record<string, DeletedCase> = {
     id: (f) => f.task.id,
   },
   completedTasks: {
-    show: (s, tx, f) => s.repos.tasks.complete(tx, f.task.id),
+    show: (s, tx, f) => s.repos.tasks.complete(tx, f.task.id, '2026-11-20'),
     remove: (s, tx, f) => s.repos.tasks.softDelete(tx, f.task.id),
     read: (s) => queries.completedTasks(s.db),
     id: (f) => f.task.id,

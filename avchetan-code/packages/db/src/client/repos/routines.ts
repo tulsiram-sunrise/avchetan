@@ -7,13 +7,14 @@ import {
   isValidLocalDate,
   isValidLocalTime,
   type LocalDate,
+  nextOccurrence,
   type RepeatRule,
   repeatRuleSchema,
   ValidationError,
 } from '@avchetan/shared';
-import { and, asc, eq, inArray, isNull } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNull, ne } from 'drizzle-orm';
 import type { RoutineDayStatus, RoutineKind } from '../../schema/enums';
-import { routineDays, routines } from '../../schema/sqlite/tables';
+import { routineDays, routines, tasks } from '../../schema/sqlite/tables';
 import type { ClientDb, Tx } from '../database';
 import {
   getById,
@@ -104,12 +105,15 @@ export function routinesRepo(deps: RepoDeps) {
   return {
     getById: (db: ClientDb, id: string) => getById(db, routines, id),
 
-    /** Live routines, paused ones included, by title. */
+    /**
+     * Live routines, paused ones included, by title: the Routines page. Repeating tasks' rules
+     * (kind `task`) belong to their tasks and are left out.
+     */
     list(db: ClientDb): Promise<Routine[]> {
       return db
         .select()
         .from(routines)
-        .where(live(routines))
+        .where(and(live(routines), ne(routines.kind, 'task')))
         .orderBy(asc(routines.title), asc(routines.id));
     },
 
@@ -130,6 +134,76 @@ export function routinesRepo(deps: RepoDeps) {
 
     update: (tx: Tx, id: string, fields: RoutineFields) =>
       updateSynced(tx, deps, routines, id, clean(fields)),
+
+    /**
+     * Make a task repeat, or change how it repeats (§6). The rule becomes a routine of kind
+     * `task` and the task its first occurrence: it keeps its due date, or gets the first
+     * occurrence from today when it had none. Returns the task.
+     */
+    async repeatTask(
+      tx: Tx,
+      taskId: string,
+      repeatRule: RepeatRule,
+      today: LocalDate,
+    ): Promise<Row<typeof tasks>> {
+      checkDate(today);
+      const task = await getById(tx, tasks, taskId);
+      if (!task || task.deletedAt !== null) {
+        throw new DbError('not_found', 'Task not found', { details: { taskId } });
+      }
+      const current = task.routineId ? await getById(tx, routines, task.routineId) : undefined;
+      if (current && current.deletedAt === null && current.kind === 'task') {
+        await updateSynced(tx, deps, routines, current.id, {
+          ...clean({
+            title: current.title,
+            kind: 'task',
+            repeatRule,
+            categoryId: current.categoryId,
+          }),
+        });
+        return task;
+      }
+      const routine = await insertSynced(tx, deps, routines, {
+        ...clean({ title: task.title, kind: 'task', repeatRule, categoryId: task.categoryId }),
+        pausedAt: null,
+      });
+      const date =
+        task.dueDate ??
+        nextOccurrence(routineRule(routine) ?? repeatRule, addDays(today, -1)) ??
+        today;
+      return updateSynced(tx, deps, tasks, task.id, {
+        routineId: routine.id,
+        routineDate: date,
+        dueDate: date,
+      });
+    },
+
+    /** Stop a task repeating: its rule is deleted, its tasks stay as they are. */
+    async stopRepeating(tx: Tx, taskId: string): Promise<void> {
+      const task = await getById(tx, tasks, taskId);
+      if (!task?.routineId) return;
+      const routine = await getById(tx, routines, task.routineId);
+      if (!routine || routine.deletedAt !== null || routine.kind !== 'task') return;
+      await softDeleteSynced(tx, deps, routines, [routine.id]);
+    },
+
+    /** Every live repeating task's rule (kind `task`), to label tasks with how they repeat. */
+    taskRules(db: ClientDb): Promise<Routine[]> {
+      return db
+        .select()
+        .from(routines)
+        .where(and(live(routines), eq(routines.kind, 'task')));
+    },
+
+    /** The rule a task repeats by, or null for a one-off task (or one that stopped repeating). */
+    async repeatOf(
+      db: ClientDb,
+      task: Pick<Row<typeof tasks>, 'routineId'>,
+    ): Promise<Routine | null> {
+      if (!task.routineId) return null;
+      const routine = await getById(db, routines, task.routineId);
+      return routine && routine.deletedAt === null && routine.kind === 'task' ? routine : null;
+    },
 
     /** Paused: no new days are made. Days already made stay. */
     pause: (tx: Tx, id: string) =>

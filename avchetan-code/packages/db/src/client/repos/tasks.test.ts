@@ -22,13 +22,15 @@ describe('finishing a task', () => {
     const { store, task } = await oneTask();
 
     const noted = await store.write((tx) =>
-      store.repos.tasks.complete(tx, task.id, '  Fixed in ten minutes '),
+      store.repos.tasks.complete(tx, task.id, '2026-11-20', '  Fixed in ten minutes '),
     );
     expect(noted.completionNote).toBe('Fixed in ten minutes');
     expect(taskState(noted)).toBe('done');
 
     await store.write((tx) => store.repos.tasks.reopen(tx, task.id));
-    const plain = await store.write((tx) => store.repos.tasks.complete(tx, task.id, '   '));
+    const plain = await store.write((tx) =>
+      store.repos.tasks.complete(tx, task.id, '2026-11-20', '   '),
+    );
     expect(plain.completionNote).toBeNull();
     expect(plain.completedAt).not.toBeNull();
   });
@@ -52,17 +54,19 @@ describe('finishing a task', () => {
 
   it('cancels a done task, finishes a cancelled one, and reopens either', async () => {
     const { store, task } = await oneTask();
-    await store.write((tx) => store.repos.tasks.complete(tx, task.id, 'went fine'));
+    await store.write((tx) => store.repos.tasks.complete(tx, task.id, '2026-11-20', 'went fine'));
 
-    const cancelled = await store.write((tx) => store.repos.tasks.cancel(tx, task.id));
+    const cancelled = await store.write((tx) =>
+      store.repos.tasks.cancel(tx, task.id, '2026-11-20'),
+    );
     expect(cancelled).toMatchObject({ completedAt: null, completionNote: null });
     expect(taskState(cancelled)).toBe('cancelled');
 
-    const done = await store.write((tx) => store.repos.tasks.complete(tx, task.id));
+    const done = await store.write((tx) => store.repos.tasks.complete(tx, task.id, '2026-11-20'));
     expect(done.cancelledAt).toBeNull();
     expect(taskState(done)).toBe('done');
 
-    await store.write((tx) => store.repos.tasks.cancel(tx, task.id));
+    await store.write((tx) => store.repos.tasks.cancel(tx, task.id, '2026-11-20'));
     const reopened = await store.write((tx) => store.repos.tasks.reopen(tx, task.id));
     expect(taskState(reopened)).toBe('open');
   });
@@ -71,7 +75,7 @@ describe('finishing a task', () => {
     const { store, task } = await oneTask();
     await store.write(async (tx) => {
       await store.repos.tasks.partlyDone(tx, task.id, 60);
-      await store.repos.tasks.complete(tx, task.id);
+      await store.repos.tasks.complete(tx, task.id, '2026-11-20');
     });
 
     const reopened = await store.write((tx) => store.repos.tasks.reopen(tx, task.id));

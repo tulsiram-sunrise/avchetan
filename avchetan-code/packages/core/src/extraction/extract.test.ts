@@ -209,7 +209,7 @@ describe('processRawLog', () => {
     const log = await capture('book the dentist');
     await extract(log, { ...emptyResult, tasks: [dentist] });
     const [task] = await liveTasks();
-    await store.write((tx) => store.repos.tasks.complete(tx, task?.id as string));
+    await store.write((tx) => store.repos.tasks.complete(tx, task?.id as string, '2026-11-20'));
 
     await extract(log, { ...emptyResult, tasks: [dentist] });
 

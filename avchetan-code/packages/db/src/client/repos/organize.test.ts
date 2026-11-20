@@ -185,7 +185,7 @@ describe('activities & tasks', () => {
   it('completes and reopens tasks', async () => {
     const { store } = await openTestStore();
     const task = await store.write((tx) => store.repos.tasks.create(tx, { title: 'Buy milk' }));
-    const done = await store.write((tx) => store.repos.tasks.complete(tx, task.id));
+    const done = await store.write((tx) => store.repos.tasks.complete(tx, task.id, '2026-11-20'));
     expect(done.completedAt).not.toBeNull();
     const reopened = await store.write((tx) => store.repos.tasks.reopen(tx, task.id));
     expect(reopened.completedAt).toBeNull();

@@ -145,5 +145,12 @@ export const pgMigrations: readonly Migration[] = [
       "ALTER TABLE \"routines\" DROP CONSTRAINT \"routines_kind_check\";",
       "ALTER TABLE \"tasks\" DROP CONSTRAINT \"tasks_origin_check\";"
     ]
+  },
+  {
+    "tag": "0011_repeating_tasks",
+    "statements": [
+      "ALTER TABLE \"tasks\" ADD COLUMN \"routine_id\" uuid;",
+      "ALTER TABLE \"tasks\" ADD COLUMN \"routine_date\" date;"
+    ]
   }
 ];

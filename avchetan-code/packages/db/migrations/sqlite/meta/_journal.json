@@ -50,6 +50,13 @@
       "when": 1794984605756,
       "tag": "0006_sync_set_aside",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1795165700542,
+      "tag": "0007_repeating_tasks",
+      "breakpoints": true
     }
   ]
 }

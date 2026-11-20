@@ -91,7 +91,7 @@ describe('synced row schemas', () => {
     const task = await store.write(async (tx) => {
       const made = await store.repos.tasks.create(tx, { title: 'Pay rent' });
       await store.repos.tasks.partlyDone(tx, made.id, 30);
-      return store.repos.tasks.cancel(tx, made.id);
+      return store.repos.tasks.cancel(tx, made.id, '2026-11-20');
     });
 
     expect(SYNCED_ROW_SCHEMAS.tasks?.parse(task)).toEqual(task);

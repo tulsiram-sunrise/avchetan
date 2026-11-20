@@ -1,5 +1,5 @@
 import { type ClientStore, getSetting, setSetting } from '@avchetan/db/sqlite';
-import { systemTimeZone, timeZoneSchema } from '@avchetan/shared';
+import { type LocalDate, localDate, systemTimeZone, timeZoneSchema } from '@avchetan/shared';
 
 const TIME_ZONE_KEY = 'general.timezone';
 
@@ -30,3 +30,8 @@ export function createTimeZoneCache(store: ClientStore) {
 }
 
 export type TimeZoneCache = ReturnType<typeof createTimeZoneCache>;
+
+/** The user's local date now, in the zone they chose (or Windows'): for writes that need "today". */
+export async function localToday(store: ClientStore): Promise<LocalDate> {
+  return localDate(store.clock.now(), (await loadTimeZone(store)) ?? systemTimeZone());
+}

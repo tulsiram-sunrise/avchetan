@@ -397,7 +397,7 @@ async function main() {
         wallMs = at;
         while (completions.length > 0 && (completions[0]?.at ?? Infinity) <= at) {
           const due = completions.shift();
-          if (due) await store.repos.tasks.complete(tx, due.taskId);
+          if (due) await store.repos.tasks.complete(tx, due.taskId, addDays(first, day));
         }
 
         const generated = generate(projectIds);

@@ -1,3 +1,4 @@
+import { draftFromRule, newRuleDraft, type RuleDraft, ruleFromDraft } from '@avchetan/core';
 import {
   finishedDaysLate,
   PROGRESS_MAX,
@@ -6,10 +7,12 @@ import {
   taskState,
 } from '@avchetan/db/sqlite';
 import {
+  describeRepeatRule,
   formatDueDate,
   formatTiming,
   isValidLocalDate,
   moveDates,
+  repeatRuleSchema,
   systemTimeZone,
 } from '@avchetan/shared';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -20,6 +23,7 @@ import ReanimatedSwipeable, {
   SwipeDirection,
 } from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { useToday } from '../queries/days';
+import { useRepeatTask, useStopRepeating, useTaskRules } from '../queries/routines';
 import {
   deleteTaskNow,
   useCancelTask,
@@ -32,6 +36,7 @@ import {
 import { useServices } from '../services-context';
 import { usePalette } from '../theme/theme';
 import { Button, Failure, Field } from './parts';
+import { RuleEditor } from './rule-editor';
 import { PromiseEditor, PromiseLabels } from './task-promises';
 import { useUndo } from './undo-bar';
 
@@ -57,9 +62,18 @@ export function TaskCheck({ task }: { task: Task }) {
   );
 }
 
-/** "Cancelled", "40% done", "Done 2 days late", and the note on how it went. */
-function statusText(task: Task): string | null {
+/** The rule a repeating task repeats by (§6), or undefined for a one-off task. */
+function useTaskRule(task: Task) {
+  const rules = useTaskRules();
+  const routine = task.routineId ? rules.data?.get(task.routineId) : undefined;
+  const parsed = repeatRuleSchema.safeParse(routine?.repeatRule);
+  return parsed.success ? parsed.data : undefined;
+}
+
+/** "Cancelled", "40% done", "Done 2 days late", how it repeats, and the note on how it went. */
+function statusText(task: Task, repeat: string | null): string | null {
   const parts: string[] = [];
+  if (repeat) parts.push(`↻ ${repeat}`);
   const state = taskState(task);
   if (state === 'cancelled') parts.push('Cancelled');
   if (state === 'done') {
@@ -163,6 +177,59 @@ function FinishActions({ task, onClose }: { task: Task; onClose: () => void }) {
   );
 }
 
+/** Repeat: how often, and the next one appears when this one is finished or cancelled. */
+function RepeatEditor({ task, onClose }: { task: Task; onClose: () => void }) {
+  const today = useToday();
+  const current = useTaskRule(task);
+  const [draft, setDraft] = useState<RuleDraft | null>(null);
+  const repeat = useRepeatTask();
+  const stop = useStopRepeating();
+  if (taskState(task) !== 'open') return null;
+  if (!draft) {
+    return (
+      <View className="flex-row flex-wrap gap-2">
+        <Button
+          label={current ? 'Change repeat' : 'Repeat'}
+          onPress={() =>
+            setDraft(current ? draftFromRule(current) : newRuleDraft(task.dueDate ?? today))
+          }
+        />
+      </View>
+    );
+  }
+  const result = ruleFromDraft(draft);
+  return (
+    <View className="gap-2">
+      <RuleEditor draft={draft} onChange={setDraft} />
+      <Text className={`text-sm ${result.ok ? 'text-inkMuted' : 'text-danger'}`}>
+        {result.ok
+          ? `${describeRepeatRule(result.rule)}. When you finish or cancel one, the next appears.`
+          : result.problem}
+      </Text>
+      <View className="flex-row flex-wrap gap-2">
+        <Button
+          primary
+          label="Save repeat"
+          disabled={!result.ok || repeat.isPending}
+          onPress={() => {
+            if (result.ok)
+              repeat.mutate({ id: task.id, repeatRule: result.rule }, { onSuccess: onClose });
+          }}
+        />
+        {current ? (
+          <Button
+            label="Stop repeating"
+            disabled={stop.isPending}
+            onPress={() => stop.mutate(task.id, { onSuccess: onClose })}
+          />
+        ) : null}
+        <Button label="Back" onPress={() => setDraft(null)} />
+      </View>
+      <Failure error={repeat.error ?? stop.error} />
+    </View>
+  );
+}
+
 function TaskEditor({ task, onClose }: { task: Task; onClose: () => void }) {
   const [title, setTitle] = useState(task.title);
   const [due, setDue] = useState(task.dueDate ?? '');
@@ -216,6 +283,7 @@ function TaskEditor({ task, onClose }: { task: Task; onClose: () => void }) {
       </View>
       <Failure error={edit.error} />
       <FinishActions task={task} onClose={onClose} />
+      <RepeatEditor task={task} onClose={onClose} />
       <PromiseEditor task={task} />
     </View>
   );
@@ -299,7 +367,8 @@ export function TaskRow({ task }: { task: Task }) {
   const undo = useUndo();
   const swipes = useSwipes(task);
   const open = taskState(task) === 'open';
-  const status = statusText(task);
+  const rule = useTaskRule(task);
+  const status = statusText(task, rule ? describeRepeatRule(rule) : null);
   if (undo.isHidden(task.id)) return null;
 
   return (

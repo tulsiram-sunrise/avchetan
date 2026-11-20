@@ -31,12 +31,12 @@ describe('openTasks', () => {
       await store.repos.tasks.create(tx, { title: 'friday', dueDate: '2026-10-30' });
       await store.repos.tasks.create(tx, { title: 'tomorrow', dueDate: '2026-10-27' });
       const done = await store.repos.tasks.create(tx, { title: 'done', dueDate: '2026-10-26' });
-      await store.repos.tasks.complete(tx, done.id);
+      await store.repos.tasks.complete(tx, done.id, '2026-11-20');
       const dropped = await store.repos.tasks.create(tx, {
         title: 'dropped',
         dueDate: '2026-10-26',
       });
-      await store.repos.tasks.cancel(tx, dropped.id);
+      await store.repos.tasks.cancel(tx, dropped.id, '2026-11-20');
     });
     const titles = (await store.queries.openTasks(store.db)).map((t) => t.title);
     expect(titles).toEqual(['tomorrow', 'friday', 'someday']);
@@ -105,9 +105,9 @@ describe('task groups', () => {
     await make('Someday');
     const lent = await make('Get the drill back', '2026-10-01');
     const finished = await make('Done thing');
-    await store.write((tx) => r.tasks.complete(tx, finished.id));
+    await store.write((tx) => r.tasks.complete(tx, finished.id, '2026-11-20'));
     const dropped = await make('Dropped', '2026-10-01');
-    await store.write((tx) => r.tasks.cancel(tx, dropped.id));
+    await store.write((tx) => r.tasks.cancel(tx, dropped.id, '2026-11-20'));
     const gone = await make('Deleted', '2026-10-01');
     await store.write((tx) => r.tasks.softDelete(tx, gone.id));
     await store.write(async (tx) => {
@@ -147,9 +147,9 @@ describe('cancelled tasks', () => {
     const today = '2026-11-16';
     await store.write(async (tx) => {
       const dropped = await r.tasks.create(tx, { title: 'Dropped', dueDate: '2026-11-10' });
-      await r.tasks.cancel(tx, dropped.id);
+      await r.tasks.cancel(tx, dropped.id, '2026-11-20');
       const dueToday = await r.tasks.create(tx, { title: 'Not today', dueDate: today });
-      await r.tasks.cancel(tx, dueToday.id);
+      await r.tasks.cancel(tx, dueToday.id, '2026-11-20');
       await r.tasks.create(tx, { title: 'Late', dueDate: '2026-11-12' });
       await r.tasks.create(tx, { title: 'Now', dueDate: today });
     });
@@ -232,9 +232,9 @@ describe('activitiesForAnalysis and tasksForAnalysis', () => {
 
     await store.write(async (tx) => {
       const done = await r.tasks.create(tx, { title: 'Done', dueDate: '2026-10-01' });
-      await r.tasks.complete(tx, done.id);
+      await r.tasks.complete(tx, done.id, '2026-11-20');
       const dropped = await r.tasks.create(tx, { title: 'Dropped', dueDate: '2026-10-01' });
-      await r.tasks.cancel(tx, dropped.id);
+      await r.tasks.cancel(tx, dropped.id, '2026-11-20');
       await r.tasks.create(tx, { title: 'Late', dueDate: '2026-10-01' });
       await r.tasks.create(tx, { title: 'Later', dueDate: '2026-11-20' });
     });
