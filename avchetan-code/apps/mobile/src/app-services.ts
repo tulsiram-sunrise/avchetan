@@ -7,6 +7,7 @@ import { createExpoPlatform, type Platform } from './platform';
 import { refreshAll } from './query-client';
 import { type BriefService, createBriefService } from './services/brief';
 import { type CaptureService, createCaptureService } from './services/capture';
+import { scheduleChoreEvening } from './services/chore-evening';
 import { startBackups } from './services/data';
 import { createExtractionService } from './services/extraction';
 import { createSyncService } from './services/sync';
@@ -41,7 +42,10 @@ async function openAppServices(platform: Platform): Promise<AppServices> {
     store,
     scheduler: platform.scheduler,
     today: () => localDate(store.clock.now(), systemTimeZone()),
-    onMade: refreshAll,
+    onMade: () => {
+      refreshAll();
+      void scheduleChoreEvening(store);
+    },
   });
   return {
     platform,

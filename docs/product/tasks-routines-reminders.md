@@ -85,6 +85,8 @@ Each day of a routine is one row whose ID is derived from the routine and the da
 
 There is **one checklist card** on Today (Days) listing the day's *confirm* chores, with a tick for each. There is **one evening notification** on the phone if anything is still unticked, never one per chore. It comes at 20:00 by default; this is a setting on each device, and only the devices set to ring use it (see [Reminders](#7-reminders)). Tapping the notification opens Today.
 
+**Built on Day 13 (2026-11-20).** The card is on Days on both apps (*Chores · 2 of 5*, a tick each; assumed routines are not listed, skipped chores show as skipped). Until the *Ring for reminders on this device* setting arrives with reminders (§7), the evening notification is a phone-only setting under **More → Routines** (*Remind me about chores left*, on at 20:00, kept per device). It is planned by `planChoreEvening` in `packages/core` and rescheduled after every write, every sync and when a new day's chores are made, so a chore ticked on the PC takes it back once the phone has synced.
+
 ## 5. Chores ticked from entries
 
 Extraction is given the titles of today's open chores and can name the one an entry matches. The code checks that the name really is an open chore today, ticks it, and shows **✓ Water plants (from your entry)** with an undo. This needs a new prompt version with fixtures, and it works with Ollama offline. A private entry is matched only by a local model, as everything private is. The AI suggests the match; only code writes it.

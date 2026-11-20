@@ -28,6 +28,9 @@ export const DAY_TABLES = [
   'tags',
   'entity_tags',
   'projects',
+  // The day's chore checklist (queries/routines.ts).
+  'routines',
+  'routine_days',
 ] as const;
 
 /**

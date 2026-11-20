@@ -1,3 +1,16 @@
+export {
+  CHORE_EVENING_SETTING,
+  type ChoreEveningNotice,
+  type ChoreEveningSettings,
+  DEFAULT_CHORE_EVENING_TIME,
+  dayChores,
+  instantAt,
+  loadChoreEveningSettings,
+  openChores,
+  parseChoreEveningSettings,
+  planChoreEvening,
+  saveChoreEveningSettings,
+} from './checklist';
 export { describeRoutine } from './describe';
 export {
   draftFromRule,

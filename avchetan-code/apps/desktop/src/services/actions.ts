@@ -268,6 +268,14 @@ const ACTIONS = {
   'routine.delete': action(idArgs, (store, { id }) =>
     store.write((tx) => store.repos.routines.remove(tx, id)),
   ),
+  // A chore ticked or unticked on the day's checklist (§4).
+  'routineDay.setDone': action(
+    z.object({ routineId: z.string().min(1), day: localDateSchema, done: z.boolean() }),
+    (store, { routineId, day, done }) =>
+      store.write((tx) =>
+        store.repos.routines.setDayStatus(tx, routineId, day, done ? 'done' : 'open'),
+      ),
+  ),
 
   'contextRule.create': action(ruleFields, (store, fields) =>
     store.write((tx) => store.repos.contextRules.create(tx, fields)),

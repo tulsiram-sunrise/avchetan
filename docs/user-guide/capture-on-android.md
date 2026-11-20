@@ -122,6 +122,10 @@ Tasks found in your entries appear on the **Tasks** tab: *Overdue*, *Today*, *Co
 
 The first time you open Routines it offers **ideas** (drink water, walk or exercise, water plants, sleep, work hours and more). Nothing is added until you turn one on and tap **Add**; **Ideas** brings the list back later. A routine's day appears each day it falls on, from the day you add it; past days are never filled in.
 
+**Ticking chores off.** Each day's *Tick it off* routines show as one **Chores** list on **Days**, with how many are done (*Chores · 2 of 5*). Tap the box to tick one, tap again to untick it; tap its name to open the routine. Assumed routines such as sleep don't appear there.
+
+**Evening reminder.** At the bottom of **More → Routines**, **Remind me about chores left** sends one notification in the evening, only on days something is still unticked; tapping it opens Days. It is on at 20:00 unless you change it, and it is set for this phone only. Turning it on asks Android to allow notifications; if you refuse, it stays off and the screen says how to allow them later in Android's settings.
+
 ## Search
 
 Tap the magnifier at the top of **Days** or **Tasks** and type a word, or the start of one: *dent* finds *dentist*, and with several words all must be there. Results come in groups: **Entries** (the found words marked), **Tasks** and **People**. Tap an entry to open its day with the entry outlined, a task to open **Tasks**, or a person to open their page; your search is still there when you come back.
