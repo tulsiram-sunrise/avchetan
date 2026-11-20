@@ -1,11 +1,17 @@
 import { describeRoutine, ROUTINE_STARTERS } from '@avchetan/core';
 import { type Routine, starterRoutineId } from '@avchetan/db/sqlite';
+import { isValidLocalTime } from '@avchetan/shared';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
 import { useToday } from '../src/queries/days';
-import { useAddStarters, useRoutines } from '../src/queries/routines';
-import { Button, Failure, SectionTitle } from '../src/ui/parts';
+import {
+  useAddStarters,
+  useChooseChoreEvening,
+  useChoreEvening,
+  useRoutines,
+} from '../src/queries/routines';
+import { Button, Failure, Field, SectionTitle } from '../src/ui/parts';
 import { useUndo } from '../src/ui/undo-bar';
 
 const KIND_LABEL: Record<string, string> = { confirm: 'Tick off', assumed: 'Assumed' };
@@ -117,6 +123,72 @@ function StarterPicker(props: { added: ReadonlySet<string>; onClose: () => void 
   );
 }
 
+/**
+ * One notification in the evening when chores are still unticked, on this phone only
+ * (product/tasks-routines-reminders.md §4). Turning it on asks Android for permission.
+ */
+function EveningReminder() {
+  const evening = useChoreEvening();
+  const choose = useChooseChoreEvening();
+  const [time, setTime] = useState('');
+  const saved = evening.data?.settings;
+  useEffect(() => {
+    if (saved) setTime(saved.time);
+  }, [saved]);
+  const on = (saved?.enabled ?? false) && (evening.data?.allowed ?? false);
+  const timeIsValid = isValidLocalTime(time.trim());
+  const changed = saved !== undefined && time.trim() !== saved.time;
+  return (
+    <View>
+      <SectionTitle title="Evening reminder" />
+      <View className="gap-3 px-4">
+        <View className="flex-row items-center justify-between">
+          <View className="flex-1 pr-3">
+            <Text className="text-base text-ink">Remind me about chores left</Text>
+            <Text className="text-sm text-inkMuted">
+              One notification, only on days something is still unticked.
+            </Text>
+          </View>
+          <Switch
+            accessibilityLabel="Remind me about chores left"
+            value={on}
+            disabled={!evening.isSuccess || choose.isPending}
+            onValueChange={(next) => choose.mutate({ enabled: next })}
+          />
+        </View>
+        {on ? (
+          <>
+            <Field
+              label="Time (24-hour, like 20:00)"
+              value={time}
+              onChangeText={setTime}
+              keyboardType="numbers-and-punctuation"
+            />
+            {time.trim() !== '' && !timeIsValid ? (
+              <Text className="text-sm text-danger">Write the time as HH:MM, like 20:00.</Text>
+            ) : null}
+            <View className="flex-row">
+              <Button
+                label="Save time"
+                primary
+                disabled={!timeIsValid || !changed || choose.isPending}
+                onPress={() => choose.mutate({ time: time.trim() })}
+              />
+            </View>
+          </>
+        ) : null}
+        {choose.data?.refused ? (
+          <Text className="text-sm text-danger">
+            Android didn't allow notifications. Turn them on for Avchetan in Android's settings,
+            then try again.
+          </Text>
+        ) : null}
+        <Failure error={choose.error ?? evening.error} />
+      </View>
+    </View>
+  );
+}
+
 /** Chores to tick off and things that simply happen, such as sleep or work hours. */
 export default function RoutinesScreen() {
   const routines = useRoutines();
@@ -147,6 +219,7 @@ export default function RoutinesScreen() {
       ) : routines.isSuccess && !showIdeas ? (
         <Text className="px-4 text-sm text-inkMuted">No routines yet.</Text>
       ) : null}
+      {all.some((routine) => routine.kind === 'confirm') ? <EveningReminder /> : null}
       <View className="px-4">
         <Failure error={routines.error} />
       </View>

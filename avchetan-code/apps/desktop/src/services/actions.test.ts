@@ -194,6 +194,26 @@ describe('actions', () => {
     expect(tags.map((tag) => tag.path)).toEqual(['fitness']);
   });
 
+  it('ticks and unticks a chore on the day’s checklist', async () => {
+    const day = store.clock.now().slice(0, 10);
+    await actions.run('routine.create', {
+      title: 'Water plants',
+      kind: 'confirm',
+      repeatRule: { freq: 'daily', start: day },
+      windowStart: null,
+      windowEnd: null,
+      today: day,
+    });
+    const [made] = await store.repos.routines.daysOn(store.db, day);
+    const routineId = made?.routine.id as string;
+
+    await actions.run('routineDay.setDone', { routineId, day, done: true });
+    expect((await store.repos.routines.daysOn(store.db, day))[0]?.day.status).toBe('done');
+
+    await actions.run('routineDay.setDone', { routineId, day, done: false });
+    expect((await store.repos.routines.daysOn(store.db, day))[0]?.day.status).toBe('open');
+  });
+
   it('fails clearly when nobody answers', async () => {
     const silent: ActionBus = { ...memoryBus(), sendRequest: async () => {} };
     const client = createActionClient(silent, 5);

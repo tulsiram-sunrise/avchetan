@@ -1,9 +1,17 @@
-import { findStarter, starterFields } from '@avchetan/core';
+import {
+  type ChoreEveningSettings,
+  dayChores,
+  findStarter,
+  loadChoreEveningSettings,
+  starterFields,
+} from '@avchetan/core';
 import type { RoutineFields } from '@avchetan/db/sqlite';
 import { ValidationError } from '@avchetan/shared';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import * as Notifications from 'expo-notifications';
 import type { AppServices } from '../app-services';
-import { refreshAll } from '../query-client';
+import { queryClient, refreshAll } from '../query-client';
+import { chooseChoreEvening, scheduleChoreEvening } from '../services/chore-evening';
 import { useServices } from '../services-context';
 import { useWrite } from './entries';
 
@@ -74,4 +82,44 @@ export async function deleteRoutineNow(services: AppServices, id: string): Promi
   await services.store.write((tx) => services.store.repos.routines.remove(tx, id));
   refreshAll();
   services.sync.schedule();
+  void scheduleChoreEvening(services.store);
+}
+
+// The day's chore checklist (product/tasks-routines-reminders.md §4).
+
+/** The day's confirm chores with their status. Days aren't made ahead, so a future day has none. */
+export function useDayChores(day: string) {
+  const { store } = useServices();
+  return useQuery({
+    queryKey: ['days', 'chores', day],
+    queryFn: async () => dayChores(await store.repos.routines.daysOn(store.db, day)),
+  });
+}
+
+export const useSetChoreDone = () =>
+  useWrite((store, { routineId, day, done }: { routineId: string; day: string; done: boolean }) =>
+    store.write((tx) =>
+      store.repos.routines.setDayStatus(tx, routineId, day, done ? 'done' : 'open'),
+    ),
+  );
+
+/** This phone's evening notification setting, and whether Android lets it ring. */
+export function useChoreEvening() {
+  const { store } = useServices();
+  return useQuery({
+    queryKey: ['settings', 'chore-evening'],
+    queryFn: async () => ({
+      settings: await loadChoreEveningSettings(store),
+      allowed: (await Notifications.getPermissionsAsync()).granted,
+    }),
+  });
+}
+
+export function useChooseChoreEvening() {
+  const { store } = useServices();
+  return useMutation({
+    mutationFn: (patch: Partial<ChoreEveningSettings>) => chooseChoreEvening(store, patch),
+    onSuccess: () =>
+      void queryClient.invalidateQueries({ queryKey: ['settings', 'chore-evening'] }),
+  });
 }

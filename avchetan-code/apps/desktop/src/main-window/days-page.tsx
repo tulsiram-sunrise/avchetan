@@ -28,6 +28,7 @@ import { useExtracted } from '../queries/organize';
 import { useServices } from '../services-context';
 import { useAppEvent } from '../use-app-event';
 import { useColorScheme } from '../use-color-scheme';
+import { ChoreCard } from './chore-card';
 import { DailyBrief } from './daily-brief';
 import { isTyping } from './keys';
 import { SyncWarningBanner } from './sync-warning-banner';
@@ -423,6 +424,8 @@ function DayPanel(props: {
               : 'Nothing was logged this day.'}
         </p>
       ) : null}
+
+      <ChoreCard day={day} />
 
       {tasks.data ? <DayTasks tasks={tasks.data} /> : null}
 

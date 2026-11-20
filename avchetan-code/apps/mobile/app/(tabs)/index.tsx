@@ -30,6 +30,7 @@ import { byRawLog } from '../../src/services/grouping';
 import { useServices } from '../../src/services-context';
 import { usePalette } from '../../src/theme/theme';
 import { CaptureButton } from '../../src/ui/capture-button';
+import { ChoreCard } from '../../src/ui/chore-card';
 import { DailyBrief } from '../../src/ui/daily-brief';
 import { DayCalendar } from '../../src/ui/day-calendar';
 import { DownloadBanner } from '../../src/ui/download-banner';
@@ -204,6 +205,7 @@ function DayContent(props: { day: string; today: string; entryInView: string | n
               : 'Nothing was logged this day.'}
         </Text>
       ) : null}
+      <ChoreCard day={day} />
       {overdue.length > 0 ? <OverdueTasks rows={overdue} /> : null}
       {groups.map((group) => (
         <View key={group.title}>

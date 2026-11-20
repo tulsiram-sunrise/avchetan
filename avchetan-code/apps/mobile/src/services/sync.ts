@@ -5,6 +5,7 @@ import { createSyncEngine, type SyncEngine } from '@avchetan/sync';
 import type { Platform } from '../platform';
 import { refreshAll } from '../query-client';
 import { usePullProgress } from '../stores/pull-progress';
+import { scheduleChoreEvening } from './chore-evening';
 
 /**
  * Pulled changes per page, each applied in one transaction. Smaller than the server's 500, so the
@@ -39,6 +40,8 @@ export function createSyncService(
     },
     onSynced: () => {
       refreshAll();
+      // Chores ticked on another device take back this evening's notification.
+      void scheduleChoreEvening(store);
       void extraction.wake();
     },
     onPullProgress: (progress) => usePullProgress.getState().setProgress(progress),

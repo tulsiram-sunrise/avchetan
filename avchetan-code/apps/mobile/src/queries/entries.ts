@@ -3,6 +3,7 @@ import { keepPreviousData, useMutation, useQueries, useQuery } from '@tanstack/r
 import { refreshAll } from '../query-client';
 import { scheduleBriefReminder } from '../services/brief-reminder';
 import type { MobileSource } from '../services/capture';
+import { scheduleChoreEvening } from '../services/chore-evening';
 import { useServices } from '../services-context';
 
 export function useExtracted(rawLogIds: readonly string[]) {
@@ -67,6 +68,8 @@ export function useWrite<A, R>(run: (store: ClientStore, args: A) => Promise<R>)
       refreshAll();
       void extraction.wake();
       sync.schedule();
+      // A tick, a new chore or a changed one changes the evening notification.
+      void scheduleChoreEvening(store);
     },
   });
 }

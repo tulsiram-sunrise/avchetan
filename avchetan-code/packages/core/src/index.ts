@@ -309,15 +309,26 @@ export {
   type ProviderDeps,
 } from './providers/registry';
 export {
+  CHORE_EVENING_SETTING,
+  type ChoreEveningNotice,
+  type ChoreEveningSettings,
+  DEFAULT_CHORE_EVENING_TIME,
+  dayChores,
   describeRoutine,
   draftFromRule,
   findStarter,
+  instantAt,
+  loadChoreEveningSettings,
   newRuleDraft,
+  openChores,
+  parseChoreEveningSettings,
+  planChoreEvening,
   ROUTINE_STARTERS,
   type RoutineStarter,
   type RuleDraft,
   type RuleFromDraft,
   ruleFromDraft,
+  saveChoreEveningSettings,
   starterFields,
 } from './routines';
 export {
