@@ -2,12 +2,13 @@
 
 Every evening, Avchetan can write a short look back at your day. It appears at the top of the day in **Days**, on your PC and your phone.
 
-A brief has up to four points:
+A brief has three parts:
 
-- **What moved forward**, and how much time you logged.
-- **Friction**: pain, tiredness or anything that blocked you. Left out when there was none.
-- **Tasks that rolled over**: open tasks that were due that day or earlier. Each has **Move to tomorrow**. A task you finish or move later leaves this list.
+- **✓ Went well**: what you got done, how much time you logged and the chores you ticked.
+- **! Needs attention**: what was missed (tasks due that day and not done, tasks only partly done, chores not ticked, and a sleep or work-hours routine you marked as not happening), then pain, tiredness or anything that blocked you. Below it, **tasks that rolled over**: open tasks that were due that day or earlier, each with **Move to tomorrow**. A task you finish or move later leaves this list. The whole part is left out when nothing needs attention.
 - **One observation** or suggestion for tomorrow.
+
+A task you cancelled or a chore you skipped was your choice, so it never shows as missed. Avchetan counts what was missed itself; the AI only writes the sentence.
 
 A day without entries gets no brief.
 

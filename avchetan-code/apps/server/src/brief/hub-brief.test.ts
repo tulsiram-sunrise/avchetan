@@ -32,8 +32,8 @@ const doGenerate = vi.fn<MockLanguageModelV4['doGenerate']>(async () => ({
     {
       type: 'text',
       text: JSON.stringify({
-        movedForward: 'You went for a run.',
-        friction: null,
+        wentWell: 'You went for a run.',
+        needsAttention: null,
         observation: 'Keep it up.',
       }),
     },

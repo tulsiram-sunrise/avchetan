@@ -1,4 +1,10 @@
-import { type Activity, type ClientStore, type RawLog, seedCategoryId } from '@avchetan/db/sqlite';
+import {
+  type Activity,
+  type ClientStore,
+  type RawLog,
+  seedCategoryId,
+  type Task,
+} from '@avchetan/db/sqlite';
 import {
   addDays,
   createLogger,
@@ -13,7 +19,7 @@ import {
 import { z } from 'zod';
 import { generateStructured, type LlmDeps } from '../llm/generate-structured';
 import { dayCategories } from '../normalize/day-summary';
-import { type BriefFacts, buildPrompt, SYSTEM } from '../prompts/daily-brief.v1';
+import { type BriefFacts, buildPrompt, SYSTEM } from '../prompts/daily-brief.v3';
 import type { ModelConfig } from '../providers/config';
 import { PROVIDER_ADAPTERS } from '../providers/registry';
 import { isSunday, makeWeeklyReview } from './weekly-review';
@@ -42,18 +48,20 @@ export function isFrictionTag(path: string): boolean {
 }
 
 export const briefTextSchema = z.object({
-  movedForward: z.string().min(1).max(400),
-  friction: z.string().min(1).max(400).nullable(),
+  wentWell: z.string().min(1).max(400),
+  needsAttention: z.string().min(1).max(400).nullable(),
   observation: z.string().min(1).max(400),
 });
 export type BriefText = z.infer<typeof briefTextSchema>;
 
 /**
- * The brief's `notes`: one line per bullet, the friction line left out when there was none.
- * Two lines are moved-forward and observation, three have friction in the middle.
+ * The brief's `notes`: one line per bullet, Needs attention left out when nothing did.
+ * Two lines are Went well and the observation, three have Needs attention in the middle.
+ * Briefs made before prompt v3 have the same shape (Moved forward, Friction), so they read as
+ * Went well and Needs attention.
  */
 export function briefNotes(text: BriefText): string {
-  return [text.movedForward, text.friction, text.observation]
+  return [text.wentWell, text.needsAttention, text.observation]
     .filter((line): line is string => line !== null)
     .map((line) => line.replace(/\s+/g, ' ').trim())
     .join('\n');
@@ -67,10 +75,10 @@ export function parseBriefNotes(notes: string | null): BriefText | { lines: stri
     .filter(Boolean);
   const [first, second, third] = lines;
   if (lines.length === 2 && first && second) {
-    return { movedForward: first, friction: null, observation: second };
+    return { wentWell: first, needsAttention: null, observation: second };
   }
   if (lines.length === 3 && first && second && third) {
-    return { movedForward: first, friction: second, observation: third };
+    return { wentWell: first, needsAttention: second, observation: third };
   }
   return { lines };
 }
@@ -121,12 +129,13 @@ export async function collectBriefFacts(
   if (entries.length === 0) return null;
 
   const scope = { includePrivate };
-  const [activities, tasks, rolledOver, resolved] = await Promise.all([
+  const [activities, tasks, rolledOver, resolved, routineDays] = await Promise.all([
     queries.activitiesForAnalysis(db, { ...scope, from: day, to: day, limit: 500 }),
     // "Today" is the day after, so no overdue list: only due and done that day.
     queries.dayTasks(db, { day, today: addDays(day, 1), timeZone }),
     queries.rolledOverTasks(db, { ...scope, day }),
     store.repos.categories.listResolved(db),
+    store.repos.routines.daysOn(db, day),
   ]);
   const categoryOf = new Map(resolved.map(({ id, resolved }) => [id, resolved]));
   const tags = await queries.tagCounts(db, {
@@ -134,19 +143,30 @@ export async function collectBriefFacts(
     activityIds: activities.map((activity) => activity.id),
   });
 
-  const doneThatDay = [...tasks.due, ...tasks.done].filter(
-    (task) => task.completedAt !== null && localDate(task.completedAt, timeZone) === day,
+  // A task from a private entry stays out like its entry.
+  const fromLogs = [...tasks.due, ...tasks.done].flatMap((task) =>
+    task.rawLogId ? [task.rawLogId] : [],
   );
-  // A finished task from a private entry stays out like its entry.
-  const shareable = includePrivate
-    ? doneThatDay
-    : await (async () => {
-        const fromLogs = doneThatDay.flatMap((task) => (task.rawLogId ? [task.rawLogId] : []));
-        const visible = new Set(
-          (await queries.logsById(db, fromLogs, scope)).map((entry) => entry.id),
-        );
-        return doneThatDay.filter((task) => task.rawLogId === null || visible.has(task.rawLogId));
-      })();
+  const visible = includePrivate
+    ? null
+    : new Set((await queries.logsById(db, fromLogs, scope)).map((entry) => entry.id));
+  const shareable = (task: Task) =>
+    visible === null || task.rawLogId === null || visible.has(task.rawLogId);
+
+  const doneThatDay = [...tasks.due, ...tasks.done].filter(
+    (task) =>
+      shareable(task) && task.completedAt !== null && localDate(task.completedAt, timeZone) === day,
+  );
+  // Due that day and still open; a cancelled task is not missed (§10).
+  const openDue = tasks.due.filter(
+    (task) => shareable(task) && task.completedAt === null && task.cancelledAt === null,
+  );
+  const routineTitles = (kind: 'confirm' | 'assumed', status: 'open' | 'done' | 'skipped') =>
+    routineDays
+      .filter(
+        ({ routine, day: routineDay }) => routine.kind === kind && routineDay.status === status,
+      )
+      .map(({ routine }) => routine.title);
 
   const byCategory = dayCategories(activities, (id) => categoryOf.get(id)?.id ?? id);
   const minutes = byCategory.flatMap((category) =>
@@ -177,7 +197,16 @@ export async function collectBriefFacts(
         .map((activity) => activity.title),
     })),
     totalMinutes: minutes.length > 0 ? minutes.reduce((sum, value) => sum + value, 0) : null,
-    tasksDone: shareable.map((task) => task.title),
+    tasksDone: doneThatDay.map((task) => task.title),
+    choresDone: routineTitles('confirm', 'done'),
+    missed: {
+      notDone: openDue.filter((task) => task.progressPct === null).map((task) => task.title),
+      partlyDone: openDue.flatMap((task) =>
+        task.progressPct !== null ? [{ title: task.title, progressPct: task.progressPct }] : [],
+      ),
+      choresNotTicked: routineTitles('confirm', 'open'),
+      routinesNotKept: routineTitles('assumed', 'skipped'),
+    },
     rolledOver: rolledOver.length,
     tags: tags.slice(0, MAX_TAGS),
     frictionTags: tags.filter((tag) => isFrictionTag(tag.path)).map((tag) => tag.path),

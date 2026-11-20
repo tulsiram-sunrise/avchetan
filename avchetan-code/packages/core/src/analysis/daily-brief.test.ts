@@ -30,8 +30,8 @@ const groq: ModelConfig = { provider: 'groq', model: 'test-model' };
 const ollama: ModelConfig = { provider: 'ollama', model: 'local-model' };
 
 const text: BriefText = {
-  movedForward: 'You ran 5 km and worked 2 h on the schema.',
-  friction: 'Your shoulder hurt after the run.',
+  wentWell: 'You ran 5 km and worked 2 h on the schema.',
+  needsAttention: 'Your shoulder hurt after the run.',
   observation: 'Try a lighter warm-up tomorrow.',
 };
 
@@ -173,10 +173,86 @@ describe('makeDailyBrief', () => {
   });
 });
 
+describe('what needs attention (§10)', () => {
+  const daily = { freq: 'daily', start: DAY } as const;
+
+  it('lists tasks not done or partly done, chores not ticked and routines not kept', async () => {
+    await capture('a long day');
+    const today = DAY;
+    await store.write(async (tx) => {
+      const { tasks, routines } = store.repos;
+      await tasks.create(tx, { title: 'Call the bank', dueDate: DAY });
+      const report = await tasks.create(tx, { title: 'Write the report', dueDate: DAY });
+      await tasks.partlyDone(tx, report.id, 40);
+      const party = await tasks.create(tx, { title: 'Plan the party', dueDate: DAY });
+      await tasks.cancel(tx, party.id, today);
+      const bills = await tasks.create(tx, { title: 'Pay the bills', dueDate: DAY });
+      await tasks.complete(tx, bills.id, today);
+
+      await routines.create(tx, {
+        title: 'Water plants',
+        kind: 'confirm',
+        repeatRule: daily,
+      });
+      const walk = await routines.create(tx, { title: 'Walk', kind: 'confirm', repeatRule: daily });
+      const read = await routines.create(tx, { title: 'Read', kind: 'confirm', repeatRule: daily });
+      const sleep = await routines.create(tx, {
+        title: 'Sleep',
+        kind: 'assumed',
+        repeatRule: daily,
+      });
+      await routines.create(tx, { title: 'Work hours', kind: 'assumed', repeatRule: daily });
+      await routines.ensureDays(tx, today);
+      await routines.setDayStatus(tx, walk.id, DAY, 'done');
+      await routines.setDayStatus(tx, read.id, DAY, 'skipped');
+      await routines.setDayStatus(tx, sleep.id, DAY, 'skipped');
+    });
+    const { llm, prompts } = fakeLlm();
+
+    await makeDailyBrief(store, { day: DAY, timeZone: TZ, models: [groq] }, llm);
+
+    expect(prompts[0]).toContain('Tasks done: Pay the bills');
+    expect(prompts[0]).toContain('Chores done: Walk');
+    expect(prompts[0]).toContain('- Tasks due and not done: Call the bank');
+    expect(prompts[0]).toContain('- Tasks only partly done: Write the report (40%)');
+    // A skipped chore was a choice, like a cancelled task: neither is missed.
+    expect(prompts[0]).toContain('- Chores not done: Water plants');
+    expect(prompts[0]).toContain("- Routines that didn't happen: Sleep");
+    expect(prompts[0]).not.toContain('Plan the party');
+  });
+
+  it('says none when nothing was missed', async () => {
+    await capture('a calm day');
+    const { llm, prompts } = fakeLlm();
+
+    await makeDailyBrief(store, { day: DAY, timeZone: TZ, models: [groq] }, llm);
+
+    expect(prompts[0]).toContain('- Tasks due and not done: none');
+    expect(prompts[0]).toContain('- Chores not done: none');
+  });
+
+  it('keeps a task from a private entry away from a cloud model', async () => {
+    await capture('a normal day');
+    const secret = await capture('see the secret doctor !private');
+    await store.write((tx) =>
+      store.repos.tasks.create(tx, {
+        title: 'Book the secret doctor',
+        dueDate: DAY,
+        rawLogId: secret.id,
+      }),
+    );
+    const { llm, prompts } = fakeLlm();
+
+    await makeDailyBrief(store, { day: DAY, timeZone: TZ, models: [groq] }, llm);
+
+    expect(prompts[0]).not.toContain('secret doctor');
+  });
+});
+
 describe('brief notes', () => {
-  it('read back with and without a friction line', () => {
+  it('read back with and without a Needs attention line', () => {
     expect(parseBriefNotes(briefNotes(text))).toEqual(text);
-    const calm = { ...text, friction: null };
+    const calm = { ...text, needsAttention: null };
     expect(parseBriefNotes(briefNotes(calm))).toEqual(calm);
   });
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { type BriefFacts, buildPrompt, SYSTEM } from './daily-brief.v1';
+import { type BriefFacts, buildPrompt, SYSTEM } from './daily-brief.v3';
 
 const facts: BriefFacts = {
   day: '2026-11-07',
@@ -13,6 +13,8 @@ const facts: BriefFacts = {
   tasksDone: [],
   rolledOver: 0,
   tags: [],
+  choresDone: [],
+  missed: { notDone: [], partlyDone: [], choresNotTicked: [], routinesNotKept: [] },
   frictionTags: [],
 };
 

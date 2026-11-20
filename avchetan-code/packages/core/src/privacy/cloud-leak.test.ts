@@ -70,7 +70,7 @@ const PRIVATE_ANSWER = JSON.stringify({
   choresDone: [],
   skip: null,
 });
-const BRIEF = '{"movedForward":"A run.","friction":null,"observation":"Keep going."}';
+const BRIEF = '{"wentWell":"A run.","needsAttention":null,"observation":"Keep going."}';
 
 const sentBodies: string[] = [];
 const fakeFetch = vi.fn<typeof fetch>(async (_url, init) => {

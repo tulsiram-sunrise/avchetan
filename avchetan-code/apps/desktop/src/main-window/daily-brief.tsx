@@ -80,17 +80,24 @@ function BriefCard(props: { brief: Activity; day: string; today: string; making:
 
   const tasks = rolledOver.data ?? [];
   const waiting = waitingDue.data ?? [];
-  const bullets: { key: string; content: ReactNode }[] =
+  const behind = tasks.length > 0 || waiting.length > 0;
+  const bullets: { key: string; content: ReactNode; mark?: BriefMark }[] =
     'lines' in text
       ? text.lines.map((line, index) => ({ key: `line-${index}`, content: line }))
       : [
-          { key: 'moved', content: text.movedForward },
-          { key: 'friction', content: text.friction },
+          { key: 'well', mark: 'well', content: text.wentWell },
           {
-            key: 'rolled',
+            key: 'attention',
+            mark: 'attention',
+            // What is behind belongs here too, even when the model found nothing to say (§10).
             content:
-              tasks.length > 0 || waiting.length > 0 ? (
-                <RolledOver tasks={tasks} waiting={waiting} today={props.today} />
+              text.needsAttention || behind ? (
+                <div className="flex flex-col gap-1">
+                  {text.needsAttention ? <span>{text.needsAttention}</span> : null}
+                  {behind ? (
+                    <RolledOver tasks={tasks} waiting={waiting} today={props.today} />
+                  ) : null}
+                </div>
               ) : null,
           },
           { key: 'observation', content: text.observation },
@@ -105,9 +112,22 @@ function BriefCard(props: { brief: Activity; day: string; today: string; making:
         Daily brief · {formatMadeAt(props.brief.updatedAt, props.day, timeZone.current())}
       </h2>
       <ul className="flex list-disc flex-col gap-1.5 pl-5 text-sm">
-        {bullets.map(({ key, content }) =>
-          content === null ? null : <li key={key}>{content}</li>,
-        )}
+        {bullets.map(({ key, content, mark }) => {
+          if (content === null) return null;
+          if (!mark) return <li key={key}>{content}</li>;
+          const { symbol, label, tone } = BRIEF_MARKS[mark];
+          return (
+            <li key={key} className="-ml-5 flex list-none gap-2">
+              <span aria-hidden="true" className={`w-3 shrink-0 text-center font-bold ${tone}`}>
+                {symbol}
+              </span>
+              <div className="flex flex-col gap-0.5">
+                <span className="font-semibold">{label}</span>
+                {content}
+              </div>
+            </li>
+          );
+        })}
       </ul>
       <div className="flex flex-wrap items-center gap-2 text-sm">
         {failed ? (
@@ -131,6 +151,14 @@ function BriefCard(props: { brief: Activity; day: string; today: string; making:
     </section>
   );
 }
+
+type BriefMark = 'well' | 'attention';
+
+/** The brief's first two lines, each with a mark and a colour (§10); the label carries the meaning. */
+const BRIEF_MARKS: Record<BriefMark, { symbol: string; label: string; tone: string }> = {
+  well: { symbol: '✓', label: 'Went well', tone: 'text-ok' },
+  attention: { symbol: '!', label: 'Needs attention', tone: 'text-warn' },
+};
 
 function RolledOver(props: { tasks: Task[]; waiting: PromiseItem[]; today: string }) {
   const tomorrow = addDays(props.today, 1);
