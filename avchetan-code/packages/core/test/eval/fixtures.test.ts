@@ -5,7 +5,7 @@ import { extractRawLog } from '../../src/extraction/extract';
 import type { LlmDeps } from '../../src/llm/generate-structured';
 import recorded from '../fixtures/extraction/recorded.json';
 import { captureFixture, type EvalContext, openEvalContext } from './context';
-import { FIXTURES } from './fixtures';
+import { FIXTURES, fixtureChores } from './fixtures';
 import { matchFixture } from './match';
 
 /**
@@ -51,8 +51,10 @@ describe('recorded extraction answers', () => {
         models: [{ provider: 'groq', model: 'recorded' }],
         vocabulary: context.vocabulary,
         llmMayCreate: 'auto',
+        chores: fixtureChores(fixture),
       },
-      replaying(answers[fixture.id]),
+      // Answers recorded before extraction v6 have no choresDone.
+      replaying({ choresDone: [], ...(answers[fixture.id] as object) }),
     );
 
     // Recorded answers predate the promise roles of extraction v4; the eval judges those.

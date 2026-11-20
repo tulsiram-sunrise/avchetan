@@ -239,5 +239,31 @@ export function routinesRepo(deps: RepoDeps) {
         ...values,
       });
     },
+
+    /**
+     * Tick a chore because an entry says it was done (§5). Only a live confirm routine's day that
+     * exists and nobody has touched since it was made: a day someone ticked, skipped or opened
+     * again (an undo) is theirs, so processing the entry again never redoes it. Returns whether
+     * it ticked.
+     */
+    async tickFromEntry(
+      tx: Tx,
+      routineId: string,
+      date: LocalDate,
+      rawLogId: string,
+    ): Promise<boolean> {
+      if (!isValidLocalDate(date) || madeDayVersion(date) >= deps.clock.now()) return false;
+      const routine = await getById(tx, routines, routineId);
+      if (!routine || routine.deletedAt !== null || routine.kind !== 'confirm') return false;
+      const day = await getById(tx, routineDays, routineDayId(routineId, date));
+      if (!day || day.deletedAt !== null || day.status !== 'open') return false;
+      if (day.updatedAt !== madeDayVersion(date)) return false;
+      await updateSynced(tx, deps, routineDays, day.id, {
+        status: 'done',
+        statusAt: deps.clock.now(),
+        rawLogId,
+      });
+      return true;
+    },
   };
 }

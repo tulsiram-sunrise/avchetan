@@ -91,6 +91,7 @@ export {
   type MentionTarget,
   NEW_CATEGORY,
   type PlannedActivity,
+  type PlannedChoreTick,
   type PlannedEntity,
   type PlannedTask,
 } from './client/repos/extraction';

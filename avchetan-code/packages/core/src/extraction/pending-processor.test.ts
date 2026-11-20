@@ -12,7 +12,7 @@ const groq: ModelConfig = { provider: 'groq', model: 'cloud-model' };
 const ollama: ModelConfig = { provider: 'ollama', model: 'local-model' };
 
 const EMPTY =
-  '{"activities":[],"tasks":[],"newCategory":null,"logTags":[],"entities":[],"skip":null}';
+  '{"activities":[],"tasks":[],"newCategory":null,"logTags":[],"entities":[],"choresDone":[],"skip":null}';
 
 function answer(text: string) {
   return {

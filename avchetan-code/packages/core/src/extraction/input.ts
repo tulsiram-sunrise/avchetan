@@ -3,6 +3,7 @@ import { addDays, type LocalDate, localDate, type Weekday, weekdayOf } from '@av
 import { clipboardForPrompt } from '../context/clipboard';
 import { windowContextOf } from '../context/window-context';
 import { parseCaptureText } from '../normalize/capture-text';
+import { openChores } from '../routines/checklist';
 import { chooseExamples, loadCorrectionPool, renderExample } from './corrections';
 
 const MAX_TAGS = 150;
@@ -70,7 +71,29 @@ export type ExtractionInput = {
   vocabulary: ExtractionVocabulary;
   /** The user's past corrections most like this entry, as prompt text. */
   corrections: string[];
+  /** Titles of the chores still open on the entry's day, for `choresDone`. */
+  chores: string[];
 };
+
+/** An open chore on the entry's day: what the model may name, and what code ticks (§5). */
+export type ChoreChoice = { routineId: string; date: LocalDate; title: string };
+
+/**
+ * The chores still open on the day the entry was written. Only days already made are offered:
+ * a device makes them from today on, so an old entry processed late usually finds none.
+ */
+export async function loadOpenChores(
+  store: ClientStore,
+  rawLog: Pick<RawLog, 'capturedAt' | 'capturedTz'>,
+): Promise<ChoreChoice[]> {
+  const date = localDate(rawLog.capturedAt, rawLog.capturedTz);
+  const rows = await store.repos.routines.daysOn(store.db, date);
+  return openChores(rows).map(({ routine }) => ({
+    routineId: routine.id,
+    date,
+    title: routine.title,
+  }));
+}
 
 /**
  * What the model may see of an entry's context: the window it was typed over, as a hint
@@ -89,6 +112,7 @@ function promptContext(context: Record<string, unknown>): Record<string, unknown
 export function buildExtractionInput(
   rawLog: Pick<RawLog, 'id' | 'content' | 'context' | 'capturedAt' | 'capturedTz' | 'privacy'>,
   vocabulary: ExtractionVocabulary,
+  chores: readonly ChoreChoice[] = [],
 ): ExtractionInput {
   const today = localDate(rawLog.capturedAt, rawLog.capturedTz);
   const upcoming = Array.from({ length: DAYS_AHEAD }, (_, index) => {
@@ -112,5 +136,6 @@ export function buildExtractionInput(
     corrections: chooseExamples(rawLog.content, rawLog.id, vocabulary.corrections).map(
       renderExample,
     ),
+    chores: chores.map((chore) => chore.title),
   };
 }

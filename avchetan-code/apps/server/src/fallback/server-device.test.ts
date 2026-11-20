@@ -40,6 +40,7 @@ const RESULT: ExtractionResult = {
   newCategory: null,
   logTags: [],
   entities: [],
+  choresDone: [],
   skip: null,
 };
 

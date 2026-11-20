@@ -1,4 +1,6 @@
+import { localDate } from '@avchetan/shared';
 import { z } from 'zod';
+import type { ChoreChoice } from '../../src/extraction/input';
 import entries from '../fixtures/extraction/entries.json';
 
 /** Made-up entries with what a good extraction must contain. See docs/architecture/extraction-pipeline.md §8. */
@@ -30,6 +32,8 @@ export const fixtureSchema = z.object({
   at: z.string(),
   /** Text attached with clipboard snap (docs/product/clipboard-snap.md). */
   clipboard: z.string().optional(),
+  /** Titles of the chores still open that day (docs/product/tasks-routines-reminders.md §5). */
+  chores: z.array(z.string()).default([]),
   expect: z.object({
     activities: z.array(expectedActivity).default([]),
     tasks: z.array(expectedTask).default([]),
@@ -37,6 +41,8 @@ export const fixtureSchema = z.object({
     entities: z.array(z.string()).default([]),
     /** When given, exactly these promise links (an empty list: none). */
     promises: z.array(expectedPromise).optional(),
+    /** When given, exactly these chores are ticked (an empty list: none). */
+    choresDone: z.array(z.string()).optional(),
     newCategory: z.boolean().default(false),
     skip: z.boolean().default(false),
   }),
@@ -47,3 +53,13 @@ export const FIXTURES: readonly Fixture[] = z.array(fixtureSchema).parse(entries
 
 /** Every fixture is captured here, so day names resolve the same on every run. */
 export const FIXTURE_TIME_ZONE = 'UTC';
+
+const CHORE_ID = 'chore:';
+
+/** A fixture's open chores. The routine ID carries the title, so a tick reads back as its title. */
+export function fixtureChores(fixture: Fixture): ChoreChoice[] {
+  const date = localDate(fixture.at, FIXTURE_TIME_ZONE);
+  return fixture.chores.map((title) => ({ routineId: CHORE_ID + title, date, title }));
+}
+
+export const choreTitleOf = (routineId: string) => routineId.slice(CHORE_ID.length);

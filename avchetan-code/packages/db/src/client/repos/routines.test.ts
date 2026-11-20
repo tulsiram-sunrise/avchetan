@@ -202,6 +202,63 @@ describe('days of a routine', () => {
   });
 });
 
+describe('ticking a chore from an entry (§5)', () => {
+  it('ticks a day nobody has touched, with the entry', async () => {
+    const { store } = await oneDevice();
+    const routines = store.repos.routines;
+    const water = await store.write((tx) => routines.create(tx, plants));
+    await store.write((tx) => routines.ensureDays(tx, TODAY));
+
+    const ticked = await store.write((tx) => routines.tickFromEntry(tx, water.id, TODAY, 'log-1'));
+
+    expect(ticked).toBe(true);
+    const [row] = await routines.daysOn(store.db, TODAY);
+    expect(row?.day).toMatchObject({ status: 'done', rawLogId: 'log-1' });
+    expect(row?.day.statusAt).not.toBeNull();
+  });
+
+  it('leaves a day someone ticked, skipped or opened again (an undo)', async () => {
+    const { store } = await oneDevice();
+    const routines = store.repos.routines;
+    const water = await store.write((tx) => routines.create(tx, plants));
+    await store.write((tx) => routines.ensureDays(tx, TODAY));
+
+    for (const status of ['skipped', 'open'] as const) {
+      await store.write((tx) => routines.setDayStatus(tx, water.id, TODAY, status));
+      expect(
+        await store.write((tx) => routines.tickFromEntry(tx, water.id, TODAY, 'log-2')),
+        status,
+      ).toBe(false);
+    }
+    await store.write((tx) => routines.setDayStatus(tx, water.id, TODAY, 'done', 'log-1'));
+    expect(await store.write((tx) => routines.tickFromEntry(tx, water.id, TODAY, 'log-2'))).toBe(
+      false,
+    );
+    const [row] = await routines.daysOn(store.db, TODAY);
+    expect(row?.day.rawLogId).toBe('log-1');
+  });
+
+  it('ticks nothing for a day not made, an assumed or a deleted routine', async () => {
+    const { store } = await oneDevice();
+    const routines = store.repos.routines;
+    const water = await store.write((tx) => routines.create(tx, plants));
+    const sleep = await store.write((tx) =>
+      routines.create(tx, { title: 'Sleep', kind: 'assumed', repeatRule: daily }),
+    );
+    const tick = (id: string, date = TODAY) =>
+      store.write((tx) => routines.tickFromEntry(tx, id, date, 'log-1'));
+
+    expect(await tick(water.id)).toBe(false);
+    await store.write((tx) => routines.ensureDays(tx, TODAY));
+    expect(await tick(sleep.id)).toBe(false);
+    expect(await tick(water.id, '2026-11-19')).toBe(false);
+    expect(await tick(water.id, 'not a date')).toBe(false);
+    await store.write((tx) => routines.remove(tx, water.id));
+    expect(await tick(water.id)).toBe(false);
+    expect(await tick('no-such-routine')).toBe(false);
+  });
+});
+
 describe('a routine from a newer app (ADR-0032)', () => {
   it('makes no days for a kind it does not know', async () => {
     const pc = await oneDevice();

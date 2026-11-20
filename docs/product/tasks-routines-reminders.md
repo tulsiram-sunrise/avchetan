@@ -91,6 +91,8 @@ There is **one checklist card** on Today (Days) listing the day's *confirm* chor
 
 Extraction is given the titles of today's open chores and can name the one an entry matches. The code checks that the name really is an open chore today, ticks it, and shows **✓ Water plants (from your entry)** with an undo. This needs a new prompt version with fixtures, and it works with Ollama offline. A private entry is matched only by a local model, as everything private is. The AI suggests the match; only code writes it.
 
+**Built on Day 14 (2026-11-20).** Prompt `extraction.v6` gets an *Open chores today* line (only on a day with open chores) and answers `choresDone` with titles from it. Code keeps a name only if it is one of the chores offered (case and punctuation aside) and the entry also has an activity on that day, so a plan (*need to water the plants*) or another day (*yesterday*) ticks nothing. It ticks only a day nobody has touched since it was made (`routines.tickFromEntry`): a chore someone ticked, skipped or unticked stays as they left it, so processing the entry again never redoes an undo. The card shows *from your entry* beside such a chore, with **Undo**. Eval on five made-up chore fixtures: `granite4.2:3b` 3/5, `granite4.2:8b` 4/5; both missed *read 20 pages* for a chore named *Read*, which only leaves it unticked.
+
 ## 6. Repeating tasks
 
 A task can have a repeat rule from §2. It is stored as a routine of a third kind, **task**. When a repeating task is finished or cancelled, the next one is made with a derived ID (routine + date), so two devices make it once. Moving one occurrence doesn't change the rule.

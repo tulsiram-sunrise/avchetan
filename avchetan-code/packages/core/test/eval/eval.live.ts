@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { MemorySecretStore } from '@avchetan/shared/testing';
@@ -11,7 +11,7 @@ import { MODEL_PRESETS } from '../../src/models/presets';
 import { type LlmProvider, modelConfigSchema } from '../../src/providers/config';
 import { apiKeySecretName, createModel } from '../../src/providers/registry';
 import { captureFixture, openEvalContext } from './context';
-import { FIXTURES } from './fixtures';
+import { FIXTURES, fixtureChores } from './fixtures';
 import { matchFixture } from './match';
 
 /**
@@ -71,7 +71,8 @@ describe('extraction eval', () => {
       const failures: string[] = [];
       for (const fixture of fixtures) {
         const rawLog = await captureFixture(context.store, fixture);
-        const request = extractionRequest(rawLog, [config], context.vocabulary);
+        const chores = fixtureChores(fixture);
+        const request = extractionRequest(rawLog, [config], context.vocabulary, chores);
         let misses: string[];
         for (let wait = 0; ; wait += 1) {
           try {
@@ -82,6 +83,7 @@ describe('extraction eval', () => {
               llmMayCreate: 'auto',
               model: 'eval',
               version: 1,
+              chores,
             });
             misses = matchFixture(plan, fixture, context.match);
             if (misses.length > 0 && process.env.LLM_EVAL_VERBOSE) {
@@ -118,7 +120,9 @@ describe('extraction eval', () => {
       if (process.env.LLM_EVAL_RECORD) {
         const file = join(here, '../fixtures/extraction/recorded.json');
         mkdirSync(dirname(file), { recursive: true });
-        writeFileSync(file, `${JSON.stringify(passed, null, 1)}\n`);
+        // Merged, so a run limited with LLM_EVAL_ONLY keeps the other recorded answers.
+        const kept: unknown = existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : {};
+        writeFileSync(file, `${JSON.stringify({ ...(kept as object), ...passed }, null, 1)}\n`);
       }
       expect(fixtures.length).toBeGreaterThan(0);
     },

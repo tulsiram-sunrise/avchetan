@@ -15,6 +15,7 @@ import {
 import type { activitiesRepo } from './activities';
 import type { categoriesRepo } from './categories';
 import type { entitiesRepo } from './entities';
+import type { routinesRepo } from './routines';
 import type { tagsRepo } from './tags';
 import type { tasksRepo } from './tasks';
 
@@ -56,6 +57,9 @@ export type PlannedEntity = {
   mentions: { target: MentionTarget; role: MentionRole }[];
 };
 
+/** A chore the entry says was done: an open confirm routine's day (tasks-routines-reminders §5). */
+export type PlannedChoreTick = { routineId: string; date: string };
+
 /** A normalized extraction, ready to apply. Produced by `@avchetan/core`. */
 export type ExtractionPlan = {
   rawLogId: string;
@@ -71,9 +75,12 @@ export type ExtractionPlan = {
   newCategory: CategoryProposal | null;
   /** Stored for the user to accept when the LLM may only suggest categories. */
   categorySuggestion: CategoryProposal | null;
+  /** Ticked only if the day is still as it was made (`routines.tickFromEntry`). */
+  choreTicks: PlannedChoreTick[];
 };
 
 type Repos = {
+  routines: ReturnType<typeof routinesRepo>;
   tags: ReturnType<typeof tagsRepo>;
   entities: ReturnType<typeof entitiesRepo>;
   categories: ReturnType<typeof categoriesRepo>;
@@ -262,6 +269,10 @@ export function extractionRepo(deps: RepoDeps, repos: Repos) {
       );
 
       if (plan.categorySuggestion) await addCategorySuggestion(tx, plan.categorySuggestion);
+
+      for (const { routineId, date } of plan.choreTicks) {
+        await repos.routines.tickFromEntry(tx, routineId, date, rawLogId);
+      }
 
       await updateSynced(tx, deps, rawLogs, rawLogId, {
         status: plan.status,

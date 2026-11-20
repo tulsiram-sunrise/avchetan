@@ -80,6 +80,9 @@ export const extractionResultSchema = z.object({
     .describe('Only if no existing category fits'),
   logTags: z.array(z.string()).describe('Tags for the entry as a whole'),
   entities: z.array(entitySchema),
+  choresDone: z
+    .array(z.string())
+    .describe('Titles from the open chores list that the entry says are done, copied exactly'),
   skip: z
     .object({ reason: z.string() })
     .nullable()

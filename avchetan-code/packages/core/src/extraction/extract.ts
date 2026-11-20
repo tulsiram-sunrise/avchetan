@@ -5,11 +5,16 @@ import {
   type LlmDeps,
   type StructuredRequest,
 } from '../llm/generate-structured';
-import * as prompt from '../prompts/extraction.v5';
+import * as prompt from '../prompts/extraction.v6';
 import type { ModelConfig } from '../providers/config';
 import { PROVIDER_ADAPTERS } from '../providers/registry';
 import { chooseExamples, dropCopiedItems } from './corrections';
-import { buildExtractionInput, type ExtractionVocabulary } from './input';
+import {
+  buildExtractionInput,
+  type ChoreChoice,
+  type ExtractionVocabulary,
+  loadOpenChores,
+} from './input';
 import { type LlmMayCreate, normalizeExtraction } from './normalize';
 import { type ExtractionResult, extractionResultSchema } from './schema';
 
@@ -22,6 +27,8 @@ export type ExtractionOptions = {
   models: readonly ModelConfig[];
   vocabulary: ExtractionVocabulary;
   llmMayCreate: LlmMayCreate;
+  /** The open chores on the entry's day; `processRawLog` loads them when left out. */
+  chores?: readonly ChoreChoice[];
 };
 
 /** A `!private` entry only ever goes to a model on the user's own hardware. */
@@ -41,6 +48,7 @@ const emptyPlan = (rawLog: RawLog): ExtractionPlan => ({
   entities: [],
   newCategory: null,
   categorySuggestion: null,
+  choreTicks: [],
 });
 
 /** The model call for one log. The eval uses this directly, to see the raw answer. */
@@ -48,6 +56,7 @@ export function extractionRequest(
   rawLog: RawLog,
   models: readonly ModelConfig[],
   vocabulary: ExtractionVocabulary,
+  chores: readonly ChoreChoice[] = [],
 ): StructuredRequest<ExtractionResult> {
   return {
     purpose: 'extraction',
@@ -55,21 +64,21 @@ export function extractionRequest(
     models,
     schema: extractionResultSchema,
     system: prompt.system,
-    prompt: prompt.buildUser(buildExtractionInput(rawLog, vocabulary)),
+    prompt: prompt.buildUser(buildExtractionInput(rawLog, vocabulary, chores)),
   };
 }
 
 /** Runs the model and normalizes its answer. Writes nothing, except the `llm_runs` audit. */
 export async function extractRawLog(
   rawLog: RawLog,
-  { models, vocabulary, llmMayCreate }: ExtractionOptions,
+  { models, vocabulary, llmMayCreate, chores = [] }: ExtractionOptions,
   llm: LlmDeps,
 ): Promise<ExtractionPlan> {
   const allowed = modelsAllowedFor(rawLog, models);
   if (rawLog.privacy !== 'normal' && allowed.length === 0) return emptyPlan(rawLog);
 
   const { output, provider, model } = await generateStructured(
-    extractionRequest(rawLog, allowed, vocabulary),
+    extractionRequest(rawLog, allowed, vocabulary, chores),
     llm,
   );
   const examples = chooseExamples(rawLog.content, rawLog.id, vocabulary.corrections);
@@ -81,6 +90,7 @@ export async function extractRawLog(
     llmMayCreate,
     model: `${provider}:${model}`,
     version: EXTRACTION_PROMPT_VERSION,
+    chores,
   });
 }
 
@@ -91,6 +101,7 @@ export async function processRawLog(
   options: ExtractionOptions,
   llm: LlmDeps,
 ): Promise<boolean> {
-  const plan = await extractRawLog(rawLog, options, llm);
+  const chores = options.chores ?? (await loadOpenChores(store, rawLog));
+  const plan = await extractRawLog(rawLog, { ...options, chores }, llm);
   return store.write((tx) => store.repos.extraction.apply(tx, plan));
 }

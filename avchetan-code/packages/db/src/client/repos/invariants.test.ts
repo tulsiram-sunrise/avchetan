@@ -216,6 +216,10 @@ const WRITES: Record<string, Write> = {
   'routines.pause': (s, tx, f) => s.repos.routines.pause(tx, f.routine.id),
   'routines.remove': (s, tx, f) => s.repos.routines.remove(tx, f.routine.id),
   'routines.ensureDays': (s, tx) => s.repos.routines.ensureDays(tx, TODAY),
+  'routines.tickFromEntry': async (s, tx, f) => {
+    await s.repos.routines.ensureDays(tx, TODAY);
+    expect(await s.repos.routines.tickFromEntry(tx, f.routine.id, TODAY, f.log.id)).toBe(true);
+  },
   'routines.setDayStatus': (s, tx, f) =>
     s.repos.routines.setDayStatus(tx, f.routine.id, TODAY, 'done'),
 };

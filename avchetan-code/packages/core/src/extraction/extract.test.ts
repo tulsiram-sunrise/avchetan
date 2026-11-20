@@ -13,7 +13,7 @@ import {
   tasks,
 } from '@avchetan/db/sqlite';
 import { openTestStore } from '@avchetan/db/testing';
-import { derivedId } from '@avchetan/shared';
+import { derivedId, localDate } from '@avchetan/shared';
 import type { LanguageModel } from 'ai';
 import { MockLanguageModelV4 } from 'ai/test';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -33,6 +33,7 @@ const emptyResult: ExtractionResult = {
   newCategory: null,
   logTags: [],
   entities: [],
+  choresDone: [],
   skip: null,
 };
 
@@ -341,5 +342,78 @@ describe('processRawLog', () => {
 
       expect(resolveModel.mock.calls.map(([config]) => config.provider)).toEqual(['ollama']);
     });
+  });
+});
+
+describe('chores ticked from entries (tasks-routines-reminders §5)', () => {
+  async function waterPlantsToday() {
+    const today = localDate(store.clock.now(), 'UTC');
+    const routine = await store.write((tx) =>
+      store.repos.routines.create(tx, {
+        title: 'Water plants',
+        kind: 'confirm',
+        repeatRule: { freq: 'daily', start: '2026-01-01' },
+      }),
+    );
+    await store.write((tx) => store.repos.routines.ensureDays(tx, today));
+    const day = async () => (await store.repos.routines.daysOn(store.db, today))[0]?.day;
+    const watered = (choresDone: string[]): ExtractionResult => ({
+      ...emptyResult,
+      activities: [{ ...run, category: 'other', title: 'Watered the plants', loggedDate: today }],
+      choresDone,
+    });
+    return { routine, today, day, watered };
+  }
+
+  it('offers the open chores and ticks the one the model names, with the entry', async () => {
+    const { day, watered } = await waterPlantsToday();
+    const log = await capture('watered the plants');
+
+    await extract(log, watered(['water plants.']));
+
+    expect(JSON.stringify(doGenerate.mock.calls[0]?.[0].prompt)).toContain(
+      'Open chores today: Water plants',
+    );
+    expect(await day()).toMatchObject({ status: 'done', rawLogId: log.id });
+  });
+
+  it('ticks nothing for a name that is not an open chore', async () => {
+    const { day, watered } = await waterPlantsToday();
+    const log = await capture('fed the cat');
+
+    await extract(log, watered(['Feed the cat']));
+
+    expect(await day()).toMatchObject({ status: 'open', rawLogId: null });
+  });
+
+  it('never redoes a tick the user undid when the entry is processed again', async () => {
+    const { routine, today, day, watered } = await waterPlantsToday();
+    const log = await capture('watered the plants');
+    await extract(log, watered(['Water plants']));
+    await store.write((tx) => store.repos.routines.setDayStatus(tx, routine.id, today, 'open'));
+
+    await extract(log, watered(['Water plants']));
+
+    expect(await day()).toMatchObject({ status: 'open', rawLogId: null });
+  });
+
+  it('ticks nothing without something done that day (a plan, or another day)', async () => {
+    const { day, watered } = await waterPlantsToday();
+    const log = await capture('watered the plants yesterday');
+
+    await extract(log, { ...watered(['Water plants']), activities: [] });
+
+    expect(await day()).toMatchObject({ status: 'open' });
+  });
+
+  it('leaves the chore list out of the prompt on a day without chores', async () => {
+    const log = await capture('watered the plants');
+
+    await extract(log, emptyResult);
+
+    const messages = doGenerate.mock.calls[0]?.[0].prompt ?? [];
+    expect(JSON.stringify(messages.filter((message) => message.role === 'user'))).not.toContain(
+      'Open chores',
+    );
   });
 });

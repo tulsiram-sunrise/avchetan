@@ -176,8 +176,10 @@ export {
 export { MAX_ATTEMPTS } from './extraction/failure-policy';
 export {
   buildExtractionInput,
+  type ChoreChoice,
   type ExtractionInput,
   type ExtractionVocabulary,
+  loadOpenChores,
   loadVocabulary,
 } from './extraction/input';
 export {

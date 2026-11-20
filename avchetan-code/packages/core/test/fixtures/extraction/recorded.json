@@ -814,5 +814,98 @@
     "skip": {
       "reason": "No content"
     }
+  },
+  "chore-water": {
+    "activities": [
+      {
+        "category": "other",
+        "title": "Watered the balcony plants",
+        "notes": null,
+        "metrics": [],
+        "exercises": [],
+        "loggedDate": "2026-03-04",
+        "project": null,
+        "inferredTags": ["plants"]
+      }
+    ],
+    "tasks": [],
+    "newCategory": null,
+    "logTags": [],
+    "entities": [
+      {
+        "kind": "place",
+        "name": "balcony",
+        "mentions": [
+          {
+            "target": "activity:0",
+            "role": "at"
+          }
+        ]
+      }
+    ],
+    "choresDone": ["Water plants"],
+    "skip": null
+  },
+  "chore-hindi": {
+    "activities": [
+      {
+        "category": "other",
+        "title": "Watered the balcony plants",
+        "notes": "Watered the balcony plants",
+        "metrics": [],
+        "exercises": [],
+        "loggedDate": "2026-03-04",
+        "project": null,
+        "inferredTags": ["plants"]
+      }
+    ],
+    "tasks": [],
+    "newCategory": null,
+    "logTags": [],
+    "entities": [
+      {
+        "kind": "place",
+        "name": "balcony",
+        "mentions": [
+          {
+            "target": "activity:0",
+            "role": "at"
+          }
+        ]
+      }
+    ],
+    "choresDone": ["Water plants"],
+    "skip": null
+  },
+  "chore-yesterday": {
+    "activities": [
+      {
+        "category": "other",
+        "title": "Tidied the flat",
+        "notes": "Tidied up the whole flat",
+        "metrics": [],
+        "exercises": [],
+        "loggedDate": "2026-03-03",
+        "project": null,
+        "inferredTags": ["tidy"]
+      }
+    ],
+    "tasks": [],
+    "newCategory": null,
+    "logTags": [],
+    "entities": [
+      {
+        "kind": "place",
+        "name": "flat",
+        "mentions": [
+          {
+            "target": "activity:0",
+            "role": "at"
+          }
+        ]
+      }
+    ],
+    "choresDone": ["Tidy up"],
+    "skip": null
   }
 }
