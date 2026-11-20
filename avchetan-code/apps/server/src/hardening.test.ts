@@ -1,7 +1,14 @@
 import { openTestStore } from '@avchetan/db/testing';
 import { configureLogging, createMonotonicClock, LlmError, type LogRecord } from '@avchetan/shared';
 import { createMemoryLogSink } from '@avchetan/shared/testing';
-import { HEADERS, MAX_PUSH_BYTES, PROTOCOL_VERSION } from '@avchetan/sync/protocol';
+import {
+  HEADERS,
+  hubProof,
+  MAX_PUSH_BYTES,
+  newChallenge,
+  PROTOCOL_VERSION,
+  tokenKey,
+} from '@avchetan/sync/protocol';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { type AppDeps, createApp, MAX_REQUEST_BYTES } from './app';
 import { loadServerIdentity } from './auth';
@@ -209,6 +216,21 @@ describe('registering devices', () => {
 });
 
 describe('health', () => {
+  it('proves it holds the token when a device sends a challenge (ADR-0033)', async () => {
+    const server = await app();
+    const challenge = newChallenge();
+    const body = (await (await server.request(`/v1/health?challenge=${challenge}`)).json()) as {
+      serverId: string;
+      proof?: string;
+    };
+    expect(body.proof).toBe(hubProof(tokenKey(TOKEN), body.serverId, challenge));
+    // No challenge, or one that isn't one: no proof.
+    for (const query of ['', '?challenge=short', '?challenge=ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ']) {
+      const plain = (await (await server.request(`/v1/health${query}`)).json()) as object;
+      expect(plain).not.toHaveProperty('proof');
+    }
+  });
+
   it('asks the database at most once a second', async () => {
     const server = await app();
     let queries = 0;

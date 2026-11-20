@@ -20,8 +20,9 @@ import {
   SyncError,
   toAppError,
 } from '@avchetan/shared';
-import { createApiClient, fetchHealth } from './api-client';
+import { createApiClient } from './api-client';
 import { loadServerUrls, SYNC_TOKEN_SECRET } from './config';
+import { findServer, learnedDue, loadLearned, saveLearned, usableLearned } from './find-server';
 import {
   type HealthResponse,
   isSyncedTable,
@@ -142,23 +143,6 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
    * machine on a café's Wi-Fi at the home address) gets nothing, and the next address is tried:
    * away from home, Tailscale still reaches the right one.
    */
-  async function findServer(
-    urls: readonly string[],
-    expected: string,
-  ): Promise<{ baseUrl: string; health: HealthResponse } | 'wrong_server' | null> {
-    let wrongServer = false;
-    for (const baseUrl of urls) {
-      try {
-        const health = await fetchHealth(fetch, baseUrl);
-        if (!expected || health.serverId === expected) return { baseUrl, health };
-        wrongServer = true;
-      } catch (error) {
-        log.debug('address did not answer', { code: toAppError(error).code });
-      }
-    }
-    return wrongServer ? 'wrong_server' : null;
-  }
-
   /**
    * A different server, or the same one with its data restored or moved in (a new
    * `dataEpoch`), doesn't hold everything this device sent: pull from the beginning, push every
@@ -305,6 +289,26 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
     await pull(api);
   }
 
+  /**
+   * Asks the hub for its current addresses, so the next sync can reach it directly where the
+   * saved ones fail, such as a PC on the phone's hotspot (product/tasks-routines-reminders.md §15).
+   */
+  async function learnWhereHubIs(
+    baseUrl: string,
+    serverId: string,
+    token: string,
+    saved: readonly string[],
+  ): Promise<void> {
+    try {
+      const api = createApiClient({ fetch, baseUrl, token, deviceId: store.deviceId });
+      const pairing = await api.pairing();
+      if (pairing.serverId !== serverId) return;
+      await saveLearned(store, usableLearned(pairing.urls, saved));
+    } catch (error) {
+      log.debug('could not learn the hub addresses', { code: toAppError(error).code });
+    }
+  }
+
   async function run(): Promise<LoopRunResult> {
     const urls = await loadServerUrls(store);
     const token = await secrets.get(SYNC_TOKEN_SECRET);
@@ -318,7 +322,19 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
     }
 
     await report('syncing');
-    const server = await findServer(urls, await expectedServer());
+    const learned = await loadLearned(store);
+    const server = await findServer({
+      fetch,
+      saved: urls,
+      learned: usableLearned(learned?.urls ?? [], urls),
+      expected: await expectedServer(),
+      token,
+    });
+    if (server === 'bad_proof') {
+      // Nothing was sent: the hub there doesn't hold this device's token (ADR-0033).
+      await report('unauthorized', { errorCode: 'unauthorized' });
+      return 'idle';
+    }
     if (server === 'wrong_server') {
       log.warn('a different server answered');
       await report('wrong_server', { errorCode: 'wrong_server' });
@@ -344,6 +360,9 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
       await report('failed', { errorCode: code });
       throw error;
     }
+
+    if (learnedDue(learned, store.clock.now()))
+      await learnWhereHubIs(server.baseUrl, serverId, token, urls);
 
     await report('synced', {
       errorCode: null,

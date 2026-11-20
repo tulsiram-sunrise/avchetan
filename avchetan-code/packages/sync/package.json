@@ -16,6 +16,7 @@
   "dependencies": {
     "@avchetan/db": "workspace:*",
     "@avchetan/shared": "workspace:*",
+    "@noble/hashes": "2.4.0",
     "zod": "4.6.7"
   }
 }

@@ -27,7 +27,9 @@ export type SyncStateKey =
    * How far a pull of everything has come (a new device, or new columns after an update), so an
    * interrupted one goes on from there instead of starting over. Empty when none is under way.
    */
-  | 'refill_cursor';
+  | 'refill_cursor'
+  /** Where the hub last said it is, as JSON `{ at, urls }` (product/tasks-routines-reminders.md §15). */
+  | 'learned_urls';
 
 export async function getSyncState(db: ClientDb, key: SyncStateKey): Promise<string | undefined> {
   const row = await db.select().from(syncState).where(eq(syncState.key, key)).get();

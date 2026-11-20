@@ -4,7 +4,7 @@ import { MemorySecretStore } from '@avchetan/shared/testing';
 import { describe, expect, it } from 'vitest';
 import { saveConnection } from './config';
 import { requestHubCommand } from './hub-command';
-import { PROTOCOL_VERSION } from './protocol';
+import { hubProof, PROTOCOL_VERSION, tokenKey } from './protocol';
 
 const HUB = 'http://127.0.0.1:8787';
 const SERVER = '0192a000-0000-7000-8000-0000000000aa';
@@ -14,14 +14,16 @@ const TOKEN = 'a-sync-token-that-is-long-enough-to-pass-32';
 function hub(status: number, body: unknown): HttpFetch & { sent: string[] } {
   const sent: string[] = [];
   const fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
-    const url = String(input);
-    if (url.endsWith('/health')) {
+    const url = new URL(String(input));
+    if (url.pathname === '/v1/health') {
+      const challenge = url.searchParams.get('challenge') ?? '';
       return new Response(
         JSON.stringify({
           status: 'ok',
           version: 'test',
           serverId: SERVER,
           protocol: PROTOCOL_VERSION,
+          proof: hubProof(tokenKey(TOKEN), SERVER, challenge),
         }),
       );
     }

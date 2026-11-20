@@ -25,6 +25,10 @@ Tailscale creates a private, encrypted network between your own devices. It's fr
 2. Add an entry: `Bought groceries on the way home`.
 3. Within about a minute it appears on the PC.
 
+## When your PC uses your phone's hotspot
+
+If your laptop is online through your phone's hotspot, the two can talk directly. After one sync (through Tailscale, or at home), the hub tells the phone its new address, and from then on the phone uses that one first, without Tailscale. For it to work, Windows must let the phone in: set the hotspot network to **Private** on the laptop (**Settings → Network & internet → Wi-Fi**, click the hotspot), only for your own phone's hotspot. The phone only sends its sync token to an address that proves it is your hub.
+
 ## Notes
 
 - The PC must be on, with the hub running and connected to the internet.
