@@ -337,7 +337,7 @@ Planned days (confirmed 2026-11-16; full calendar repeat rules and sleep hours m
 15. Repeating tasks through routines ✅ 2026-11-20
 16. Reminders: phone alarms (leeway, exact opt-in), *ring on this device* setting, PC popup; background sync backs off after an unreachable hub (battery) ✅ 2026-11-20
 17. "Remind me at 4" read by extraction ✅ 2026-11-20
-18. The phone reaches the hub directly when the PC is on the phone's hotspot (or got a new address at home): the hub sends its current local addresses with each sync, the phone tries them before Tailscale; the Setup check warns about a Public network ([§15](product/tasks-routines-reminders.md#15-the-phone-reaches-the-hub-directly-on-a-hotspot), added 2026-11-20)
+18. The phone reaches the hub directly when the PC is on the phone's hotspot (or got a new address at home): the hub sends its current local addresses with each sync and announces itself on the local network (mDNS), the phone tries those before Tailscale, and the hub proves it holds the token (a challenge) before the phone sends it; the Setup check warns about a Public network ([§15](product/tasks-routines-reminders.md#15-the-phone-reaches-the-hub-directly-on-a-hotspot), added 2026-11-20)
 19. Sleep hours: stated times, *woke up*, bed + wake into `sleep_h` in Trends
 20. The brief's Went well / Needs attention
 21. Day coverage (opt-in, *unaccounted*)

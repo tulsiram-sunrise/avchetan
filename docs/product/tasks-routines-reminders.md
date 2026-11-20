@@ -27,7 +27,7 @@ Today a task is either open or done, nothing reminds you of it, and anything you
 | 15 | [Repeating tasks](#6-repeating-tasks) through routines | PC and phone |
 | 16 | [Reminders](#7-reminders): phone alarms, the per-device ring setting, PC popup | Phone first, PC |
 | 17 | ["Remind me at 4" read by extraction](#8-reminders-from-what-you-type) | Extraction |
-| 18 | [The phone reaches the hub directly on a hotspot](#15-the-phone-reaches-the-hub-directly-on-a-hotspot), without Tailscale | Sync, both |
+| 18 | [The phone reaches the hub directly on a hotspot](#15-the-phone-reaches-the-hub-directly-on-a-hotspot), without Tailscale: addresses at each sync, mDNS discovery, the hub proves itself first | Sync, both |
 | 19 | [Sleep hours](#9-sleep-hours): stated times, *woke up*, bed + wake into `sleep_h` | Extraction + Trends |
 | 20 | [The brief: Went well / Needs attention](#10-the-brief-went-well-and-needs-attention) | Brief |
 | 21 | [Day coverage](#11-day-coverage) (opt-in) | Days |
@@ -149,5 +149,7 @@ The phone's capture box gets `/done` and `/undo`, reusing the fuzzy command matc
 *Added 2026-11-20 from what the author sees often:* the laptop running the hub is online through the phone's own hotspot, yet the phone reaches the hub through Tailscale. The two are on one small network (the phone is its router), so they could talk directly. They don't because (1) the phone only knows the addresses saved at pairing, and on the hotspot the laptop has another one (on many phones the hotspot's range changes each time it is turned on), and (2) Windows treats a newly joined network, such as a hotspot, as **Public**, and the guide's firewall rule allows the hub's port on **Private** networks only.
 
 - **The hub tells the phone where it is.** Each sync answer (or the health check) carries the hub's current local addresses, as the pairing code does. The phone keeps them beside the paired ones and tries the local ones first, Tailscale after. The pinned server ID (Day 7) still has to match, so another device at that address is never used.
+- **Found on the local network (mDNS), decided 2026-11-20.** The hub announces itself on the local network (a `_avchetan._tcp` service, as printers and Chromecasts do) with its server ID; the phone looks for it with Android's built-in network service discovery (`NsdManager`) when its saved addresses don't answer. That makes even the first connection on a new network work without Tailscale. Needs no new Android permission; the hub only answers on Private networks, as the firewall rule allows.
+- **The hub proves itself before the token is sent (decided 2026-11-20).** An address learned by sync or discovery is only a hint: anyone on the network could claim to be the hub, and today the server ID it checks is not secret. Before sending its token to such an address, the phone sends a random challenge and the hub answers with a value only a holder of the sync token can compute (an HMAC of the challenge keyed by the token). No match, no token. An ADR records the protocol.
 - **Setup check on the PC:** warns when the network the hub listens on is marked Public, with how to set it to Private (only for networks you own, such as your phone's hotspot).
 - Works the same on home Wi-Fi when the router gives the PC a new address. Tailscale stays the way in from anywhere else.
