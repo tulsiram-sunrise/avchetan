@@ -907,5 +907,89 @@
     ],
     "choresDone": ["Tidy up"],
     "skip": null
+  },
+  "remind-dentist": {
+    "activities": [],
+    "tasks": [
+      {
+        "title": "Call the dentist",
+        "notes": null,
+        "dueDate": "2026-03-04",
+        "category": "health",
+        "project": null,
+        "inferredTags": ["dentist"],
+        "forPerson": null,
+        "waitingOn": null,
+        "remindAt": "16:00"
+      }
+    ],
+    "newCategory": null,
+    "logTags": [],
+    "entities": [],
+    "choresDone": [],
+    "skip": null
+  },
+  "remind-tomorrow": {
+    "activities": [],
+    "tasks": [
+      {
+        "title": "Take the car for service",
+        "notes": null,
+        "dueDate": "2026-03-05",
+        "category": null,
+        "project": null,
+        "inferredTags": [],
+        "forPerson": null,
+        "waitingOn": null,
+        "remindAt": "07:30"
+      }
+    ],
+    "newCategory": null,
+    "logTags": [],
+    "entities": [],
+    "choresDone": [],
+    "skip": null
+  },
+  "remind-tonight": {
+    "activities": [],
+    "tasks": [
+      {
+        "title": "Take my vitamins",
+        "notes": null,
+        "dueDate": "2026-03-04",
+        "category": "health",
+        "project": null,
+        "inferredTags": ["health"],
+        "forPerson": null,
+        "waitingOn": null,
+        "remindAt": "21:00"
+      }
+    ],
+    "newCategory": null,
+    "logTags": [],
+    "entities": [],
+    "choresDone": [],
+    "skip": null
+  },
+  "remind-not-asked": {
+    "activities": [],
+    "tasks": [
+      {
+        "title": "Dentist appointment",
+        "notes": null,
+        "dueDate": "2026-03-06",
+        "category": "health",
+        "project": null,
+        "inferredTags": ["dentist"],
+        "forPerson": null,
+        "waitingOn": null,
+        "remindAt": null
+      }
+    ],
+    "newCategory": null,
+    "logTags": [],
+    "entities": [],
+    "choresDone": [],
+    "skip": null
   }
 }

@@ -10,12 +10,21 @@ import {
   type RawLog,
   seedCategoryId,
 } from '@avchetan/db/sqlite';
-import { daysBetween, isValidLocalDate, type LocalDate, localDate } from '@avchetan/shared';
+import {
+  daysBetween,
+  isValidLocalDate,
+  isValidLocalTime,
+  type LocalDate,
+  type LocalTime,
+  localDate,
+  type UtcInstant,
+} from '@avchetan/shared';
 import { z } from 'zod';
 import { ruleMatchesOf, ruleOutcome } from '../context/window-context';
 import { normalizeMetrics, parseQuantity } from '../normalize/metrics';
 import { normalizeTagPath, normalizeTagSegment } from '../normalize/tags';
-import { checkDate } from './date-check';
+import { instantAt } from '../routines/checklist';
+import { checkDate, namesNoDay } from './date-check';
 import type { ChoreChoice, ExtractionVocabulary } from './input';
 import type { ExtractionResult } from './schema';
 
@@ -63,6 +72,27 @@ function choreTicksOf(names: readonly string[], chores: readonly ChoreChoice[]) 
     if (chore) ticks.set(chore.routineId, { routineId: chore.routineId, date: chore.date });
   }
   return [...ticks.values()];
+}
+
+/**
+ * The reminder an entry asked for (product/tasks-routines-reminders.md §8): the model gives a
+ * local time, code makes the instant on the task's day (today when it has none). None when the
+ * time can't be read or had already passed when the entry was written.
+ */
+export function plannedReminder(
+  time: string | null | undefined,
+  dueDate: LocalDate | null,
+  today: LocalDate,
+  rawLog: { capturedAt: string; capturedTz: string },
+): { dueDate: LocalDate; remindAt: UtcInstant } | null {
+  const match = time?.trim().match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) return null;
+  const local = `${(match[1] ?? '').padStart(2, '0')}:${match[2]}`;
+  if (!isValidLocalTime(local)) return null;
+  const day = dueDate ?? today;
+  const remindAt = instantAt(day, local as LocalTime, rawLog.capturedTz);
+  if (Date.parse(remindAt) <= Date.parse(rawLog.capturedAt)) return null;
+  return { dueDate: day, remindAt };
 }
 
 function plausibleDate(value: string | null, today: LocalDate): LocalDate | null {
@@ -258,20 +288,27 @@ export function normalizeExtraction(
     model,
     version,
     activities: plannedActivities,
-    tasks: tasks.map(({ item }) => ({
-      categoryId: item.category ? (categories.resolve(item.category) ?? null) : null,
-      title: clean(item.title, MAX_TITLE) as string,
-      notes: clean(item.notes, MAX_NOTES),
-      dueDate: checkDate({
+    tasks: tasks.map(({ item }) => {
+      const dueDate = checkDate({
         date: plausibleDate(item.dueDate, today),
         own: `${item.title} ${item.notes ?? ''}`,
         entry: rawLog.content ?? '',
         today,
         ahead: true,
-      }),
-      projectId: projectId(item.project),
-      tagPaths: tagPaths(item.inferredTags, categorySlugs),
-    })),
+      });
+      // An entry that names no day asks for a reminder today, whatever date the model gave.
+      const reminderDay = namesNoDay(rawLog.content ?? '') ? today : dueDate;
+      const reminder = plannedReminder(item.remindAt, reminderDay, today, rawLog);
+      return {
+        categoryId: item.category ? (categories.resolve(item.category) ?? null) : null,
+        title: clean(item.title, MAX_TITLE) as string,
+        notes: clean(item.notes, MAX_NOTES),
+        dueDate: reminder?.dueDate ?? dueDate,
+        remindAt: reminder?.remindAt ?? null,
+        projectId: projectId(item.project),
+        tagPaths: tagPaths(item.inferredTags, categorySlugs),
+      };
+    }),
     logTagPaths: skipped ? [] : tagPaths(result.logTags, categorySlugs),
     entities: skipped ? [] : entities,
     newCategory: categories.newCategory,

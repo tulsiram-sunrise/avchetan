@@ -57,6 +57,7 @@ const dentist: ExtractionResult['tasks'][number] = {
   inferredTags: [],
   forPerson: null,
   waitingOn: null,
+  remindAt: null,
 };
 
 function answer(result: ExtractionResult) {

@@ -103,6 +103,9 @@ export function matchFixture(
     if (item.dueDate !== undefined && task.dueDate !== item.dueDate) {
       misses.push(`due ${task.dueDate}, wanted ${item.dueDate}`);
     }
+    if (item.remindAt !== undefined && (task.remindAt ?? null) !== item.remindAt) {
+      misses.push(`reminder ${task.remindAt ?? null}, wanted ${item.remindAt}`);
+    }
   }
 
   const tags = [

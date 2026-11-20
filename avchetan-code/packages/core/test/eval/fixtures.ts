@@ -15,6 +15,8 @@ const expectedActivity = z.object({
 
 const expectedTask = z.object({
   dueDate: z.string().nullable().optional(),
+  /** The reminder as a UTC instant (fixtures are in UTC), or null for none (§8). */
+  remindAt: z.string().nullable().optional(),
   titleHas: z.string().optional(),
 });
 

@@ -54,6 +54,7 @@ const task: ExtractionResult['tasks'][number] = {
   inferredTags: [],
   forPerson: null,
   waitingOn: null,
+  remindAt: null,
 };
 
 describe('normalizeExtraction', () => {
@@ -309,5 +310,50 @@ describe('normalizeExtraction', () => {
   it('is deterministic', () => {
     const result = { ...empty, activities: [activity], tasks: [task], logTags: ['knee'] };
     expect(normalizeExtraction(result, context)).toEqual(normalizeExtraction(result, context));
+  });
+});
+
+describe('reminders from what you type (§8)', () => {
+  // Captured 2026-10-30 at 10:00 UTC.
+  const withText = (content: string, zone = 'UTC'): NormalizeContext => ({
+    ...context,
+    rawLog: { ...context.rawLog, capturedTz: zone, content },
+  });
+  const remind = (fields: Partial<typeof task>, content: string, zone?: string) =>
+    normalizeExtraction({ ...empty, tasks: [{ ...task, ...fields }] }, withText(content, zone))
+      .tasks[0];
+
+  it('turns the local time into the instant on the due date', () => {
+    expect(
+      remind({ dueDate: '2026-10-31', remindAt: '7:30' }, 'remind me tomorrow at 7:30 to call Sam'),
+    ).toMatchObject({ dueDate: '2026-10-31', remindAt: '2026-10-31T07:30:00.000Z' });
+    expect(
+      remind({ dueDate: '2026-10-30', remindAt: '16:00' }, 'remind me at 4 pm', 'Asia/Kolkata'),
+    ).toMatchObject({ dueDate: '2026-10-30', remindAt: '2026-10-30T10:30:00.000Z' });
+  });
+
+  it('is for today when the entry names no day, whatever date the model copied', () => {
+    expect(
+      remind({ dueDate: '2026-11-02', remindAt: '16:00' }, 'remind me at 4 pm to call Sam'),
+    ).toMatchObject({ dueDate: '2026-10-30', remindAt: '2026-10-30T16:00:00.000Z' });
+    // No due date at all: the reminder's day becomes the task's.
+    expect(remind({ remindAt: '18:00' }, 'remind me at 6 to call Sam')).toMatchObject({
+      dueDate: '2026-10-30',
+      remindAt: '2026-10-30T18:00:00.000Z',
+    });
+  });
+
+  it('drops a time it cannot read, or one already past when written', () => {
+    expect(remind({ remindAt: '4 pm' }, 'remind me at 4 pm')?.remindAt).toBeNull();
+    expect(remind({ remindAt: '25:00' }, 'remind me at 25')?.remindAt).toBeNull();
+    const past = remind({ dueDate: '2026-10-30', remindAt: '09:00' }, 'remind me at 9 to call Sam');
+    expect(past).toMatchObject({ dueDate: '2026-10-30', remindAt: null });
+  });
+
+  it('leaves a task without a reminder as it was', () => {
+    expect(remind({ dueDate: '2026-10-31' }, 'call Sam tomorrow')).toMatchObject({
+      dueDate: '2026-10-31',
+      remindAt: null,
+    });
   });
 });

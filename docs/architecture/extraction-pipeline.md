@@ -62,6 +62,7 @@ Input assembled by `buildExtractionInput(rawLog, vocabulary)`:
 - Correction examples: up to 5 of the user's past fixes that share words with this entry, at the start of the request ([correction feedback](../product/correction-feedback.md)), private ones only for a local model. Left out first on `llm_context_overflow`. Items copied from them are dropped before normalizing.
 - Context hints: `raw_logs.context` (active app, rule matches) when present.
 - Open chores: titles of the confirm routines still open on the log's local day (`loadOpenChores`), as an *Open chores today* line right before the entry, only when there are some (prompt v6, [tasks-routines-reminders §5](../product/tasks-routines-reminders.md#5-chores-ticked-from-entries)).
+- Reminders (prompt v7, [§8](../product/tasks-routines-reminders.md#8-reminders-from-what-you-type)): a task's `remindAt` is the local `HH:MM` the entry asks to be reminded at. `normalize.ts` (`plannedReminder`) makes the UTC instant on the task's day in the log's `captured_tz`, takes today when the entry names no day (`namesNoDay`), drops a time already past when the entry was written, and gives a task with no date the reminder's day. Apply sets `remind_at` only on a task that has none, so organizing again never moves a reminder.
 - The raw content and the already-parsed explicit tags.
 
 Output: one structured object validated by the **extraction envelope** schema:
@@ -69,7 +70,8 @@ Output: one structured object validated by the **extraction envelope** schema:
 ```
 ExtractionResult {
   activities: [{ category, title, notes|null, metrics: [{key, value}], exercises[], loggedDate, project|null, inferredTags[] }]
-  tasks:      [{ title, notes|null, dueDate|null, category|null, project|null, inferredTags[] }]
+  tasks:      [{ title, notes|null, dueDate|null, category|null, project|null, inferredTags[],
+                forPerson|null, waitingOn|null, remindAt|null }]
   newCategory?: { name, description }   // only if no existing category fits; max one per log
                                         // `category` fields hold an existing slug or this new name
   logTags:    string[]            // inferred tags for the raw log as a whole

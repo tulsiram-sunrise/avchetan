@@ -9,6 +9,8 @@
 
 **On the PC:** click **More** on the task, then **Remind me…**, pick the day and time, then **Save reminder**.
 
+**Or just write it.** An entry such as `remind me at 4 pm to call the dentist` becomes a task due today with a reminder at 16:00, once the entry is organized. Name a day for another one (`remind me tomorrow at 7:30 to take the car in`). Only *remind me*, *set a reminder* and the like set one: `dentist on Friday at 11` is a task without a reminder. A time that had already passed when you wrote it sets none. Organizing the entry again never changes a reminder you already have.
+
 The task then shows when it will ring, such as *⏰ Today 16:00* or *⏰ Tomorrow 09:30*. **Change reminder** picks another time; **No reminder** removes it.
 
 - Marking the task done or cancelling it stops its reminder.

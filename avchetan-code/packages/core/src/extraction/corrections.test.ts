@@ -52,6 +52,7 @@ const swim: ExtractionResult = {
       inferredTags: [],
       forPerson: null,
       waitingOn: null,
+      remindAt: null,
     },
   ],
 };

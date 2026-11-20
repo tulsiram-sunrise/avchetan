@@ -1,6 +1,7 @@
 import type { RepeatRule } from '@avchetan/shared';
 import { describe, expect, it } from 'vitest';
 import { openTestStore } from '../../../testing';
+import type { ExtractionPlan } from './extraction';
 import { repeatTaskId } from './repeat-tasks';
 import { movedReminder } from './task-reminders';
 
@@ -121,6 +122,66 @@ describe('task reminders (§7)', () => {
     expect(movedReminder({ remindAt, dueDate: '2026-11-23' }, '2026-11-23')).toBeUndefined();
     expect(movedReminder({ remindAt, dueDate: '2026-11-23' }, '2026-11-20')).toBe(
       '2026-11-20T10:30:00.000Z',
+    );
+  });
+});
+
+describe('reminders from what you type (§8)', () => {
+  const planWith = (rawLogId: string, remindAt: string | null): ExtractionPlan => ({
+    rawLogId,
+    status: 'processed',
+    model: 'mock:model',
+    version: 7,
+    activities: [],
+    tasks: [
+      {
+        categoryId: null,
+        title: 'Call the dentist',
+        notes: null,
+        dueDate: TODAY,
+        remindAt,
+        projectId: null,
+        tagPaths: [],
+      },
+    ],
+    logTagPaths: [],
+    entities: [],
+    newCategory: null,
+    categorySuggestion: null,
+    choreTicks: [],
+  });
+
+  async function organized(remindAt: string | null) {
+    const { store } = await openTestStore({ start: START });
+    const log = await store.write((tx) =>
+      store.repos.rawLogs.capture(tx, {
+        content: 'remind me at 4 pm to call the dentist',
+        source: 'mobile_text',
+        capturedTz: 'UTC',
+      }),
+    );
+    await store.write((tx) => store.repos.extraction.apply(tx, planWith(log.id, remindAt)));
+    const [row] = await store.repos.tasks.reminders(store.db, START, 10);
+    return { store, log, task: row?.task };
+  }
+
+  it('gives the extracted task its reminder', async () => {
+    const { task } = await organized('2026-11-20T16:00:00.000Z');
+    expect(task).toMatchObject({ title: 'Call the dentist', remindAt: '2026-11-20T16:00:00.000Z' });
+  });
+
+  it('organizing again never moves or removes a reminder already set', async () => {
+    const { store, log, task } = await organized('2026-11-20T16:00:00.000Z');
+    const id = task?.id as string;
+    await store.write((tx) => store.repos.tasks.setReminder(tx, id, '2026-11-20T17:15:00.000Z'));
+
+    await store.write((tx) =>
+      store.repos.extraction.apply(tx, planWith(log.id, '2026-11-20T16:00:00.000Z')),
+    );
+    await store.write((tx) => store.repos.extraction.apply(tx, planWith(log.id, null)));
+
+    expect((await store.repos.tasks.reminders(store.db, START, 10))[0]?.task.remindAt).toBe(
+      '2026-11-20T17:15:00.000Z',
     );
   });
 });

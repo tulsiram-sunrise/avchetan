@@ -42,6 +42,8 @@ export type PlannedTask = {
   title: string;
   notes: string | null;
   dueDate: string | null;
+  /** A reminder the entry asked for, as a UTC instant (§8). */
+  remindAt?: string | null;
   projectId: string | null;
   tagPaths: string[];
 };
@@ -171,8 +173,9 @@ export function extractionRepo(deps: RepoDeps, repos: Repos) {
       for (const [ordinal, item] of plan.tasks.entries()) {
         const id = derivedId('task', rawLogId, ordinal);
         taskIds.push(id);
-        if ((await getById(tx, tasks, id))?.isUserEdited) continue;
-        const { tagPaths, ...fields } = item;
+        const existing = await getById(tx, tasks, id);
+        if (existing?.isUserEdited) continue;
+        const { tagPaths, remindAt, ...fields } = item;
         // `completedAt` stays out: re-extraction must not reopen a finished task.
         await upsertSynced(tx, deps, tasks, {
           ...fields,
@@ -182,6 +185,8 @@ export function extractionRepo(deps: RepoDeps, repos: Repos) {
           origin: 'extraction',
           isUserEdited: false,
           ordinal,
+          // Organizing again never moves or removes a reminder already set, by the entry or by hand.
+          ...(remindAt && !existing?.remindAt ? { remindAt } : {}),
         });
         await setInferredTags(tx, 'task', id, tagPaths);
       }
