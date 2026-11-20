@@ -19,6 +19,11 @@ const GROUPS: { title: string; items: Item[] }[] = [
     title: 'Your stuff',
     items: [
       { title: 'Routines', hint: 'Chores to tick off, sleep and work hours.', href: '/routines' },
+      {
+        title: 'Reminders',
+        hint: 'Whether this phone rings, and at the exact minute.',
+        href: '/settings/reminders',
+      },
       { title: 'People', hint: 'Who you saw, and what you promised.', href: '/people' },
       { title: 'Tags', hint: "Each tag's entries, totals and tasks.", href: '/tags' },
       { title: 'Projects', hint: "Each project's entries, totals and tasks.", href: '/projects' },

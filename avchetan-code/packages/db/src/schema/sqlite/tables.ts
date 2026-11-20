@@ -131,6 +131,8 @@ export const tasks = sqliteTable(
     /** A repeating task: its routine (kind `task`) and the occurrence it stands for (§6). */
     routineId: text('routine_id'),
     routineDate: text('routine_date'),
+    /** When to remind, a UTC instant (§7). Each device that rings schedules it. */
+    remindAt: text('remind_at'),
   },
   (t) => [
     index('tasks_completed_at_due_date_idx').on(t.completedAt, t.dueDate),

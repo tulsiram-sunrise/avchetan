@@ -85,6 +85,13 @@
       "when": 1795165701769,
       "tag": "0011_repeating_tasks",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1795166678638,
+      "tag": "0012_task_reminders",
+      "breakpoints": true
     }
   ]
 }

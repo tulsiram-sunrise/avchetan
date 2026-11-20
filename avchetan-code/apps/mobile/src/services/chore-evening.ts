@@ -16,6 +16,7 @@ import {
 } from '@avchetan/shared';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+import { loadPhoneRing } from './task-reminders';
 
 const log = createLogger('chore-evening');
 
@@ -60,7 +61,8 @@ export async function chooseChoreEvening(
 
 /**
  * Schedules today's notification, or removes it when it isn't wanted any more (all ticked,
- * turned off, time passed). Safe to call after every write and sync: the same ID replaces it.
+ * turned off, time passed, or this phone doesn't ring for reminders). Safe to call after every
+ * write and sync: the same ID replaces it.
  */
 export async function scheduleChoreEvening(store: ClientStore): Promise<void> {
   try {
@@ -68,14 +70,17 @@ export async function scheduleChoreEvening(store: ClientStore): Promise<void> {
     const now = store.clock.now();
     const today = localDate(now, timeZone);
     const id = `${ID_PREFIX}${today}`;
-    const [settings, days, permission] = await Promise.all([
+    const [ring, settings, days, permission] = await Promise.all([
+      loadPhoneRing(store),
       loadChoreEveningSettings(store),
       store.repos.routines.daysOn(store.db, today),
       Notifications.getPermissionsAsync(),
     ]);
-    const notice = permission.granted
-      ? planChoreEvening({ today, now, timeZone, settings, open: openChores(days) })
-      : null;
+    // Only a phone that rings for reminders sends it (§4).
+    const notice =
+      ring && permission.granted
+        ? planChoreEvening({ today, now, timeZone, settings, open: openChores(days) })
+        : null;
     if (!notice) {
       await Notifications.cancelScheduledNotificationAsync(id);
       return;

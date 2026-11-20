@@ -129,6 +129,8 @@ const WRITES: Record<string, Write> = {
     s.repos.tasks.complete(tx, f.task.id, '2026-11-20', 'Paid online'),
   'tasks.partlyDone': (s, tx, f) => s.repos.tasks.partlyDone(tx, f.task.id, 40),
   'tasks.cancel': (s, tx, f) => s.repos.tasks.cancel(tx, f.task.id, '2026-11-20'),
+  'tasks.setReminder': (s, tx, f) =>
+    s.repos.tasks.setReminder(tx, f.task.id, '2026-11-21T10:30:00.000Z'),
   'tasks.deleteByUser': (s, tx, f) => s.repos.tasks.deleteByUser(tx, f.task.id),
   'tasks.softDelete': (s, tx, f) => s.repos.tasks.softDelete(tx, f.task.id),
 
@@ -351,6 +353,13 @@ const READS: Record<string, DeletedCase> = {
     remove: (s, tx, f) => s.repos.tasks.softDelete(tx, f.task.id),
     read: async (s) =>
       (await search.searchTasks(s.db, { ...scope, text: 'rent', limit: 50 })).map((h) => h.task),
+    id: (f) => f.task.id,
+  },
+  'tasks.reminders': {
+    show: (s, tx, f) => s.repos.tasks.setReminder(tx, f.task.id, '2099-01-01T08:00:00.000Z'),
+    remove: (s, tx, f) => s.repos.tasks.softDelete(tx, f.task.id),
+    read: async (s) =>
+      (await s.repos.tasks.reminders(s.db, '2000-01-01T00:00:00.000Z', 50)).map((r) => r.task),
     id: (f) => f.task.id,
   },
   activitiesOn: {

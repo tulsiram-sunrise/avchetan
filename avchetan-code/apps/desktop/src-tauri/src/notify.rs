@@ -1,5 +1,7 @@
-//! Windows notifications (docs/product/daily-brief.md#reminders). Clicking one opens Days on
-//! the brief's day. Texts are fixed here, so no entry text ever reaches the notification.
+//! Windows notifications. The daily brief's (docs/product/daily-brief.md#reminders) opens Days
+//! on its day and its texts are fixed here. A task reminder
+//! (docs/product/tasks-routines-reminders.md §7) shows the task's title, or a fixed one for a
+//! task from a private entry (decided in `packages/core`), and opens Tasks.
 
 use tauri::{AppHandle, Runtime};
 #[cfg(windows)]
@@ -65,6 +67,46 @@ fn show_brief_toast<R: Runtime>(app: &AppHandle<R>, day: String) -> CommandResul
         .map_err(|error| CommandError::new("notification_failed", error.to_string()))
 }
 
+/// The longest reminder title shown; Windows cuts long ones anyway.
+const MAX_REMINDER_TITLE: usize = 200;
+
+fn reminder_title(title: &str) -> Option<String> {
+    let title = title.trim();
+    if title.is_empty() {
+        return None;
+    }
+    Some(title.chars().take(MAX_REMINDER_TITLE).collect())
+}
+
+#[tauri::command]
+pub fn reminder_notify(app: AppHandle, title: String) -> CommandResult<()> {
+    let title = reminder_title(&title)
+        .ok_or_else(|| CommandError::new("invalid_title", "Title is empty"))?;
+    show_reminder_toast(&app, title)
+}
+
+#[cfg(windows)]
+fn show_reminder_toast<R: Runtime>(app: &AppHandle<R>, title: String) -> CommandResult<()> {
+    let handle = app.clone();
+    Toast::new(&app_id(app))
+        .title(&title)
+        .text1("Click to open it in Tasks")
+        .on_activated(move |_| {
+            crate::error::warn_on_err(
+                "open tasks",
+                windows::open_main(&handle, "tasks", None, None).map_err(|e| e.message),
+            );
+            Ok(())
+        })
+        .show()
+        .map_err(|error| CommandError::new("notification_failed", error.to_string()))
+}
+
+#[cfg(not(windows))]
+fn show_reminder_toast<R: Runtime>(_app: &AppHandle<R>, _title: String) -> CommandResult<()> {
+    Ok(())
+}
+
 #[cfg(not(windows))]
 fn show_brief_toast<R: Runtime>(_app: &AppHandle<R>, _day: String) -> CommandResult<()> {
     // Windows only for now (macOS/Linux are unscheduled).
@@ -84,5 +126,19 @@ mod tests {
         assert!(!is_sunday("2026-02-28"));
         assert_eq!(brief_title("2026-11-08"), "Your day and week in brief");
         assert_eq!(brief_title("2026-11-07"), "Your daily brief is ready");
+    }
+
+    #[test]
+    fn reminder_titles_are_trimmed_and_cut() {
+        assert_eq!(
+            reminder_title("  Call the dentist "),
+            Some("Call the dentist".into())
+        );
+        assert_eq!(reminder_title("   "), None);
+        let long = "a".repeat(500);
+        assert_eq!(
+            reminder_title(&long).map(|t| t.len()),
+            Some(MAX_REMINDER_TITLE)
+        );
     }
 }

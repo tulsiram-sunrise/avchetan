@@ -126,6 +126,7 @@ Indexes: `(logged_date)`, `(category_id, logged_date)`, `(raw_log_id)`, `(projec
 | `cancelled_at` | UTC ISO, nullable | Cancelled: not done and never counted as missed. A task is **open** when both `completed_at` and `cancelled_at` are null; marking it done clears `cancelled_at` and cancelling clears `completed_at` |
 | `routine_id` | UUID, nullable | A repeating task: its rule, a `routines` row of kind `task`. Finishing or cancelling makes the next occurrence with ID `derivedId('repeat_task', routine_id, date)`, never dated before today ([tasks-routines-reminders §6](../product/tasks-routines-reminders.md#6-repeating-tasks)) |
 | `routine_date` | `YYYY-MM-DD`, nullable | The occurrence the task stands for. Moving the task changes `due_date`, never this, so the rule is kept |
+| `remind_at` | UTC instant, nullable | When to remind ([§7](../product/tasks-routines-reminders.md#7-reminders)). Moving the task moves it by the same days; a repeating task's next occurrence gets the same time of day. Which devices ring is a local setting, not stored here |
 
 Indexes: `(completed_at, due_date)`, `(raw_log_id)`.
 

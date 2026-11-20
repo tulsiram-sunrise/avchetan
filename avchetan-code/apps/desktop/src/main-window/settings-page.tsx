@@ -26,6 +26,7 @@ import { DataSetting } from './data-setting';
 import { HubSetting } from './hub-setting';
 import { LearnedSetting } from './learned-setting';
 import { PrivateTagsSetting } from './private-tags-setting';
+import { RemindersSetting } from './reminders-setting';
 import { SeeThroughSetting } from './see-through-setting';
 import { loadSettingsTab, SETTINGS_TABS, type SettingsTab, saveSettingsTab } from './settings-tabs';
 import { SyncSetting } from './sync-setting';
@@ -93,6 +94,7 @@ function TabContent({ tab }: { tab: SettingsTab }) {
               <QuietButton onClick={() => openView('setup')}>Run setup again</QuietButton>
             </div>
           </section>
+          <RemindersSetting />
           <TimeZoneSetting />
           <AutostartSetting />
           <AboutSetting />

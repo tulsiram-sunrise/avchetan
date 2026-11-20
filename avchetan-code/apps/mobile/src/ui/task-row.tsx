@@ -38,6 +38,7 @@ import { usePalette } from '../theme/theme';
 import { Button, Failure, Field } from './parts';
 import { RuleEditor } from './rule-editor';
 import { PromiseEditor, PromiseLabels } from './task-promises';
+import { ReminderEditor, useReminderLabel } from './task-reminder';
 import { useUndo } from './undo-bar';
 
 export function TaskCheck({ task }: { task: Task }) {
@@ -70,9 +71,13 @@ function useTaskRule(task: Task) {
   return parsed.success ? parsed.data : undefined;
 }
 
-/** "Cancelled", "40% done", "Done 2 days late", how it repeats, and the note on how it went. */
-function statusText(task: Task, repeat: string | null): string | null {
+/**
+ * "Cancelled", "40% done", "Done 2 days late", its reminder, how it repeats, and the note on
+ * how it went.
+ */
+function statusText(task: Task, repeat: string | null, reminder: string | null): string | null {
   const parts: string[] = [];
+  if (reminder) parts.push(reminder);
   if (repeat) parts.push(`↻ ${repeat}`);
   const state = taskState(task);
   if (state === 'cancelled') parts.push('Cancelled');
@@ -283,6 +288,7 @@ function TaskEditor({ task, onClose }: { task: Task; onClose: () => void }) {
       </View>
       <Failure error={edit.error} />
       <FinishActions task={task} onClose={onClose} />
+      <ReminderEditor task={task} onClose={onClose} />
       <RepeatEditor task={task} onClose={onClose} />
       <PromiseEditor task={task} />
     </View>
@@ -368,7 +374,8 @@ export function TaskRow({ task }: { task: Task }) {
   const swipes = useSwipes(task);
   const open = taskState(task) === 'open';
   const rule = useTaskRule(task);
-  const status = statusText(task, rule ? describeRepeatRule(rule) : null);
+  const reminder = useReminderLabel(task);
+  const status = statusText(task, rule ? describeRepeatRule(rule) : null, reminder);
   if (undo.isHidden(task.id)) return null;
 
   return (

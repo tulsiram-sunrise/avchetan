@@ -10,6 +10,7 @@ import {
 import { routines, tasks } from '../../schema/sqlite/tables';
 import type { Tx } from '../database';
 import { getById, insertSynced, type RepoDeps, type Row } from '../synced';
+import { movedReminder } from './task-reminders';
 
 /**
  * Repeating tasks (product/tasks-routines-reminders.md §6): a task's repeat rule is a routine of
@@ -73,5 +74,8 @@ export async function makeNextRepeat(
     cancelledAt: null,
     routineId,
     routineDate: date,
+    // The same time of day on the new date.
+    remindAt:
+      finished.dueDate === date ? finished.remindAt : (movedReminder(finished, date) ?? null),
   });
 }

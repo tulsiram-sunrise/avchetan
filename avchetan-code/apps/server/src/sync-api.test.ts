@@ -284,6 +284,7 @@ describe('push and pull', () => {
       cancelledAt: null,
       routineId: null,
       routineDate: null,
+      remindAt: null,
     };
     await push([
       { table: 'raw_logs', row: await clientRow('1') },

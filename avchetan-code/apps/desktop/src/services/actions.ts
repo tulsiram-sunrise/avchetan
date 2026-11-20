@@ -14,6 +14,7 @@ import {
   newId,
   repeatRuleSchema,
   toAppError,
+  type UtcInstant,
   ValidationError,
 } from '@avchetan/shared';
 import { z } from 'zod';
@@ -87,6 +88,12 @@ const ACTIONS = {
   }),
   'task.stopRepeating': action(idArgs, (store, { id }) =>
     store.write((tx) => store.repos.routines.stopRepeating(tx, id)),
+  ),
+  // A reminder (§7): an instant, or null for none. The repository checks the format.
+  'task.setReminder': action(
+    idArgs.extend({ remindAt: z.string().max(40).nullable() }),
+    (store, { id, remindAt }) =>
+      store.write((tx) => store.repos.tasks.setReminder(tx, id, remindAt as UtcInstant | null)),
   ),
   'task.edit': action(
     idArgs.extend({ title: z.string().optional(), dueDate: optionalDate }),

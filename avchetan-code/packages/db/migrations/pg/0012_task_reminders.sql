@@ -1,0 +1,1 @@
+ALTER TABLE "tasks" ADD COLUMN "remind_at" timestamp(3) with time zone;

@@ -13,6 +13,7 @@ import { useAction } from '../queries/organize';
 import { useTaskRules } from '../queries/routines';
 import { useServices } from '../services-context';
 import { RuleEditor } from './rule-editor';
+import { ReminderPanel, useReminderText } from './task-reminder';
 import { ActionError, fieldClass, QuietButton } from './ui';
 import { useUndo } from './undo-bar';
 
@@ -45,12 +46,17 @@ function useRepeatText(task: Task): string | null {
   return rule.success ? describeRepeatRule(rule.data) : null;
 }
 
-/** "Cancelled", "40% done", "2 days late", how it repeats, and the note on how it went. */
+/**
+ * "Cancelled", "40% done", "2 days late", its reminder, how it repeats, and the note on how
+ * it went.
+ */
 export function TaskStatus({ task }: { task: Task }) {
   const { timeZone } = useServices();
   const repeat = useRepeatText(task);
+  const reminder = useReminderText(task);
   const state = taskState(task);
   const parts: string[] = [];
+  if (reminder) parts.push(reminder);
   if (repeat) parts.push(`↻ ${repeat}`);
   if (state === 'cancelled') parts.push('Cancelled');
   if (state === 'done') {
@@ -71,11 +77,12 @@ export function TaskStatus({ task }: { task: Task }) {
   );
 }
 
-type Mode = 'closed' | 'menu' | 'note' | 'progress' | 'repeat';
+type Mode = 'closed' | 'menu' | 'note' | 'progress' | 'repeat' | 'remind';
 
 /**
  * A task's *More* button and the actions it opens (product/tasks-routines-reminders.md §1): done
- * with a note, partly done, move, repeat (§6), cancel, reopen and delete (with an undo message).
+ * with a note, partly done, move, remind (§7), repeat (§6), cancel, reopen and delete (with an
+ * undo message).
  */
 export function useTaskMenu(task: Task) {
   const [mode, setMode] = useState<Mode>('closed');
@@ -143,6 +150,9 @@ export function useTaskMenu(task: Task) {
             if (event.target.value) moveTo(event.target.value);
           }}
         />
+        <QuietButton onClick={() => setMode('remind')}>
+          {task.remindAt ? 'Change reminder…' : 'Remind me…'}
+        </QuietButton>
         <QuietButton
           onClick={() => {
             setDraft(
@@ -242,6 +252,8 @@ export function useTaskMenu(task: Task) {
         </div>
       </form>
     );
+  } else if (mode === 'remind') {
+    panel = <ReminderPanel task={task} onDone={close} onBack={() => setMode('menu')} />;
   } else if (mode === 'progress') {
     const pct = Number(progress);
     const valid = Number.isInteger(pct) && pct >= PROGRESS_MIN && pct <= PROGRESS_MAX;

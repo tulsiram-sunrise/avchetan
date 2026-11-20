@@ -4,11 +4,15 @@ import {
   llmMayCreateSchema,
   loadExtractionMode,
   loadExtractionSettings,
+  loadRingSetting,
+  RING_SETTING,
+  saveRingSetting,
 } from '@avchetan/core';
 import { getSetting, setSetting } from '@avchetan/db/sqlite';
 import { createLogger } from '@avchetan/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { emitAppEvent } from '../native/events';
+import { PC_RINGS_BY_DEFAULT } from '../services/reminders';
 import { loadSeeThrough, type SeeThrough, saveSeeThrough } from '../services/see-through';
 import { loadSubmitKey, type SubmitKey, saveSubmitKey } from '../services/submit-key';
 import { loadTimeZone, saveTimeZone } from '../services/time-zone';
@@ -114,6 +118,31 @@ export function useSetSeeThrough() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: seeThroughQuery });
       // The dock is another window: it refreshes its `settings` queries on this event.
+      emitAppEvent('logs:changed', { tables: ['settings'] }).catch(() =>
+        log.warn('could not announce setting change'),
+      );
+    },
+  });
+}
+
+const ringQuery = ['settings', RING_SETTING] as const;
+
+/** *Ring for reminders on this device*: off on a PC until turned on (§7). */
+export function useRingHere() {
+  const { store } = useServices();
+  return useQuery({
+    queryKey: ringQuery,
+    queryFn: () => loadRingSetting(store, PC_RINGS_BY_DEFAULT),
+  });
+}
+
+export function useSetRingHere() {
+  const { store } = useServices();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (on: boolean) => saveRingSetting(store, on),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ringQuery });
       emitAppEvent('logs:changed', { tables: ['settings'] }).catch(() =>
         log.warn('could not announce setting change'),
       );

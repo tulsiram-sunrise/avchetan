@@ -31,6 +31,8 @@ export function createShell(invoke: Invoke) {
     ) => callNative(invoke, 'main_open', { view, day, search }, z.null()),
     /** "Your daily brief is ready"; clicking it opens Days on `day` (src-tauri/src/notify.rs). */
     notifyBrief: (day: string) => callNative(invoke, 'brief_notify', { day }, z.null()),
+    /** A task reminder titled `title`; clicking it opens Tasks (src-tauri/src/notify.rs). */
+    notifyReminder: (title: string) => callNative(invoke, 'reminder_notify', { title }, z.null()),
     setTrayPending: (count: number) => callNative(invoke, 'tray_set_pending', { count }, z.null()),
     /** The tray's window context item: `pausedUntil` is a local time to show, e.g. "14:30". */
     setTrayContext: (enabled: boolean, pausedUntil: string | null) =>

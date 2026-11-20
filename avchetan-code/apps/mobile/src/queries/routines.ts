@@ -11,7 +11,8 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import * as Notifications from 'expo-notifications';
 import type { AppServices } from '../app-services';
 import { queryClient, refreshAll } from '../query-client';
-import { chooseChoreEvening, scheduleChoreEvening } from '../services/chore-evening';
+import { chooseChoreEvening } from '../services/chore-evening';
+import { scheduleNotifications } from '../services/notifications';
 import { useServices } from '../services-context';
 import { useWrite } from './entries';
 
@@ -108,7 +109,7 @@ export async function deleteRoutineNow(services: AppServices, id: string): Promi
   await services.store.write((tx) => services.store.repos.routines.remove(tx, id));
   refreshAll();
   services.sync.schedule();
-  void scheduleChoreEvening(services.store);
+  void scheduleNotifications(services.store);
 }
 
 // The day's chore checklist (product/tasks-routines-reminders.md §4).
