@@ -70,11 +70,18 @@ async function send<T extends z.ZodType>(
   return parsed.data;
 }
 
-/** Needs no token: it picks an address and identifies the server. */
-export function fetchHealth(fetch: HttpFetch, baseUrl: string): Promise<HealthResponse> {
+/**
+ * Needs no token: it picks an address and identifies the server. With `challenge`, the server
+ * also proves it holds the token (ADR-0033).
+ */
+export function fetchHealth(
+  fetch: HttpFetch,
+  baseUrl: string,
+  challenge?: string,
+): Promise<HealthResponse> {
   return send(
     fetch,
-    `${baseUrl}/v1/health`,
+    `${baseUrl}/v1/health${challenge ? `?challenge=${challenge}` : ''}`,
     { signal: AbortSignal.timeout(HEALTH_TIMEOUT_MS) },
     healthResponseSchema,
   );

@@ -7,6 +7,7 @@ import {
 } from '@avchetan/shared';
 import { z } from 'zod';
 
+export { CHALLENGE_PATTERN, hubProof, newChallenge, proofMatches, tokenKey } from './hub-proof';
 export { isSyncedTable, SYNCED_ROW_SCHEMAS } from './rows';
 
 /** Major version, sent as `X-Avchetan-Protocol`. The server answers others with 426. */
@@ -45,6 +46,8 @@ export const healthResponseSchema = z.object({
   /** Changes when the server's data is restored or moved in. Older servers don't send it. */
   dataEpoch: z.uuid().optional(),
   protocol: z.int(),
+  /** The answer to `?challenge=` (ADR-0033). Servers before it leave it out. */
+  proof: z.string().max(128).optional(),
 });
 export type HealthResponse = z.infer<typeof healthResponseSchema>;
 

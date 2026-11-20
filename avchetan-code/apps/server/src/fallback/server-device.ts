@@ -24,6 +24,19 @@ import { createMemorySqliteExecutor } from './node-sqlite';
 
 const log = createLogger('server-device');
 
+/**
+ * The device reaches the server in-process with its own internal token, so the health check's
+ * proof (made with the users' token, ADR-0033) can never match it, and there is nothing to prove:
+ * its challenge is left out, which the engine treats as a saved address of an older server.
+ */
+const withoutChallenge =
+  (fetch: HttpFetch): HttpFetch =>
+  (input, init) => {
+    const url = new URL(String(input));
+    url.searchParams.delete('challenge');
+    return fetch(url.toString(), init);
+  };
+
 /** Never resolved: requests go straight to the app's own fetch. */
 const INTERNAL_URL = 'https://server.internal';
 /** How many waiting logs to look at per run; the copy then picks the oldest claimable one. */
@@ -121,7 +134,7 @@ export async function openServerDevice(deps: ServerDeviceDeps): Promise<ServerDe
   });
   const engine = createSyncEngine({
     store,
-    fetch: deps.fetch,
+    fetch: withoutChallenge(deps.fetch),
     secrets,
     network: alwaysOnline,
     scheduler,

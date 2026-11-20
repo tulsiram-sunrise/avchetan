@@ -4,7 +4,7 @@ import { FakeNetworkMonitor, ManualScheduler, MemorySecretStore } from '@avcheta
 import { describe, expect, it, vi } from 'vitest';
 import { saveConnection } from './config';
 import { createSyncEngine, type PullProgress, type SyncDevice } from './engine';
-import type { PushRejection } from './protocol';
+import { hubProof, type PushRejection, tokenKey } from './protocol';
 import { describeSync, INITIAL_STATUS, loadSyncStatus } from './status';
 
 /**
@@ -52,6 +52,12 @@ class FakeServer {
   dataEpoch = EPOCH;
   /** Other machines at some hosts: they answer health as another server, and nothing else. */
   readonly strangers = new Map<string, string>();
+  /** Hosts that don't answer at all, such as a home address while away. */
+  readonly unreachable = new Set<string>();
+  /** What `/v1/pairing` says the hub's addresses are. */
+  pairingUrls: string[] = [];
+  /** The token health proves it holds: another plays a hub that changed its token, or an impostor. */
+  proofToken = TOKEN;
 
   /** The next answer to `path`: an Error never gets there, 'pass' answers as usual. */
   next(path: string, answer: Scripted | Error | 'pass'): void {
@@ -69,7 +75,7 @@ class FakeServer {
     const body: unknown = init?.body ? JSON.parse(String(init.body)) : undefined;
     const token = new Headers(init?.headers).get('Authorization');
     this.calls.push({ host: url.host, path: url.pathname, query: url.searchParams, body, token });
-    if (this.down) throw new TypeError('fetch failed');
+    if (this.down || this.unreachable.has(url.host)) throw new TypeError('fetch failed');
     const stranger = this.strangers.get(url.host);
     if (stranger) {
       return json(200, { status: 'ok', version: 'other', serverId: stranger, protocol: 1 });
@@ -83,14 +89,21 @@ class FakeServer {
   private answer(url: globalThis.URL, body: unknown): unknown {
     const serverTime = '2026-10-26T10:00:00.000Z';
     switch (url.pathname) {
-      case '/v1/health':
+      case '/v1/health': {
+        const challenge = url.searchParams.get('challenge');
         return {
           status: 'ok',
           version: 'test',
           serverId: this.serverId,
           dataEpoch: this.dataEpoch,
           protocol: 1,
+          ...(challenge
+            ? { proof: hubProof(tokenKey(this.proofToken), this.serverId, challenge) }
+            : {}),
         };
+      }
+      case '/v1/pairing':
+        return { serverId: this.serverId, urls: this.pairingUrls };
       case '/v1/devices/register':
         return { deviceId: (body as { deviceId: string }).deviceId, serverTime };
       case '/v1/sync/push': {
@@ -479,6 +492,45 @@ describe('pulling', () => {
 describe('the server a device expects', () => {
   const OTHER = '0192a000-0000-7000-8000-00000000cccc';
   const HOME = 'https://hub.test';
+
+  it('learns where the hub is, and reaches it there when the saved addresses fail (§15)', async () => {
+    const device = await setup();
+    await saveConnection(device.store, new MemorySecretStore(), {
+      urls: ['http://192.168.1.5:8787', 'http://100.101.1.2:8787'],
+      token: TOKEN,
+      trustLocalNetwork: true,
+      serverId: SERVER_ID,
+    });
+    // The PC is on the phone's hotspot: a new address, and Tailscale down for the moment.
+    device.server.pairingUrls = ['http://192.168.43.20:8787', 'http://100.101.1.2:8787'];
+    await device.engine.syncNow();
+    expect(await device.status()).toMatchObject({ state: 'synced' });
+
+    device.server.unreachable.add('192.168.1.5:8787');
+    device.server.unreachable.add('100.101.1.2:8787');
+    device.server.calls.length = 0;
+    await device.addTask('Water the plants');
+    await device.engine.syncNow();
+
+    expect(await device.status()).toMatchObject({ state: 'synced' });
+    const pushedTo = device.server.calls.filter((call) => call.path === '/v1/sync/push');
+    expect(pushedTo.map((call) => call.host)).toEqual(['192.168.43.20:8787']);
+  });
+
+  it('sends no token to a saved address that cannot prove it holds it (ADR-0033)', async () => {
+    const device = await setup();
+    device.server.proofToken = 'another-token-that-is-long-enough-to-pass';
+
+    await device.engine.syncNow();
+
+    expect(device.server.calls.map((call) => [call.path, call.token])).toEqual([
+      ['/v1/health', null],
+    ]);
+    expect(await device.status()).toMatchObject({
+      state: 'unauthorized',
+      errorCode: 'unauthorized',
+    });
+  });
 
   it('skips another machine at the home address and reaches its hub at the next one', async () => {
     const device = await setup();

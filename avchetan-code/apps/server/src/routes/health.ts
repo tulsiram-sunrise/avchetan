@@ -1,5 +1,5 @@
 import { createLogger, toAppError } from '@avchetan/shared';
-import { PROTOCOL_VERSION } from '@avchetan/sync/protocol';
+import { CHALLENGE_PATTERN, hubProof, PROTOCOL_VERSION } from '@avchetan/sync/protocol';
 import { sql } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { ApiError } from '../api-error';
@@ -22,12 +22,19 @@ export function healthRoutes({ db, identity, version, nowMs = Date.now }: AppDep
         throw new ApiError(503, 'unavailable', 'The database is not answering');
       }
     }
+    // A device's challenge, answered with proof that this server holds the token (ADR-0033).
+    const challenge = c.req.query('challenge');
+    const proof =
+      challenge && CHALLENGE_PATTERN.test(challenge)
+        ? hubProof(identity.tokenHash, identity.serverId, challenge)
+        : undefined;
     return c.json({
       status: 'ok',
       version,
       serverId: identity.serverId,
       dataEpoch: identity.dataEpoch,
       protocol: PROTOCOL_VERSION,
+      ...(proof ? { proof } : {}),
     });
   });
 }

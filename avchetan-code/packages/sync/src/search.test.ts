@@ -3,10 +3,12 @@ import type { HttpFetch } from '@avchetan/shared';
 import { MemorySecretStore } from '@avchetan/shared/testing';
 import { describe, expect, it } from 'vitest';
 import { saveConnection } from './config';
+import { hubProof, PROTOCOL_VERSION, tokenKey } from './protocol';
 import { SIMILAR_SHOWN, similarEntries } from './search';
 
 const HUB = 'http://127.0.0.1:8787';
 const TOKEN = 'a-sync-token-that-is-long-enough-to-pass-32';
+const SERVER = '0192a000-0000-7000-8000-0000000000aa';
 
 /** A hub whose `/v1/search` returns these entry IDs, closest first; records each request. */
 function hub(
@@ -15,7 +17,19 @@ function hub(
   scores: readonly number[] = [],
 ): HttpFetch & { sent: unknown[] } {
   const sent: unknown[] = [];
-  const fetch = async (_input: RequestInfo | URL, init?: RequestInit) => {
+  const fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = new URL(String(input));
+    if (url.pathname === '/v1/health') {
+      const challenge = url.searchParams.get('challenge') ?? '';
+      const proof = hubProof(tokenKey(TOKEN), SERVER, challenge);
+      const health = {
+        status: 'ok',
+        version: 'test',
+        serverId: SERVER,
+        protocol: PROTOCOL_VERSION,
+      };
+      return new Response(JSON.stringify({ ...health, proof }));
+    }
     sent.push(JSON.parse(String(init?.body)));
     const results = ids.map((rawLogId, i) => ({
       rawLogId,
