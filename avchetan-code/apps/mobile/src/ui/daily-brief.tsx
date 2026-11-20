@@ -110,17 +110,26 @@ function BriefCard(props: { brief: Activity; day: string; today: string; making:
   const since = entries.data ? entriesSinceBrief(entries.data, props.brief) : 0;
   const tasks = rolledOver.data ?? [];
   const waiting = waitingDue.data ?? [];
-  const bullets: { key: string; content: ReactNode }[] =
+  const behind = tasks.length > 0 || waiting.length > 0;
+  const bullets: { key: string; content: ReactNode; mark?: BriefMark }[] =
     'lines' in text
       ? text.lines.map((line, index) => ({ key: `line-${index}`, content: line }))
       : [
-          { key: 'moved', content: text.movedForward },
-          { key: 'friction', content: text.friction },
+          { key: 'well', mark: 'well', content: text.wentWell },
           {
-            key: 'rolled',
+            key: 'attention',
+            mark: 'attention',
+            // What is behind belongs here too, even when the model found nothing to say (§10).
             content:
-              tasks.length > 0 || waiting.length > 0 ? (
-                <RolledOver tasks={tasks} waiting={waiting} today={props.today} />
+              text.needsAttention || behind ? (
+                <View className="gap-1">
+                  {text.needsAttention ? (
+                    <Text className="text-sm text-ink">{text.needsAttention}</Text>
+                  ) : null}
+                  {behind ? (
+                    <RolledOver tasks={tasks} waiting={waiting} today={props.today} />
+                  ) : null}
+                </View>
               ) : null,
           },
           { key: 'observation', content: text.observation },
@@ -134,18 +143,35 @@ function BriefCard(props: { brief: Activity; day: string; today: string; making:
       <Text className="text-xs font-semibold uppercase tracking-wide text-inkMuted">
         Daily brief · {formatMadeAt(props.brief.updatedAt, props.day, systemTimeZone())}
       </Text>
-      {bullets.map(({ key, content }) =>
-        content === null ? null : (
+      {bullets.map(({ key, content, mark }) => {
+        if (content === null) return null;
+        const marked = mark ? BRIEF_MARKS[mark] : null;
+        const body =
+          typeof content === 'string' ? (
+            <Text className="text-sm text-ink">{content}</Text>
+          ) : (
+            content
+          );
+        return (
           <View key={key} className="flex-row gap-2">
-            <Text className="text-sm text-ink">•</Text>
-            {typeof content === 'string' ? (
-              <Text className="flex-1 text-sm text-ink">{content}</Text>
-            ) : (
-              <View className="flex-1">{content}</View>
-            )}
+            <Text
+              importantForAccessibility="no"
+              accessibilityElementsHidden
+              className={
+                marked ? `w-3 text-center text-sm font-bold ${marked.tone}` : 'text-sm text-ink'
+              }
+            >
+              {marked ? marked.symbol : '•'}
+            </Text>
+            <View className="flex-1 gap-0.5">
+              {marked ? (
+                <Text className="text-sm font-semibold text-ink">{marked.label}</Text>
+              ) : null}
+              {body}
+            </View>
           </View>
-        ),
-      )}
+        );
+      })}
       <View className="items-start gap-2">
         <FailedBrief day={props.day} />
         {since > 0 && !props.making && !make.isPending ? (
@@ -164,6 +190,14 @@ function BriefCard(props: { brief: Activity; day: string; today: string; making:
     </View>
   );
 }
+
+type BriefMark = 'well' | 'attention';
+
+/** The brief's first two lines, each with a mark and a colour (§10); the label carries the meaning. */
+const BRIEF_MARKS: Record<BriefMark, { symbol: string; label: string; tone: string }> = {
+  well: { symbol: '✓', label: 'Went well', tone: 'text-ok' },
+  attention: { symbol: '!', label: 'Needs attention', tone: 'text-warn' },
+};
 
 function RolledOver(props: { tasks: Task[]; waiting: PromiseItem[]; today: string }) {
   const edit = useEditTask();

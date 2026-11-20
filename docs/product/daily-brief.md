@@ -12,10 +12,13 @@ At the top of a day in Days, in place of the summary line:
 
 ```
 ┌ Daily brief · made by your hub at 21:04 ───────────┐
-│ • Moved forward: schema design, 2 workouts;         │
-│   3 h 10 min of work logged.                        │
-│ • Friction: shoulder pain (twice), low energy.      │
-│ • 2 tasks rolled over:                              │
+│ ✓ Went well                                         │
+│   Schema design and 2 workouts; 3 h 10 min of work  │
+│   logged, and you watered the plants.               │
+│ ! Needs attention                                   │
+│   The report is 40% done and the walk was missed;   │
+│   shoulder pain (twice), low energy.                │
+│   2 tasks rolled over:                              │
 │     Send the invoice        [Move to tomorrow]      │
 │     Call the plumber        [Move to tomorrow]      │
 │ • Pain showed up on both workout days.              │
@@ -23,8 +26,9 @@ At the top of a day in Days, in place of the summary line:
 └─────────────────────────────────────────────────────┘
 ```
 
-- **Four bullets:** (1) what moved forward and the total time logged, (2) friction (pain, fatigue, blockers), (3) rolled-over tasks, (4) one observation or suggestion. A bullet with nothing to say is left out (no friction → no friction bullet).
-- **Bullet 3 is built by the app, not the model:** the tasks that are still open and were due on that day or earlier, read live from `tasks`, each with **Move to tomorrow** (due date becomes the day after *today*). A task done or moved since disappears from the list. The model only gets the count.
+- **Three parts** (since v0.5.0, [tasks-routines-reminders §10](tasks-routines-reminders.md#10-the-brief-went-well-and-needs-attention)): **✓ Went well** (what got done, the total time logged, chores ticked) and **! Needs attention** (what was missed, then pain, fatigue and blockers), each with its mark in a colour and its name in words, then one observation or suggestion. *Needs attention* is left out when nothing needs it. Briefs made before v0.5.0 (*Moved forward*, *Friction*) show under the new names.
+- **What was missed is counted by the app:** tasks due that day and not done, tasks only partly done (with their percentage), chores not ticked, and assumed routines (sleep, work hours) marked as not having happened. A cancelled task or a skipped chore was a choice and is left out. The model only puts these into words.
+- **The rolled-over tasks are built by the app, not the model,** and sit under *Needs attention*: the tasks that are still open and were due on that day or earlier, read live from `tasks`, each with **Move to tomorrow** (due date becomes the day after *today*). A task done or moved since disappears from the list. The model only gets the count.
 - **Today**, before the brief exists: the summary line as now, plus **Make the brief now**.
 - **A day without entries gets no brief** and costs no model call.
 - **Make it again** replaces the brief, for example after entries were added late. Deleting a brief hides it, and the app does not make it again by itself.
@@ -53,8 +57,8 @@ At the top of a day in Days, in place of the summary line:
 
 In `@avchetan/core` (`analysis/daily-brief.ts`), on a `ClientStore`, so the apps and the server's device share it:
 
-1. **Facts in code** (models are bad at arithmetic, as in Ask): entries that day (`dayEntries`), activities by category with their main metric totals, total `duration_min`, tasks done, open tasks rolled over (count), friction tags (tags under `health/` and tags such as `pain`, `fatigue`, `blocked`, `low-energy` and their children), and the entries' text.
-2. **One structured call** to the analysis model (`generateStructured`, no tools, so small CPU models manage it): a Zod schema with `movedForward`, `friction` (nullable) and `observation`, each one sentence. Prompt in `prompts/daily-brief.v1.ts`, an eval fixture set beside the extraction fixtures.
+1. **Facts in code** (models are bad at arithmetic, as in Ask): entries that day (`dayEntries`), activities by category with their main metric totals, total `duration_min`, tasks done, chores done, what was missed (above), open tasks rolled over (count), friction tags (tags under `health/` and tags such as `pain`, `fatigue`, `blocked`, `low-energy` and their children), and the entries' text.
+2. **One structured call** to the analysis model (`generateStructured`, no tools, so small CPU models manage it): a Zod schema with `wentWell`, `needsAttention` (nullable) and `observation`, each one sentence. Prompt in `prompts/daily-brief.v3.ts`, an eval fixture set beside the extraction fixtures.
 3. **Saved** through the activities repository: category `reflection`, `origin = 'system'`, `title = 'Daily brief'`, `notes` = the bullets as text, `metrics = { kind: 'daily_brief' }`, `logged_date` = the day, ID `derivedId('daily-brief', date)`. One `llm_runs` row with `purpose = 'analysis'`.
 
 System rows are not entries: Days' dots and summary line, Ask's counting tools and the extraction vocabulary skip activities with `origin = 'system'`.

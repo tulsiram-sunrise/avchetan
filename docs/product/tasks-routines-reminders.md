@@ -130,6 +130,8 @@ Extraction stores when an activity happened in `occurred_at`:
 
 The brief's first two lines are **✓ Went well** and **! Needs attention**, each with a mark and a colour. They replace *Moved forward* and *Friction*. *Needs attention* includes what was missed: tasks due and not done, tasks only partly done, chores not ticked, and assumed routines an entry contradicts. Cancelled tasks are left out. All of this is computed in code like the brief's other facts; the AI only phrases it. There is no schema change.
 
+**Built on Day 20 (2026-11-21).** Prompt `daily-brief.v3`: the model writes `wentWell`, `needsAttention` (nullable) and `observation`; `collectBriefFacts` adds chores done and a *Missed* block (due and not done, partly done with the percentage, chores still open, assumed routines marked skipped), leaving out cancelled tasks, skipped chores and anything from a private entry when the model is in the cloud. *An assumed routine an entry contradicts* is a skipped day of it, set by hand from the checklist for now. The notes keep the same three-line shape, so briefs made before read as Went well and Needs attention. Both apps show the two lines with a coloured mark (✓ green, ! amber) and the name in words, and the rolled-over tasks under Needs attention.
+
 ## 11. Day coverage
 
 This is a setting, off by default. It shows the hours accounted for out of 24: logged `duration_min`, plus assumed routines (sleep, work) on days with no entry that contradicts them, plus 15% of the day for small things nobody logs. The rest is shown as **unaccounted**, never *wasted*, because an unlogged hour may have been rest.

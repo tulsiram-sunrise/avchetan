@@ -178,8 +178,8 @@ describe('weekly review', () => {
   it('is made with Sunday’s brief', async () => {
     await sleepMonth();
     const { llm } = fakeLlm({
-      movedForward: 'You checked in.',
-      friction: null,
+      wentWell: 'You checked in.',
+      needsAttention: null,
       observation: 'Sleep more.',
       findings: [],
     });
