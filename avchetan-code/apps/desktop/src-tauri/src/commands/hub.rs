@@ -138,6 +138,8 @@ struct Inner {
     quick_crashes: u32,
     error: Option<&'static str>,
     logs: VecDeque<String>,
+    /// The hub's announcement on the local network while it runs (§15).
+    announcement: Option<crate::mdns::Announcement>,
 }
 
 #[derive(Clone)]
@@ -170,6 +172,7 @@ impl HubState {
                 quick_crashes: 0,
                 error: None,
                 logs: VecDeque::new(),
+                announcement: None,
             })),
             operations: Arc::new(Mutex::new(())),
         }
@@ -276,6 +279,8 @@ impl HubState {
             }
             if line.starts_with("[server] listening") && inner.phase == Phase::Starting {
                 inner.phase = Phase::Running;
+                // Phones on this network can find it now, without Tailscale.
+                inner.announcement = crate::mdns::Announcement::register(inner.config.port);
                 // The hub has its new data epoch by now (it's set before it listens).
                 crate::error::warn_on_err(
                     "clear epoch marker",
@@ -314,6 +319,7 @@ impl HubState {
             };
             inner.child = None;
             inner.stdin = None;
+            inner.announcement = None;
             let quick = inner
                 .started_at
                 .is_some_and(|started| started.elapsed() < QUICK_CRASH);
@@ -347,6 +353,7 @@ impl HubState {
             let mut inner = self.lock();
             inner.generation += 1;
             inner.phase = Phase::Off;
+            inner.announcement = None;
             (inner.child.take(), inner.stdin.take())
         };
         drop(stdin);

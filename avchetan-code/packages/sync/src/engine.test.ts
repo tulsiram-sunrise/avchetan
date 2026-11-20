@@ -140,7 +140,13 @@ class FakeServer {
   }
 }
 
-type SetupOptions = { pullPageSize?: number; pushBatchSize?: number; online?: boolean };
+type SetupOptions = {
+  pullPageSize?: number;
+  pushBatchSize?: number;
+  online?: boolean;
+  /** What looking on the local network finds (mDNS, §15). */
+  discover?: () => Promise<string[]>;
+};
 
 async function setup(options: SetupOptions = {}) {
   const server = new FakeServer();
@@ -161,6 +167,7 @@ async function setup(options: SetupOptions = {}) {
     onPullProgress: (value) => progress.push(value),
     ...(options.pullPageSize ? { pullPageSize: options.pullPageSize } : {}),
     ...(options.pushBatchSize ? { pushBatchSize: options.pushBatchSize } : {}),
+    ...(options.discover ? { discover: options.discover } : {}),
   });
   return {
     server,
@@ -515,6 +522,38 @@ describe('the server a device expects', () => {
     expect(await device.status()).toMatchObject({ state: 'synced' });
     const pushedTo = device.server.calls.filter((call) => call.path === '/v1/sync/push');
     expect(pushedTo.map((call) => call.host)).toEqual(['192.168.43.20:8787']);
+  });
+
+  it('looks on the local network only when no known address answers, and remembers it', async () => {
+    let looked = 0;
+    const device = await setup({
+      discover: async () => {
+        looked += 1;
+        return ['http://192.168.43.20:8787', 'http://192.168.43.99:8787'];
+      },
+    });
+    await saveConnection(device.store, new MemorySecretStore(), {
+      urls: ['http://192.168.1.5:8787'],
+      token: TOKEN,
+      trustLocalNetwork: true,
+      serverId: SERVER_ID,
+    });
+    await device.engine.syncNow();
+    expect(looked).toBe(0);
+
+    device.server.unreachable.add('192.168.1.5:8787');
+    device.server.unreachable.add('192.168.43.99:8787');
+    await device.addTask('Water the plants');
+    await device.engine.syncNow();
+
+    expect(looked).toBe(1);
+    expect(await device.status()).toMatchObject({ state: 'synced' });
+    const pushes = device.server.calls.filter((call) => call.path === '/v1/sync/push');
+    expect(pushes.at(-1)?.host).toBe('192.168.43.20:8787');
+    // Next time it is tried with the other addresses, without looking again.
+    await device.addTask('Call the plumber');
+    await device.engine.syncNow();
+    expect(looked).toBe(1);
   });
 
   it('sends no token to a saved address that cannot prove it holds it (ADR-0033)', async () => {

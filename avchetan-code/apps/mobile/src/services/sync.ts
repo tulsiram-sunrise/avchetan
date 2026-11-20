@@ -2,6 +2,7 @@ import { loadBriefSettings, loadExtractionMode, type PendingProcessor } from '@a
 import type { ClientStore } from '@avchetan/db/sqlite';
 import { systemTimeZone } from '@avchetan/shared';
 import { createSyncEngine, type SyncEngine } from '@avchetan/sync';
+import { discoverHubs } from '../../modules/hub-discovery';
 import type { Platform } from '../platform';
 import { refreshAll } from '../query-client';
 import { usePullProgress } from '../stores/pull-progress';
@@ -23,6 +24,8 @@ export function createSyncService(
   return createSyncEngine({
     store,
     fetch,
+    // When no known address answers: the hub announcing itself on this network (§15).
+    discover: () => discoverHubs(),
     secrets,
     network,
     scheduler,
