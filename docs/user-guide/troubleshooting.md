@@ -261,7 +261,7 @@ If the lock was on and you removed the device's lock, Avchetan turned the app lo
 **"Couldn't check this PC's network."** Avchetan asks Windows PowerShell about the network and firewall, and it didn't answer. Restart Avchetan. Phones can still connect if the network is Private and the firewall rule exists ([Setup: Home Hub, Let your phone reach the PC](setup-home-hub.md#let-your-phone-reach-the-pc)).
 
 ## tailscale
-**"Tailscale isn't running."** This is optional. To sync with your phone away from home, follow [Use your phone away from home](remote-access-tailscale.md).
+**"Tailscale isn't connected."** This is optional. Tailscale isn't installed, or it's switched off or signed out on this PC (the Tailscale icon by the clock shows which). To sync with your phone away from home, follow [Use your phone away from home](remote-access-tailscale.md).
 
 ## database_url_invalid
 **Cloud server log: "DATABASE_URL is not a valid address."** Usually the database password contains `#`, `/`, `?` or `%`, which break the address. Reset the database password to one with only letters and numbers, build the line again ([Setup: Cloud server](setup-cloud.md#part-1--the-database-supabase), Part 1, step 4), and paste it into `DATABASE_URL`. Also check that it starts with `postgresql://`, has no spaces, and that `[YOUR-PASSWORD]` was replaced including the square brackets.

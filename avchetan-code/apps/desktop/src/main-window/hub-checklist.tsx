@@ -193,7 +193,7 @@ function NetworkRows(props: { port: number }) {
           </Row>
         )
       ) : (
-        <Row state="optional" title="Away from home: Tailscale isn't running (optional)">
+        <Row state="optional" title="Away from home: Tailscale isn't connected (optional)">
           <span className="text-ink-muted">
             Install it on this PC and your phone to sync from anywhere.{' '}
             <HelpLink code="tailscale" />

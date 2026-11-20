@@ -44,7 +44,8 @@ function Has-Rule($name) {{
   $ports = @($rule | Get-NetFirewallPortFilter | ForEach-Object {{ [string]$_.LocalPort }})
   return $ports -contains '{port}'
 }}
-$tailscale = Get-NetIPAddress -AddressFamily IPv4 -InterfaceAlias Tailscale | Select-Object -First 1
+$tailscale = Get-NetIPAddress -AddressFamily IPv4 -InterfaceAlias Tailscale |
+  Where-Object {{ $_.IPAddress -like '100.*' }} | Select-Object -First 1
 @{{
   networks = $networks
   rule = (Has-Rule '{RULE}')
@@ -198,5 +199,11 @@ mod tests {
         assert!(script.contains("-DisplayName 'Avchetan hub' -Direction Inbound -Protocol TCP -LocalPort 8787 -Profile Private"));
         assert!(script.contains("-RemoteAddress 100.64.0.0/10"));
         assert!(check_script(9000).contains("-contains '9000'"));
+    }
+
+    #[test]
+    fn takes_only_a_tailscale_address() {
+        // A stopped Tailscale leaves its adapter with a 169.254.x.x address.
+        assert!(check_script(8787).contains("Where-Object { $_.IPAddress -like '100.*' }"));
     }
 }
