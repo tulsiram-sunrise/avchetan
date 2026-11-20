@@ -103,5 +103,11 @@ export const sqliteMigrations: readonly Migration[] = [
       "ALTER TABLE `tasks` ADD `routine_id` text;",
       "ALTER TABLE `tasks` ADD `routine_date` text;"
     ]
+  },
+  {
+    "tag": "0008_task_reminders",
+    "statements": [
+      "ALTER TABLE `tasks` ADD `remind_at` text;"
+    ]
   }
 ];

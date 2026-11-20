@@ -152,5 +152,11 @@ export const pgMigrations: readonly Migration[] = [
       "ALTER TABLE \"tasks\" ADD COLUMN \"routine_id\" uuid;",
       "ALTER TABLE \"tasks\" ADD COLUMN \"routine_date\" date;"
     ]
+  },
+  {
+    "tag": "0012_task_reminders",
+    "statements": [
+      "ALTER TABLE \"tasks\" ADD COLUMN \"remind_at\" timestamp(3) with time zone;"
+    ]
   }
 ];

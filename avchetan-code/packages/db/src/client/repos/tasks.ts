@@ -1,17 +1,20 @@
 import {
   daysBetween,
+  isUtcInstant,
   isValidLocalDate,
   type LocalDate,
   localDate,
   type TimeZone,
+  type UtcInstant,
   ValidationError,
 } from '@avchetan/shared';
-import { and, isNull } from 'drizzle-orm';
-import { tasks } from '../../schema/sqlite/tables';
-import type { Tx } from '../database';
+import { and, asc, eq, gt, isNull } from 'drizzle-orm';
+import { rawLogs, tasks } from '../../schema/sqlite/tables';
+import type { ClientDb, Tx } from '../database';
 import {
   getById,
   insertSynced,
+  live,
   type RepoDeps,
   type Row,
   type RowPatch,
@@ -21,6 +24,7 @@ import {
 import { softDeleteLinksTo } from './cascade';
 import { recordCorrection } from './corrections';
 import { checkToday, makeNextRepeat } from './repeat-tasks';
+import { movedReminder } from './task-reminders';
 
 export type Task = Row<typeof tasks>;
 
@@ -105,6 +109,7 @@ export function tasksRepo(deps: RepoDeps) {
         cancelledAt: null,
         routineId: null,
         routineDate: null,
+        remindAt: null,
       });
     },
 
@@ -128,9 +133,12 @@ export function tasksRepo(deps: RepoDeps) {
           )
         : false;
       await recordCorrection(tx, deps, 'task', current, rest);
+      const remindAt =
+        dueDate !== undefined && current ? movedReminder(current, dueDate) : undefined;
       return updateSynced(tx, deps, tasks, id, {
         ...rest,
         ...(dueDate !== undefined ? { dueDate } : {}),
+        ...(remindAt !== undefined ? { remindAt } : {}),
         isUserEdited:
           current?.origin === 'extraction' && fixed ? true : (current?.isUserEdited ?? false),
       });
@@ -192,6 +200,38 @@ export function tasksRepo(deps: RepoDeps) {
       });
       await makeNextRepeat(tx, deps, task, today);
       return task;
+    },
+
+    /** Remind at an instant (§7), or no reminder with null. Each ringing device schedules it. */
+    setReminder(tx: Tx, id: string, remindAt: UtcInstant | null): Promise<Task> {
+      if (remindAt !== null && !isUtcInstant(remindAt)) {
+        throw new ValidationError('invalid_time', 'Invalid reminder time', {
+          details: { remindAt },
+        });
+      }
+      return updateSynced(tx, deps, tasks, id, { remindAt });
+    },
+
+    /**
+     * Open tasks whose reminder comes after `after`, soonest first: what a ringing device
+     * schedules. `private` says the task came from a private entry, so its title stays hidden.
+     */
+    async reminders(
+      db: ClientDb,
+      after: UtcInstant,
+      limit: number,
+    ): Promise<{ task: Task; private: boolean }[]> {
+      const rows = await db
+        .select({ task: tasks, privacy: rawLogs.privacy })
+        .from(tasks)
+        .leftJoin(rawLogs, eq(rawLogs.id, tasks.rawLogId))
+        .where(and(live(tasks), openTaskWhere(), gt(tasks.remindAt, after)))
+        .orderBy(asc(tasks.remindAt), asc(tasks.id))
+        .limit(limit);
+      return rows.map(({ task, privacy }) => ({
+        task,
+        private: privacy !== null && privacy !== 'normal',
+      }));
     },
 
     /** Back to open, from done or cancelled. Progress is kept: it was real work. */

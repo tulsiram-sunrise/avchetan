@@ -170,6 +170,7 @@ export const tasks = pgTable(
     /** A repeating task: its routine (kind `task`) and the occurrence it stands for (§6). */
     routineId: uuid('routine_id'),
     routineDate: localDate('routine_date'),
+    remindAt: instant('remind_at'),
   },
   (t) => [
     seqIndex('tasks', t),

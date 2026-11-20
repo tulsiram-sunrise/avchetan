@@ -1,9 +1,17 @@
 import { loadExtractionSettings, MAX_ATTEMPTS, someModelAnswers } from '@avchetan/core';
+import { getSetting, setSetting } from '@avchetan/db/sqlite';
 import { createLogger, toAppError } from '@avchetan/shared';
+import { loadSyncStatus } from '@avchetan/sync';
 import * as BackgroundTask from 'expo-background-task';
 import * as TaskManager from 'expo-task-manager';
+import { z } from 'zod';
 import { type AppServices, getAppServices } from '../app-services';
-import { type BackgroundPlan, backgroundPlan } from './background-plan';
+import {
+  type BackgroundPlan,
+  backgroundPlan,
+  type UnreachableState,
+  unreachableBackoff,
+} from './background-plan';
 
 const log = createLogger('background');
 
@@ -12,9 +20,39 @@ const TASK_NAME = 'avchetan-process-pending';
 const MINIMUM_INTERVAL_MINUTES = 15;
 /** Fits the time Android allows. Anything left waits for the next run. */
 const MAX_LOGS_PER_RUN = 3;
+/** This phone's wait after an unreachable hub (settings stay on the device). */
+const UNREACHABLE_SETTING = 'background.unreachable';
+
+const unreachableSchema = z.object({
+  tries: z.int().min(1),
+  since: z.string(),
+  until: z.string(),
+});
+
+async function loadUnreachable({ store }: AppServices): Promise<UnreachableState | null> {
+  const parsed = unreachableSchema.safeParse(await getSetting(store.db, UNREACHABLE_SETTING));
+  return parsed.success ? parsed.data : null;
+}
+
+/** Remembers whether the sync just run reached the hub, for the next runs' wait. */
+async function noteSyncOutcome(services: AppServices): Promise<void> {
+  const { store } = services;
+  const { state } = await loadSyncStatus(store);
+  const outcome =
+    state === 'synced' ? 'reached' : state === 'server_unreachable' ? 'unreachable' : 'other';
+  const saved = await loadUnreachable(services);
+  const lastPullAt = await store.sync.getState('last_pull_at');
+  // A pull since the last failure starts the waits from 30 minutes again.
+  const previous = saved && !(lastPullAt && lastPullAt > saved.since) ? saved : null;
+  const next = unreachableBackoff(previous, outcome, store.clock.now());
+  if (next === previous) return;
+  if (next) log.info('background sync waits', { tries: next.tries });
+  await store.write((tx) => setSetting(tx, UNREACHABLE_SETTING, next, store.clock.now()));
+}
 
 /** Reads only the local database: deciding to skip a run must cost nothing. */
-async function planRun({ store }: AppServices): Promise<BackgroundPlan> {
+async function planRun(services: AppServices): Promise<BackgroundPlan> {
+  const { store } = services;
   const now = store.clock.now();
   const { models } = await loadExtractionSettings(store);
   const [outbox, claimable] = await Promise.all([
@@ -33,6 +71,7 @@ async function planRun({ store }: AppServices): Promise<BackgroundPlan> {
     toSend: outbox.length,
     toOrganize: claimable.length,
     lastPullAt: (await store.sync.getState('last_pull_at')) ?? null,
+    unreachable: await loadUnreachable(services),
     now,
   });
 }
@@ -58,7 +97,10 @@ TaskManager.defineTask(TASK_NAME, async () => {
     const plan = await planRun(services);
     if (!plan.sync && !plan.organize) return BackgroundTask.BackgroundTaskResult.Success;
     // Sync first: another device or the server may have organized some of these already.
-    if (plan.sync) await services.sync.syncNow();
+    if (plan.sync) {
+      await services.sync.syncNow();
+      await noteSyncOutcome(services);
+    }
     // Waited for, so Android doesn't put the app to sleep before the results are sent.
     if (plan.organize && (await organize(services))) await services.sync.syncNow();
     return BackgroundTask.BackgroundTaskResult.Success;

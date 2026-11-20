@@ -108,6 +108,8 @@ The phone already does little in the background: Android runs one task at most e
 
 **Result (2026-11-15, the author's phone, two periods since a full charge):** Avchetan's share of the phone's battery use was 1.35% and 3.31% (the second period about 2% of a full charge); CPU about 3 min per period, almost all in the background; data under 100 KB. The first period kept the phone awake 17 min 31 s for 3 min of CPU: waiting, not working. The likely cause: away from home, a background run called the Ollama on the PC, which no one answered, and a local model's call waits up to 3 minutes (and used up one of the entry's tries). **Fixed in v0.4.0:** a background run reads the local database first and does nothing when nothing waits to be sent or organized and the last pull is under an hour old (`backgroundPlan`); before organizing, `someModelAnswers` asks Ollama for its model list (5 s) and leaves entries for a later run when it doesn't answer.
 
+**Second result (2026-11-20, v0.4.0, a day on mobile data):** 2.17%, 1 min 11 s CPU, but 12 min 39 s kept awake: still waiting more than working. Each background sync that can't reach the hub waits up to 4 s on every address, every 15 minutes. **Fixed in v0.5.0 (Day 16):** after a background sync finds the hub unreachable, the next runs leave syncing alone for 30 minutes, then 1, 2 and at most 4 hours (`unreachableBackoff`); a sync that reaches the hub, or opening the app at home, starts over. Organizing is unaffected. To be measured again after v0.5.0.
+
 ## 9. Added after the baseline
 
 Decided 2026-11-11, after the [performance baseline](../roadmap.md#phase-8--finding-and-using-data-v040) and the user's own observations:

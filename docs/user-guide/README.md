@@ -26,6 +26,7 @@ Avchetan is a personal logger and planner. Type (or say) anything — a workout,
 
 ## More
 
+- [Reminders](reminders.md): a time on a task, which devices ring, and ringing at the exact minute
 - [Daily brief](daily-brief.md): a short look back at each day, the evening reminder, and the [Your week](daily-brief.md#your-week-sundays) card on Sundays
 - [Private entries](ai-models.md#private-entries): `!private` and private tags keep an entry away from cloud AI
 - [Window context and rules](capture-on-windows.md#window-context-and-rules) and [clipboard snap](capture-on-windows.md#attach-the-clipboard) on the PC

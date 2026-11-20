@@ -16,8 +16,10 @@ import { queryClient, refreshAll } from '../src/query-client';
 import { appLeft, appReturned, startAppLock } from '../src/services/app-lock';
 import { registerBackgroundWork } from '../src/services/background';
 import { reminderDay, scheduleBriefReminder } from '../src/services/brief-reminder';
-import { choreEveningDay, scheduleChoreEvening } from '../src/services/chore-evening';
+import { choreEveningDay } from '../src/services/chore-evening';
 import { watchAppState } from '../src/services/foreground';
+import { scheduleNotifications } from '../src/services/notifications';
+import { isTaskReminder } from '../src/services/task-reminders';
 import { ServicesProvider } from '../src/services-context';
 import { AppTheme } from '../src/theme/theme';
 import { lockedScreenLayout } from '../src/ui/lock-screen';
@@ -45,11 +47,16 @@ Notifications.setNotificationHandler({
 
 /**
  * A tapped brief reminder opens Days on its day, which makes or fetches the brief; the chore
- * notification opens the day its checklist is on.
+ * notification opens the day its checklist is on; a task reminder opens Tasks.
  */
 function OpenTappedReminder() {
   const response = Notifications.useLastNotificationResponse();
   useEffect(() => {
+    if (isTaskReminder(response ?? null)) {
+      router.navigate('/tasks');
+      void Notifications.clearLastNotificationResponseAsync();
+      return;
+    }
     const day = reminderDay(response ?? null) ?? choreEveningDay(response ?? null);
     if (!day) return;
     router.navigate({ pathname: '/', params: { day } });
@@ -111,6 +118,7 @@ function AppRoutes({ startup }: { startup: Startup }) {
             <Stack.Screen name="settings/sync" options={{ title: 'Sync' }} />
             <Stack.Screen name="settings/data" options={{ title: 'Your data' }} />
             <Stack.Screen name="settings/brief" options={{ title: 'Daily brief' }} />
+            <Stack.Screen name="settings/reminders" options={{ title: 'Reminders' }} />
             <Stack.Screen name="settings/private-tags" options={{ title: 'Private tags' }} />
             <Stack.Screen name="settings/voice" options={{ title: 'Voice' }} />
             <Stack.Screen name="settings/app-lock" options={{ title: 'App lock' }} />
@@ -147,7 +155,7 @@ export default function RootLayout() {
           services.sync.start();
           services.brief.start();
           void scheduleBriefReminder(services.store);
-          void scheduleChoreEvening(services.store);
+          void scheduleNotifications(services.store);
           void registerBackgroundWork();
           stopWatching = watchAppState(AppState, {
             onActive: () => {
@@ -158,7 +166,7 @@ export default function RootLayout() {
               void services.sync.syncNow();
               void services.brief.wake();
               void scheduleBriefReminder(services.store);
-              void scheduleChoreEvening(services.store);
+              void scheduleNotifications(services.store);
             },
             // Timers stop now, so a change waiting out the sync debounce would wait until the app
             // came back. Requests still run, so send it before leaving.

@@ -76,7 +76,7 @@ An entry's tags show under it on **Days**; tap one to open the tag's page. **Mor
 
 ## The More tab
 
-**More** is grouped: **Your stuff** (Routines, People, Tags, Projects, Trends), **AI and capture** (AI models, Voice, Daily brief, What Avchetan learned), **Privacy** (App lock, Private tags), **Connection and data** (Sync, Your data, Setup check) and **Help** (User guide, Report a problem, Log, Run setup again).
+**More** is grouped: **Your stuff** (Routines, Reminders, People, Tags, Projects, Trends), **AI and capture** (AI models, Voice, Daily brief, What Avchetan learned), **Privacy** (App lock, Private tags), **Connection and data** (Sync, Your data, Setup check) and **Help** (User guide, Report a problem, Log, Run setup again).
 
 ## Change or fix an entry
 
@@ -105,6 +105,7 @@ Tasks found in your entries appear on the **Tasks** tab: *Overdue*, *Today*, *Co
   - **Mark done** with a note on how it went (optional).
   - Save how much is **partly done**, from 1 to 99%. The task stays open and shows *40% done*.
   - **Move** it to **Tomorrow** or **Next week** (the Monday after this week).
+  - **Remind me** at a day and time; the task shows it (*⏰ Today 16:00*). **Change reminder** or **No reminder** changes it. Moving the task moves its reminder too ([Reminders](reminders.md)).
   - **Cancel task**: it's struck through and never counted as missed. Use **Delete** instead when it was never a task.
   - **Reopen** a done or cancelled task.
   - **Repeat** makes a task come back: every few days, on chosen weekdays, monthly or yearly, as for routines. The task shows how it repeats (*↻ Every week on Monday*). When you mark one done or cancel it, the next one appears with its date; finishing one late never adds the days you missed, the next is today at the earliest. Moving one doesn't change the others. **Change repeat** edits the rule, **Stop repeating** ends it and leaves the tasks you have. Repeating tasks don't appear under Routines.
@@ -127,7 +128,7 @@ The first time you open Routines it offers **ideas** (drink water, walk or exerc
 
 **Ticked from what you write.** When an entry says you did one of the day's chores (*watered the plants* while *Water plants* is open), it is ticked for you once the entry is organized, and shows *from your entry*. Tap **Undo** if it was wrong; it then stays unticked. Plans (*need to water the plants*) and other days (*yesterday*) tick nothing. A private entry is only matched by an AI model on your own hardware, like everything private.
 
-**Evening reminder.** At the bottom of **More → Routines**, **Remind me about chores left** sends one notification in the evening, only on days something is still unticked; tapping it opens Days. It is on at 20:00 unless you change it, and it is set for this phone only. Turning it on asks Android to allow notifications; if you refuse, it stays off and the screen says how to allow them later in Android's settings.
+**Evening reminder.** At the bottom of **More → Routines**, **Remind me about chores left** sends one notification in the evening, only on days something is still unticked; tapping it opens Days. It is on at 20:00 unless you change it, and it is set for this phone only. It stays quiet when the phone doesn't ring for reminders (**More → Reminders**, see [Reminders](reminders.md)). Turning it on asks Android to allow notifications; if you refuse, it stays off and the screen says how to allow them later in Android's settings.
 
 ## Search
 

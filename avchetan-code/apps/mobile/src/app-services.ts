@@ -7,9 +7,9 @@ import { createExpoPlatform, type Platform } from './platform';
 import { refreshAll } from './query-client';
 import { type BriefService, createBriefService } from './services/brief';
 import { type CaptureService, createCaptureService } from './services/capture';
-import { scheduleChoreEvening } from './services/chore-evening';
 import { startBackups } from './services/data';
 import { createExtractionService } from './services/extraction';
+import { scheduleNotifications } from './services/notifications';
 import { createSyncService } from './services/sync';
 
 const log = createLogger('app');
@@ -32,7 +32,7 @@ async function openAppServices(platform: Platform): Promise<AppServices> {
   const extraction = createExtractionService(store, platform, () => {
     refreshAll();
     // An entry may have ticked a chore, which takes it out of this evening's notification.
-    void scheduleChoreEvening(store);
+    void scheduleNotifications(store);
     // Off screen, Android has paused the timer the debounce waits on.
     if (AppState.currentState === 'active') sync.schedule();
     else void sync.syncNow();
@@ -46,7 +46,7 @@ async function openAppServices(platform: Platform): Promise<AppServices> {
     today: () => localDate(store.clock.now(), systemTimeZone()),
     onMade: () => {
       refreshAll();
-      void scheduleChoreEvening(store);
+      void scheduleNotifications(store);
     },
   });
   return {

@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
 import { useToday } from '../src/queries/days';
+import { useRing } from '../src/queries/reminders';
 import {
   useAddStarters,
   useChooseChoreEvening,
@@ -129,6 +130,7 @@ function StarterPicker(props: { added: ReadonlySet<string>; onClose: () => void 
  */
 function EveningReminder() {
   const evening = useChoreEvening();
+  const ring = useRing();
   const choose = useChooseChoreEvening();
   const [time, setTime] = useState('');
   const saved = evening.data?.settings;
@@ -181,6 +183,12 @@ function EveningReminder() {
           <Text className="text-sm text-danger">
             Android didn't allow notifications. Turn them on for Avchetan in Android's settings,
             then try again.
+          </Text>
+        ) : null}
+        {on && ring.data?.ring === false ? (
+          <Text className="text-sm text-inkMuted">
+            This phone doesn't ring for reminders, so it stays quiet. Turn it on under More →
+            Reminders.
           </Text>
         ) : null}
         <Failure error={choose.error ?? evening.error} />

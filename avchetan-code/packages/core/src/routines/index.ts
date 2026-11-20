@@ -13,6 +13,21 @@ export {
 } from './checklist';
 export { describeRoutine } from './describe';
 export {
+  describeReminder,
+  dueReminders,
+  loadRingSetting,
+  PC_LATE_LIMIT_MS,
+  planReminders,
+  REMINDERS_AHEAD,
+  type ReminderNotice,
+  type ReminderRow,
+  RING_SETTING,
+  reminderDraft,
+  reminderInstant,
+  reminderNotice,
+  saveRingSetting,
+} from './reminders';
+export {
   draftFromRule,
   newRuleDraft,
   type RuleDraft,

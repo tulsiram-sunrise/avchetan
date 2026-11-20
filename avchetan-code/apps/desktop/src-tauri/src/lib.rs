@@ -137,6 +137,7 @@ pub fn run() {
             tray::tray_set_context,
             context::context_recent_apps,
             notify::brief_notify,
+            notify::reminder_notify,
             voice::voice_start,
             voice::voice_stop,
             voice::voice_cancel,

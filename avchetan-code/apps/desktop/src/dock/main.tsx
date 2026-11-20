@@ -13,6 +13,7 @@ import { loadDraft } from '../services/draft';
 import { announce } from '../services/extraction';
 import { needsSetup } from '../services/first-run';
 import { applySnapHotkey, DEFAULT_HOTKEY, savedHotkey } from '../services/hotkey';
+import { createReminderChecker, startReminders } from '../services/reminders';
 import { useDockStore } from '../stores/dock-store';
 import { DockApp } from './dock-app';
 import { startTimerProbe } from './timer-probe';
@@ -87,6 +88,16 @@ void bootstrap(
       today: () => localDate(services.store.clock.now(), services.timeZone.current()),
       onMade: () => void announce(services.store, services.platform),
     });
+    // Task reminders, when this PC is set to ring (product/tasks-routines-reminders.md §7).
+    startReminders(
+      createReminderChecker({
+        store: services.store,
+        notify: async (title) => {
+          await services.platform.shell.notifyReminder(title);
+        },
+      }),
+      services.platform.scheduler,
+    );
     // A changed model or key may clear whatever the queue is waiting for.
     onAppEvent('logs:changed', ({ tables }) => {
       if (!tables.includes('settings')) return;

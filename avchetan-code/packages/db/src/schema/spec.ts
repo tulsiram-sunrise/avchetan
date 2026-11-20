@@ -134,6 +134,7 @@ export const TABLES = {
     /** A repeating task: its `task` routine and the occurrence it stands for (§6). */
     routine_id: opt('uuid'),
     routine_date: opt('local_date'),
+    remind_at: opt('instant'),
   }),
   tags: synced({
     name: req('text'),
