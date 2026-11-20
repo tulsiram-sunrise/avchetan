@@ -50,7 +50,9 @@ export async function makeNextRepeat(
   if (!rule.success) return null;
 
   const yesterday = addDays(today, -1);
-  const date = nextOccurrence(rule.data, routineDate > yesterday ? routineDate : yesterday);
+  // Dates as YYYY-MM-DD sort as text: the later of the two.
+  const after = [routineDate, yesterday].sort()[1] as LocalDate;
+  const date = nextOccurrence(rule.data, after);
   if (!date) return null;
   const id = repeatTaskId(routineId, date);
   if (await getById(tx, tasks, id)) return null;
