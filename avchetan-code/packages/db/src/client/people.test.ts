@@ -133,7 +133,7 @@ describe('promises', () => {
       ).map((p) => p.task.id),
     ).toEqual([wait.id]);
 
-    await store.write((tx) => r.tasks.complete(tx, owe.id));
+    await store.write((tx) => r.tasks.complete(tx, owe.id, '2026-11-20'));
     const done = await store.people.promises(store.db, {
       ...local,
       direction: 'both',

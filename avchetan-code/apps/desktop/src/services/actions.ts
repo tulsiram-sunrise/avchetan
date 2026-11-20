@@ -17,6 +17,7 @@ import {
   ValidationError,
 } from '@avchetan/shared';
 import { z } from 'zod';
+import { localToday } from './time-zone';
 
 const log = createLogger('actions');
 
@@ -53,23 +54,39 @@ const action = <S extends z.ZodType>(args: S, run: Action<S>['run']): Action<S> 
  * timestamp on this device (ADR-0019, Q21) and `updated_at` stays strictly increasing.
  */
 const ACTIONS = {
-  'task.setDone': action(idArgs.extend({ done: z.boolean() }), (store, { id, done }) =>
-    store.write((tx) =>
-      done ? store.repos.tasks.complete(tx, id) : store.repos.tasks.reopen(tx, id),
-    ),
-  ),
+  // Finishing or cancelling a repeating task makes the next one, never before today (§6).
+  'task.setDone': action(idArgs.extend({ done: z.boolean() }), async (store, { id, done }) => {
+    const today = await localToday(store);
+    return store.write((tx) =>
+      done ? store.repos.tasks.complete(tx, id, today) : store.repos.tasks.reopen(tx, id),
+    );
+  }),
   // Finishing a task (product/tasks-routines-reminders.md §1). Moving is `task.edit` with a date.
   'task.finish': action(
     idArgs.extend({ note: z.string().nullable().optional() }),
-    (store, { id, note }) => store.write((tx) => store.repos.tasks.complete(tx, id, note)),
+    async (store, { id, note }) => {
+      const today = await localToday(store);
+      return store.write((tx) => store.repos.tasks.complete(tx, id, today, note));
+    },
   ),
   'task.partlyDone': action(
     idArgs.extend({ progressPct: z.number() }),
     (store, { id, progressPct }) =>
       store.write((tx) => store.repos.tasks.partlyDone(tx, id, progressPct)),
   ),
-  'task.cancel': action(idArgs, (store, { id }) =>
-    store.write((tx) => store.repos.tasks.cancel(tx, id)),
+  'task.cancel': action(idArgs, async (store, { id }) => {
+    const today = await localToday(store);
+    return store.write((tx) => store.repos.tasks.cancel(tx, id, today));
+  }),
+  // Repeating tasks (§6): the rule is a routine of kind task, the task its first occurrence.
+  'task.repeat': action(idArgs.extend({ repeatRule: repeatRuleSchema }), async (store, args) => {
+    const today = await localToday(store);
+    return store.write((tx) =>
+      store.repos.routines.repeatTask(tx, args.id, args.repeatRule, today),
+    );
+  }),
+  'task.stopRepeating': action(idArgs, (store, { id }) =>
+    store.write((tx) => store.repos.routines.stopRepeating(tx, id)),
   ),
   'task.edit': action(
     idArgs.extend({ title: z.string().optional(), dueDate: optionalDate }),

@@ -128,6 +128,9 @@ export const tasks = sqliteTable(
     completionNote: text('completion_note'),
     progressPct: integer('progress_pct'),
     cancelledAt: text('cancelled_at'),
+    /** A repeating task: its routine (kind `task`) and the occurrence it stands for (§6). */
+    routineId: text('routine_id'),
+    routineDate: text('routine_date'),
   },
   (t) => [
     index('tasks_completed_at_due_date_idx').on(t.completedAt, t.dueDate),

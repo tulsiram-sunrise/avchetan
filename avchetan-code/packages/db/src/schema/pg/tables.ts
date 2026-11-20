@@ -167,6 +167,9 @@ export const tasks = pgTable(
     completionNote: text('completion_note'),
     progressPct: integer('progress_pct'),
     cancelledAt: instant('cancelled_at'),
+    /** A repeating task: its routine (kind `task`) and the occurrence it stands for (§6). */
+    routineId: uuid('routine_id'),
+    routineDate: localDate('routine_date'),
   },
   (t) => [
     seqIndex('tasks', t),

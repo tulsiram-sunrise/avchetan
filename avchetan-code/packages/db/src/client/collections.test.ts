@@ -73,7 +73,7 @@ async function setup() {
     });
     await r.tasks.create(tx, { title: 'Buy shoes', projectId: project.id });
     const done = await r.tasks.create(tx, { title: 'Old task', projectId: project.id });
-    await r.tasks.complete(tx, done.id);
+    await r.tasks.complete(tx, done.id, '2026-11-20');
     return project.id;
   });
   return { store, projectId, run, plan };

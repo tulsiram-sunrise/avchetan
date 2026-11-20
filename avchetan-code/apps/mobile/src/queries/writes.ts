@@ -1,19 +1,24 @@
 import { buildCaptureInput, normalizeMetrics } from '@avchetan/core';
+import type { ClientStore } from '@avchetan/db/sqlite';
+import { localDate, systemTimeZone } from '@avchetan/shared';
 import type { AppServices } from '../app-services';
 import { refreshAll } from '../query-client';
 import { useWrite } from './entries';
 
+/** Finishing or cancelling a repeating task makes the next one, never before today (§6). */
+const todayOf = (store: ClientStore) => localDate(store.clock.now(), systemTimeZone());
+
 export const useSetTaskDone = () =>
   useWrite((store, { id, done }: { id: string; done: boolean }) =>
     store.write((tx) =>
-      done ? store.repos.tasks.complete(tx, id) : store.repos.tasks.reopen(tx, id),
+      done ? store.repos.tasks.complete(tx, id, todayOf(store)) : store.repos.tasks.reopen(tx, id),
     ),
   );
 
 /** Done, with an optional note on how it went (product/tasks-routines-reminders.md §1). */
 export const useFinishTask = () =>
   useWrite((store, { id, note }: { id: string; note?: string | null }) =>
-    store.write((tx) => store.repos.tasks.complete(tx, id, note)),
+    store.write((tx) => store.repos.tasks.complete(tx, id, todayOf(store), note)),
   );
 
 export const usePartlyDone = () =>
@@ -22,7 +27,9 @@ export const usePartlyDone = () =>
   );
 
 export const useCancelTask = () =>
-  useWrite((store, id: string) => store.write((tx) => store.repos.tasks.cancel(tx, id)));
+  useWrite((store, id: string) =>
+    store.write((tx) => store.repos.tasks.cancel(tx, id, todayOf(store))),
+  );
 
 /** Move: only the due date changes, so it isn't a correction (see tasksRepo.editByUser). */
 export const useMoveTask = () =>

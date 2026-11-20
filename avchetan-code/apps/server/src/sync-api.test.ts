@@ -282,6 +282,8 @@ describe('push and pull', () => {
       completionNote: null,
       progressPct: null,
       cancelledAt: null,
+      routineId: null,
+      routineDate: null,
     };
     await push([
       { table: 'raw_logs', row: await clientRow('1') },

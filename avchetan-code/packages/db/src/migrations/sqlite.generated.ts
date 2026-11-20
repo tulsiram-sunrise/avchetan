@@ -96,5 +96,12 @@ export const sqliteMigrations: readonly Migration[] = [
     "statements": [
       "CREATE TABLE `sync_set_aside` (\n\t`table_name` text NOT NULL,\n\t`record_id` text NOT NULL,\n\t`row` text NOT NULL,\n\t`set_aside_at` text NOT NULL,\n\tPRIMARY KEY(`table_name`, `record_id`)\n);"
     ]
+  },
+  {
+    "tag": "0007_repeating_tasks",
+    "statements": [
+      "ALTER TABLE `tasks` ADD `routine_id` text;",
+      "ALTER TABLE `tasks` ADD `routine_date` text;"
+    ]
   }
 ];

@@ -65,7 +65,7 @@ describe('outbox', () => {
     const { store } = await openTestStore();
     const task = await store.write((tx) => store.repos.tasks.create(tx, { title: 'Buy milk' }));
     const inFlight = (await store.sync.listOutbox()).filter((e) => e.recordId === task.id);
-    await store.write((tx) => store.repos.tasks.complete(tx, task.id)); // edit during push
+    await store.write((tx) => store.repos.tasks.complete(tx, task.id, '2026-11-20')); // edit during push
     expect(await store.sync.ackOutbox(inFlight)).toBe(0);
     expect((await store.sync.listOutbox()).some((e) => e.recordId === task.id)).toBe(true);
   });

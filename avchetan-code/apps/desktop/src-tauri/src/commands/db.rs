@@ -350,7 +350,7 @@ mod tests {
     /// triggers (one statement each, with inner semicolons) and `json_each` work here.
     #[test]
     fn client_migrations_build_the_search_index() {
-        const MIGRATIONS: [&str; 7] = [
+        const MIGRATIONS: [&str; 8] = [
             include_str!("../../../../../packages/db/migrations/sqlite/0000_init.sql"),
             include_str!(
                 "../../../../../packages/db/migrations/sqlite/0001_example_forgotten_at.sql"
@@ -360,6 +360,7 @@ mod tests {
             include_str!("../../../../../packages/db/migrations/sqlite/0004_task_finishing.sql"),
             include_str!("../../../../../packages/db/migrations/sqlite/0005_routines.sql"),
             include_str!("../../../../../packages/db/migrations/sqlite/0006_sync_set_aside.sql"),
+            include_str!("../../../../../packages/db/migrations/sqlite/0007_repeating_tasks.sql"),
         ];
         let connection = Connection::open_in_memory().unwrap();
         let run = |sql: &str| {

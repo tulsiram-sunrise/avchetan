@@ -107,9 +107,9 @@ describe('analysis tools', () => {
     await store.write(async (tx) => {
       const r = store.repos.tasks;
       const done = await r.create(tx, { title: 'Paid rent', dueDate: '2026-10-25' });
-      await r.complete(tx, done.id, 'paid online');
+      await r.complete(tx, done.id, '2026-10-25', 'paid online');
       const dropped = await r.create(tx, { title: 'Old plan', dueDate: '2026-10-25' });
-      await r.cancel(tx, dropped.id);
+      await r.cancel(tx, dropped.id, '2026-10-25');
       const half = await r.create(tx, { title: 'Report', dueDate: '2026-10-25' });
       await r.partlyDone(tx, half.id, 50);
     });

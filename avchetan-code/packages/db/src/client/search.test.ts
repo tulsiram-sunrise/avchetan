@@ -236,12 +236,12 @@ describe('searchTasks', () => {
   it('sorts a cancelled task with the finished ones', async () => {
     const { store, r, taskTitles, advance } = await setup();
     const dropped = await store.write((tx) => r.tasks.create(tx, { title: 'Paint the fence' }));
-    await store.write((tx) => r.tasks.cancel(tx, dropped.id));
+    await store.write((tx) => r.tasks.cancel(tx, dropped.id, '2026-11-20'));
     advance(1000);
     await store.write((tx) => r.tasks.create(tx, { title: 'Paint the door' }));
     advance(1000);
     const done = await store.write((tx) => r.tasks.create(tx, { title: 'Paint the gate' }));
-    await store.write((tx) => r.tasks.complete(tx, done.id));
+    await store.write((tx) => r.tasks.complete(tx, done.id, '2026-11-20'));
     advance(1000);
     await store.write((tx) => r.tasks.create(tx, { title: 'Paint the shed' }));
 
@@ -261,7 +261,7 @@ describe('searchTasks', () => {
     );
     advance(1000);
     const done = await store.write((tx) => r.tasks.create(tx, { title: 'Book flights' }));
-    await store.write((tx) => r.tasks.complete(tx, done.id));
+    await store.write((tx) => r.tasks.complete(tx, done.id, '2026-11-20'));
     advance(1000);
     await store.write((tx) => r.tasks.create(tx, { title: 'Return library book' }));
 

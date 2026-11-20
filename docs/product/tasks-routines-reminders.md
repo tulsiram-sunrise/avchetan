@@ -97,6 +97,8 @@ Extraction is given the titles of today's open chores and can name the one an en
 
 A task can have a repeat rule from §2. It is stored as a routine of a third kind, **task**. When a repeating task is finished or cancelled, the next one is made with a derived ID (routine + date), so two devices make it once. Moving one occurrence doesn't change the rule.
 
+**Built on Day 15 (2026-11-20).** `tasks` gained `routine_id` and `routine_date` (the occurrence a task stands for; migrations sqlite `0007`, pg `0011`). **Repeat…** on a task (both apps, the rule form from the Routines page) makes a `task` routine and the task its first occurrence: it keeps its due date, or gets the first occurrence from today. `tasks.complete` and `tasks.cancel` now take the user's local `today` and make the next occurrence after `routine_date` but never before today, so a task finished weeks late adds one task, not a backlog. The next one's ID is `derivedId('repeat_task', routine, date)`; it isn't made when it already exists (another device, or deleted by the user), when the rule has ended or is paused, or after **Stop repeating** (the routine is deleted, the tasks stay). Reopening a task leaves the next one. `task` routines don't appear on the Routines page; a task shows *↻ Every week on Monday*.
+
 ## 7. Reminders
 
 A task can have a reminder time (`remind_at`), set by hand on both apps or [from what you type](#8-reminders-from-what-you-type).

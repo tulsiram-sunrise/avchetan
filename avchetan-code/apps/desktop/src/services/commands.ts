@@ -28,6 +28,7 @@ import { emitAppEvent } from '../native/events';
 import type { LockStatus } from '../native/lock';
 import { unlockApp } from './app-lock';
 import { announce } from './extraction';
+import { localToday } from './time-zone';
 
 const log = createLogger('commands');
 
@@ -218,7 +219,8 @@ const UNLOCK_MESSAGES: Record<UnlockOutcome, string> = {
 function doneTask(deps: CommandDeps, task: Task): () => Promise<CommandOutcome> {
   return async () => {
     const { store } = deps;
-    await store.write((tx) => store.repos.tasks.complete(tx, task.id));
+    const today = await localToday(store);
+    await store.write((tx) => store.repos.tasks.complete(tx, task.id, today));
     deps.changed();
     const undo = async () => {
       await store.write((tx) => store.repos.tasks.reopen(tx, task.id));

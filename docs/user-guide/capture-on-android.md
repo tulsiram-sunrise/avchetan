@@ -107,6 +107,7 @@ Tasks found in your entries appear on the **Tasks** tab: *Overdue*, *Today*, *Co
   - **Move** it to **Tomorrow** or **Next week** (the Monday after this week).
   - **Cancel task**: it's struck through and never counted as missed. Use **Delete** instead when it was never a task.
   - **Reopen** a done or cancelled task.
+  - **Repeat** makes a task come back: every few days, on chosen weekdays, monthly or yearly, as for routines. The task shows how it repeats (*↻ Every week on Monday*). When you mark one done or cancel it, the next one appears with its date; finishing one late never adds the days you missed, the next is today at the earliest. Moving one doesn't change the others. **Change repeat** edits the rule, **Stop repeating** ends it and leaves the tasks you have. Repeating tasks don't appear under Routines.
 - A done task shows how it went: *Done on time*, *Done 2 days late* or *Done 1 day early*, and your note.
 - Each group shows how many it holds and its first 50; tap **Show more** for the next 50. People and a person's entries work the same way.
 
