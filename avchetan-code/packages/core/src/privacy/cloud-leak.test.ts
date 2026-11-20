@@ -28,7 +28,7 @@ const groq: ModelConfig = { provider: 'groq', model: 'cloud-model' };
 const ollama: ModelConfig = { provider: 'ollama', model: 'local-model' };
 
 const EMPTY =
-  '{"activities":[],"tasks":[],"newCategory":null,"logTags":[],"entities":[],"skip":null}';
+  '{"activities":[],"tasks":[],"newCategory":null,"logTags":[],"entities":[],"choresDone":[],"skip":null}';
 /** What the local model makes of the private entry: a name and a tag only it knows. */
 const PRIVATE_ANSWER = JSON.stringify({
   activities: [
@@ -64,6 +64,7 @@ const PRIVATE_ANSWER = JSON.stringify({
       mentions: [{ target: 'log', role: 'with' }],
     },
   ],
+  choresDone: [],
   skip: null,
 });
 const BRIEF = '{"movedForward":"A run.","friction":null,"observation":"Keep going."}';

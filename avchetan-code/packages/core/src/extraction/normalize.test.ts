@@ -30,6 +30,7 @@ const empty: ExtractionResult = {
   newCategory: null,
   logTags: [],
   entities: [],
+  choresDone: [],
   skip: null,
 };
 

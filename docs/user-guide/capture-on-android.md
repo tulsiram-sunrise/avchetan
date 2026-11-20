@@ -124,6 +124,8 @@ The first time you open Routines it offers **ideas** (drink water, walk or exerc
 
 **Ticking chores off.** Each day's *Tick it off* routines show as one **Chores** list on **Days**, with how many are done (*Chores · 2 of 5*). Tap the box to tick one, tap again to untick it; tap its name to open the routine. Assumed routines such as sleep don't appear there.
 
+**Ticked from what you write.** When an entry says you did one of the day's chores (*watered the plants* while *Water plants* is open), it is ticked for you once the entry is organized, and shows *from your entry*. Tap **Undo** if it was wrong; it then stays unticked. Plans (*need to water the plants*) and other days (*yesterday*) tick nothing. A private entry is only matched by an AI model on your own hardware, like everything private.
+
 **Evening reminder.** At the bottom of **More → Routines**, **Remind me about chores left** sends one notification in the evening, only on days something is still unticked; tapping it opens Days. It is on at 20:00 unless you change it, and it is set for this phone only. Turning it on asks Android to allow notifications; if you refuse, it stays off and the screen says how to allow them later in Android's settings.
 
 ## Search

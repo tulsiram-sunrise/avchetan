@@ -5,6 +5,7 @@ import {
   type MentionTarget,
   NEW_CATEGORY,
   normalizeEntityName,
+  type PlannedActivity,
   type PlannedEntity,
   type RawLog,
   seedCategoryId,
@@ -15,7 +16,7 @@ import { ruleMatchesOf, ruleOutcome } from '../context/window-context';
 import { normalizeMetrics, parseQuantity } from '../normalize/metrics';
 import { normalizeTagPath, normalizeTagSegment } from '../normalize/tags';
 import { checkDate } from './date-check';
-import type { ExtractionVocabulary } from './input';
+import type { ChoreChoice, ExtractionVocabulary } from './input';
 import type { ExtractionResult } from './schema';
 
 export const LLM_MAY_CREATE_SETTING = 'categories.llmMayCreate';
@@ -42,7 +43,27 @@ export type NormalizeContext = {
   llmMayCreate: LlmMayCreate;
   model: string;
   version: number;
+  /** The open chores the prompt offered; only these can be ticked. */
+  chores?: readonly ChoreChoice[];
 };
+
+/** "Water plants", "water  plants." and "Water-plants" are one chore. */
+const choreKey = (title: string) =>
+  title
+    .toLowerCase()
+    .replace(/[^p{L}p{N}]+/gu, ' ')
+    .trim();
+
+/** The model names chores; code keeps only names that are one of the offered open chores. */
+function choreTicksOf(names: readonly string[], chores: readonly ChoreChoice[]) {
+  const byKey = new Map(chores.map((chore) => [choreKey(chore.title), chore]));
+  const ticks = new Map<string, { routineId: string; date: string }>();
+  for (const name of names) {
+    const chore = byKey.get(choreKey(name));
+    if (chore) ticks.set(chore.routineId, { routineId: chore.routineId, date: chore.date });
+  }
+  return [...ticks.values()];
+}
 
 function plausibleDate(value: string | null, today: LocalDate): LocalDate | null {
   if (!value || !isValidLocalDate(value)) return null;
@@ -208,28 +229,35 @@ export function normalizeExtraction(
     }
   });
 
+  const plannedActivities: PlannedActivity[] = activities.map(({ item }) => ({
+    categoryId: categories.resolve(item.category) ?? seedCategoryId('other'),
+    title: clean(item.title, MAX_TITLE) as string,
+    notes: clean(item.notes, MAX_NOTES),
+    metrics: foldMetrics(item),
+    loggedDate:
+      checkDate({
+        date: plausibleDate(item.loggedDate, today),
+        own: `${item.title} ${item.notes ?? ''}`,
+        entry: rawLog.content ?? '',
+        today,
+        ahead: false,
+      }) ?? today,
+    projectId: projectId(item.project),
+    tagPaths: tagPaths(item.inferredTags, categorySlugs),
+  }));
+
+  // A chore done is also something that happened that day: a tick with no activity on the
+  // chore's day is a plan, or about another day, and is dropped.
+  const choreTicks = choreTicksOf(result.choresDone ?? [], context.chores ?? []).filter((tick) =>
+    plannedActivities.some((activity) => activity.loggedDate === tick.date),
+  );
   const skipped = result.skip !== null && activities.length === 0 && tasks.length === 0;
   return {
     rawLogId: rawLog.id,
     status: skipped ? 'skipped' : 'processed',
     model,
     version,
-    activities: activities.map(({ item }) => ({
-      categoryId: categories.resolve(item.category) ?? seedCategoryId('other'),
-      title: clean(item.title, MAX_TITLE) as string,
-      notes: clean(item.notes, MAX_NOTES),
-      metrics: foldMetrics(item),
-      loggedDate:
-        checkDate({
-          date: plausibleDate(item.loggedDate, today),
-          own: `${item.title} ${item.notes ?? ''}`,
-          entry: rawLog.content ?? '',
-          today,
-          ahead: false,
-        }) ?? today,
-      projectId: projectId(item.project),
-      tagPaths: tagPaths(item.inferredTags, categorySlugs),
-    })),
+    activities: plannedActivities,
     tasks: tasks.map(({ item }) => ({
       categoryId: item.category ? (categories.resolve(item.category) ?? null) : null,
       title: clean(item.title, MAX_TITLE) as string,
@@ -248,5 +276,6 @@ export function normalizeExtraction(
     entities: skipped ? [] : entities,
     newCategory: categories.newCategory,
     categorySuggestion: categories.suggestion,
+    choreTicks,
   };
 }

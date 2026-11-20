@@ -16,6 +16,7 @@ const plan = (overrides: Partial<ExtractionPlan>): ExtractionPlan => ({
   entities: [],
   newCategory: null,
   categorySuggestion: null,
+  choreTicks: [],
   ...overrides,
 });
 

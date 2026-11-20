@@ -8,7 +8,8 @@ import { Failure, SectionTitle } from './parts';
 
 /**
  * The day's chores in one card, each with a tick (docs/product/tasks-routines-reminders.md §4).
- * Nothing shows on a day without chores; days are only made from today on.
+ * Nothing shows on a day without chores; days are only made from today on. A chore ticked
+ * because an entry said so is marked, with an undo (§5).
  */
 export function ChoreCard({ day }: { day: string }) {
   const chores = useDayChores(day);
@@ -43,6 +44,7 @@ function ChoreRow(props: {
   const { routine, day } = props.row;
   const done = day.status === 'done';
   const skipped = day.status === 'skipped';
+  const fromEntry = done && day.rawLogId !== null;
   return (
     <View className="flex-row items-center gap-3 px-4 py-2">
       <Pressable
@@ -71,7 +73,19 @@ function ChoreRow(props: {
           {routine.title}
           {skipped ? ' (skipped)' : ''}
         </Text>
+        {fromEntry ? <Text className="text-xs text-inkMuted">from your entry</Text> : null}
       </Pressable>
+      {fromEntry ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Undo: ${routine.title} wasn’t done`}
+          disabled={props.disabled}
+          hitSlop={8}
+          onPress={() => props.onToggle(false)}
+        >
+          <Text className="text-sm text-accent">Undo</Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }

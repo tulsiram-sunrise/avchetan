@@ -1,5 +1,5 @@
 import { type ExtractionPlan, NEW_CATEGORY, type PlannedActivity } from '@avchetan/db/sqlite';
-import type { Fixture } from './fixtures';
+import { choreTitleOf, type Fixture } from './fixtures';
 
 const NUMERIC_TOLERANCE = 0.01;
 
@@ -120,6 +120,14 @@ export function matchFixture(
   }
 
   if (expected.promises) misses.push(...promiseMisses(plan, expected.promises));
+
+  if (expected.choresDone) {
+    const ticked = plan.choreTicks.map((tick) => choreTitleOf(tick.routineId)).sort();
+    const wanted = [...expected.choresDone].sort();
+    if (JSON.stringify(ticked) !== JSON.stringify(wanted)) {
+      misses.push(`chores [${ticked.join(', ')}], wanted [${wanted.join(', ')}]`);
+    }
+  }
 
   if (expected.newCategory && !plan.newCategory) misses.push('no new category proposed');
   return misses;

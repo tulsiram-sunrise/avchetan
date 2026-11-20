@@ -31,6 +31,8 @@ async function openAppServices(platform: Platform): Promise<AppServices> {
   // Each needs the other: organizing queues a sync, and a sync may bring entries to organize.
   const extraction = createExtractionService(store, platform, () => {
     refreshAll();
+    // An entry may have ticked a chore, which takes it out of this evening's notification.
+    void scheduleChoreEvening(store);
     // Off screen, Android has paused the timer the debounce waits on.
     if (AppState.currentState === 'active') sync.schedule();
     else void sync.syncNow();

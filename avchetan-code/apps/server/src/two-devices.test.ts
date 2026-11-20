@@ -537,6 +537,7 @@ describe('corrections across devices (ADR-0027)', () => {
     entities: [],
     newCategory: null,
     categorySuggestion: null,
+    choreTicks: [],
   });
 
   async function correctOnPhone(phone: Device) {

@@ -37,6 +37,7 @@ const plan = (rawLogId: string): ExtractionPlan => ({
   entities: [],
   newCategory: null,
   categorySuggestion: null,
+  choreTicks: [],
 });
 
 async function extracted(

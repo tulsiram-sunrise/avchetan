@@ -762,5 +762,78 @@
         }
       ]
     }
+  },
+  {
+    "id": "chore-water",
+    "text": "watered all the plants on the balcony",
+    "at": "2026-03-04T04:30:00.000Z",
+    "chores": ["Read", "Take medicine", "Water plants"],
+    "expect": {
+      "activities": [
+        {
+          "date": "2026-03-04"
+        }
+      ],
+      "choresDone": ["Water plants"]
+    }
+  },
+  {
+    "id": "chore-two",
+    "text": "took my BP tablet after breakfast, then read 20 pages of my book",
+    "at": "2026-03-04T04:30:00.000Z",
+    "chores": ["Read", "Take medicine", "Tidy up"],
+    "expect": {
+      "activities": [
+        {
+          "date": "2026-03-04"
+        },
+        {
+          "date": "2026-03-04"
+        }
+      ],
+      "choresDone": ["Read", "Take medicine"]
+    }
+  },
+  {
+    "id": "chore-still-to-do",
+    "text": "need to water the plants tonight",
+    "at": "2026-03-04T04:30:00.000Z",
+    "chores": ["Drink water", "Water plants"],
+    "expect": {
+      "tasks": [
+        {
+          "titleHas": "water"
+        }
+      ],
+      "choresDone": []
+    }
+  },
+  {
+    "id": "chore-hindi",
+    "text": "aaj subah paudhon ko paani diya",
+    "at": "2026-03-04T04:30:00.000Z",
+    "chores": ["Drink water", "Water plants"],
+    "expect": {
+      "activities": [
+        {
+          "date": "2026-03-04"
+        }
+      ],
+      "choresDone": ["Water plants"]
+    }
+  },
+  {
+    "id": "chore-yesterday",
+    "text": "yesterday tidied up the whole flat",
+    "at": "2026-03-04T04:30:00.000Z",
+    "chores": ["Tidy up", "Read"],
+    "expect": {
+      "activities": [
+        {
+          "date": "2026-03-03"
+        }
+      ],
+      "choresDone": []
+    }
   }
 ]

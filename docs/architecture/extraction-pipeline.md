@@ -61,6 +61,7 @@ Input assembled by `buildExtractionInput(rawLog, vocabulary)`:
 - Vocabulary: active categories (slug + name + description), active project names + descriptions, top ~150 existing tag paths, known entity names (top ~100 by recency), metric key registry.
 - Correction examples: up to 5 of the user's past fixes that share words with this entry, at the start of the request ([correction feedback](../product/correction-feedback.md)), private ones only for a local model. Left out first on `llm_context_overflow`. Items copied from them are dropped before normalizing.
 - Context hints: `raw_logs.context` (active app, rule matches) when present.
+- Open chores: titles of the confirm routines still open on the log's local day (`loadOpenChores`), as an *Open chores today* line right before the entry, only when there are some (prompt v6, [tasks-routines-reminders §5](../product/tasks-routines-reminders.md#5-chores-ticked-from-entries)).
 - The raw content and the already-parsed explicit tags.
 
 Output: one structured object validated by the **extraction envelope** schema:
@@ -73,6 +74,7 @@ ExtractionResult {
                                         // `category` fields hold an existing slug or this new name
   logTags:    string[]            // inferred tags for the raw log as a whole
   entities:   [{ kind, name, mentions: [{ target: 'log'|'activity:<i>'|'task:<i>', role }] }]
+  choresDone: string[]            // titles from the open chores list the entry says were done
   skip?:      { reason }          // nothing actionable (e.g. "test", "asdf")
 }
 ```
@@ -90,6 +92,7 @@ This replaces the original spec's two separate tools (`log_activity`, `create_ta
 3. Compute deterministic IDs: `activity = derivedId('activity', rawLogId, ordinal)`, `task = derivedId('task', rawLogId, ordinal)`, tags/links/entities/mentions per [data-model](data-model.md).
 4. One local transaction:
    - Upsert all derived rows (skip any existing row with `is_user_edited = true`).
+   - Tick each chore in `choreTicks` with `routines.tickFromEntry`: only a name that is one of the offered chores and has an activity on that day reaches the plan, and only a day still as it was made is ticked, so a tick the user undid is never redone.
    - Soft-delete previous derived rows of this raw log (`origin='extraction'`, not user-edited) whose IDs aren't in the new set (re-extraction replaces cleanly).
    - Update raw log: `status='processed'`, `processed_by`, `processed_at`, `extraction_model`, `extraction_version`, clear lease and `last_error`.
    - Enqueue outbox for every changed row.

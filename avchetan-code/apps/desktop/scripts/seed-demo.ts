@@ -432,6 +432,7 @@ async function main() {
           })),
           newCategory: null,
           categorySuggestion: null,
+          choreTicks: [],
         };
         await store.repos.extraction.apply(tx, plan);
 
