@@ -32,6 +32,8 @@ const RESULT: ExtractionResult = {
       metrics: [{ key: 'distance_km', value: '5' }],
       exercises: [],
       loggedDate: '2026-10-26',
+      occurredAt: null,
+      sleep: null,
       project: null,
       inferredTags: [],
     },

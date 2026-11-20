@@ -39,6 +39,8 @@ const PRIVATE_ANSWER = JSON.stringify({
       metrics: [],
       exercises: [],
       loggedDate: '2026-10-26',
+      occurredAt: null,
+      sleep: null,
       project: null,
       inferredTags: ['kneecap'],
     },

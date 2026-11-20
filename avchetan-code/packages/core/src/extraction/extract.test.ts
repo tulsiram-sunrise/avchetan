@@ -44,6 +44,8 @@ const run: ExtractionResult['activities'][number] = {
   metrics: [{ key: 'distance_km', value: '5' }],
   exercises: [],
   loggedDate: '2026-10-30',
+  occurredAt: null,
+  sleep: null,
   project: null,
   inferredTags: ['running'],
 };

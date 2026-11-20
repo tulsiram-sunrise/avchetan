@@ -12,23 +12,27 @@ import { METRICS } from '../normalize/metric-keys';
  * 6: the day's open chores, and `choresDone` naming those the entry did
  *    (docs/product/tasks-routines-reminders.md §5).
  * 7: `remindAt` on a task, the local time the entry asks to be reminded at (§8).
+ * 8: `occurredAt` (local HH:MM or "now") and `sleep` (bed / wake) on an activity; "woke up" is
+ *    always an activity (§9).
  */
-export const version = 7;
+export const version = 8;
 
-const metricList = METRICS.filter((metric) => metric.key !== 'kind' && metric.key !== 'exercises')
+/** Keys code sets itself, never the model. */
+const NOT_FOR_THE_MODEL = new Set(['kind', 'exercises', 'sleep_event']);
+const metricList = METRICS.filter((metric) => !NOT_FOR_THE_MODEL.has(metric.key))
   .map((metric) => metric.key)
   .join(', ');
 
 /** Made-up examples only. All dated as if today were Friday 2026-03-06. */
 const EXAMPLES = `
 Entry: ran 5k this morning in 28 min, felt great. need to renew gym membership by monday
-{"activities":[{"category":"workout","title":"Morning run","notes":"Felt great","metrics":[{"key":"distance_km","value":"5"},{"key":"duration_min","value":"28"}],"exercises":[],"loggedDate":"2026-03-06","project":null,"inferredTags":["running"]}],"tasks":[{"title":"Renew gym membership","notes":null,"dueDate":"2026-03-09","category":"workout","project":null,"inferredTags":[],"forPerson":null,"waitingOn":null,"remindAt":null}],"newCategory":null,"logTags":[],"entities":[],"choresDone":[],"skip":null}
+{"activities":[{"category":"workout","title":"Morning run","notes":"Felt great","metrics":[{"key":"distance_km","value":"5"},{"key":"duration_min","value":"28"}],"exercises":[],"loggedDate":"2026-03-06","occurredAt":null,"sleep":null,"project":null,"inferredTags":["running"]}],"tasks":[{"title":"Renew gym membership","notes":null,"dueDate":"2026-03-09","category":"workout","project":null,"inferredTags":[],"forPerson":null,"waitingOn":null,"remindAt":null}],"newCategory":null,"logTags":[],"entities":[],"choresDone":[],"skip":null}
 
 Entry: yesterday deadlift 120kg 3x5, rows 60kg 3x8
-{"activities":[{"category":"workout","title":"Strength session","notes":null,"metrics":[],"exercises":[{"name":"Deadlift","sets":3,"reps":5,"weightKg":120,"durationMin":null},{"name":"Barbell row","sets":3,"reps":8,"weightKg":60,"durationMin":null}],"loggedDate":"2026-03-05","project":null,"inferredTags":["strength"]}],"tasks":[],"newCategory":null,"logTags":[],"entities":[],"choresDone":[],"skip":null}
+{"activities":[{"category":"workout","title":"Strength session","notes":null,"metrics":[],"exercises":[{"name":"Deadlift","sets":3,"reps":5,"weightKg":120,"durationMin":null},{"name":"Barbell row","sets":3,"reps":8,"weightKg":60,"durationMin":null}],"loggedDate":"2026-03-05","occurredAt":null,"sleep":null,"project":null,"inferredTags":["strength"]}],"tasks":[],"newCategory":null,"logTags":[],"entities":[],"choresDone":[],"skip":null}
 
 Entry: lunch with Priya at Cafe Lotus, dal rice, owe her 300 for the bill
-{"activities":[{"category":"diet","title":"Lunch: dal rice","notes":null,"metrics":[{"key":"meal","value":"lunch"}],"exercises":[],"loggedDate":"2026-03-06","project":null,"inferredTags":[]}],"tasks":[{"title":"Pay Priya 300 for lunch","notes":null,"dueDate":null,"category":null,"project":null,"inferredTags":[],"forPerson":"Priya","waitingOn":null,"remindAt":null}],"newCategory":null,"logTags":[],"entities":[{"kind":"person","name":"Priya","mentions":[{"target":"activity:0","role":"with"}]},{"kind":"place","name":"Cafe Lotus","mentions":[{"target":"activity:0","role":"at"}]}],"choresDone":[],"skip":null}
+{"activities":[{"category":"diet","title":"Lunch: dal rice","notes":null,"metrics":[{"key":"meal","value":"lunch"}],"exercises":[],"loggedDate":"2026-03-06","occurredAt":null,"sleep":null,"project":null,"inferredTags":[]}],"tasks":[{"title":"Pay Priya 300 for lunch","notes":null,"dueDate":null,"category":null,"project":null,"inferredTags":[],"forPerson":"Priya","waitingOn":null,"remindAt":null}],"newCategory":null,"logTags":[],"entities":[{"kind":"person","name":"Priya","mentions":[{"target":"activity:0","role":"with"}]},{"kind":"place","name":"Cafe Lotus","mentions":[{"target":"activity:0","role":"at"}]}],"choresDone":[],"skip":null}
 
 Entry: Dev said he'd return my drill by Sunday
 {"activities":[],"tasks":[{"title":"Get the drill back from Dev","notes":null,"dueDate":"2026-03-08","category":null,"project":null,"inferredTags":[],"forPerson":null,"waitingOn":"Dev","remindAt":null}],"newCategory":null,"logTags":[],"entities":[{"kind":"person","name":"Dev","mentions":[{"target":"log","role":"about"}]}],"choresDone":[],"skip":null}
@@ -37,24 +41,30 @@ Entry: promised Neha I'd review her slides before the demo on Tuesday
 {"activities":[],"tasks":[{"title":"Review Neha's slides","notes":"Before the demo","dueDate":"2026-03-10","category":"work","project":null,"inferredTags":[],"forPerson":"Neha","waitingOn":null,"remindAt":null}],"newCategory":null,"logTags":[],"entities":[{"kind":"person","name":"Neha","mentions":[{"target":"log","role":"about"}]}],"choresDone":[],"skip":null}
 
 Entry: aaj 2 ghante deep work kiya, phir bhi thoda stress hai
-{"activities":[{"category":"work","title":"Deep work session","notes":"Still a little stressed","metrics":[{"key":"deep_work_min","value":"2 h"},{"key":"stress","value":"3"}],"exercises":[],"loggedDate":"2026-03-06","project":null,"inferredTags":[]}],"tasks":[],"newCategory":null,"logTags":[],"entities":[],"choresDone":[],"skip":null}
+{"activities":[{"category":"work","title":"Deep work session","notes":"Still a little stressed","metrics":[{"key":"deep_work_min","value":"2 h"},{"key":"stress","value":"3"}],"exercises":[],"loggedDate":"2026-03-06","occurredAt":null,"sleep":null,"project":null,"inferredTags":[]}],"tasks":[],"newCategory":null,"logTags":[],"entities":[],"choresDone":[],"skip":null}
 
 Entry: practiced sitar for 40 minutes, the new raag is getting easier
-{"activities":[{"category":"Music Practice","title":"Sitar practice","notes":"The new raag is getting easier","metrics":[{"key":"duration_min","value":"40"}],"exercises":[],"loggedDate":"2026-03-06","project":null,"inferredTags":["sitar"]}],"tasks":[],"newCategory":{"name":"Music Practice","description":"Learning and practicing musical instruments"},"logTags":[],"entities":[],"choresDone":[],"skip":null}
+{"activities":[{"category":"Music Practice","title":"Sitar practice","notes":"The new raag is getting easier","metrics":[{"key":"duration_min","value":"40"}],"exercises":[],"loggedDate":"2026-03-06","occurredAt":null,"sleep":null,"project":null,"inferredTags":["sitar"]}],"tasks":[],"newCategory":{"name":"Music Practice","description":"Learning and practicing musical instruments"},"logTags":[],"entities":[],"choresDone":[],"skip":null}
 
 Open chores today: Drink water, Take medicine, Water plants
 Entry: watered the balcony plants before work, then 20 min walk
-{"activities":[{"category":"other","title":"Watered the balcony plants","notes":null,"metrics":[],"exercises":[],"loggedDate":"2026-03-06","project":null,"inferredTags":["plants"]},{"category":"workout","title":"Walk","notes":null,"metrics":[{"key":"duration_min","value":"20"}],"exercises":[],"loggedDate":"2026-03-06","project":null,"inferredTags":["walking"]}],"tasks":[],"newCategory":null,"logTags":[],"entities":[],"choresDone":["Water plants"],"skip":null}
+{"activities":[{"category":"other","title":"Watered the balcony plants","notes":null,"metrics":[],"exercises":[],"loggedDate":"2026-03-06","occurredAt":null,"sleep":null,"project":null,"inferredTags":["plants"]},{"category":"workout","title":"Walk","notes":null,"metrics":[{"key":"duration_min","value":"20"}],"exercises":[],"loggedDate":"2026-03-06","occurredAt":null,"sleep":null,"project":null,"inferredTags":["walking"]}],"tasks":[],"newCategory":null,"logTags":[],"entities":[],"choresDone":["Water plants"],"skip":null}
 
 Open chores today: Read, Tidy up
 Entry: tidied the kitchen yesterday. must read tonight
-{"activities":[{"category":"other","title":"Tidied the kitchen","notes":null,"metrics":[],"exercises":[],"loggedDate":"2026-03-05","project":null,"inferredTags":[]}],"tasks":[{"title":"Read tonight","notes":null,"dueDate":"2026-03-06","category":null,"project":null,"inferredTags":[],"forPerson":null,"waitingOn":null,"remindAt":null}],"newCategory":null,"logTags":[],"entities":[],"choresDone":[],"skip":null}
+{"activities":[{"category":"other","title":"Tidied the kitchen","notes":null,"metrics":[],"exercises":[],"loggedDate":"2026-03-05","occurredAt":null,"sleep":null,"project":null,"inferredTags":[]}],"tasks":[{"title":"Read tonight","notes":null,"dueDate":"2026-03-06","category":null,"project":null,"inferredTags":[],"forPerson":null,"waitingOn":null,"remindAt":null}],"newCategory":null,"logTags":[],"entities":[],"choresDone":[],"skip":null}
 
 Entry: remind me at 4 pm to call the dentist about the crown
 {"activities":[],"tasks":[{"title":"Call the dentist about the crown","notes":null,"dueDate":"2026-03-06","category":"health","project":null,"inferredTags":["dentist"],"forPerson":null,"waitingOn":null,"remindAt":"16:00"}],"newCategory":null,"logTags":[],"entities":[],"choresDone":[],"skip":null}
 
 Entry: meeting with the landlord on Monday at 11. remind me sunday 8:30 pm to print the lease
 {"activities":[],"tasks":[{"title":"Meet the landlord","notes":null,"dueDate":"2026-03-09","category":null,"project":null,"inferredTags":[],"forPerson":null,"waitingOn":null,"remindAt":null},{"title":"Print the lease","notes":null,"dueDate":"2026-03-08","category":null,"project":null,"inferredTags":[],"forPerson":null,"waitingOn":null,"remindAt":"20:30"}],"newCategory":null,"logTags":[],"entities":[],"choresDone":[],"skip":null}
+
+Entry: went to bed at 11:30 last night, woke up at 6:45 feeling groggy. just had a 20 min call with Arjun
+{"activities":[{"category":"health","title":"Went to bed","notes":null,"metrics":[],"exercises":[],"loggedDate":"2026-03-05","occurredAt":"23:30","sleep":"bed","project":null,"inferredTags":[]},{"category":"health","title":"Woke up","notes":"Felt groggy","metrics":[{"key":"energy","value":"2"}],"exercises":[],"loggedDate":"2026-03-06","occurredAt":"06:45","sleep":"wake","project":null,"inferredTags":[]},{"category":"work","title":"Call with Arjun","notes":null,"metrics":[{"key":"duration_min","value":"20"}],"exercises":[],"loggedDate":"2026-03-06","occurredAt":"now","sleep":null,"project":null,"inferredTags":[]}],"tasks":[],"newCategory":null,"logTags":[],"entities":[{"kind":"person","name":"Arjun","mentions":[{"target":"activity:2","role":"with"}]}],"choresDone":[],"skip":null}
+
+Entry: ok sleeping now
+{"activities":[{"category":"health","title":"Went to bed","notes":null,"metrics":[],"exercises":[],"loggedDate":"2026-03-06","occurredAt":"now","sleep":"bed","project":null,"inferredTags":[]}],"tasks":[],"newCategory":null,"logTags":[],"entities":[],"choresDone":[],"skip":null}
 
 Entry: asdf test
 {"activities":[],"tasks":[],"newCategory":null,"logTags":[],"entities":[],"choresDone":[],"skip":{"reason":"No content"}}
@@ -67,6 +77,10 @@ Activities are things that already happened. Tasks are forward-looking commitmen
 Categories: use a slug from the list. If none fits a hobby, skill or routine, add one newCategory with a short name and a one-line description, even the first time, and put that name in the item's category field. Use "other" only for errands and one-offs.
 
 Dates: copy them from the date table, never calculate. For a weekday, find that exact weekday's line: a plain weekday still to come is its "coming" line, one already gone is its "past" line, and a "week after" line only when the entry says the week after or next week. loggedDate is today unless the entry names an earlier day; "this morning", "today" and "tonight" are today. "kal" with a past verb means yesterday, with a future verb tomorrow. dueDate stays null unless a day is stated.
+
+Times: occurredAt is the 24-hour local time HH:MM the entry states for an activity ("woke up at 6:05" is "06:05", "slept at 11:30 last night" is "23:30" on yesterday's date), or "now" when the words say it is happening now or just ended ("now going to sleep", "abhi", "just finished a swim", "just got back from a walk"): a duration does not stop it being "now". A part of the day without a time ("this morning", "ran today") is null.
+
+Sleep: "woke up" is always an activity, with sleep "wake", even with nothing else to say. Going to bed or to sleep for the night ("sleeping now", "so raha hoon") is always an activity with sleep "bed", never skipped. sleep is null for every other activity, naps included.
 
 Metrics: use only values the entry states, except 1-5 scales (energy, mood, stress) which you may estimate from clear wording. Never invent numbers. Allowed keys: ${metricList}. For an amount with no key, use a snake_case key with a unit suffix. Put gym exercises in "exercises".
 

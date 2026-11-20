@@ -6,14 +6,17 @@ import { formatMetricAmount } from './metric-totals';
  * Exercises get their own lines.
  */
 export function metricsText(metrics: Record<string, unknown>): string {
-  return Object.entries(metrics)
-    .filter(([key]) => key !== 'exercises')
-    .map(([key, value]) => {
-      const { label } = metricChoice(key);
-      const text = typeof value === 'number' ? formatMetricAmount(key, value) : String(value);
-      return `${label}: ${text}`;
-    })
-    .join(' · ');
+  return (
+    Object.entries(metrics)
+      // The title already says "Woke up"; sleep_event only pairs it with a bed.
+      .filter(([key]) => key !== 'exercises' && key !== 'sleep_event')
+      .map(([key, value]) => {
+        const { label } = metricChoice(key);
+        const text = typeof value === 'number' ? formatMetricAmount(key, value) : String(value);
+        return `${label}: ${text}`;
+      })
+      .join(' · ')
+  );
 }
 
 export function exerciseLines(metrics: Record<string, unknown>): string[] {

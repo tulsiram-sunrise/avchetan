@@ -41,6 +41,8 @@ const activity: ExtractionResult['activities'][number] = {
   metrics: [],
   exercises: [],
   loggedDate: '2026-10-29',
+  occurredAt: null,
+  sleep: null,
   project: null,
   inferredTags: [],
 };
@@ -355,5 +357,64 @@ describe('reminders from what you type (§8)', () => {
       dueDate: '2026-10-31',
       remindAt: null,
     });
+  });
+});
+
+describe('when an activity happened, and sleep (§9)', () => {
+  // Captured 2026-10-30 at 10:00 UTC.
+  const withText = (content: string, zone = 'UTC'): NormalizeContext => ({
+    ...context,
+    rawLog: { ...context.rawLog, capturedTz: zone, content },
+  });
+  const at = (fields: Partial<typeof activity>, content: string, zone?: string) =>
+    normalizeExtraction(
+      { ...empty, activities: [{ ...activity, loggedDate: '2026-10-30', ...fields }] },
+      withText(content, zone),
+    ).activities[0];
+
+  it('turns a stated local time into the instant on its day', () => {
+    expect(at({ occurredAt: '6:05' }, 'woke up at 6:05')).toMatchObject({
+      loggedDate: '2026-10-30',
+      occurredAt: '2026-10-30T06:05:00.000Z',
+    });
+    expect(at({ occurredAt: '06:05' }, 'woke up at 6:05', 'Asia/Kolkata')).toMatchObject({
+      occurredAt: '2026-10-30T00:35:00.000Z',
+    });
+  });
+
+  it('uses the moment the entry was saved for "now"', () => {
+    expect(at({ occurredAt: 'now' }, 'now going to sleep')?.occurredAt).toBe(
+      '2026-10-30T10:00:00.000Z',
+    );
+    // "now" about another day can't be the moment it was written.
+    expect(
+      at({ occurredAt: 'now', loggedDate: '2026-10-29' }, 'yesterday ran')?.occurredAt,
+    ).toBeNull();
+  });
+
+  it('moves a time later than the entry to the night before', () => {
+    expect(at({ occurredAt: '23:30' }, 'went to bed at 11:30')).toMatchObject({
+      loggedDate: '2026-10-29',
+      occurredAt: '2026-10-29T23:30:00.000Z',
+    });
+    // A few minutes ahead is the clock, not yesterday.
+    expect(at({ occurredAt: '10:03' }, 'woke up at 10:03')?.occurredAt).toBe(
+      '2026-10-30T10:03:00.000Z',
+    );
+    expect(
+      at({ occurredAt: '23:30', loggedDate: '2026-10-29' }, 'yesterday went to bed at 11:30'),
+    ).toMatchObject({ loggedDate: '2026-10-29', occurredAt: '2026-10-29T23:30:00.000Z' });
+  });
+
+  it('leaves the time unknown when it cannot be read', () => {
+    expect(at({ occurredAt: 'morning' }, 'ran this morning')?.occurredAt).toBeNull();
+    expect(at({ occurredAt: '7:30 pm' }, 'ran')?.occurredAt).toBeNull();
+    expect(at({}, 'ran')?.occurredAt).toBeNull();
+  });
+
+  it('keeps only bed and wake as the sleep mark', () => {
+    expect(at({ sleep: 'Wake' }, 'woke up')?.metrics).toEqual({ sleep_event: 'wake' });
+    expect(at({ sleep: 'bed' }, 'sleeping')?.metrics).toEqual({ sleep_event: 'bed' });
+    expect(at({ sleep: 'nap' }, 'napped')?.metrics).toEqual({});
   });
 });

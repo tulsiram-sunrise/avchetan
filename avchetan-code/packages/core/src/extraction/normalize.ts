@@ -8,9 +8,12 @@ import {
   type PlannedActivity,
   type PlannedEntity,
   type RawLog,
+  SLEEP_EVENT_KEY,
+  type SleepEvent,
   seedCategoryId,
 } from '@avchetan/db/sqlite';
 import {
+  addDays,
   daysBetween,
   isValidLocalDate,
   isValidLocalTime,
@@ -74,6 +77,48 @@ function choreTicksOf(names: readonly string[], chores: readonly ChoreChoice[]) 
   return [...ticks.values()];
 }
 
+/** The model's "7:30" or "07:30"; null for anything else ("7:30 pm", "25:00"). */
+function localTimeOf(text: string | null | undefined): LocalTime | null {
+  const match = text?.trim().match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) return null;
+  const local = `${(match[1] ?? '').padStart(2, '0')}:${match[2]}`;
+  return isValidLocalTime(local) ? (local as LocalTime) : null;
+}
+
+/** A stated time this far past the moment the entry was written is a clock slip, not tomorrow. */
+const CLOCK_SLACK_MS = 5 * 60_000;
+
+/**
+ * When an activity happened (product/tasks-routines-reminders.md §9): a stated local time on its
+ * day, or the moment the entry was saved when the words say it is happening now or just did.
+ * Activities have already happened, so a time later than the entry on the entry's own day is
+ * the night before ("went to bed at 11:30", written at 7 in the morning). None when the time
+ * can't be read, or "now" is claimed for another day.
+ */
+export function plannedOccurrence(
+  time: string | null | undefined,
+  loggedDate: LocalDate,
+  today: LocalDate,
+  rawLog: { capturedAt: string; capturedTz: string },
+): { loggedDate: LocalDate; occurredAt: UtcInstant } | null {
+  if (time?.trim().toLowerCase() === 'now') {
+    return loggedDate === today
+      ? { loggedDate, occurredAt: rawLog.capturedAt as UtcInstant }
+      : null;
+  }
+  const local = localTimeOf(time);
+  if (!local) return null;
+  const occurredAt = instantAt(loggedDate, local, rawLog.capturedTz);
+  if (Date.parse(occurredAt) <= Date.parse(rawLog.capturedAt) + CLOCK_SLACK_MS) {
+    return { loggedDate, occurredAt };
+  }
+  if (loggedDate !== today) return null;
+  const dayBefore = addDays(today, -1);
+  return { loggedDate: dayBefore, occurredAt: instantAt(dayBefore, local, rawLog.capturedTz) };
+}
+
+const SLEEP_MARKS: ReadonlySet<string> = new Set<SleepEvent>(['bed', 'wake']);
+
 /**
  * The reminder an entry asked for (product/tasks-routines-reminders.md §8): the model gives a
  * local time, code makes the instant on the task's day (today when it has none). None when the
@@ -85,12 +130,10 @@ export function plannedReminder(
   today: LocalDate,
   rawLog: { capturedAt: string; capturedTz: string },
 ): { dueDate: LocalDate; remindAt: UtcInstant } | null {
-  const match = time?.trim().match(/^(\d{1,2}):(\d{2})$/);
-  if (!match) return null;
-  const local = `${(match[1] ?? '').padStart(2, '0')}:${match[2]}`;
-  if (!isValidLocalTime(local)) return null;
+  const local = localTimeOf(time);
+  if (!local) return null;
   const day = dueDate ?? today;
-  const remindAt = instantAt(day, local as LocalTime, rawLog.capturedTz);
+  const remindAt = instantAt(day, local, rawLog.capturedTz);
   if (Date.parse(remindAt) <= Date.parse(rawLog.capturedAt)) return null;
   return { dueDate: day, remindAt };
 }
@@ -259,22 +302,31 @@ export function normalizeExtraction(
     }
   });
 
-  const plannedActivities: PlannedActivity[] = activities.map(({ item }) => ({
-    categoryId: categories.resolve(item.category) ?? seedCategoryId('other'),
-    title: clean(item.title, MAX_TITLE) as string,
-    notes: clean(item.notes, MAX_NOTES),
-    metrics: foldMetrics(item),
-    loggedDate:
+  const plannedActivities: PlannedActivity[] = activities.map(({ item }) => {
+    const loggedDate =
       checkDate({
         date: plausibleDate(item.loggedDate, today),
         own: `${item.title} ${item.notes ?? ''}`,
         entry: rawLog.content ?? '',
         today,
         ahead: false,
-      }) ?? today,
-    projectId: projectId(item.project),
-    tagPaths: tagPaths(item.inferredTags, categorySlugs),
-  }));
+      }) ?? today;
+    const occurrence = plannedOccurrence(item.occurredAt, loggedDate, today, rawLog);
+    const metrics = foldMetrics(item);
+    // The model marks going to bed and waking up; code pairs them into sleep_h (db's sleep.ts).
+    const sleep = item.sleep?.trim().toLowerCase();
+    if (sleep && SLEEP_MARKS.has(sleep)) metrics[SLEEP_EVENT_KEY] = sleep;
+    return {
+      categoryId: categories.resolve(item.category) ?? seedCategoryId('other'),
+      title: clean(item.title, MAX_TITLE) as string,
+      notes: clean(item.notes, MAX_NOTES),
+      metrics,
+      loggedDate: occurrence?.loggedDate ?? loggedDate,
+      occurredAt: occurrence?.occurredAt ?? null,
+      projectId: projectId(item.project),
+      tagPaths: tagPaths(item.inferredTags, categorySlugs),
+    };
+  });
 
   // A chore done is also something that happened that day: a tick with no activity on the
   // chore's day is a plan, or about another day, and is dropped.

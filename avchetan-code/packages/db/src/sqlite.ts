@@ -107,6 +107,12 @@ export {
   routineRule,
   starterRoutineId,
 } from './client/repos/routines';
+export {
+  MAX_NIGHT_H,
+  MIN_NIGHT_H,
+  SLEEP_EVENT_KEY,
+  type SleepEvent,
+} from './client/repos/sleep';
 export type { Tag, TagLink } from './client/repos/tags';
 export {
   finishedDaysLate,

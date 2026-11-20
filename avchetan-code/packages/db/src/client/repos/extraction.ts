@@ -16,6 +16,7 @@ import type { activitiesRepo } from './activities';
 import type { categoriesRepo } from './categories';
 import type { entitiesRepo } from './entities';
 import type { routinesRepo } from './routines';
+import { pairSleep } from './sleep';
 import type { tagsRepo } from './tags';
 import type { tasksRepo } from './tasks';
 
@@ -33,6 +34,8 @@ export type PlannedActivity = {
   notes: string | null;
   metrics: Record<string, unknown>;
   loggedDate: string;
+  /** When it happened, if the entry says (a UTC instant); null otherwise. */
+  occurredAt?: string | null;
   projectId: string | null;
   tagPaths: string[];
 };
@@ -161,7 +164,7 @@ export function extractionRepo(deps: RepoDeps, repos: Repos) {
           id,
           rawLogId,
           categoryId: categoryIdOf(item.categoryId),
-          occurredAt: null,
+          occurredAt: item.occurredAt ?? null,
           origin: 'extraction',
           isUserEdited: false,
           ordinal,
@@ -213,6 +216,7 @@ export function extractionRepo(deps: RepoDeps, repos: Repos) {
       for (const { id } of await staleOf(tasks, taskIds)) {
         await repos.tasks.softDelete(tx, id);
       }
+      await pairSleep(tx, deps, activityIds);
 
       const editableActivities = (
         await tx
