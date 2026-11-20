@@ -196,3 +196,15 @@ export function dayHints(text: string, today: LocalDate): DayHint[] {
   }
   return hints;
 }
+
+const OTHER_DAY_HINTS =
+  /\b(kal|parso|parson|week|weekend|month|jan(uary)?|feb(ruary)?|mar(ch)?|apr(il)?|may|june?|july?|aug(ust)?|sep(t(ember)?)?|oct(ober)?|nov(ember)?|dec(ember)?|\d{1,2}(st|nd|rd|th))\b|\d{4}-\d{2}-\d{2}|\d{1,2}[/.]\d{1,2}|कल|परसों/iu;
+
+/**
+ * Whether a text names no day at all: no day word, weekday, date, month or "kal". A reminder
+ * asked for in such an entry is for today (product/tasks-routines-reminders.md §8), whatever
+ * date a small model copied from its examples.
+ */
+export function namesNoDay(text: string): boolean {
+  return dayWords(text).length === 0 && !OTHER_DAY_HINTS.test(text);
+}

@@ -53,6 +53,7 @@ const PRIVATE_ANSWER = JSON.stringify({
       inferredTags: [],
       forPerson: 'Zorblax',
       waitingOn: null,
+      remindAt: null,
     },
   ],
   newCategory: null,

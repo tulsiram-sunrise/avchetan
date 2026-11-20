@@ -46,6 +46,10 @@ const taskSchema = z.object({
     .string()
     .nullable()
     .describe('The named person who said they would do this for the user, if any'),
+  remindAt: z
+    .string()
+    .nullable()
+    .describe('Local time HH:MM the entry asks to be reminded at, else null'),
 });
 
 /**

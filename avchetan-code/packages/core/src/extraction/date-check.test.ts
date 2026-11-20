@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { checkDate, dayHints, dayWords } from './date-check';
+import { checkDate, dayHints, dayWords, namesNoDay } from './date-check';
 
 // Sunday 8 November 2026, as in the feature audit.
 const today = '2026-11-08';
@@ -121,5 +121,21 @@ describe('dayHints', () => {
 
   it('finds nothing in plain text', () => {
     expect(dayHints('bought a new lock', today)).toEqual([]);
+  });
+});
+
+describe('namesNoDay', () => {
+  it.each([
+    ['remind me at 4 pm to call the dentist', true],
+    ['set an alarm for 6:30', true],
+    ['remind me tomorrow at 7', false],
+    ['remind me on friday at 9', false],
+    ['kal subah 6 baje yaad dilana', false],
+    ['remind me on the 25th', false],
+    ['remind me on 12 March at 10', false],
+    ['remind me next week', false],
+    ['remind me at 9 tonight', false],
+  ])('%s → %s', (text, expected) => {
+    expect(namesNoDay(text)).toBe(expected);
   });
 });

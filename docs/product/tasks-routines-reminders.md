@@ -27,16 +27,17 @@ Today a task is either open or done, nothing reminds you of it, and anything you
 | 15 | [Repeating tasks](#6-repeating-tasks) through routines | PC and phone |
 | 16 | [Reminders](#7-reminders): phone alarms, the per-device ring setting, PC popup | Phone first, PC |
 | 17 | ["Remind me at 4" read by extraction](#8-reminders-from-what-you-type) | Extraction |
-| 18 | [Sleep hours](#9-sleep-hours): stated times, *woke up*, bed + wake into `sleep_h` | Extraction + Trends |
-| 19 | [The brief: Went well / Needs attention](#10-the-brief-went-well-and-needs-attention) | Brief |
-| 20 | [Day coverage](#11-day-coverage) (opt-in) | Days |
-| 21 | [Share to Avchetan](#12-share-to-avchetan) | Phone |
-| 22 | [Accessibility pass](#13-accessibility-pass) | PC and phone |
-| 23 | `HubClient` in core: Ask, the brief and command reading leave the apps ([roadmap](../roadmap.md#v050--tasks-routines-and-reminders)) | `packages/core`, both apps |
-| 24 | Command handlers, one undo model and the write actions move into core | `packages/core`, both apps |
-| 25 | [`/done` and `/undo` on the phone](#14-done-and-undo-on-the-phone) | Phone |
-| 26 | Edits made on two devices: keep the losing version ([roadmap](../roadmap.md#v050--tasks-routines-and-reminders)) | Sync, both |
-| 27 | Test build and release ([releasing](../conventions/releasing.md)) | Both |
+| 18 | [The phone reaches the hub directly on a hotspot](#15-the-phone-reaches-the-hub-directly-on-a-hotspot), without Tailscale | Sync, both |
+| 19 | [Sleep hours](#9-sleep-hours): stated times, *woke up*, bed + wake into `sleep_h` | Extraction + Trends |
+| 20 | [The brief: Went well / Needs attention](#10-the-brief-went-well-and-needs-attention) | Brief |
+| 21 | [Day coverage](#11-day-coverage) (opt-in) | Days |
+| 22 | [Share to Avchetan](#12-share-to-avchetan) | Phone |
+| 23 | [Accessibility pass](#13-accessibility-pass) | PC and phone |
+| 24 | `HubClient` in core: Ask, the brief and command reading leave the apps ([roadmap](../roadmap.md#v050--tasks-routines-and-reminders)) | `packages/core`, both apps |
+| 25 | Command handlers, one undo model and the write actions move into core | `packages/core`, both apps |
+| 26 | [`/done` and `/undo` on the phone](#14-done-and-undo-on-the-phone) | Phone |
+| 27 | Edits made on two devices: keep the losing version ([roadmap](../roadmap.md#v050--tasks-routines-and-reminders)) | Sync, both |
+| 28 | Test build and release ([releasing](../conventions/releasing.md)) | Both |
 
 ## 1. Finishing a task
 
@@ -113,6 +114,8 @@ A task can have a reminder time (`remind_at`), set by hand on both apps or [from
 
 "Remind me at 4 pm to call the dentist" becomes a task with `due_date` today and `remind_at` 16:00 local time. The model gives a local time and code turns it into UTC. This is a new prompt version with fixtures, and it shares Day 11's time reading.
 
+**Built on Day 17 (2026-11-20).** Prompt `extraction.v7` adds `remindAt` (local `HH:MM`) to each task, with two examples and a rule: only when the entry asks to be reminded, never for a time that is only part of a plan. Code (`plannedReminder` in `normalize.ts`) makes the instant on the task's day in the entry's time zone, uses today when the entry names no day (`namesNoDay`, as small models copy the examples' date), gives an undated task the reminder's day, and drops a time already past when written. Organizing again sets `remind_at` only on a task that has none. Eval on five made-up reminder fixtures: `granite4.2:8b` 4/5 (missed *kal subah 6 baje yaad dilana*), `granite4.2:3b` 2/5 before the no-day check; the whole set on `granite4.2:8b` 40/58, the 53 older fixtures 36/53, in line with earlier runs of this model on a processor.
+
 ## 9. Sleep hours
 
 Extraction stores when an activity happened in `occurred_at`:
@@ -139,4 +142,12 @@ On both apps: text size follows the system setting, keyboard focus is always vis
 
 ## 14. `/done` and `/undo` on the phone
 
-The phone's capture box gets `/done` and `/undo`, reusing the fuzzy command matching from v0.4.0 ([capture box redesign](capture-box-redesign.md)). The handlers come from `packages/core` (Day 24), so the phone and the PC run the same code.
+The phone's capture box gets `/done` and `/undo`, reusing the fuzzy command matching from v0.4.0 ([capture box redesign](capture-box-redesign.md)). The handlers come from `packages/core` (Day 25), so the phone and the PC run the same code.
+
+## 15. The phone reaches the hub directly on a hotspot
+
+*Added 2026-11-20 from what the author sees often:* the laptop running the hub is online through the phone's own hotspot, yet the phone reaches the hub through Tailscale. The two are on one small network (the phone is its router), so they could talk directly. They don't because (1) the phone only knows the addresses saved at pairing, and on the hotspot the laptop has another one (on many phones the hotspot's range changes each time it is turned on), and (2) Windows treats a newly joined network, such as a hotspot, as **Public**, and the guide's firewall rule allows the hub's port on **Private** networks only.
+
+- **The hub tells the phone where it is.** Each sync answer (or the health check) carries the hub's current local addresses, as the pairing code does. The phone keeps them beside the paired ones and tries the local ones first, Tailscale after. The pinned server ID (Day 7) still has to match, so another device at that address is never used.
+- **Setup check on the PC:** warns when the network the hub listens on is marked Public, with how to set it to Private (only for networks you own, such as your phone's hotspot).
+- Works the same on home Wi-Fi when the router gives the PC a new address. Tailscale stays the way in from anywhere else.

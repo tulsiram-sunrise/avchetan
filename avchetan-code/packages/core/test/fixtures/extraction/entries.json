@@ -835,5 +835,75 @@
       ],
       "choresDone": []
     }
+  },
+  {
+    "id": "remind-dentist",
+    "text": "remind me at 4 pm to call the dentist",
+    "at": "2026-03-04T04:30:00.000Z",
+    "expect": {
+      "tasks": [
+        {
+          "titleHas": "dentist",
+          "dueDate": "2026-03-04",
+          "remindAt": "2026-03-04T16:00:00.000Z"
+        }
+      ]
+    }
+  },
+  {
+    "id": "remind-tomorrow",
+    "text": "remind me tomorrow at 7:30 am to take the car for service",
+    "at": "2026-03-04T15:00:00.000Z",
+    "expect": {
+      "tasks": [
+        {
+          "titleHas": "car",
+          "dueDate": "2026-03-05",
+          "remindAt": "2026-03-05T07:30:00.000Z"
+        }
+      ]
+    }
+  },
+  {
+    "id": "remind-tonight",
+    "text": "set a reminder for 9 tonight to take my vitamins",
+    "at": "2026-03-04T10:00:00.000Z",
+    "expect": {
+      "tasks": [
+        {
+          "titleHas": "vitamin",
+          "dueDate": "2026-03-04",
+          "remindAt": "2026-03-04T21:00:00.000Z"
+        }
+      ]
+    }
+  },
+  {
+    "id": "remind-not-asked",
+    "text": "dentist appointment on friday at 11",
+    "at": "2026-03-04T10:00:00.000Z",
+    "expect": {
+      "tasks": [
+        {
+          "titleHas": "dentist",
+          "dueDate": "2026-03-06",
+          "remindAt": null
+        }
+      ]
+    }
+  },
+  {
+    "id": "remind-hinglish",
+    "text": "kal subah 6 baje yaad dilana, gym jaana hai",
+    "at": "2026-03-04T15:00:00.000Z",
+    "expect": {
+      "tasks": [
+        {
+          "titleHas": "gym",
+          "dueDate": "2026-03-05",
+          "remindAt": "2026-03-05T06:00:00.000Z"
+        }
+      ]
+    }
   }
 ]

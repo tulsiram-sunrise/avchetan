@@ -42,6 +42,16 @@ describe('recorded extraction answers', () => {
     expect(Object.keys(answers).length).toBeGreaterThanOrEqual(30);
   });
 
+  /** Answers recorded before extraction v6 have no choresDone, before v7 no remindAt. */
+  const upgraded = (answer: unknown) => {
+    const { tasks = [], ...rest } = answer as { tasks?: object[] };
+    return {
+      choresDone: [],
+      ...rest,
+      tasks: tasks.map((task) => ({ remindAt: null, ...task })),
+    };
+  };
+
   it.each(FIXTURES.filter((fixture) => fixture.id in answers))('$id', async (fixture) => {
     const rawLog = await captureFixture(context.store, fixture);
 
@@ -53,8 +63,7 @@ describe('recorded extraction answers', () => {
         llmMayCreate: 'auto',
         chores: fixtureChores(fixture),
       },
-      // Answers recorded before extraction v6 have no choresDone.
-      replaying({ choresDone: [], ...(answers[fixture.id] as object) }),
+      replaying(upgraded(answers[fixture.id])),
     );
 
     // Recorded answers predate the promise roles of extraction v4; the eval judges those.
