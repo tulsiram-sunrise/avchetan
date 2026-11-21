@@ -14,6 +14,7 @@ import { createApp } from '../app';
 import { loadServerIdentity, type ServerIdentity } from '../auth';
 import type { ServerDatabase } from '../db/client';
 import { openTestDatabase } from '../db/testing';
+import { socketAddress } from '../socket-address';
 import { openServerDevice, type ServerDevice } from './server-device';
 
 const TOKEN = 'test-token-that-is-long-enough-to-pass-32';
@@ -78,6 +79,8 @@ beforeEach(async () => {
     profile: 'hub',
     internalToken: INTERNAL_TOKEN,
     nowMs: () => serverMs,
+    // The real lookup, so a request with no socket (this device's) is covered.
+    clientAddress: socketAddress,
   });
   serverFetch = (input, init) => Promise.resolve(app.fetch(new Request(input, init)));
 });
