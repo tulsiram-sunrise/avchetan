@@ -146,7 +146,7 @@ On both apps: text size follows the system setting, keyboard focus is always vis
 
 ## 14. `/done` and `/undo` on the phone
 
-The phone's capture box gets `/done` and `/undo`, reusing the fuzzy command matching from v0.4.0 ([capture box redesign](capture-box-redesign.md)). The handlers come from `packages/core` (Day 25), so the phone and the PC run the same code.
+The phone's capture box gets `/done` and `/undo`, reusing the fuzzy command matching from v0.4.0 ([capture box redesign](capture-box-redesign.md)). The handlers come from `packages/core` (Day 26), so the phone and the PC run the same code.
 
 ## 15. The phone reaches the hub directly on a hotspot
 
