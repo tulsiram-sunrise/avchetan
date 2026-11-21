@@ -9,7 +9,6 @@ import {
 } from '@avchetan/shared';
 import { MAX_SEARCH_RESULTS } from '@avchetan/sync/protocol';
 import { serve } from '@hono/node-server';
-import { getConnInfo } from '@hono/node-server/conninfo';
 import serverPackage from '../package.json' with { type: 'json' };
 import { ApiError } from './api-error';
 import { createApp } from './app';
@@ -34,6 +33,7 @@ import {
   secretsFromEnv,
 } from './from-env';
 import { pairingUrls } from './pairing';
+import { socketAddress } from './socket-address';
 import { saveGeneratedToken } from './token-file';
 
 /** The release version (`pnpm version:set`), bundled in at build time. */
@@ -117,7 +117,7 @@ async function main(): Promise<void> {
   let briefRunner: BriefRunner | null = null;
 
   const app = createApp({
-    clientAddress: (c) => getConnInfo(c).remote.address,
+    clientAddress: socketAddress,
     db: database.db,
     identity,
     clock,
