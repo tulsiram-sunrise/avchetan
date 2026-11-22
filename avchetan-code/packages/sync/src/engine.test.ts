@@ -7,6 +7,9 @@ import { createSyncEngine, type PullProgress, type SyncDevice } from './engine';
 import { hubProof, type PushRejection, tokenKey } from './protocol';
 import { describeSync, INITIAL_STATUS, loadSyncStatus } from './status';
 
+/** Writing hundreds of rows first can pass Vitest's 5 s default on a busy CI runner. */
+const SLOW_SETUP_MS = 20_000;
+
 /**
  * The engine against a scripted server: no PGlite, no HTTP, so each case runs in milliseconds.
  * The full round trip through the real server is in apps/server/src/two-devices.test.ts.
@@ -316,23 +319,27 @@ describe('pushing', () => {
     expect(await device.status()).toMatchObject({ state: 'synced', clockSkew: true });
   });
 
-  it('sends a backlog bigger than one batch, and the rows after a refused one', async () => {
-    const device = await setup();
-    const first = await device.addTask('Refused');
-    device.server.refused.set(first.id, 'validation');
-    await device.store.write(async (tx) => {
-      for (let n = 1; n <= 520; n += 1)
-        await device.store.repos.tasks.create(tx, { title: `${n}` });
-    });
+  it(
+    'sends a backlog bigger than one batch, and the rows after a refused one',
+    async () => {
+      const device = await setup();
+      const first = await device.addTask('Refused');
+      device.server.refused.set(first.id, 'validation');
+      await device.store.write(async (tx) => {
+        for (let n = 1; n <= 520; n += 1)
+          await device.store.repos.tasks.create(tx, { title: `${n}` });
+      });
 
-    await device.engine.syncNow();
+      await device.engine.syncNow();
 
-    // One walk through the outbox: two batches, and the refused row went once.
-    expect(device.server.count('/v1/sync/push')).toBe(2);
-    expect(device.server.received.filter(({ table }) => table === 'tasks')).toHaveLength(520);
-    expect(await device.store.sync.listOutbox()).toHaveLength(1);
-    expect(device.server.pushed.get(first.id)).toBe(1);
-  });
+      // One walk through the outbox: two batches, and the refused row went once.
+      expect(device.server.count('/v1/sync/push')).toBe(2);
+      expect(device.server.received.filter(({ table }) => table === 'tasks')).toHaveLength(520);
+      expect(await device.store.sync.listOutbox()).toHaveLength(1);
+      expect(device.server.pushed.get(first.id)).toBe(1);
+    },
+    SLOW_SETUP_MS,
+  );
 
   it('tries a refused row once per sync, however long the backlog', async () => {
     // Batches of 10, so 130 rows are 13 batches: more than a row's 10 tries.
