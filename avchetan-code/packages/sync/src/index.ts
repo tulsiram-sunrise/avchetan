@@ -35,6 +35,7 @@ export {
   checkConnection,
   connectionRows,
   hubModelRows,
+  hubOrganizingRows,
   isConnectionError,
 } from './setup-check';
 export {

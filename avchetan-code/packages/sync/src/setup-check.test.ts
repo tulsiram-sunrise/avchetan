@@ -5,7 +5,12 @@ import { MemorySecretStore } from '@avchetan/shared/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { SYNC_TOKEN_SECRET, saveConnection } from './config';
 import type { StatusResponse } from './protocol';
-import { type ConnectionCheck, checkConnection, connectionRows } from './setup-check';
+import {
+  type ConnectionCheck,
+  checkConnection,
+  connectionRows,
+  hubOrganizingRows,
+} from './setup-check';
 
 const SERVER = '0192a000-0000-7000-8000-0000000000aa';
 const TOKEN = 'a-sync-token-that-is-long-enough-to-pass';
@@ -132,5 +137,48 @@ describe('checkConnection', () => {
       state: 'problem',
       helpCode: 'ollama_not_running',
     });
+  });
+});
+
+describe('hubOrganizingRows', () => {
+  const at = (minutesAgo: number) =>
+    new Date(Date.parse('2026-10-26T10:00:00.000Z') - minutesAgo * 60_000).toISOString();
+  const status = (extra: Partial<StatusResponse>, waitingLong?: number): StatusResponse => ({
+    ...serverStatus('2026-10-26T10:00:00.000Z'),
+    ...(waitingLong === undefined ? {} : { logs: { waiting: 3, failed: 0, waitingLong } }),
+    ...extra,
+  });
+
+  it('says nothing for an older hub, or one that keeps up', () => {
+    expect(hubOrganizingRows(status({}))).toEqual([]);
+    expect(
+      hubOrganizingRows(status({ serverDevice: { errorCode: null, okAt: at(300) } }, 0)),
+    ).toEqual([]);
+  });
+
+  it('waits a while before calling a failing sync a problem', () => {
+    const failing = (minutes: number) =>
+      hubOrganizingRows(status({ serverDevice: { errorCode: 'internal', okAt: at(minutes) } }));
+
+    expect(failing(10)).toEqual([]);
+    expect(failing(20)).toEqual([
+      expect.objectContaining({
+        id: 'hub-device',
+        state: 'problem',
+        detail: expect.stringContaining('internal'),
+        helpCode: 'hub_not_organizing',
+      }),
+    ]);
+  });
+
+  it('reports entries that waited long past the grace period', () => {
+    expect(hubOrganizingRows(status({}, 1))).toEqual([
+      expect.objectContaining({
+        id: 'hub-waiting',
+        title: '1 entry has waited over an hour for the hub to organize',
+        helpCode: 'hub_not_organizing',
+      }),
+    ]);
+    expect(hubOrganizingRows(status({}, 4))[0]?.title).toMatch(/^4 entries have/);
   });
 });

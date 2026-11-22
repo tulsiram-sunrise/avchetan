@@ -5,6 +5,7 @@ import {
   type Scheduler,
   type SecretStore,
   TimerScheduler,
+  withRequestLog,
   withStandardFailures,
 } from '@avchetan/shared';
 import NetInfo from '@react-native-community/netinfo';
@@ -48,7 +49,7 @@ export async function createExpoPlatform(): Promise<Platform> {
     secrets: new ExpoSecretStore(SecureStore),
     network: new NetInfoMonitor(NetInfo.addEventListener),
     scheduler: new TimerScheduler(),
-    fetch: withStandardFailures(expoFetch as HttpFetch),
+    fetch: withRequestLog(withStandardFailures(expoFetch as HttpFetch)),
     files: createDataFiles(DATABASE_NAME),
   };
 }

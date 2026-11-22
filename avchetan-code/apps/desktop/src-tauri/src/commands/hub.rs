@@ -4,7 +4,7 @@
 
 use std::collections::VecDeque;
 use std::fs;
-use std::io::{BufRead, BufReader, Read};
+use std::io::{BufRead, BufReader, Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Child, ChildStdin, Command, Stdio};
 use std::sync::{Arc, Mutex, MutexGuard};
@@ -241,6 +241,9 @@ impl HubState {
         match spawned {
             Ok(mut child) => {
                 inner.stdin = child.stdin.take();
+                if crate::detailed_log::is_on() {
+                    tell_log_level(&mut inner.stdin, true);
+                }
                 // Output that isn't a logger line (a crash's stack) comes on stderr: a warning.
                 let streams = [
                     (
@@ -274,6 +277,11 @@ impl HubState {
                 push_log(&mut inner.logs, format!("[desktop] {}", error.message));
             }
         }
+    }
+
+    /// Tells a running hub that the log turned detailed or back (`apps/server/src/hub-input.ts`).
+    pub fn set_detailed_log(&self, detailed: bool) {
+        tell_log_level(&mut self.lock().stdin, detailed);
     }
 
     fn read_logs(&self, stream: Box<dyn Read + Send>, other_output: log::Level, generation: u64) {
@@ -549,6 +557,19 @@ fn remove_if_present(path: &Path) -> std::io::Result<()> {
 
 fn io_failed(code: &'static str) -> impl Fn(std::io::Error) -> CommandError {
     move |error| CommandError::new(code, error.to_string())
+}
+
+fn tell_log_level(stdin: &mut Option<ChildStdin>, detailed: bool) {
+    let Some(stdin) = stdin.as_mut() else { return };
+    let line: &[u8] = if detailed {
+        b"log-level detailed\n"
+    } else {
+        b"log-level normal\n"
+    };
+    crate::error::warn_on_err(
+        "tell the hub its log level",
+        stdin.write_all(line).and_then(|()| stdin.flush()),
+    );
 }
 
 /// The level and text of a line of hub output. Its logger writes `LEVEL [scope] message {fields}`

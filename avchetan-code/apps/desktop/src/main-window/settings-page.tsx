@@ -23,6 +23,7 @@ import { AppLockSetting } from './app-lock-setting';
 import { ClipboardSnapSetting } from './clipboard-snap-setting';
 import { CommandsSetting } from './commands-setting';
 import { DataSetting } from './data-setting';
+import { DetailedLogSetting } from './detailed-log-setting';
 import { HubSetting } from './hub-setting';
 import { LearnedSetting } from './learned-setting';
 import { PrivateTagsSetting } from './private-tags-setting';
@@ -183,6 +184,7 @@ function AboutSetting() {
         <QuietButton onClick={() => openLogs.mutate()}>Open log folder</QuietButton>
       </div>
       <ActionError errors={[openLogs.error]} />
+      <DetailedLogSetting />
     </section>
   );
 }

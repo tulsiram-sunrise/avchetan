@@ -15,6 +15,7 @@ import { createApp } from './app';
 import { loadServerIdentity } from './auth';
 import type { ServerDatabase } from './db/client';
 import { openTestDatabase } from './db/testing';
+import { countLongWaiting } from './fallback/left-waiting';
 import { toInstant } from './sync/read-pull';
 
 const TOKEN = 'test-token-that-is-long-enough-to-pass-32';
@@ -435,6 +436,36 @@ describe('status', () => {
     const response = await withAi.request('/v1/status', { headers: headers() });
 
     expect(statusResponseSchema.parse(await response.json()).ai).toEqual(ai);
+  });
+
+  it('says whether the server keeps up with organizing, when it organizes', async () => {
+    const identity = await loadServerIdentity(database.db, TOKEN);
+    const organizing = (minutes: number) =>
+      createApp({
+        db: database.db,
+        identity,
+        clock: createMonotonicClock({ source: () => wallMs }),
+        version: 'test',
+        profile: 'hub',
+        organizing: async () => ({
+          waitingLong: await countLongWaiting(database.db, minutes),
+          serverDevice: { errorCode: 'internal', okAt: NOW },
+        }),
+      });
+    await register();
+    const ordinary = await clientRow('waiting');
+    const secret = { ...(await clientRow('private')), privacy: 'local_only' };
+    await push([ordinary, secret].map((row) => ({ table: 'raw_logs', row })));
+
+    const read = async (minutes: number) =>
+      statusResponseSchema.parse(
+        await (await organizing(minutes).request('/v1/status', { headers: headers() })).json(),
+      );
+
+    // Just pushed: waiting no time at all, but not an hour. The private one never counts.
+    expect((await read(0)).logs).toEqual({ waiting: 2, failed: 0, waitingLong: 1 });
+    expect((await read(60)).logs.waitingLong).toBe(0);
+    expect((await read(60)).serverDevice).toEqual({ errorCode: 'internal', okAt: NOW });
   });
 });
 

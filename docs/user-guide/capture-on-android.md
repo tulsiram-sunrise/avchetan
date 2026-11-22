@@ -76,7 +76,7 @@ An entry's tags show under it on **Days**; tap one to open the tag's page. **Mor
 
 ## The More tab
 
-**More** is grouped: **Your stuff** (Routines, Reminders, People, Tags, Projects, Trends), **AI and capture** (AI models, Voice, Daily brief, What Avchetan learned), **Privacy** (App lock, Private tags), **Connection and data** (Sync, Your data, Setup check) and **Help** (User guide, Report a problem, Log, Run setup again).
+**More** is grouped: **Your stuff** (Routines, Reminders, People, Tags, Projects, Trends), **AI and capture** (AI models, Voice, Daily brief, What Avchetan learned), **Privacy** (App lock, Private tags), **Connection and data** (Sync, Your data, Setup check) and **Help** (User guide, Report a problem, Log, Run setup again). **Log** shows what the app did since you opened it; its **Detailed log for 1 hour** adds each request, sync step and entry organized when you are asked for a detailed log ([Send a log](troubleshooting.md#send-a-log)).
 
 ## Change or fix an entry
 

@@ -169,8 +169,10 @@ export function createPendingProcessor(deps: PendingProcessorDeps): PendingProce
 
     if (budget !== null) budget -= 1;
     await store.write((tx) => store.repos.rawLogs.claim(tx, next, later(LEASE_MS)));
+    const startedMs = Date.now();
     try {
       await extract(next, models, settings);
+      log.debug('entry organized', { id: next.id, durationMs: Date.now() - startedMs });
       deps.onChange?.();
       return 'more';
     } catch (error) {

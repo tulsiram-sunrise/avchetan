@@ -5,6 +5,7 @@ import {
   type Scheduler,
   type SecretStore,
   TimerScheduler,
+  withRequestLog,
   withStandardFailures,
 } from '@avchetan/shared';
 import { invoke } from '@tauri-apps/api/core';
@@ -48,7 +49,7 @@ export function createTauriPlatform(call: Invoke = invoke): Platform {
     secrets: new TauriSecretStore(call),
     network: new BrowserNetworkMonitor(),
     scheduler: new TimerScheduler(),
-    fetch: withStandardFailures(withoutOrigin(tauriFetch)),
+    fetch: withRequestLog(withStandardFailures(withoutOrigin(tauriFetch))),
     shell: createShell(call),
     files: createDataFiles(call),
     hub: createHub(call),

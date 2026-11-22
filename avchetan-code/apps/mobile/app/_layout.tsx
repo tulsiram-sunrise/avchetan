@@ -1,6 +1,7 @@
 // First: every module's logger writes to the phone's log (More → Log) from the start.
 import '../src/platform/app-log';
 import '../global.css';
+import { loadDetailedLogUntil } from '@avchetan/core';
 import { createLogger, toAppError } from '@avchetan/shared';
 import { QueryClientProvider } from '@tanstack/react-query';
 import * as Notifications from 'expo-notifications';
@@ -11,6 +12,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, AppState, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { type AppServices, getAppServices } from '../src/app-services';
+import { detailedLog } from '../src/platform/app-log';
 import { expoDeviceLock } from '../src/platform/device-lock';
 import { queryClient, refreshAll } from '../src/query-client';
 import { appLeft, appReturned, startAppLock } from '../src/services/app-lock';
@@ -25,6 +27,13 @@ import { AppTheme } from '../src/theme/theme';
 import { lockedScreenLayout } from '../src/ui/lock-screen';
 import { HelpLink } from '../src/ui/parts';
 import { UndoProvider } from '../src/ui/undo-bar';
+
+/** The saved *Detailed log for 1 hour* (More → Log), at startup and when the app comes back. */
+function applyDetailedLog(services: AppServices): void {
+  loadDetailedLogUntil(services.store)
+    .then((until) => detailedLog.apply(until))
+    .catch(() => log.warn('could not read the detailed log setting'));
+}
 
 const log = createLogger('app');
 
@@ -151,6 +160,7 @@ export default function RootLayout() {
       })
       .then(
         (services) => {
+          applyDetailedLog(services);
           services.extraction.start();
           services.sync.start();
           services.brief.start();
@@ -160,6 +170,7 @@ export default function RootLayout() {
           stopWatching = watchAppState(AppState, {
             onActive: () => {
               appReturned(Date.now());
+              applyDetailedLog(services);
               // Android may have stopped timers, and the background task may have changed rows.
               refreshAll();
               void services.extraction.wake();

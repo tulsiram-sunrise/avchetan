@@ -50,6 +50,8 @@ export {
   systemTimeZone,
   weekdayOf,
 } from './dates';
+export type { DetailedLogControl } from './detailed-log';
+export { createDetailedLogControl, DETAILED_LOG_MS, withRequestLog } from './detailed-log';
 export { errorFields, thrownAt } from './error-fields';
 export type { ErrorHelp, KnownErrorCode } from './error-help';
 export {
