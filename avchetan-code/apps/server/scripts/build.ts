@@ -10,6 +10,8 @@ await build({
   target: 'node24',
   format: 'esm',
   sourcemap: true,
+  // Stack paths start at the workspace (apps/server/src/…), as in the hub (build-sidecar.ts).
+  sourceRoot: '/avchetan-code/apps/server/dist/',
   // PGlite and its pgvector extension load their files from beside their own modules, so they
   // ship as folders. pg only tries pg-native when asked for it.
   external: ['@electric-sql/pglite', '@electric-sql/pglite-pgvector', 'pg-native'],

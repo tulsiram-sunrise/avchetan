@@ -1,6 +1,13 @@
-import { createLogger, describeError, helpSection, toAppError } from '@avchetan/shared';
+import {
+  createLogger,
+  describeError,
+  helpSection,
+  logErrorShown,
+  toAppError,
+} from '@avchetan/shared';
 import { isConnectionError } from '@avchetan/sync';
 import { router } from 'expo-router';
+import { useEffect } from 'react';
 import { Pressable, Text, TextInput, type TextInputProps, View } from 'react-native';
 import { openHelp } from '../help';
 import { usePalette } from '../theme/theme';
@@ -47,6 +54,8 @@ export function Field({ label, ...input }: TextInputProps & { label: string }) {
 
 /** "Help" link for an error code (ERROR_HELP); nothing when the message is the whole fix. */
 export function HelpLink({ code }: { code: string }) {
+  // Every error shown with a Help link is in the log (docs/conventions/errors-and-logging.md).
+  useEffect(() => logErrorShown(code), [code]);
   const section = helpSection(code);
   if (!section) return null;
   return (

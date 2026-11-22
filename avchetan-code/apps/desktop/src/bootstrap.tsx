@@ -1,11 +1,12 @@
-import { configureLogging, createLogger, toAppError } from '@avchetan/shared';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { configureLogging, createLogger, errorFields, toAppError } from '@avchetan/shared';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { type ReactNode, StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { type AppServices, openAppServices } from './app-services';
 import { HelpLink } from './help-link';
 import { createTauriPlatform } from './platform';
 import { createDesktopLogSink, pluginLogWriter } from './platform/log-sink';
+import { createQueryClient } from './query-client';
 import { ServicesProvider } from './services-context';
 import './styles.css';
 
@@ -20,6 +21,13 @@ export async function bootstrap(
     level: import.meta.env.DEV ? 'debug' : 'info',
     sink: createDesktopLogSink({ write: pluginLogWriter, console: import.meta.env.DEV }),
   });
+  // Errors nothing caught: where they were thrown, never their text.
+  window.addEventListener('error', (event) =>
+    log.error('uncaught error', errorFields(event.error)),
+  );
+  window.addEventListener('unhandledrejection', (event) =>
+    log.error('unhandled rejection', errorFields(event.reason)),
+  );
   const container = document.getElementById('root');
   if (!container) throw new Error('missing #root');
   const root = createRoot(container);
@@ -27,10 +35,7 @@ export async function bootstrap(
   try {
     const services = await openAppServices(createTauriPlatform());
     await beforeRender?.(services);
-    // Local SQLite reads are cheap and change only through our own writes.
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { staleTime: Number.POSITIVE_INFINITY, retry: false } },
-    });
+    const queryClient = createQueryClient();
     root.render(
       <StrictMode>
         <QueryClientProvider client={queryClient}>
@@ -40,7 +45,7 @@ export async function bootstrap(
     );
   } catch (error) {
     const appError = toAppError(error);
-    log.error('startup failed', { code: appError.code });
+    log.error('startup failed', errorFields(appError));
     root.render(<StartupError code={appError.code} />);
   }
 }

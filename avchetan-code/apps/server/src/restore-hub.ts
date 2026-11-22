@@ -1,12 +1,15 @@
 import { configureLogging, toAppError } from '@avchetan/shared';
 import { restoreSnapshot } from './backups/restore';
 import { loadEnv } from './env';
+import { createLineSink } from './log-sink';
 
 /**
  * `pnpm --filter @avchetan/server restore:hub <snapshot file>`: puts a hub snapshot back into
  * PGLITE_DATA_DIR (docs/user-guide/backup-and-restore.md). Messages go straight to the
  * terminal; they hold paths only.
  */
+configureLogging({ sink: createLineSink() });
+
 async function main(): Promise<void> {
   const env = loadEnv(process.env);
   configureLogging({ level: env.LOG_LEVEL });
