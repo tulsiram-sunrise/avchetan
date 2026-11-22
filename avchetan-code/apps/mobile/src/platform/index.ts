@@ -5,6 +5,7 @@ import {
   type Scheduler,
   type SecretStore,
   TimerScheduler,
+  withStandardFailures,
 } from '@avchetan/shared';
 import NetInfo from '@react-native-community/netinfo';
 import { fetch as expoFetch } from 'expo/fetch';
@@ -14,7 +15,6 @@ import { createDataFiles, type DataFiles } from './data-files';
 import { createExpoSqliteExecutor } from './expo-sqlite';
 import { NetInfoMonitor } from './netinfo-monitor';
 import { ExpoSecretStore } from './secure-store';
-import { withStandardFailures } from './standard-fetch';
 
 /** Every platform capability the app uses, built once (docs/patterns/platform-adapters.md). */
 export type Platform = {

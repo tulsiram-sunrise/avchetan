@@ -1,5 +1,6 @@
 import { getSetting, setSetting } from '@avchetan/db/sqlite';
 import { openTestStore } from '@avchetan/db/testing';
+import { withStandardFailures } from '@avchetan/shared';
 import { MemorySecretStore } from '@avchetan/shared/testing';
 import { describe, expect, it, vi } from 'vitest';
 import { loadExtractionSettings, MODEL_SLOTS_SETTING } from '../extraction/settings';
@@ -120,6 +121,38 @@ describe('AI model settings', () => {
     const headers = new Headers(fetch.mock.calls[0]?.[1]?.headers);
     expect(headers.get('authorization')).toBe('Bearer typed-key');
     expect(await hasApiKey(secrets, 'groq')).toBe(false);
+  });
+
+  it('says the model could not be reached when the desktop request fails', async () => {
+    // Tauri's HTTP plugin rejects with a bare string; this once showed as "internal".
+    const fetch = withStandardFailures(async () => {
+      throw 'error sending request';
+    });
+    const google = { provider: 'google', model: 'test-model' } as const;
+
+    await expect(
+      testDraftModel(
+        { config: google, apiKey: 'typed-key' },
+        { fetch, secrets: new MemorySecretStore() },
+      ),
+    ).rejects.toMatchObject({ code: 'llm_unavailable' });
+  });
+
+  it('says the model took too long when the request is cancelled', async () => {
+    const fetch = withStandardFailures(
+      (_input, init) =>
+        new Promise((_resolve, reject) =>
+          init?.signal?.addEventListener('abort', () => reject(new Error('Request cancelled'))),
+        ),
+    );
+    const slow = { provider: 'google', model: 'test-model', timeoutMs: 10 } as const;
+
+    await expect(
+      testDraftModel(
+        { config: slow, apiKey: 'typed-key' },
+        { fetch, secrets: new MemorySecretStore() },
+      ),
+    ).rejects.toMatchObject({ code: 'llm_unavailable', details: { reason: 'timeout' } });
   });
 
   it('says so when testing with no key at all', async () => {

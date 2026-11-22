@@ -60,6 +60,8 @@ Phase 2: `global-shortcut`, `autostart` (start at login, on by default the first
 
 Every request from the app (models, Ollama, the hub or server) goes through the `http` plugin, so it is made by Rust rather than the webview, and only to the hosts in the capability's scope. The app sends **no `Origin` header** (`src/platform/native-fetch.ts`, with the plugin's `unsafe-headers` feature): the plugin would otherwise send the window's origin, which is `http://localhost:1420` in a development build but `http://tauri.localhost` once installed, and Ollama refuses the latter with 403. Only the app's own bundled code runs in its windows (CSP), so the feature's extra freedom over headers is not exposed to web content.
 
+The plugin also fails in its own way: a failed connection rejects with a bare string, and an aborted request (a model's time limit) with a plain `Request cancelled` error. The AI SDK and sync recognize neither, so a model's **Test** once showed "Something inside Avchetan went wrong". `withStandardFailures` (`@avchetan/shared`, also used by the phone for `expo/fetch`) turns them into standard fetch failures: an abort into an `AbortError`, anything else into `TypeError('fetch failed')`.
+
 ## Data layer
 
 - SQLite file in the app data dir (`avchetan.db`), WAL mode.

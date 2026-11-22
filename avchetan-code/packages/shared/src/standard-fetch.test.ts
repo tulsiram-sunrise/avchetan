@@ -23,6 +23,28 @@ describe('withStandardFailures', () => {
     expect(failure).toMatchObject({ message: 'fetch failed', cause });
   });
 
+  it('wraps a bare string, as the Tauri HTTP plugin rejects with, in an error', async () => {
+    const fetch = withStandardFailures(failingWith('error sending request'));
+
+    const failure = await fetch('http://test.invalid').catch((error: unknown) => error);
+
+    expect(failure).toBeInstanceOf(TypeError);
+    expect(failure).toMatchObject({
+      message: 'fetch failed',
+      cause: { message: 'error sending request' },
+    });
+  });
+
+  it('reports the Tauri HTTP plugin cancelling an aborted request as an abort', async () => {
+    const fetch = withStandardFailures(failingWith(new Error('Request cancelled')));
+    const controller = new AbortController();
+    controller.abort();
+
+    await expect(fetch('http://test.invalid', { signal: controller.signal })).rejects.toMatchObject(
+      { name: 'AbortError' },
+    );
+  });
+
   it('reports an abort as one, so a timeout stays a timeout', async () => {
     // What expo/fetch really throws: a plain error, with nothing naming it an abort.
     const fetch = withStandardFailures(failingWith(new Error('fetch failed: canceled')));

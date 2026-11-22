@@ -129,3 +129,4 @@ export {
 export type { CheckAction, CheckRow, CheckState } from './setup-check';
 export { sortCheckRows } from './setup-check';
 export { slugify, slugifyPath } from './slug';
+export { withStandardFailures } from './standard-fetch';

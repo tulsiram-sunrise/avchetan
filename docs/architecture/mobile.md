@@ -36,7 +36,7 @@ app/
 
 A floating capture button sits on every tab except Ask, which has its own input. Capture sheet: multiline input, Save, mic button (Phase 7).
 
-An edit replaces the raw log with a new one, so the entry screen moves to the new ID after saving. `expo/fetch` fails differently from standard fetch, so `platform/standard-fetch.ts` makes connection failures look standard, or the AI SDK wouldn't treat them as being offline.
+An edit replaces the raw log with a new one, so the entry screen moves to the new ID after saving. `expo/fetch` fails differently from standard fetch, so `withStandardFailures` (`@avchetan/shared`, shared with the desktop) makes connection failures look standard, or the AI SDK wouldn't treat them as being offline.
 
 ## Background & lifecycle
 
