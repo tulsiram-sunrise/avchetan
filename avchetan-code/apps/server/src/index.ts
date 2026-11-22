@@ -4,6 +4,7 @@ import {
   configureLogging,
   createLogger,
   createMonotonicClock,
+  errorFields,
   TimerScheduler,
   toAppError,
 } from '@avchetan/shared';
@@ -32,6 +33,7 @@ import {
   llmFromEnv,
   secretsFromEnv,
 } from './from-env';
+import { createLineSink } from './log-sink';
 import { pairingUrls } from './pairing';
 import { socketAddress } from './socket-address';
 import { saveGeneratedToken } from './token-file';
@@ -40,6 +42,8 @@ import { saveGeneratedToken } from './token-file';
 const VERSION = serverPackage.version;
 const SHUTDOWN_GRACE_MS = 5_000;
 
+// Before anything else, so even a failed env check is one line (src/log-sink.ts).
+configureLogging({ sink: createLineSink() });
 const log = createLogger('server');
 
 /** Opens and migrates the database, explaining the setup mistakes we know how to fix. */
@@ -279,9 +283,6 @@ async function main(): Promise<void> {
 
 main().catch((error: unknown) => {
   // The code only: a message can carry a connection string or a key.
-  log.error('startup failed', {
-    code: toAppError(error).code,
-    error: error instanceof Error ? error.name : 'unknown',
-  });
+  log.error('startup failed', errorFields(error));
   process.exit(1);
 });

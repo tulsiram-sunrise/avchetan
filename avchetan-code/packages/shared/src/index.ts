@@ -50,6 +50,7 @@ export {
   systemTimeZone,
   weekdayOf,
 } from './dates';
+export { errorFields, thrownAt } from './error-fields';
 export type { ErrorHelp, KnownErrorCode } from './error-help';
 export {
   describeError,
@@ -59,6 +60,8 @@ export {
   OTHER_ERRORS_SECTION,
   parseLastError,
 } from './error-help';
+export type { ShownErrorLog } from './error-shown';
+export { createShownErrorLog, ERROR_SHOWN_REPEAT_MS, logErrorShown } from './error-shown';
 export type { Result } from './errors';
 export {
   AppError,

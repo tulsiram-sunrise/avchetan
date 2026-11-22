@@ -2,7 +2,9 @@ import {
   combineSinks,
   configureLogging,
   consoleSink,
+  createLogger,
   createRingBufferSink,
+  errorFields,
   type RingBufferSink,
 } from '@avchetan/shared';
 
@@ -21,3 +23,15 @@ configureLogging({
   level: __DEV__ ? 'debug' : 'info',
   sink: __DEV__ ? combineSinks(consoleSink, appLog.sink) : appLog.sink,
 });
+
+const uncaught = createLogger('ui');
+
+// Errors nothing caught: where they were thrown, never their text. React Native's own handler
+// still runs after (the red screen while developing, closing the app on a fatal one).
+if (typeof ErrorUtils !== 'undefined') {
+  const previous = ErrorUtils.getGlobalHandler();
+  ErrorUtils.setGlobalHandler((error: unknown, isFatal?: boolean) => {
+    uncaught.error('uncaught error', { ...errorFields(error), fatal: isFatal === true });
+    previous(error, isFatal);
+  });
+}

@@ -75,6 +75,12 @@ async function record(deps: LlmDeps, run: LlmRun): Promise<void> {
   }
 }
 
+/** Which service failed, for the log (an error shown from a settings Test button, say). */
+function withProvider(error: AppError, provider: string): AppError {
+  if (!(error instanceof LlmError)) return error;
+  return new LlmError(error.code, error.message, { details: { ...error.details, provider } });
+}
+
 async function callModel<T>(
   config: ModelConfig,
   messages: ModelMessage[],
@@ -114,7 +120,7 @@ async function callModel<T>(
     await finish(true, result.usage, null);
     return { ok: true, output };
   } catch (thrown) {
-    const error = toLlmError(thrown, adapter);
+    const error = withProvider(toLlmError(thrown, adapter), config.provider);
     const invalid = NoObjectGeneratedError.isInstance(thrown) ? thrown : undefined;
     await finish(false, invalid?.usage, error.code);
     return { ok: false, error, invalidText: invalid?.text };

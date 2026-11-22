@@ -283,6 +283,27 @@ describe('a failed answer', () => {
     expect(events).not.toContain('Asha');
     expect(events).not.toContain('10.0.0.7');
   });
+
+  it('logs where an unexpected error was thrown, never its text', async () => {
+    const server = await app({
+      checkAi: async () => {
+        throw new TypeError('Cannot read "met Asha about the loan"');
+      },
+    });
+    await register(server);
+
+    const response = await server.request('/v1/status', { headers: headers() });
+
+    expect(response.status).toBe(500);
+    const failure = records.find((record) => record.message === 'request failed');
+    expect(failure?.fields).toMatchObject({
+      path: '/v1/status',
+      code: 'internal',
+      error: 'TypeError',
+      at: expect.stringMatching(/apps\/server\/src\/hardening\.test\.ts:\d+:\d+\)$/),
+    });
+    expect(JSON.stringify(records)).not.toContain('Asha');
+  });
 });
 
 describe('a push that deletes many rows', () => {

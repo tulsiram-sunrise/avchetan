@@ -1,4 +1,5 @@
-import { createLogger, helpSection } from '@avchetan/shared';
+import { createLogger, helpSection, logErrorShown } from '@avchetan/shared';
+import { useEffect } from 'react';
 import { openHelp, troubleshootingUrl } from './help';
 import { emitAppEvent } from './native/events';
 
@@ -9,6 +10,8 @@ const log = createLogger('help');
  * whose message is the whole fix.
  */
 export function HelpLink(props: { code: string }) {
+  // Every error shown with a Help link is in the log (docs/conventions/errors-and-logging.md).
+  useEffect(() => logErrorShown(props.code), [props.code]);
   const section = helpSection(props.code);
   if (!section) return null;
   return (

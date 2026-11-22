@@ -41,6 +41,12 @@ await build({
   platform: 'node',
   target: 'node24',
   format: 'cjs',
+  // A stack names our source files (packages/core/src/…), not lines of one bundle: the log
+  // says where an error was thrown (docs/conventions/errors-and-logging.md). sourceRoot makes
+  // the paths start at the workspace, so no folder of the machine that built it shows.
+  sourcemap: 'inline',
+  sourcesContent: false,
+  sourceRoot: '/avchetan-code/apps/server/dist/sidecar-work/',
   external: ['@electric-sql/pglite', '@electric-sql/pglite-pgvector', 'pg-native'],
   // Inside the executable require() loads only built-ins, so PGlite comes from beside it.
   banner: {
@@ -57,6 +63,7 @@ writeFileSync(
     output: blob,
     disableExperimentalSEAWarning: true,
     useCodeCache: true,
+    execArgv: ['--enable-source-maps'],
   }),
 );
 execFileSync(process.execPath, ['--experimental-sea-config', join(work, 'sea-config.json')], {

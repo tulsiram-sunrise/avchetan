@@ -200,6 +200,22 @@ describe('generateStructured', () => {
     expect(backupCall).not.toHaveBeenCalled();
   });
 
+  it('says when Gemini has no model of that name', async () => {
+    const { deps } = setup({
+      'gemini-model': async () => {
+        throw apiError(404, { responseBody: '{"error":{"code":404,"status":"NOT_FOUND"}}' });
+      },
+    });
+
+    await expect(
+      generateStructured(request([{ provider: 'google', model: 'gemini-model' }]), deps),
+    ).rejects.toMatchObject({
+      code: 'llm_unavailable',
+      message: "The provider doesn't offer this model",
+      details: { status: 404, reason: 'model_missing' },
+    });
+  });
+
   it('says when a model is not downloaded in Ollama', async () => {
     const { deps } = setup({
       'backup-model': async () => {

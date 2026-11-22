@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { devices } from '@avchetan/db/pg';
-import { type Clock, createLogger, type ModelCheck } from '@avchetan/shared';
+import { type Clock, createLogger, errorFields, type ModelCheck } from '@avchetan/shared';
 import {
   type ErrorResponse,
   HEADERS,
@@ -200,7 +200,7 @@ export function createApp(deps: AppDeps) {
     log.error('request failed', {
       requestId: c.get('requestId'),
       path: c.req.path,
-      error: error.name,
+      ...errorFields(error),
     });
     return c.json(errorBody(c, 'internal', 'Something went wrong on the server'), 500);
   });

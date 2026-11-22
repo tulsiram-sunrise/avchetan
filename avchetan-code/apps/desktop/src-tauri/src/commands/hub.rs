@@ -241,21 +241,27 @@ impl HubState {
         match spawned {
             Ok(mut child) => {
                 inner.stdin = child.stdin.take();
-                for stream in [
-                    child
-                        .stdout
-                        .take()
-                        .map(|s| Box::new(s) as Box<dyn Read + Send>),
-                    child
-                        .stderr
-                        .take()
-                        .map(|s| Box::new(s) as Box<dyn Read + Send>),
-                ]
-                .into_iter()
-                .flatten()
-                {
+                // Output that isn't a logger line (a crash's stack) comes on stderr: a warning.
+                let streams = [
+                    (
+                        child
+                            .stdout
+                            .take()
+                            .map(|s| Box::new(s) as Box<dyn Read + Send>),
+                        log::Level::Info,
+                    ),
+                    (
+                        child
+                            .stderr
+                            .take()
+                            .map(|s| Box::new(s) as Box<dyn Read + Send>),
+                        log::Level::Warn,
+                    ),
+                ];
+                for (stream, other_output) in streams {
+                    let Some(stream) = stream else { continue };
                     let state = self.clone();
-                    thread::spawn(move || state.read_logs(stream, generation));
+                    thread::spawn(move || state.read_logs(stream, other_output, generation));
                 }
                 inner.child = Some(child);
                 inner.started_at = Some(Instant::now());
@@ -270,14 +276,17 @@ impl HubState {
         }
     }
 
-    fn read_logs(&self, stream: Box<dyn Read + Send>, generation: u64) {
+    fn read_logs(&self, stream: Box<dyn Read + Send>, other_output: log::Level, generation: u64) {
+        let home = home_dir();
         for line in BufReader::new(stream).lines() {
             let Ok(line) = line else { break };
+            let line = without_home(&line, home.as_deref());
             let mut inner = self.lock();
             if inner.generation != generation {
                 break;
             }
-            if line.starts_with("[server] listening") && inner.phase == Phase::Starting {
+            let (level, message) = hub_line_level(&line, other_output);
+            if message.starts_with("[server] listening") && inner.phase == Phase::Starting {
                 inner.phase = Phase::Running;
                 // Phones on this network can find it now, without Tailscale.
                 inner.announcement = crate::mdns::Announcement::register(inner.config.port);
@@ -287,11 +296,9 @@ impl HubState {
                     remove_if_present(&self.dir.join(RESET_EPOCH_MARKER)),
                 );
             }
-            // Its logger's lines (`[scope] …`: IDs, counts, codes) also go to the log file; other
-            // output, such as a crash's stack, stays only in Settings' list.
-            if line.starts_with('[') {
-                log::info!(target: "hub", "{line}");
-            }
+            // Everything goes to the log file too: its logger's lines (IDs, counts, codes and
+            // where an error was thrown) and other output, such as a crash's stack.
+            log::log!(target: "hub", level, "{message}");
             push_log(&mut inner.logs, line);
         }
     }
@@ -542,6 +549,41 @@ fn remove_if_present(path: &Path) -> std::io::Result<()> {
 
 fn io_failed(code: &'static str) -> impl Fn(std::io::Error) -> CommandError {
     move |error| CommandError::new(code, error.to_string())
+}
+
+/// The level and text of a line of hub output. Its logger writes `LEVEL [scope] message {fields}`
+/// (apps/server/src/log-sink.ts); anything else gets the stream's own level.
+fn hub_line_level(line: &str, other_output: log::Level) -> (log::Level, &str) {
+    let levels = [
+        ("DEBUG ", log::Level::Debug),
+        ("INFO ", log::Level::Info),
+        ("WARN ", log::Level::Warn),
+        ("ERROR ", log::Level::Error),
+    ];
+    for (prefix, level) in levels {
+        if let Some(message) = line.strip_prefix(prefix) {
+            if message.starts_with('[') {
+                return (level, message);
+            }
+        }
+    }
+    (other_output, line)
+}
+
+fn home_dir() -> Option<String> {
+    std::env::var("USERPROFILE")
+        .or_else(|_| std::env::var("HOME"))
+        .ok()
+        .filter(|home| home.len() > 3)
+}
+
+/// A crash's stack names files under the user's folder, and with it their user name: `~` instead.
+fn without_home(line: &str, home: Option<&str>) -> String {
+    let Some(home) = home else {
+        return line.to_string();
+    };
+    line.replace(home, "~")
+        .replace(&home.replace('\\', "/"), "~")
 }
 
 fn push_log(logs: &mut VecDeque<String>, line: String) {
@@ -947,5 +989,46 @@ mod tests {
         }
         assert_eq!(logs.len(), LOG_LINES);
         assert_eq!(logs.front().map(String::as_str), Some("5"));
+    }
+
+    #[test]
+    fn reads_the_level_from_the_hub_logger_line() {
+        assert_eq!(
+            hub_line_level(
+                r#"ERROR [http] request failed {"code":"internal"}"#,
+                log::Level::Info
+            ),
+            (
+                log::Level::Error,
+                r#"[http] request failed {"code":"internal"}"#
+            )
+        );
+        assert_eq!(
+            hub_line_level("INFO [server] listening {}", log::Level::Warn),
+            (log::Level::Info, "[server] listening {}")
+        );
+        // A crash's stack keeps the level of the stream it came on.
+        assert_eq!(
+            hub_line_level("    at main (index.ts:3:1)", log::Level::Warn),
+            (log::Level::Warn, "    at main (index.ts:3:1)")
+        );
+        assert_eq!(
+            hub_line_level("INFO without a scope", log::Level::Info),
+            (log::Level::Info, "INFO without a scope")
+        );
+    }
+
+    #[test]
+    fn leaves_the_user_folder_out_of_hub_output() {
+        let home = Some(r"C:\Users\made-up-name");
+        assert_eq!(
+            without_home(r"at f (C:\Users\made-up-name\AppData\x.js:1:2)", home),
+            r"at f (~\AppData\x.js:1:2)"
+        );
+        assert_eq!(
+            without_home("file:///C:/Users/made-up-name/a.js", home),
+            "file:///~/a.js"
+        );
+        assert_eq!(without_home("no path here", None), "no path here");
     }
 }
