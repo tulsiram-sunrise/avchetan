@@ -6,6 +6,9 @@ import { seedCategoryId } from './repos/categories';
 import type { ClientStore } from './store';
 import { getById, SYNCED_TABLES } from './synced';
 
+/** Writing hundreds of rows first can pass Vitest's 5 s default on a busy CI runner. */
+const SLOW_SETUP_MS = 20_000;
+
 type TestStore = Awaited<ReturnType<typeof openTestStore>>;
 
 /** Two devices with distinct IDs and wall clocks. */
@@ -236,18 +239,22 @@ describe('applying a large page', () => {
     return { store, tasks };
   }
 
-  it('inserts more new rows than one statement holds', async () => {
-    const { tasks } = await remoteTasks(450);
-    const { store } = await openTestStore({ newId: () => crypto.randomUUID() });
-    const queued = (await store.sync.listOutbox()).length;
-    const changes = tasks.map((row) => ({ table: 'tasks', row }) as RemoteChange);
-    expect(await store.sync.applyRemote(changes)).toEqual({ applied: 450, skipped: 0 });
-    const stored = await store.db.query.tasks.findMany();
-    expect(stored).toHaveLength(450);
-    expect(stored.find((task) => task.title === 'Task 449')).toBeDefined();
-    // Pulled rows are never queued to be sent back.
-    expect(await store.sync.listOutbox()).toHaveLength(queued);
-  });
+  it(
+    'inserts more new rows than one statement holds',
+    async () => {
+      const { tasks } = await remoteTasks(450);
+      const { store } = await openTestStore({ newId: () => crypto.randomUUID() });
+      const queued = (await store.sync.listOutbox()).length;
+      const changes = tasks.map((row) => ({ table: 'tasks', row }) as RemoteChange);
+      expect(await store.sync.applyRemote(changes)).toEqual({ applied: 450, skipped: 0 });
+      const stored = await store.db.query.tasks.findMany();
+      expect(stored).toHaveLength(450);
+      expect(stored.find((task) => task.title === 'Task 449')).toBeDefined();
+      // Pulled rows are never queued to be sent back.
+      expect(await store.sync.listOutbox()).toHaveLength(queued);
+    },
+    SLOW_SETUP_MS,
+  );
 
   it('mixes new, newer, older and a repeated id in one page', async () => {
     const { a, b } = await twoDevices();

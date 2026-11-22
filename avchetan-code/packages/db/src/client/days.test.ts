@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { openTestStore } from '../../testing';
 import { seedCategoryId } from './repos/categories';
 
+/** Writing hundreds of rows first can pass Vitest's 5 s default on a busy CI runner. */
+const SLOW_SETUP_MS = 20_000;
+
 type Store = Awaited<ReturnType<typeof openTestStore>>['store'];
 
 const TZ = 'Asia/Kolkata';
@@ -165,25 +168,30 @@ describe('monthDots', () => {
     expect(dots.get('2026-11-04')).toBeUndefined();
   });
 
-  it('reads a busy month quickly', async () => {
-    const { store } = await openTestStore();
-    for (let i = 0; i < 300; i++) {
-      const day = String((i % 30) + 1).padStart(2, '0');
-      const log = await captureAt(store, `entry ${i}`, `2026-11-${day}T06:00:00.000Z`);
-      if (i % 3 !== 0) await addActivity(store, log.id, i % 2 ? 'diet' : 'work', `2026-11-${day}`);
-    }
+  it(
+    'reads a busy month quickly',
+    async () => {
+      const { store } = await openTestStore();
+      for (let i = 0; i < 300; i++) {
+        const day = String((i % 30) + 1).padStart(2, '0');
+        const log = await captureAt(store, `entry ${i}`, `2026-11-${day}T06:00:00.000Z`);
+        if (i % 3 !== 0)
+          await addActivity(store, log.id, i % 2 ? 'diet' : 'work', `2026-11-${day}`);
+      }
 
-    const started = performance.now();
-    const dots = await store.queries.monthDots(store.db, {
-      from: '2026-11-01',
-      to: '2026-11-30',
-      timeZone: TZ,
-    });
-    const took = performance.now() - started;
+      const started = performance.now();
+      const dots = await store.queries.monthDots(store.db, {
+        from: '2026-11-01',
+        to: '2026-11-30',
+        timeZone: TZ,
+      });
+      const took = performance.now() - started;
 
-    expect(dots.size).toBe(30);
-    expect(took).toBeLessThan(50);
-  });
+      expect(dots.size).toBe(30);
+      expect(took).toBeLessThan(50);
+    },
+    SLOW_SETUP_MS,
+  );
 });
 
 describe('system rows', () => {
