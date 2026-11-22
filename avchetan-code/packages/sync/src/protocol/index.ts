@@ -72,10 +72,19 @@ export const statusResponseSchema = z.object({
       lastSeenAt: instant.nullable(),
     }),
   ),
-  /** Raw logs not deleted, by the status that needs attention. */
-  logs: z.object({ waiting: z.int(), failed: z.int() }),
+  /**
+   * Raw logs not deleted, by the status that needs attention. `waitingLong`: ordinary entries
+   * still waiting long after the hub's device should have organized them (newer hubs that
+   * organize send it).
+   */
+  logs: z.object({ waiting: z.int(), failed: z.int(), waitingLong: z.int().optional() }),
   /** The server's own models and whether each can be used. Older servers don't send it. */
   ai: z.array(modelCheckSchema).optional(),
+  /**
+   * The hub's own device (ADR-0021), when it organizes: its last sync error (null once one
+   * succeeds) and when it last synced or started. Older hubs don't send it.
+   */
+  serverDevice: z.object({ errorCode: z.string().max(64).nullable(), okAt: instant }).optional(),
 });
 export type StatusResponse = z.infer<typeof statusResponseSchema>;
 

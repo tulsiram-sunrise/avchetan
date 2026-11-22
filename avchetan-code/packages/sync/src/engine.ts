@@ -205,6 +205,9 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
 
   async function push(api: ReturnType<typeof createApiClient>): Promise<void> {
     let clockSkew = false;
+    const startedMs = Date.now();
+    let sent = 0;
+    let refused = 0;
     // One walk through the outbox: a refused row is sent once per sync, not once per batch, so
     // a long backlog can't use up its tries in one go.
     let after: OutboxPosition | undefined;
@@ -235,8 +238,11 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
           code,
         })),
       );
+      sent += entries.length;
+      refused += rejected.length;
       clockSkew ||= rejected.some(({ code }) => code === 'clock_skew');
     }
+    log.debug('pushed', { rows: sent, refused, durationMs: Date.now() - startedMs });
     current = { ...current, clockSkew };
     await store.sync.setState('last_push_at', store.clock.now());
   }
@@ -281,6 +287,8 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
       await store.sync.setState('pulled_columns', SYNCED_COLUMNS_FINGERPRINT);
       await store.sync.setState('refill_cursor', '');
       log.info('pulled everything', { rows: done, durationMs: Date.now() - startedMs });
+    } else {
+      log.debug('pulled', { rows: done, durationMs: Date.now() - startedMs });
     }
     await store.sync.setState('last_pull_at', store.clock.now());
   }

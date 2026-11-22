@@ -134,6 +134,41 @@ function hubModelRow(check: ModelCheck): CheckRow {
 }
 
 /** The hub's own models, as a phone can't ask Ollama on the PC itself. */
+/** The hub's own device failing this long, by the hub's clock, is more than a passing hiccup. */
+export const SERVER_DEVICE_FAILING_MS = 15 * 60_000;
+
+/**
+ * Whether the hub keeps up with organizing (its own device, ADR-0021): its sync failing for a
+ * while, or entries waiting long past the grace period. Older hubs send neither.
+ */
+export function hubOrganizingRows(server: StatusResponse): CheckRow[] {
+  const rows: CheckRow[] = [];
+  const device = server.serverDevice;
+  if (
+    device?.errorCode &&
+    Date.parse(server.serverTime) - Date.parse(device.okAt) > SERVER_DEVICE_FAILING_MS
+  ) {
+    rows.push({
+      id: 'hub-device',
+      state: 'problem',
+      title: "Your hub can't organize entries: its own sync keeps failing",
+      detail: `Code: ${device.errorCode}. Restart Avchetan on the PC that runs the hub.`,
+      helpCode: 'hub_not_organizing',
+    });
+  }
+  const waitingLong = server.logs.waitingLong ?? 0;
+  if (waitingLong > 0) {
+    rows.push({
+      id: 'hub-waiting',
+      state: 'problem',
+      title: `${waitingLong} ${waitingLong === 1 ? 'entry has' : 'entries have'} waited over an hour for the hub to organize`,
+      detail: "Check the hub's models above, then restart Avchetan on the PC that runs the hub.",
+      helpCode: 'hub_not_organizing',
+    });
+  }
+  return rows;
+}
+
 export function hubModelRows(checks: readonly ModelCheck[]): CheckRow[] {
   return checks.map(hubModelRow);
 }
@@ -253,6 +288,7 @@ export function connectionRows(
       });
     }
     rows.push(...hubModelRows(check.server.ai ?? []));
+    rows.push(...hubOrganizingRows(check.server));
   }
 
   if (check.lastSyncedAt) {

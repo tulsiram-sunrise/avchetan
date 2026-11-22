@@ -116,6 +116,7 @@ export const ERROR_HELP = {
   // The Home Hub inside the desktop app.
   hub_port_in_use: at('hub_port_in_use'),
   hub_crashed: at('hub_crashed', 'Couldn’t start the hub'),
+  hub_not_organizing: at('hub_not_organizing'),
   hub_start_failed: at('hub_crashed', 'Couldn’t start the hub'),
   hub_program_missing: at(
     'hub_program_missing',

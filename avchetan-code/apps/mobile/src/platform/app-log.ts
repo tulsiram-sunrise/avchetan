@@ -2,14 +2,20 @@ import {
   combineSinks,
   configureLogging,
   consoleSink,
+  createDetailedLogControl,
   createLogger,
   createRingBufferSink,
+  type DetailedLogControl,
   errorFields,
   type RingBufferSink,
+  TimerScheduler,
 } from '@avchetan/shared';
 
-/** How many log records the phone keeps (More → Log): enough for a session, a few hundred KB at most. */
-export const APP_LOG_RECORDS = 500;
+/**
+ * How many log records the phone keeps (More → Log): enough for an hour of the detailed log,
+ * about 300 KB, which Share still sends in one piece.
+ */
+export const APP_LOG_RECORDS = 2000;
 
 /**
  * The phone's log (docs/conventions/errors-and-logging.md): the newest records in memory, shown in
@@ -19,9 +25,20 @@ export const APP_LOG_RECORDS = 500;
  */
 export const appLog: RingBufferSink = createRingBufferSink(APP_LOG_RECORDS);
 
+const baseLevel = __DEV__ ? 'debug' : 'info';
+
 configureLogging({
-  level: __DEV__ ? 'debug' : 'info',
+  level: baseLevel,
   sink: __DEV__ ? combineSinks(consoleSink, appLog.sink) : appLog.sink,
+});
+
+/**
+ * *Detailed log for 1 hour* (More → Log): `debug` until it ends. The Log screen applies a change,
+ * app/_layout.tsx the saved setting at startup and when the app comes back.
+ */
+export const detailedLog: DetailedLogControl = createDetailedLogControl({
+  baseLevel,
+  scheduler: new TimerScheduler(),
 });
 
 const uncaught = createLogger('ui');

@@ -5,6 +5,7 @@ mod app_lock;
 mod clipboard;
 mod commands;
 mod context;
+mod detailed_log;
 mod dock_look;
 mod error;
 mod hotkey;
@@ -32,15 +33,19 @@ fn log_plugin() -> tauri::plugin::TauriPlugin<tauri::Wry> {
     if cfg!(debug_assertions) {
         targets.push(Target::new(TargetKind::Stdout));
     }
-    let level = if cfg!(debug_assertions) {
-        log::LevelFilter::Debug
-    } else {
-        log::LevelFilter::Info
-    };
     tauri_plugin_log::Builder::new()
         .clear_targets()
         .targets(targets)
-        .level(level)
+        // Debug records reach the filter, which keeps them only while the log is detailed (or in
+        // development): the plugin's level can't change once it runs.
+        .level(log::LevelFilter::Debug)
+        .filter(|metadata| {
+            detailed_log::keeps(
+                metadata.level(),
+                detailed_log::is_on(),
+                cfg!(debug_assertions),
+            )
+        })
         // Libraries' details (requests, window events) stay out even in development.
         .level_for("hyper", log::LevelFilter::Warn)
         .level_for("hyper_util", log::LevelFilter::Warn)
@@ -120,6 +125,7 @@ pub fn run() {
             commands::hub::hub_restore,
             commands::hub::hub_folder_open,
             commands::hub::hub_free_port,
+            commands::log::log_set_detailed,
             commands::network::hub_network_status,
             commands::network::hub_network_allow,
             commands::network::network_settings_open,

@@ -109,7 +109,8 @@ On **General**:
 - **Reminders:** **Ring for reminders on this device** shows a Windows notification for a task's reminder while Avchetan is running. It is off on a PC until you turn it on, and set for this PC only ([Reminders](reminders.md)).
 - **Start with Windows:** leave this on so the shortcut works right after you sign in.
 - **Time zone:** Avchetan follows Windows. Choose a zone here if your entries should use a different one. A day ends at midnight.
-- **Open log folder** (under About): the log of what Avchetan did, to attach to a problem report ([The log](troubleshooting.md#the-log)).
+- **Open log folder** (under About): the log of what Avchetan did, to attach to a problem report ([Send a log](troubleshooting.md#send-a-log)).
+- **Detailed log for 1 hour** (under About): adds each request, sync step and entry organized to the log, for this PC and its built-in hub, when you are asked for a detailed log. It turns itself off after an hour.
 
 ## Ask about your entries
 

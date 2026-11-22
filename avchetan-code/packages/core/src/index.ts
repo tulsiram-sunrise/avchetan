@@ -157,6 +157,12 @@ export {
   windowContextOf,
   windowContextSchema,
 } from './context/window-context';
+export {
+  DETAILED_LOG_SETTING,
+  loadDetailedLogUntil,
+  startDetailedLog,
+  stopDetailedLog,
+} from './diagnostics/detailed-log';
 export { type EmbeddingSource, embeddingText, embedTexts } from './embeddings/embed';
 export {
   chooseExamples,

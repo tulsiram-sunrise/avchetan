@@ -25,6 +25,7 @@ import { createEmbedder, type Embedder, embeddingModelId } from './embeddings/em
 import { enqueueEmbedJobs, rawLogsTouchedBy } from './embeddings/jobs';
 import { searchLogs } from './embeddings/search';
 import { loadEnv, type ServerEnv } from './env';
+import { countLongWaiting } from './fallback/left-waiting';
 import { openServerDevice, type ServerDevice } from './fallback/server-device';
 import {
   analysisModelFromEnv,
@@ -33,6 +34,7 @@ import {
   llmFromEnv,
   secretsFromEnv,
 } from './from-env';
+import { followHubCommands } from './hub-input';
 import { createLineSink } from './log-sink';
 import { pairingUrls } from './pairing';
 import { socketAddress } from './socket-address';
@@ -41,6 +43,9 @@ import { saveGeneratedToken } from './token-file';
 /** The release version (`pnpm version:set`), bundled in at build time. */
 const VERSION = serverPackage.version;
 const SHUTDOWN_GRACE_MS = 5_000;
+
+/** Waiting this long past the grace period, an entry is one the hub should have organized. */
+const WAITING_LONG_AFTER_GRACE_MINUTES = 60;
 
 // Before anything else, so even a failed env check is one line (src/log-sink.ts).
 configureLogging({ sink: createLineSink() });
@@ -143,6 +148,20 @@ async function main(): Promise<void> {
         .catch((error) => log.warn('could not queue embeddings', { code: toAppError(error).code }));
     },
     ...(search ? { search } : {}),
+    ...(organizing.length > 0
+      ? {
+          organizing: async () =>
+            device
+              ? {
+                  waitingLong: await countLongWaiting(
+                    database.db,
+                    env.FALLBACK_GRACE_MINUTES + WAITING_LONG_AFTER_GRACE_MINUTES,
+                  ),
+                  serverDevice: await device.syncHealth(),
+                }
+              : null,
+        }
+      : {}),
     ...(serverModels.length > 0
       ? {
           checkAi: () =>
@@ -277,6 +296,8 @@ async function main(): Promise<void> {
     // has no SIGTERM for a child, and the pipe also closes if the app itself crashes.
     process.stdin.once('end', shutDown);
     process.stdin.once('close', shutDown);
+    // It also tells the hub when its log is detailed.
+    followHubCommands(process.stdin, env.LOG_LEVEL);
     process.stdin.resume();
   }
 }

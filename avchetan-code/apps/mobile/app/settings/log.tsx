@@ -2,6 +2,7 @@ import { createLogger, formatLogRecord, type LogRecord } from '@avchetan/shared'
 import { useState } from 'react';
 import { ScrollView, Share, Text, View } from 'react-native';
 import { appLog } from '../../src/platform/app-log';
+import { DetailedLogSwitch } from '../../src/ui/detailed-log-switch';
 import { Button } from '../../src/ui/parts';
 
 const log = createLogger('settings');
@@ -33,6 +34,7 @@ export default function LogScreen() {
           What Avchetan did since the app opened, and any error codes, never what you wrote. It is
           kept only while the app is open. Share it with a problem report when asked.
         </Text>
+        <DetailedLogSwitch />
         <View className="flex-row gap-2">
           <Button label="Refresh" onPress={refresh} />
           <Button label="Share" disabled={records.length === 0} onPress={share} />

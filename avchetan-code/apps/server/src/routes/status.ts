@@ -5,7 +5,15 @@ import { Hono } from 'hono';
 import type { AppDeps, AppEnv } from '../app';
 import { toInstant } from '../sync/read-pull';
 
-export function statusRoutes({ db, clock, identity, version, profile, checkAi }: AppDeps) {
+export function statusRoutes({
+  db,
+  clock,
+  identity,
+  version,
+  profile,
+  checkAi,
+  organizing,
+}: AppDeps) {
   return new Hono<AppEnv>().get('/status', async (c) => {
     const deviceRows = await db
       .select({
@@ -23,6 +31,7 @@ export function statusRoutes({ db, clock, identity, version, profile, checkAi }:
       .where(and(isNull(rawLogs.deletedAt), inArray(rawLogs.status, ['pending_llm', 'error'])))
       .groupBy(rawLogs.status);
     const totalFor = (status: string) => logCounts.find((row) => row.status === status)?.total ?? 0;
+    const keepingUp = organizing ? await organizing() : null;
 
     const body: StatusResponse = {
       serverId: identity.serverId,
@@ -33,8 +42,13 @@ export function statusRoutes({ db, clock, identity, version, profile, checkAi }:
         ...row,
         lastSeenAt: row.lastSeenAt === null ? null : toInstant(row.lastSeenAt),
       })),
-      logs: { waiting: totalFor('pending_llm'), failed: totalFor('error') },
+      logs: {
+        waiting: totalFor('pending_llm'),
+        failed: totalFor('error'),
+        ...(keepingUp ? { waitingLong: keepingUp.waitingLong } : {}),
+      },
       ...(checkAi ? { ai: await checkAi() } : {}),
+      ...(keepingUp ? { serverDevice: keepingUp.serverDevice } : {}),
     };
     return c.json(body);
   });

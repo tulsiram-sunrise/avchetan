@@ -1,5 +1,5 @@
 import { devices, rawLogs } from '@avchetan/db/pg';
-import { and, asc, eq, isNull, lt, or, sql } from 'drizzle-orm';
+import { and, asc, count, eq, isNull, lt, or, sql } from 'drizzle-orm';
 import type { ServerDb } from '../db/client';
 
 /**
@@ -39,4 +39,24 @@ export async function logsLeftWaiting(
     .orderBy(asc(rawLogs.capturedAt))
     .limit(options.limit);
   return rows.map((row) => row.id);
+}
+
+/**
+ * Ordinary entries still waiting `minutes` after they reached the server, for the Setup check:
+ * the hub's device should have organized them long before. Private ones are left out, since a
+ * cloud model never may.
+ */
+export async function countLongWaiting(db: ServerDb, minutes: number): Promise<number> {
+  const [row] = await db
+    .select({ total: count() })
+    .from(rawLogs)
+    .where(
+      and(
+        isNull(rawLogs.deletedAt),
+        eq(rawLogs.status, 'pending_llm'),
+        eq(rawLogs.privacy, 'normal'),
+        sql`${rawLogs.createdOnServerAt} <= now() - make_interval(mins => ${minutes})`,
+      ),
+    );
+  return row?.total ?? 0;
 }

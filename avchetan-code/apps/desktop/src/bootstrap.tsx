@@ -7,6 +7,7 @@ import { HelpLink } from './help-link';
 import { createTauriPlatform } from './platform';
 import { createDesktopLogSink, pluginLogWriter } from './platform/log-sink';
 import { createQueryClient } from './query-client';
+import { followDetailedLog } from './services/detailed-log';
 import { ServicesProvider } from './services-context';
 import './styles.css';
 
@@ -17,8 +18,9 @@ export async function bootstrap(
   render: (services: AppServices) => ReactNode,
   beforeRender?: (services: AppServices) => Promise<void>,
 ): Promise<void> {
+  const baseLevel = import.meta.env.DEV ? 'debug' : 'info';
   configureLogging({
-    level: import.meta.env.DEV ? 'debug' : 'info',
+    level: baseLevel,
     sink: createDesktopLogSink({ write: pluginLogWriter, console: import.meta.env.DEV }),
   });
   // Errors nothing caught: where they were thrown, never their text.
@@ -34,6 +36,7 @@ export async function bootstrap(
 
   try {
     const services = await openAppServices(createTauriPlatform());
+    await followDetailedLog(services, baseLevel);
     await beforeRender?.(services);
     const queryClient = createQueryClient();
     root.render(

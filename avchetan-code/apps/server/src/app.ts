@@ -20,6 +20,7 @@ import type { ServerIdentity } from './auth';
 import { hashToken, tokenMatches } from './auth';
 import type { HubBrief } from './brief/hub-brief';
 import type { ServerDb } from './db/client';
+import type { ServerDeviceHealth } from './fallback/server-device';
 import { createRateLimiter, createSignInGuard, MAX_FROM_ADDRESS, MAX_PULLS } from './rate-limit';
 import { askRoutes } from './routes/ask';
 import { briefRoutes } from './routes/brief';
@@ -61,6 +62,11 @@ export type AppDeps = {
   command?: (request: HubCommandRequestParsed) => Promise<HubCommandResponse>;
   /** Whether the server's own models can be used, for the Setup check. */
   checkAi?: () => Promise<ModelCheck[]>;
+  /**
+   * Whether the server's own device is keeping up, for the Setup check: absent when it doesn't
+   * organize entries.
+   */
+  organizing?: () => Promise<{ waitingLong: number; serverDevice: ServerDeviceHealth } | null>;
   /** The network address a request came from (Node's socket); absent in tests by default. */
   clientAddress?: (c: Context<AppEnv>) => string | undefined;
   /** Devices this server accepts (a leaked token can't register thousands). */

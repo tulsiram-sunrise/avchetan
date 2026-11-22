@@ -12,7 +12,7 @@ Start with the **Setup check**. It tests everything and tells you what to fix.
 It checks:
 
 - **Sync:** whether each saved address of your hub or server answers, whether it accepts this device's token, and whether this device's clock matches the server's.
-- **AI:** whether the models this device uses can work: Ollama running, the model downloaded, or the API key saved. A phone that lets the hub organize or answer also sees the hub's own models, so it can tell you when Ollama has stopped on the PC.
+- **AI:** whether the models this device uses can work: Ollama running, the model downloaded, or the API key saved. A phone that lets the hub organize or answer also sees the hub's own models, so it can tell you when Ollama has stopped on the PC, and whether the hub keeps up with organizing ([hub_not_organizing](#hub_not_organizing)).
 - **Home Hub on this PC** (Windows, when the hub is on): the hub running, its models in Ollama, the network Private, the firewall rules, Tailscale, and the paired phones.
 
 Problems come first, each with its fix and a **Help** link to its section below. Click **Check again** after fixing something.
@@ -210,6 +210,12 @@ If the lock was on and you removed the device's lock, Avchetan turned the app lo
 - `database setup problem` or `startup failed`: the line names the cause.
 - Nothing useful: quit Avchetan from the tray, start it again, and turn on the hub. If it still fails, restore the hub's data from a backup ([Back up and restore](backup-and-restore.md)).
 
+## hub_not_organizing
+**"Your hub can't organize entries: its own sync keeps failing"** or **"… entries have waited over an hour for the hub to organize"** in the Setup check. The hub organizes the entries other devices leave to it, and it has stopped keeping up.
+1. Look at the hub's models in the same Setup check: Ollama running and the model downloaded, or the API key saved. Fix any line marked as a problem.
+2. Restart Avchetan on the PC that runs the hub: right-click the tray icon → **Quit Avchetan**, then open it again. Waiting entries are organized within a few minutes after that.
+3. If the warning comes back, turn on **Detailed log for 1 hour**, wait until it shows again, and [send the log](#send-a-log) with a problem report.
+
 ## hub_program_missing
 **"The hub program isn't installed with this copy of Avchetan."** Install Avchetan again from the installer. In a development copy, build it first: `pnpm --filter @avchetan/server build:sidecar`.
 
@@ -280,12 +286,17 @@ If the lock was on and you removed the device's lock, Avchetan turned the app lo
 1. Quit Avchetan (on Windows: right-click the tray icon → **Quit Avchetan**; on Android: close it from recent apps) and open it again.
 2. Run the [Setup check](#setup-check).
 3. If it happens again, [report it on GitHub](https://github.com/tulsiram-sunrise/avchetan/issues/new?template=bug-report.yml) (Windows: **Settings → General → About → Report a problem**; Android: **More → Report a problem**), with the error text and what you were doing. Don't include your entries or tokens.
-4. If asked for the log, attach it (see [The log](#the-log)).
+4. If asked for the log, attach it (see [Send a log](#send-a-log)).
 
-## The log
-Avchetan keeps a log of what it did and the error codes it met: IDs, counts and times, never what you wrote, your keys or your tokens.
-- **Windows:** **Settings → General → Open log folder** opens the folder (`%LOCALAPPDATA%\app.avchetan\logs`). `avchetan.log` is the current file; up to four older ones are kept, about 1 MB each, and older ones are deleted. Times are in UTC. Attach `avchetan.log` to the report.
+## Send a log
+Avchetan keeps a log of what it did and the error codes it met: IDs, counts, times and where in Avchetan's code an error happened, never what you wrote, your keys or your tokens. Every error you see on screen is in it too.
+- **Windows:** **Settings → General → Open log folder** opens the folder (`%LOCALAPPDATA%\app.avchetan\logs`). `avchetan.log` is the current file; up to four older ones are kept, about 1 MB each, and older ones are deleted. Times are in UTC. It includes the built-in hub's log. Attach `avchetan.log` to the report.
 - **Android:** **More → Log** shows what the app did since you opened it, newest first. Tap **Share** to send it (for example to an email you then attach to the report). It is kept only while the app is open and never saved to the phone's storage.
+
+**Detailed log.** When the normal log doesn't show enough, you may be asked for a detailed one. It adds each request (the address, never what was sent), each sync step and each entry organized, with how long it took. Still never what you wrote.
+1. Turn it on: **Settings → General → Detailed log for 1 hour** on Windows (it covers the built-in hub too), or **More → Log → Detailed log for 1 hour** on Android.
+2. Do what went wrong again, or wait until it happens.
+3. Send the log as above. The detailed log turns itself off after an hour; **Turn off the detailed log** ends it sooner.
 
 ## Entries stay "pending"
 Normal when offline or when the hub is unreachable. They are processed automatically later. If they stay pending while everything is connected, open **Review** in the main window: it shows the reason for each entry.

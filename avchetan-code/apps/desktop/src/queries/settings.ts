@@ -1,12 +1,16 @@
 import {
+  DETAILED_LOG_SETTING,
   LLM_MAY_CREATE_SETTING,
   type LlmMayCreate,
   llmMayCreateSchema,
+  loadDetailedLogUntil,
   loadExtractionMode,
   loadExtractionSettings,
   loadRingSetting,
   RING_SETTING,
   saveRingSetting,
+  startDetailedLog,
+  stopDetailedLog,
 } from '@avchetan/core';
 import { getSetting, setSetting } from '@avchetan/db/sqlite';
 import { createLogger } from '@avchetan/shared';
@@ -143,6 +147,37 @@ export function useSetRingHere() {
     mutationFn: (on: boolean) => saveRingSetting(store, on),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ringQuery });
+      emitAppEvent('logs:changed', { tables: ['settings'] }).catch(() =>
+        log.warn('could not announce setting change'),
+      );
+    },
+  });
+}
+
+const detailedLogQuery = ['settings', DETAILED_LOG_SETTING] as const;
+
+/** When *Detailed log for 1 hour* ends, or null when it is off. */
+export function useDetailedLogUntil() {
+  const { store } = useServices();
+  return useQuery({
+    queryKey: detailedLogQuery,
+    queryFn: () => loadDetailedLogUntil(store),
+    // It ends by itself: the switch shows that within a minute.
+    refetchInterval: 60_000,
+  });
+}
+
+export function useSetDetailedLog() {
+  const { store } = useServices();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (on: boolean) => {
+      if (on) await startDetailedLog(store);
+      else await stopDetailedLog(store);
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: detailedLogQuery });
+      // Both windows and the shell follow it (services/detailed-log.ts).
       emitAppEvent('logs:changed', { tables: ['settings'] }).catch(() =>
         log.warn('could not announce setting change'),
       );

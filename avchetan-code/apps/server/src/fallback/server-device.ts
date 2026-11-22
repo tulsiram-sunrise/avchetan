@@ -17,7 +17,7 @@ import {
   type SecretStore,
   TimerScheduler,
 } from '@avchetan/shared';
-import { createSyncEngine, type SyncEngine, saveConnection } from '@avchetan/sync';
+import { createSyncEngine, loadSyncStatus, type SyncEngine, saveConnection } from '@avchetan/sync';
 import type { ServerDb } from '../db/client';
 import { logsLeftWaiting } from './left-waiting';
 import { createMemorySqliteExecutor } from './node-sqlite';
@@ -58,6 +58,8 @@ export type ServerDeviceDeps = {
   wallClock?: () => number;
 };
 
+export type ServerDeviceHealth = { errorCode: string | null; okAt: string };
+
 export type ServerDevice = {
   store: ClientStore;
   engine: SyncEngine;
@@ -66,6 +68,11 @@ export type ServerDevice = {
   stop: () => void;
   /** Pull now, then look for work: another device just pushed. */
   wake: () => void;
+  /**
+   * Whether its own sync works, for the Setup check: the last error (null once one succeeds) and
+   * when it last synced, or started when it never has.
+   */
+  syncHealth: () => Promise<ServerDeviceHealth>;
 };
 
 class MemorySecrets implements SecretStore {
@@ -142,11 +149,14 @@ export async function openServerDevice(deps: ServerDeviceDeps): Promise<ServerDe
     onSynced: () => void processor.wake(),
   });
 
+  let startedAt = store.clock.now();
+
   return {
     store,
     engine,
     processor,
     start() {
+      startedAt = store.clock.now();
       engine.start();
       processor.start();
       log.info('started', { deviceId: store.deviceId, graceMinutes: deps.graceMinutes });
@@ -157,6 +167,10 @@ export async function openServerDevice(deps: ServerDeviceDeps): Promise<ServerDe
     },
     wake() {
       void engine.syncNow();
+    },
+    async syncHealth() {
+      const { errorCode } = await loadSyncStatus(store);
+      return { errorCode, okAt: (await store.sync.getState('last_pull_at')) || startedAt };
     },
   };
 }
