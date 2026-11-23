@@ -355,7 +355,7 @@ Planned days (confirmed 2026-11-16; full calendar repeat rules and sleep hours m
 26. Command handlers, one undo model and the write actions move into core ✅ 2026-11-23
 27. `/done` and `/undo` on the phone ✅ 2026-11-23
 28. Edits made on two devices: keep the losing version, *Changed on two devices* notice, and its ADR (with the `fast-check` convergence test, device IDs seeded) ✅ 2026-11-23 ([ADR-0034](decisions/0034-two-device-edits-keep-the-loser.md); a gap is [Q31](open-questions.md))
-29. Test build and release
+29. Test build and release. **Test build 1 (2026-11-24)** on the author's PC and phone found: a repeated activity dropped as "copied from an example" (*worked* vs *work*), no number for money, and Ask doing its own (wrong) arithmetic and dates with the hub's small model; fixed before the release (spending as `spent`, extraction prompt 9 and organizing older money entries again; totals worked out by code before Ask answers, Ask prompt 6). The rest worked
 
 ## v0.6.0 — Security
 

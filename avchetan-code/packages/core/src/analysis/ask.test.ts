@@ -236,3 +236,55 @@ describe('ask', () => {
     await expect(ask(store, question(groq), llm)).rejects.toMatchObject({ code: 'llm_refused' });
   });
 });
+
+describe('ask: totals worked out by the app (v0.5.0 test build)', () => {
+  async function sleep(day: string, hours: number) {
+    const log = await store.write((tx) =>
+      store.repos.rawLogs.capture(tx, {
+        content: `slept ${hours} h`,
+        source: 'desktop_text',
+        capturedTz: 'UTC',
+      }),
+    );
+    await store.write((tx) =>
+      store.repos.activities.create(tx, {
+        categoryId: seedCategoryId('health'),
+        title: 'Sleep',
+        loggedDate: day,
+        rawLogId: log.id,
+        metrics: { sleep_h: hours },
+      }),
+    );
+  }
+
+  const system = () => JSON.stringify(doStream.mock.calls[0]?.[0].prompt);
+
+  it('says nothing was recorded today, so an older entry is not taken for today', async () => {
+    await sleep('2026-10-20', 2);
+    doStream.mockResolvedValueOnce(textStream('No sleep recorded today.'));
+
+    await ask(store, { ...question(groq), question: 'how much i have slept today' }, llm);
+
+    expect(system()).toContain('sleep, today (2026-10-30): nothing recorded.');
+  });
+
+  it('gives the exact total and its sources for this month', async () => {
+    await sleep('2026-10-28', 2);
+    await sleep('2026-10-29', 7.5);
+    doStream.mockResolvedValueOnce(textStream('9.5 h.'));
+
+    await ask(store, { ...question(groq), question: 'how much did I sleep this month?' }, llm);
+
+    expect(system()).toContain(
+      'sleep, this month (2026-10-01 to 2026-10-30): total 9.5 h from 2 activities, average 4.8 h each. Sources: [1] [2].',
+    );
+  });
+
+  it('adds nothing when the question names no period', async () => {
+    doStream.mockResolvedValueOnce(textStream('…'));
+
+    await ask(store, { ...question(groq), question: 'when did I last sleep badly' }, llm);
+
+    expect(system()).not.toContain('Computed by the app');
+  });
+});
