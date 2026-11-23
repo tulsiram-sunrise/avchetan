@@ -1,5 +1,5 @@
 import type { RawLogSource } from '@avchetan/db';
-import type { ClientStore } from '@avchetan/db/sqlite';
+import { type ClientStore, CONFLICT_COLUMNS, type ConflictTable } from '@avchetan/db/sqlite';
 import {
   AppError,
   isValidLocalDate,
@@ -33,6 +33,10 @@ const ruleFields = z.object({
   projectId: z.string().nullable(),
   tagPaths: z.array(z.string()),
   enabled: z.boolean(),
+});
+const conflictArgs = z.object({
+  table: z.enum(Object.keys(CONFLICT_COLUMNS) as [ConflictTable, ...ConflictTable[]]),
+  id: z.string().min(1),
 });
 const localDateSchema = z.string().refine(isValidLocalDate, 'Invalid date');
 const routineFields = z.object({
@@ -324,6 +328,14 @@ export const WRITE_ACTIONS = {
     ({ store }, { id, enabled }) =>
       store.write((tx) => store.repos.contextRules.setEnabled(tx, id, enabled)),
   ),
+  // Edits made on two devices (ADR-0034): this device's version again, or the other one.
+  'conflict.keepMine': action(conflictArgs, ({ store }, { table, id }) =>
+    store.write((tx) => store.repos.conflicts.keepMine(tx, table, id)),
+  ),
+  'conflict.keepTheirs': action(conflictArgs, ({ store }, { table, id }) =>
+    store.write((tx) => store.repos.conflicts.keepTheirs(tx, table, id)),
+  ),
+
   'contextRule.delete': action(idArgs, ({ store }, { id }) =>
     store.write((tx) => store.repos.contextRules.remove(tx, id)),
   ),
@@ -358,5 +370,10 @@ export async function runWrite(
 ): Promise<unknown> {
   if (!isWriteName(name)) throw new AppError('unknown_action', 'The app needs a restart');
   const definition = WRITE_ACTIONS[name] as WriteAction<z.ZodType<unknown>, unknown>;
-  return definition.run(context, definition.args.parse(args));
+  const parsed = definition.args.parse(args);
+  // A person's own edit: if another device's wins over it, it is kept and shown (ADR-0034).
+  const { store } = context;
+  const write: ClientStore['write'] = (fn, options) =>
+    store.write(fn, { ...options, byUser: true });
+  return definition.run({ ...context, store: { ...store, write } }, parsed);
 }

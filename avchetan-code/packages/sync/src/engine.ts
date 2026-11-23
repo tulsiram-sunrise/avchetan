@@ -227,9 +227,18 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
         changes,
       });
 
-      const ackedKeys = new Set(acked.map(({ table, id }) => `${table}:${id}`));
+      const ackedKeys = new Map(acked.map((ack) => [`${ack.table}:${ack.id}`, ack]));
+      const at = store.clock.now();
       await store.sync.ackOutbox(
-        entries.filter((entry) => ackedKeys.has(`${entry.tableName}:${entry.recordId}`)),
+        entries.flatMap((entry, index) => {
+          const ack = ackedKeys.get(`${entry.tableName}:${entry.recordId}`);
+          if (!ack) return [];
+          const row = changes[index]?.row;
+          // Lost to another device's edit: a hand edit is kept, to be shown (ADR-0034).
+          return ack.lost && row
+            ? [{ ...entry, lost: { row, byUser: entry.byUser, at } }]
+            : [entry];
+        }),
       );
       await store.sync.rejectOutbox(
         rejected.map(({ table, id, code }) => ({

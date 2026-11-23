@@ -1,4 +1,4 @@
-import { buildExtractionInput, loadVocabulary } from '@avchetan/core';
+import { buildExtractionInput, loadVocabulary, runWrite } from '@avchetan/core';
 import { tasks as serverTasks } from '@avchetan/db/pg';
 import {
   type ClientStore,
@@ -66,10 +66,7 @@ beforeEach(async () => {
 afterEach(() => database.close());
 
 async function device(fetch: HttpFetch = (input, init) => serverFetch(input, init), start = START) {
-  const { store, advance } = await openTestStore({
-    start,
-    newId: () => crypto.randomUUID(),
-  });
+  const { store, advance } = await openTestStore({ start, newId: () => crypto.randomUUID() });
   const secrets = new MemorySecretStore();
   const network = new FakeNetworkMonitor();
   await saveConnection(store, secrets, { urls: [URL], token: TOKEN, trustLocalNetwork: false });
@@ -719,5 +716,104 @@ describe('an interrupted first download', () => {
     expect((await titles({ store } as Device)).sort()).toEqual(
       ['Five', 'Four', 'One', 'Seven', 'Six', 'Three', 'Two'].sort(),
     );
+  });
+});
+
+describe('edits made on two devices (ADR-0034)', () => {
+  /** A hand edit, as the apps make it: through core's shared writes. */
+  const byHand = (each: Device) => ({
+    store: each.store,
+    today: () => '2026-10-26',
+    textSource: 'mobile_text' as const,
+  });
+
+  async function editedOnBoth() {
+    const phone = await device();
+    const desktop = await device();
+    const task = await addTask(phone, 'original');
+    await converge(phone, desktop);
+    // Both offline: the phone's edit first, the desktop's later, and the desktop syncs first.
+    await runWrite(byHand(phone), 'task.edit', { id: task.id, title: 'from the phone' });
+    desktop.advance(5_000);
+    await runWrite(byHand(desktop), 'task.edit', { id: task.id, title: 'from the desktop' });
+    serverMs += 5_000;
+    await desktop.engine.syncNow();
+    await phone.engine.syncNow();
+    return { phone, desktop, task };
+  }
+
+  it('keeps the losing hand edit on the device that made it, and shows what differs', async () => {
+    const { phone, desktop, task } = await editedOnBoth();
+
+    expect(await titles(phone)).toEqual(['from the desktop']);
+    expect(await phone.store.conflicts()).toMatchObject([
+      {
+        table: 'tasks',
+        id: task.id,
+        changes: [{ field: 'title', mine: 'from the phone', theirs: 'from the desktop' }],
+      },
+    ]);
+    expect(await desktop.store.conflicts()).toEqual([]);
+  });
+
+  it('Keep this one writes it again, and it wins everywhere', async () => {
+    const { phone, desktop, task } = await editedOnBoth();
+
+    await runWrite(byHand(phone), 'conflict.keepMine', { table: 'tasks', id: task.id });
+    await converge(phone, desktop);
+
+    expect(await titles(phone)).toEqual(['from the phone']);
+    expect(await titles(desktop)).toEqual(['from the phone']);
+    expect(await phone.store.conflicts()).toEqual([]);
+    expect(await snapshot(phone)).toEqual(await snapshot(desktop));
+  });
+
+  it('Keep the other forgets this device’s version', async () => {
+    const { phone, task } = await editedOnBoth();
+
+    await runWrite(byHand(phone), 'conflict.keepTheirs', { table: 'tasks', id: task.id });
+
+    expect(await phone.store.conflicts()).toEqual([]);
+    expect(await titles(phone)).toEqual(['from the desktop']);
+  });
+
+  it('keeps nothing when the AI, not a person, wrote the version that lost', async () => {
+    const phone = await device();
+    const desktop = await device();
+    const task = await addTask(phone, 'original');
+    await converge(phone, desktop);
+    await phone.store.write((tx) =>
+      phone.store.repos.tasks.editByUser(tx, task.id, { title: 'not by hand' }),
+    );
+    desktop.advance(5_000);
+    await runWrite(byHand(desktop), 'task.edit', { id: task.id, title: 'from the desktop' });
+    serverMs += 5_000;
+    await desktop.engine.syncNow();
+    await phone.engine.syncNow();
+
+    expect(await phone.store.conflicts()).toEqual([]);
+  });
+
+  it('shows nothing when both did the same thing', async () => {
+    const phone = await device();
+    const desktop = await device();
+    const task = await addTask(phone, 'Water the plants');
+    await converge(phone, desktop);
+    await runWrite(byHand(phone), 'task.setDone', { id: task.id, done: true });
+    desktop.advance(5_000);
+    await runWrite(byHand(desktop), 'task.setDone', { id: task.id, done: true });
+    serverMs += 5_000;
+    await desktop.engine.syncNow();
+    await phone.engine.syncNow();
+
+    expect(await phone.store.conflicts()).toEqual([]);
+  });
+
+  it('forgets the lost version once it is edited by hand again', async () => {
+    const { phone, task } = await editedOnBoth();
+
+    await runWrite(byHand(phone), 'task.edit', { id: task.id, title: 'third try' });
+
+    expect(await phone.store.conflicts()).toEqual([]);
   });
 });

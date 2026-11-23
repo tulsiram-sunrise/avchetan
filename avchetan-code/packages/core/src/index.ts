@@ -137,6 +137,12 @@ export {
 } from './commands/registry';
 export { createUndoStack, MAX_UNDO, type UndoEntry, type UndoStack } from './commands/undo';
 export {
+  type ConflictLine,
+  type ConflictNotice,
+  describeConflict,
+  loadConflictNotices,
+} from './conflicts/describe';
+export {
   type ClipboardRead,
   clipboardFields,
   clipboardForPrompt,

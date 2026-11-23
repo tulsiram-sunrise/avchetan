@@ -29,6 +29,7 @@ import { useServices } from '../services-context';
 import { useAppEvent } from '../use-app-event';
 import { useColorScheme } from '../use-color-scheme';
 import { ChoreCard } from './chore-card';
+import { ConflictNotices } from './conflict-notices';
 import { DailyBrief } from './daily-brief';
 import { DayCoverageCard } from './day-coverage-card';
 import { isTyping } from './keys';
@@ -131,6 +132,7 @@ export function DaysPage(props: {
         ) : null}
       </div>
       <SyncWarningBanner />
+      <ConflictNotices />
       <DayPanel
         day={day}
         today={today}

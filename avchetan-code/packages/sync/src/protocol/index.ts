@@ -117,7 +117,17 @@ export const PUSH_REJECTIONS = ['validation', 'clock_skew', 'unknown_table'] as 
 export type PushRejection = (typeof PUSH_REJECTIONS)[number];
 
 export const pushResponseSchema = z.object({
-  acked: z.array(z.object({ table: z.string(), id: z.string() })),
+  acked: z.array(
+    z.object({
+      table: z.string(),
+      id: z.string(),
+      /**
+       * The server kept another device's newer version (ADR-0034). Additive: servers before
+       * v0.5.0 leave it out, and older apps ignore it.
+       */
+      lost: z.boolean().optional(),
+    }),
+  ),
   rejected: z.array(
     z.object({
       table: z.string(),

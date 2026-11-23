@@ -39,6 +39,15 @@ On the phone, **More → Sync** says **Up to date.**, and your existing entries 
 
 With a long history the first download takes a few minutes (50,000 entries took under 5 minutes in our test). **Days** shows *Downloading your history… 12,000 of 50,000* with a bar; you can keep using the app meanwhile, and older days fill in as they arrive. If the phone loses Wi-Fi or you close the app, the download goes on from where it stopped next time.
 
+## Changed on two devices
+
+If you change the same thing on the phone and on your PC before they sync (say, you move a task's due date on the phone while offline and rename it on the PC), the change made last wins on both, as before. The device whose change lost now tells you: **Days** and **Tasks** show *Changed on two devices* with the task, entry, activity or routine, and what differs (*on this phone* and *kept from the other device*).
+
+- **Keep this one** puts this device's version back. It syncs like any edit and wins on every device.
+- **Keep the other** keeps the version that won and hides the notice.
+
+Only changes you made by hand count, and only fields you can see (marking a task done on both devices shows nothing). The notice goes away by itself if you edit the same thing again. It appears on the device that synced **second**: if the device that changed it first had already synced, its change is replaced without a notice, as before.
+
 ## Notes
 
 - The code contains a secret. Don't share a photo or screenshot of it. If you think it leaked, see [If your sync token leaked](troubleshooting.md#token_stolen).

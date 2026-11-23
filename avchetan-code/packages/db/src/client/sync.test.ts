@@ -277,3 +277,44 @@ describe('applying a large page', () => {
     expect(await title(fresh.id)).toBe('New, edited');
   });
 });
+
+describe('a hand edit that loses to a pulled row (ADR-0034)', () => {
+  async function editedOnBoth(byUser: boolean) {
+    const { a, b } = await twoDevices();
+    const task = await a.store.write((tx) => a.store.repos.tasks.create(tx, { title: 'original' }));
+    await deliver(a.store, b.store);
+    await b.store.write(
+      (tx) => b.store.repos.tasks.editByUser(tx, task.id, { title: 'from b, waiting' }),
+      { byUser },
+    );
+    a.advance(5_000);
+    await a.store.write(
+      (tx) => a.store.repos.tasks.editByUser(tx, task.id, { title: 'from a, newer' }),
+      { byUser: true },
+    );
+    // b pulls a's newer edit before pushing its own.
+    await deliver(a.store, b.store);
+    return { b: b.store, task };
+  }
+
+  it('is kept while it was still waiting to be sent', async () => {
+    const { b, task } = await editedOnBoth(true);
+
+    expect(await b.conflicts()).toMatchObject([
+      {
+        id: task.id,
+        changes: [{ field: 'title', mine: 'from b, waiting', theirs: 'from a, newer' }],
+      },
+    ]);
+    // The outbox pointer went with the lost change, as before. (Only this row: which seed
+    // categories wait depends on which random device ID sorts first.)
+    const waiting = await b.sync.listOutbox();
+    expect(waiting.filter((entry) => entry.recordId === task.id)).toEqual([]);
+  });
+
+  it('is not kept when no person made it', async () => {
+    const { b } = await editedOnBoth(false);
+
+    expect(await b.conflicts()).toEqual([]);
+  });
+});

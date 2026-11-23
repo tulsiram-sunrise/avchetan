@@ -37,6 +37,7 @@ Short records of significant decisions: context, decision, consequences. Accepte
 | [0031](0031-routine-days-derived-rows.md) | A routine's days are derived rows made on the day, with a fixed early version | Accepted (its strict sync check of the rule superseded by 0032) |
 | [0032](0032-sync-tolerates-unknown-values.md) | Sync passes on values it doesn't know, and sets aside rows it can't read | Accepted |
 | [0033](0033-hub-proves-itself-before-the-token.md) | The hub proves it holds the token before a device sends it | Accepted |
+| [0034](0034-two-device-edits-keep-the-loser.md) | Edits made on two devices keep the losing version, and say so | Accepted |
 
 ## Template
 

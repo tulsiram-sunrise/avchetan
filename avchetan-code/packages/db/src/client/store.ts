@@ -6,6 +6,7 @@ import {
 } from '@avchetan/shared';
 import { type ApplyResult, applyRemoteChanges, type RemoteChange } from './apply-remote';
 import * as collections from './collections';
+import { type Conflict, conflictsRepo, currentConflicts } from './conflicts';
 import { createClientDatabase, type SqliteExecutor, type Tx } from './database';
 import { collectExport, type DataExport } from './export';
 import {
@@ -47,7 +48,7 @@ import {
   setAside,
   setAsideCount,
 } from './set-aside';
-import { getById, type RepoDeps, SYNCED_TABLES } from './synced';
+import { getById, markUserTransaction, type RepoDeps, SYNCED_TABLES } from './synced';
 import * as trends from './trends';
 
 export type OpenClientStoreOptions = {
@@ -84,9 +85,13 @@ export async function openClientStore(options: OpenClientStoreOptions) {
     source: wallClock,
   });
 
-  /** Transaction that also persists the clock high-water mark, keeping restarts monotonic. */
-  function write<T>(fn: (tx: Tx) => Promise<T>): Promise<T> {
+  /**
+   * Transaction that also persists the clock high-water mark, keeping restarts monotonic.
+   * `byUser`: a person's own edit, so losing it to another device is shown (ADR-0034).
+   */
+  function write<T>(fn: (tx: Tx) => Promise<T>, options: { byUser?: boolean } = {}): Promise<T> {
     return database.write(async (tx) => {
+      if (options.byUser) markUserTransaction(tx);
       const before = clock.lastIssued();
       const result = await fn(tx);
       const after = clock.lastIssued();
@@ -107,6 +112,7 @@ export async function openClientStore(options: OpenClientStoreOptions) {
     entities: entitiesRepo(deps),
     contextRules: contextRulesRepo(deps),
     routines: routinesRepo(deps),
+    conflicts: conflictsRepo(deps),
   };
   const repos = { ...baseRepos, extraction: extractionRepo(deps, baseRepos) };
 
@@ -123,6 +129,8 @@ export async function openClientStore(options: OpenClientStoreOptions) {
     search,
     collections,
     trends,
+    /** Edits made on two devices to show, newest first (ADR-0034). */
+    conflicts: (): Promise<Conflict[]> => write((tx) => currentConflicts(tx, deviceId)),
     recordLlmRun: (run: Omit<NewLlmRun, 'id' | 'createdAt'>): Promise<void> =>
       write((tx) => insertLlmRun(tx, { ...run, id: newId(), createdAt: clock.now() })),
     /** Everything for "Export my data" (see export.ts for what is left out). */
@@ -145,7 +153,7 @@ export async function openClientStore(options: OpenClientStoreOptions) {
       /** Queues every row again, for a server that has none of them. */
       enqueueEverything: (): Promise<void> => write((tx) => enqueueEverything(tx, clock.now())),
       applyRemote: (changes: readonly RemoteChange[]): Promise<ApplyResult> =>
-        database.write((tx) => applyRemoteChanges(tx, changes)),
+        database.write((tx) => applyRemoteChanges(tx, changes, { now: clock.now() })),
       /**
        * One pulled page and its cursor, together: a crash can't skip or repeat part of a page.
        * Rows this app couldn't read are kept aside in the same transaction (ADR-0032).
@@ -156,7 +164,7 @@ export async function openClientStore(options: OpenClientStoreOptions) {
         options: { refill?: boolean; setAside?: readonly SetAsideRow[] } = {},
       ): Promise<ApplyResult> =>
         write(async (tx) => {
-          const result = await applyRemoteChanges(tx, changes, options);
+          const result = await applyRemoteChanges(tx, changes, { ...options, now: clock.now() });
           await dropSetAside(tx, changes);
           if (options.setAside?.length) await setAside(tx, options.setAside, clock.now());
           await setSyncState(tx, 'pull_cursor', String(cursor));

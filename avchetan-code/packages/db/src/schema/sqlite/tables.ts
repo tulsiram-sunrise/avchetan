@@ -247,6 +247,21 @@ export const syncOutbox = sqliteTable(
     enqueuedAt: text('enqueued_at').notNull(),
     attempts: integer('attempts').notNull().default(0),
     lastError: text('last_error'),
+    /** The waiting change was made by hand, so losing it to another device is shown (ADR-0034). */
+    byUser: bool('by_user').notNull().default(false),
+  },
+  (t) => [primaryKey({ columns: [t.tableName, t.recordId] })],
+);
+
+/** A hand edit that lost to another device's, until the person picks one (ADR-0034). */
+export const syncConflicts = sqliteTable(
+  'sync_conflicts',
+  {
+    tableName: text('table_name').notNull(),
+    recordId: text('record_id').notNull(),
+    /** The row as this device had it, whole: Keep this one writes its visible fields again. */
+    lostRow: text('lost_row', { mode: 'json' }).$type<Record<string, unknown>>().notNull(),
+    detectedAt: text('detected_at').notNull(),
   },
   (t) => [primaryKey({ columns: [t.tableName, t.recordId] })],
 );

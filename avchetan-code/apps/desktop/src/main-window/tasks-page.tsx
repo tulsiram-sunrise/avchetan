@@ -8,6 +8,7 @@ import {
 import { useState } from 'react';
 import { useToday } from '../queries/days';
 import { useAction, useTaskGroup, useTaskGroupCounts } from '../queries/organize';
+import { ConflictNotices } from './conflict-notices';
 import { TaskCheckbox, TaskStatus, taskTitleClass, useTaskMenu } from './task-actions';
 import { TaskPromises } from './task-promises';
 import { ActionError, EditableText, fieldClass, panelClass, QuietButton } from './ui';
@@ -93,6 +94,7 @@ export function TasksPage() {
 
   return (
     <div className="flex max-w-3xl flex-col gap-6">
+      <ConflictNotices />
       {TASK_GROUPS.map((group) => (
         <Group key={group} group={group} today={today} count={counts.data?.[group] ?? 0} />
       ))}

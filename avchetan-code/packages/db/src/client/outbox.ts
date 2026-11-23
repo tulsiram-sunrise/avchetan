@@ -1,5 +1,6 @@
 import { and, asc, count, eq, gt, gte, lt, min, or, sql } from 'drizzle-orm';
 import { syncOutbox } from '../schema/sqlite/tables';
+import { isConflictTable, recordConflict } from './conflicts';
 import type { ClientDb, Tx } from './database';
 import { SYNCED_TABLES, type SyncedTableName } from './synced';
 
@@ -11,6 +12,8 @@ export type OutboxEntry = {
   recordId: string;
   enqueuedAt: string;
   attempts: number;
+  /** Made by hand (ADR-0034). */
+  byUser: boolean;
 };
 
 /** Where a walk through the outbox got to: the last entry it read. */
@@ -32,6 +35,7 @@ export async function listOutbox(
       recordId: syncOutbox.recordId,
       enqueuedAt: syncOutbox.enqueuedAt,
       attempts: syncOutbox.attempts,
+      byUser: syncOutbox.byUser,
     })
     .from(syncOutbox)
     .where(
@@ -102,7 +106,13 @@ export async function rejectOutbox(
  */
 export async function ackOutbox(
   tx: Tx,
-  entries: readonly Pick<OutboxEntry, 'tableName' | 'recordId' | 'enqueuedAt'>[],
+  entries: readonly (Pick<OutboxEntry, 'tableName' | 'recordId' | 'enqueuedAt'> & {
+    /**
+     * The server kept another device's newer version (ADR-0034): for a hand edit, the row as it
+     * was pushed is kept as a conflict at `lost.at`.
+     */
+    lost?: { row: Record<string, unknown> & { id: string }; byUser: boolean; at: string };
+  })[],
 ): Promise<number> {
   let removed = 0;
   for (const entry of entries) {
@@ -117,6 +127,11 @@ export async function ackOutbox(
       )
       .returning({ recordId: syncOutbox.recordId });
     removed += result.length;
+    // Only when this was the change still waiting: one made since will be pushed and win.
+    const { lost } = entry;
+    if (result.length > 0 && lost?.byUser && isConflictTable(entry.tableName)) {
+      await recordConflict(tx, entry.tableName, lost.row, lost.at);
+    }
   }
   return removed;
 }
