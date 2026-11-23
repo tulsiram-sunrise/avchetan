@@ -1,11 +1,16 @@
+import { type CommandOutcome, captureText, isCommand, rememberCapture } from '@avchetan/core';
 import { createLogger, describeError } from '@avchetan/shared';
+import { useMutation } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { BackHandler, Pressable, Text, TextInput, View } from 'react-native';
 import { useCapture } from '../src/queries/entries';
 import type { MobileSource } from '../src/services/capture';
+import { phoneCommandDeps } from '../src/services/commands';
+import { useServices } from '../src/services-context';
 import { useDraft } from '../src/stores/draft';
 import { usePalette } from '../src/theme/theme';
+import { CommandPanel } from '../src/ui/command-panel';
 import { Button, Failure, HelpLink } from '../src/ui/parts';
 import { useDictation } from '../src/ui/use-dictation';
 
@@ -23,6 +28,17 @@ export default function CaptureScreen() {
   const text = useDraft((state) => state.text);
   const setText = useDraft((state) => state.setText);
   const capture = useCapture();
+  const services = useServices();
+  /** What the last command did, with its Undo, until something new is typed. */
+  const [outcome, setOutcome] = useState<CommandOutcome | null>(null);
+  const undo = useMutation({
+    mutationFn: async (take: NonNullable<CommandOutcome['undo']>) => {
+      const entry = services.undo.find(take);
+      return (entry && (await services.undo.run(entry))) ?? 'Already undone';
+    },
+    onSuccess: (message) => setOutcome({ message, undo: null }),
+  });
+  const command = isCommand(text);
   const params = useLocalSearchParams<{ from?: string; voice?: string }>();
   const fromWidget = params.from === 'widget';
   // Like the widget, a share goes back to the app it came from once you're done.
@@ -75,27 +91,60 @@ export default function CaptureScreen() {
         >
           <Text className="text-base">{dictation.listening ? '■ Listening…' : '🎤'}</Text>
         </Pressable>
-        <Button
-          primary
-          label="Save"
-          disabled={!text.trim() || capture.isPending}
-          onPress={() => {
-            if (dictation.listening) dictation.stop();
-            capture.mutate(
-              { text, source },
-              {
-                onSuccess: (rawLog) => {
-                  if (backToCaller) {
-                    log.info('capture from outside the app', { id: rawLog.id, from: params.from });
-                  }
-                  setText('');
-                  router.back();
+        {command ? null : (
+          <Button
+            primary
+            label="Save"
+            disabled={!text.trim() || capture.isPending}
+            onPress={() => {
+              if (dictation.listening) dictation.stop();
+              capture.mutate(
+                // `//note` saves `/note`.
+                { text: captureText(text), source },
+                {
+                  onSuccess: (rawLog) => {
+                    // So `/undo` can take it back (command-mode.md).
+                    rememberCapture(phoneCommandDeps(services), rawLog);
+                    if (backToCaller) {
+                      log.info('capture from outside the app', {
+                        id: rawLog.id,
+                        from: params.from,
+                      });
+                    }
+                    setText('');
+                    router.back();
+                  },
                 },
-              },
-            );
+              );
+            }}
+          />
+        )}
+      </View>
+      {command ? (
+        <CommandPanel
+          text={text}
+          setText={setText}
+          onOutcome={(next) => {
+            setText('');
+            setOutcome(next);
           }}
         />
-      </View>
+      ) : null}
+      {outcome ? (
+        <View className="flex-row items-center gap-3">
+          <Text accessibilityLiveRegion="polite" className="flex-1 text-sm text-ink">
+            {outcome.message}
+          </Text>
+          {outcome.undo ? (
+            <Button
+              label="Undo"
+              disabled={undo.isPending}
+              onPress={() => outcome.undo && undo.mutate(outcome.undo)}
+            />
+          ) : null}
+        </View>
+      ) : null}
+      <Failure error={undo.error} />
       <Failure error={capture.error} />
       {dictation.error ? (
         <Text accessibilityRole="alert" className="text-sm text-danger">
@@ -110,12 +159,15 @@ export default function CaptureScreen() {
         autoFocus={!voiceAtOnce}
         multiline
         className="min-h-24 flex-1 text-base text-ink"
-        placeholder={dictation.listening ? 'Listening…' : "What's on your mind?"}
+        placeholder={
+          dictation.listening ? 'Listening…' : "What's on your mind? (/done marks a task done)"
+        }
         placeholderTextColor={palette.inkMuted}
         textAlignVertical="top"
         value={text}
         onChangeText={(next) => {
           setText(next);
+          setOutcome(null);
           if (!next) setSpoken(false);
         }}
         onSelectionChange={(event) => {

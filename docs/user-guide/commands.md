@@ -1,6 +1,6 @@
 # Commands in the capture box
 
-Type `/` in the capture box on Windows to do something instead of logging it. The label above the box changes from **Capture** to **Command**, and a line under the box always says what **Enter** will do. Nothing happens until you press Enter.
+Type `/` in the capture box on Windows to do something instead of logging it (the phone has `/done` and `/undo`: see [On the phone](#on-the-phone)). The label above the box changes from **Capture** to **Command**, and a line under the box always says what **Enter** will do. Nothing happens until you press Enter.
 
 ## The commands
 
@@ -22,6 +22,18 @@ After a command that changed something, an **Undo** button shows for 10 seconds.
 To save an entry that starts with `/`, begin it with `//`. For example, `//etc/hosts edited` is saved as `/etc/hosts edited`.
 
 While Avchetan is [locked](app-lock.md), `/lock`, `/unlock` and `/settings` work as usual. Other commands, `/undo` and Ctrl+Z included, ask for Windows Hello first.
+
+## On the phone
+
+The phone's capture box has two commands: `/done` and `/undo`. Type `/` in the box and it shows them; tap one to fill it in. Instead of **Save**, the box then shows what the command will do, for example **Done: Call the plumber**. Tap it to run it. When several tasks match, tap the one you did.
+
+- `/done plumb` marks the matching open task as done, as on the PC. **Undo** appears under the box until you type again.
+- `/undo` takes back the newest of: the last entry you saved from the box, or the last `/done`. It remembers the last 20 while the app is open.
+- The other commands (`/find`, `/brief`, `/sync`, `/settings`, `/lock`, `/unlock`) are on the PC only for now, and the phone doesn't ask the AI to read an unknown command.
+- To save an entry that starts with `/`, begin it with `//`, as on the PC.
+- While the app is [locked](app-lock.md), writing works but commands don't: the box shows **Unlock** first, so no task titles are shown to someone else.
+
+A task done on the phone is done on your PC after the next sync, and an undo syncs back the same way.
 
 ## When you type something else
 

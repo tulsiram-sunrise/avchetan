@@ -25,6 +25,8 @@ Until you choose one, your entries are saved and wait.
 
 This works without a connection too. The entry waits, and it's organized when you're back online. Opening the app does this right away. With the app closed, Android organizes a few entries at a time every so often, and it decides when.
 
+**Commands:** type `/done` and words from a task to mark it done, or `/undo` to take back the entry you just saved or the last `/done` ([Commands](commands.md#on-the-phone)). To save an entry that starts with `/`, begin it with `//`.
+
 **Rather talk?** Tap 🎤 in the box and say it; the words appear for you to check before **Save**. It uses the phone's own offline speech recognition: see [Voice](voice.md#on-the-phone).
 
 If you close the box without saving, your text is still there the next time you open it, unless the app has fully closed.
