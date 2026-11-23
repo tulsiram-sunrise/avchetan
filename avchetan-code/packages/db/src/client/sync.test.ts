@@ -306,8 +306,10 @@ describe('a hand edit that loses to a pulled row (ADR-0034)', () => {
         changes: [{ field: 'title', mine: 'from b, waiting', theirs: 'from a, newer' }],
       },
     ]);
-    // The outbox pointer went with the lost change, as before.
-    expect(await b.sync.listOutbox()).toEqual([]);
+    // The outbox pointer went with the lost change, as before. (Only this row: which seed
+    // categories wait depends on which random device ID sorts first.)
+    const waiting = await b.sync.listOutbox();
+    expect(waiting.filter((entry) => entry.recordId === task.id)).toEqual([]);
   });
 
   it('is not kept when no person made it', async () => {
