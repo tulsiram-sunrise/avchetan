@@ -1,27 +1,13 @@
 import {
   type CommandName,
   type CommandReading,
-  createModel,
-  interpretCommand,
-  isCommandName,
   learnFromReading,
-  loadAnalysisMode,
-  loadAnalysisModel,
-  loadCommandLearning,
   matchOpenTask,
   type ParsedCommand,
-  PROVIDER_ADAPTERS,
 } from '@avchetan/core';
 import type { ClientStore, RawLog, Task } from '@avchetan/db/sqlite';
-import {
-  AppError,
-  createLogger,
-  LlmError,
-  type LocalDate,
-  localDate,
-  type UnlockOutcome,
-} from '@avchetan/shared';
-import { loadSyncStatus, requestHubCommand, type SyncState } from '@avchetan/sync';
+import { type LocalDate, localDate, type UnlockOutcome } from '@avchetan/shared';
+import { loadSyncStatus, type SyncState } from '@avchetan/sync';
 import type { AppServices } from '../app-services';
 import { SETTINGS_TABS, type SettingsTab, saveSettingsTab } from '../main-window/settings-tabs';
 import { emitAppEvent } from '../native/events';
@@ -29,8 +15,6 @@ import type { LockStatus } from '../native/lock';
 import { unlockApp } from './app-lock';
 import { announce } from './extraction';
 import { localToday } from './time-zone';
-
-const log = createLogger('commands');
 
 /** What a command did, and how to take it back when it changed something. */
 export type CommandOutcome = { message: string; undo: (() => Promise<string>) | null };
@@ -376,56 +360,6 @@ export function planCommand(
   if (parsed.command) return planFor(deps, parsed.command, parsed.text, openTasks);
   if (!parsed.input) return { kind: 'hint', text: 'Type a command' };
   return { kind: 'ask_ai', input: parsed.input };
-}
-
-/**
- * Asks which command the text means: the hub's model when the hub answers this PC's questions,
- * else this PC's answers model (or its organizing model). Only the text, the command list and
- * past confirmed readings are sent (docs/product/command-mode.md).
- */
-export async function readCommand(services: AppServices, input: string): Promise<CommandReading> {
-  const { store, platform } = services;
-  if ((await loadAnalysisMode(store)) === 'hub') return readCommandOnHub(services, input);
-  const model = await loadAnalysisModel(store);
-  if (!model) {
-    throw new LlmError('llm_auth', 'Reading commands needs a model in Settings → AI → AI models');
-  }
-  if (!platform.network.isOnline() && !PROVIDER_ADAPTERS[model.provider].local) {
-    throw new LlmError('llm_unavailable', 'This PC is offline, so the AI can’t read this command');
-  }
-  const { examples } = await loadCommandLearning(store);
-  const reading = await interpretCommand(
-    input,
-    { models: [model], examples },
-    {
-      resolveModel: (config) => createModel(config, platform),
-      recordRun: (run) => store.recordLlmRun(run),
-    },
-  );
-  log.info('command read', { command: reading?.command ?? 'none' });
-  if (!reading) throw new AppError('command_unknown', 'Couldn’t read this as a command');
-  return reading;
-}
-
-/** The hub reads it (feature audit bug 4); a command this PC doesn't know counts as none. */
-async function readCommandOnHub(services: AppServices, input: string): Promise<CommandReading> {
-  const { store, platform } = services;
-  if (!platform.network.isOnline()) {
-    throw new LlmError(
-      'llm_unavailable',
-      'This PC is offline, so your hub can’t read this command',
-    );
-  }
-  const { examples } = await loadCommandLearning(store);
-  const { command, text } = await requestHubCommand(
-    { store, fetch: platform.fetch, secrets: platform.secrets },
-    { input, examples },
-  );
-  log.info('command read by the hub', { command: command ?? 'none' });
-  if (command === null || !isCommandName(command)) {
-    throw new AppError('command_unknown', 'Couldn’t read this as a command');
-  }
-  return { command, text: text.trim() };
 }
 
 /** Runs a confirmed AI reading's plan, then learns from it. */

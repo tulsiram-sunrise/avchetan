@@ -71,7 +71,7 @@ The plugin also fails in its own way: a failed connection rejects with a bare st
 
 ## Background work
 
-Runs in the dock webview (always alive): pending processor, sync engine timers, daily brief runner (`services/brief.ts`; the main window asks it with the `brief:make` event and follows `brief:state`, because a brief can take minutes, longer than an action may). WebView2 may throttle timers in hidden windows — Phase 2 must verify timers fire while hidden; if not, drive a 30 s heartbeat event from Rust (`tokio` interval → `emit('tick')`).
+Runs in the dock webview (always alive): pending processor, sync engine timers, daily brief runner (`services/brief.ts`, around core's `createDeviceBriefMaker`; the main window asks it with the `brief:make` event and follows `brief:state`, because a brief can take minutes, longer than an action may). WebView2 may throttle timers in hidden windows — Phase 2 must verify timers fire while hidden; if not, drive a 30 s heartbeat event from Rust (`tokio` interval → `emit('tick')`).
 
 ## Frontend stack
 

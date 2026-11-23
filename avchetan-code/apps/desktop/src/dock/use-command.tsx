@@ -6,6 +6,7 @@ import {
   loadCommandLearning,
   parseCommand,
   rankCommands,
+  readCommand,
 } from '@avchetan/core';
 import { createLogger, toAppError } from '@avchetan/shared';
 import { useQuery } from '@tanstack/react-query';
@@ -21,7 +22,6 @@ import {
   createUndoStack,
   planCommand,
   planFor,
-  readCommand,
 } from '../services/commands';
 import { useServices } from '../services-context';
 import { DOCK_LIST_ID, dockRowId } from './dock-list';
@@ -132,7 +132,7 @@ export function useCommand(
     setError(null);
     try {
       const askedOn = current.current;
-      const read = await readCommand(services, input);
+      const read = await readCommand(services.device, input);
       // The text changed while the AI read it: this reading is for words no longer there, and
       // Enter must not run it (and wipe the new text).
       if (current.current !== askedOn) return;

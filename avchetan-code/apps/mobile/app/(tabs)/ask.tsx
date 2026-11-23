@@ -1,10 +1,9 @@
-import type { AskSource } from '@avchetan/core';
+import { type AskSource, askQuestion } from '@avchetan/core';
 import { formatDay } from '@avchetan/shared';
 import { router } from 'expo-router';
 import { useHeaderHeight } from 'expo-router/react-navigation';
 import { useRef, useState } from 'react';
 import { KeyboardAvoidingView, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
-import { askQuestion } from '../../src/services/ask';
 import { useServices } from '../../src/services-context';
 import { usePalette } from '../../src/theme/theme';
 import { Button, Failure } from '../../src/ui/parts';
@@ -37,7 +36,7 @@ export default function AskScreen() {
     setText('');
     setTurn({ question, answer: '', sources: [], error: null, asking: true });
     try {
-      const { answer, sources } = await askQuestion(services, question, (answer) =>
+      const { answer, sources } = await askQuestion(services.device, question, (answer) =>
         update({ answer }),
       );
       update({ answer, sources, asking: false });

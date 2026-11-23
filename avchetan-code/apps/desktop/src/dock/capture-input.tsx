@@ -1,4 +1,5 @@
 import {
+  askQuestion,
   CAPTURE_MODE_BADGES,
   type CaptureMode,
   type CommandName,
@@ -16,7 +17,7 @@ import { useCaptureMutation, useRecentCaptures } from '../queries/raw-logs';
 import { useDockFind } from '../queries/search';
 import { useSubmitKey } from '../queries/settings';
 import { unlockMessage } from '../services/app-lock';
-import { askQuestion, isQuestion, questionText } from '../services/ask';
+import { isQuestion, questionText } from '../services/ask';
 import { commandDeps, rememberCapture } from '../services/commands';
 import { dockKey } from '../services/dock-keys';
 import { dockState } from '../services/dock-state';
@@ -206,7 +207,9 @@ export function CaptureInput(props: {
     const base: AskState = { question, answer: '', sources: [], status: 'asking', error: null };
     setAsk(base);
     try {
-      const result = await askQuestion(services, question, (answer) => setAsk({ ...base, answer }));
+      const result = await askQuestion(services.device, question, (answer) =>
+        setAsk({ ...base, answer }),
+      );
       setAsk({ ...base, ...result, status: 'done' });
     } catch (error) {
       const { code, message } = toAppError(error);
