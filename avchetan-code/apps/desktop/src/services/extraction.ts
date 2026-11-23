@@ -1,4 +1,4 @@
-import { createModel, createPendingProcessor, type PendingProcessor } from '@avchetan/core';
+import { createPendingProcessor, llmDepsFor, type PendingProcessor } from '@avchetan/core';
 import type { ClientStore } from '@avchetan/db/sqlite';
 import { createLogger, toAppError } from '@avchetan/shared';
 import { emitAppEvent } from '../native/events';
@@ -35,15 +35,12 @@ export function createExtractionService(
   platform: Platform,
   onChange: () => void,
 ): PendingProcessor {
-  const { fetch, secrets, network, scheduler } = platform;
+  const { network, scheduler } = platform;
   return createPendingProcessor({
     store,
     network,
     scheduler,
-    llm: {
-      resolveModel: (config) => createModel(config, { fetch, secrets }),
-      recordRun: (run) => store.recordLlmRun(run),
-    },
+    llm: llmDepsFor(store, platform),
     onChange: () => {
       void announce(store, platform);
       onChange();

@@ -16,6 +16,7 @@ export {
 } from './engine';
 export { askHub, askServer, type HubAnswer } from './hub-ask';
 export { requestHubBrief } from './hub-brief';
+export { createHubClient } from './hub-client';
 export { requestHubCommand } from './hub-command';
 export {
   buildPairingLink,

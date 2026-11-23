@@ -1,4 +1,4 @@
-import type { PendingProcessor } from '@avchetan/core';
+import type { DeviceDeps, PendingProcessor } from '@avchetan/core';
 import { type ClientStore, openClientStore, startRoutineDays } from '@avchetan/db/sqlite';
 import { createLogger, localDate, systemTimeZone } from '@avchetan/shared';
 import type { SyncEngine } from '@avchetan/sync';
@@ -8,6 +8,7 @@ import { refreshAll } from './query-client';
 import { type BriefService, createBriefService } from './services/brief';
 import { type CaptureService, createCaptureService } from './services/capture';
 import { startBackups } from './services/data';
+import { createDeviceDeps } from './services/device';
 import { createExtractionService } from './services/extraction';
 import { scheduleNotifications } from './services/notifications';
 import { createSyncService } from './services/sync';
@@ -21,6 +22,8 @@ export type AppServices = {
   extraction: PendingProcessor;
   sync: SyncEngine;
   brief: BriefService;
+  /** What Ask, the brief and command reading in core need from this phone. */
+  device: DeviceDeps;
 };
 
 /** Wires the packages: native database → client store → services. */
@@ -38,6 +41,7 @@ async function openAppServices(platform: Platform): Promise<AppServices> {
     else void sync.syncNow();
   });
   const sync = createSyncService(store, platform, extraction);
+  const device = createDeviceDeps(store, platform, systemTimeZone);
   startBackups({ store, platform });
   // Today's routine days (ADR-0031), and the next day's once the date changes while open.
   startRoutineDays({
@@ -55,7 +59,8 @@ async function openAppServices(platform: Platform): Promise<AppServices> {
     capture: createCaptureService(store),
     extraction,
     sync,
-    brief: createBriefService({ store, platform, sync }),
+    device,
+    brief: createBriefService({ device, platform, sync }),
   };
 }
 

@@ -38,6 +38,10 @@ export const platform = {
 
 Each app has exactly **one composition root** (`src/platform/index.ts` + `src/app-services.ts`) that builds adapters and wires packages (db → repos → sync engine → pending processor). Components get services via a React context, not by importing singletons from deep paths.
 
+## Another package as an adapter: `HubClient`
+
+`core` may not import `sync` (`shared ← db ← {core, sync} ← apps`), yet Ask, the daily brief and command reading must ask the hub when it answers for this device. So `core` defines a small `HubClient` interface (`packages/core/src/device/hub-client.ts`: `isSetUp`, `ask`, `brief`, `command`, `search`), `@avchetan/sync` implements it with `createHubClient()` without importing core (TypeScript checks the shape where the app passes it in), and each app builds one `DeviceDeps` in its composition root (`src/services/device.ts`: store, platform, hub client, time zone, and the words its messages use, such as "this PC" and where models are chosen). `askQuestion`, `createDeviceBriefMaker` and `readCommand` in core take that, and models are wired once by `llmDepsFor(store, platform)`. Tests in core pass a fake `HubClient`.
+
 ## Test adapters
 
 `@avchetan/shared/testing` provides `MemorySecretStore`, `FakeNetworkMonitor` (toggle online), `ManualScheduler` (tick by hand), `createTestClock()`; `@avchetan/db/testing` provides `openTestStore()` (a migrated, seeded client store on in-memory `node:sqlite`).

@@ -157,6 +157,15 @@ export {
   windowContextOf,
   windowContextSchema,
 } from './context/window-context';
+export { askQuestion } from './device/ask-question';
+export {
+  type BriefMakerDeps,
+  createDeviceBriefMaker,
+  type DeviceBriefMaker,
+} from './device/brief-maker';
+export type { DeviceDeps } from './device/device-deps';
+export type { DeviceWords, HubClient } from './device/hub-client';
+export { readCommand } from './device/read-command';
 export {
   DETAILED_LOG_SETTING,
   loadDetailedLogUntil,
@@ -223,6 +232,7 @@ export {
   type StructuredRequest,
   type StructuredResult,
 } from './llm/generate-structured';
+export { llmDepsFor } from './llm/llm-deps';
 export { testModel } from './llm/test-model';
 export {
   checkDeviceModels,
