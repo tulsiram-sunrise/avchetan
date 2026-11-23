@@ -18,13 +18,19 @@ export function PickSheet<T>(props: {
       onRequestClose={props.onClose}
     >
       <Pressable
+        accessibilityRole="button"
         accessibilityLabel="Close"
         className="flex-1 justify-end"
         style={{ backgroundColor: 'rgba(0, 0, 0, 0.4)' }}
         onPress={props.onClose}
       >
         {open ? (
-          <Pressable className="rounded-t-2xl bg-surfaceRaised pb-6" style={{ maxHeight: '70%' }}>
+          // Only stops a tap on the sheet from closing it; nothing to say or press.
+          <Pressable
+            accessible={false}
+            className="rounded-t-2xl bg-surfaceRaised pb-6"
+            style={{ maxHeight: '70%' }}
+          >
             <Text className="px-4 pb-2 pt-4 text-base font-semibold text-ink">{open.title}</Text>
             <ScrollView>
               {open.options.map((option) => (

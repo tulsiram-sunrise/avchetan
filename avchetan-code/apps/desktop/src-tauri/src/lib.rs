@@ -11,6 +11,7 @@ mod error;
 mod hotkey;
 mod mdns;
 mod notify;
+mod text_scale;
 mod tray;
 mod voice;
 mod windows;
@@ -147,6 +148,7 @@ pub fn run() {
             context::context_recent_apps,
             notify::brief_notify,
             notify::reminder_notify,
+            text_scale::text_scale,
             voice::voice_start,
             voice::voice_stop,
             voice::voice_cancel,

@@ -350,7 +350,7 @@ Planned days (confirmed 2026-11-16; full calendar repeat rules and sleep hours m
 21. Logs you can debug with: one line per hub message, where errors were thrown, crash output in the PC log, every error shown on screen logged too, *Detailed log for 1 hour*, a Setup-check warning for entries left waiting (added 2026-11-21). Part 1 ✅ 2026-11-22: one line per hub record, crash output and `errorFields` (where, never the message) with source maps in the hub, every error shown logged, Gemini 404; part 2 ✅ 2026-11-22: *Detailed log for 1 hour* (PC with its hub, phone), request/sync/organizing debug lines, the Setup-check warning `hub_not_organizing`, troubleshooting *Send a log* ✅
 22. Day coverage (opt-in, *unaccounted*) ✅ 2026-11-23
 23. Share to Avchetan (saved as `mobile_text`, no new source value) ✅ 2026-11-23
-24. Accessibility pass
+24. Accessibility pass ✅ 2026-11-23
 25. `HubClient` in core: Ask, the brief and command reading move out of the apps, and `llmDepsFor()`
 26. Command handlers, one undo model and the write actions move into core
 27. `/done` and `/undo` on the phone
