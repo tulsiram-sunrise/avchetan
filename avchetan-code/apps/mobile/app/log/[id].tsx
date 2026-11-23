@@ -17,6 +17,7 @@ import {
 import { MetricsEditor } from '../../src/ui/metrics-editor';
 import { Button, Failure, Field, HelpLink } from '../../src/ui/parts';
 import { privatePrefix, WaitsForLocalAi } from '../../src/ui/private-mark';
+import { retryNote, willRetry } from '../../src/ui/retry-note';
 import { StatusBadge } from '../../src/ui/status-badge';
 import { TaskRow } from '../../src/ui/task-row';
 
@@ -129,6 +130,13 @@ function LastError({ rawLog }: { rawLog: RawLog }) {
   const stored = parseLastError(rawLog.lastError);
   const { code } = stored;
   const { message } = describeError(stored);
+  if (willRetry(rawLog)) {
+    return (
+      <Text className="text-sm text-inkMuted">
+        {retryNote(rawLog)}. Last try: {message}. <HelpLink code={code} />
+      </Text>
+    );
+  }
   return (
     <Text accessibilityRole="alert" className="text-sm text-danger">
       {message}. <HelpLink code={code} />

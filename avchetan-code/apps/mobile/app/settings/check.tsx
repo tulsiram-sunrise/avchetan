@@ -4,6 +4,7 @@ import { checkConnection, connectionRows } from '@avchetan/sync';
 import { useIsFetching, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { Linking, ScrollView, Text, View } from 'react-native';
+import { discoverHubs } from '../../modules/hub-discovery';
 import { useServices } from '../../src/services-context';
 import { Button, Failure, HelpLink, SectionTitle } from '../../src/ui/parts';
 
@@ -73,7 +74,7 @@ export default function CheckScreen() {
   const deps = { fetch: platform.fetch, secrets: platform.secrets };
   const connection = useQuery({
     queryKey: [...CHECK_KEY, 'connection'],
-    queryFn: () => checkConnection({ store, ...deps }),
+    queryFn: () => checkConnection({ store, ...deps, discover: () => discoverHubs() }),
   });
   const models = useQuery({
     queryKey: [...CHECK_KEY, 'device-models'],
