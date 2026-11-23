@@ -43,15 +43,28 @@ export function toSnakeKey(key: string): string {
     .replace(/^_+|_+$/g, '');
 }
 
-/** Parses `45`, `"45"`, `"45 min"`, `"1.5h"`, `"10,000"`, `"2,5 km"`. */
+/** A currency sign or word before an amount (`₹3,600`, `Rs. 500`), and `/-` after it. */
+const CURRENCY_AROUND = /^\s*(?:[₹$€£¥]|rs\.?|inr|usd|eur)\s*|\s*\/-\s*$/giu;
+
+/** Thousands (`120,000`) or Indian grouping (`1,20,000`). */
+const GROUPED = /^-?\d{1,3}(?:,\d{2})*,\d{3}$|^-?\d{1,3}(?:,\d{3})+$/;
+
+/**
+ * Parses `45`, `"45"`, `"45 min"`, `"1.5h"`, `"10,000"`, `"1,20,000"`, `"2,5 km"`, and an amount
+ * with a currency sign or word (`"₹3,600"`, `"Rs. 500"`, `"500/-"`): the sign is left out.
+ */
 export function parseQuantity(value: unknown): { amount: number; unit?: string } | undefined {
   if (typeof value === 'number') return Number.isFinite(value) ? { amount: value } : undefined;
   if (typeof value !== 'string') return undefined;
-  const match = /^\s*(-?\d{1,3}(?:,\d{3})+|-?\d+(?:[.,]\d+)?)\s*([\p{L}]+)?\s*\.?\s*$/u.exec(value);
+  const text = value.replace(CURRENCY_AROUND, '');
+  const match =
+    /^\s*(-?\d{1,3}(?:,\d{2})*,\d{3}|-?\d{1,3}(?:,\d{3})+|-?\d+(?:[.,]\d+)?)\s*([\p{L}]+)?\s*\.?\s*$/u.exec(
+      text,
+    );
   if (!match) return undefined;
   const digits = match[1] as string;
   const amount = Number(
-    /^-?\d{1,3}(,\d{3})+$/.test(digits) ? digits.replaceAll(',', '') : digits.replace(',', '.'),
+    GROUPED.test(digits) ? digits.replaceAll(',', '') : digits.replace(',', '.'),
   );
   if (!Number.isFinite(amount)) return undefined;
   return match[2] ? { amount, unit: match[2].toLowerCase() } : { amount };

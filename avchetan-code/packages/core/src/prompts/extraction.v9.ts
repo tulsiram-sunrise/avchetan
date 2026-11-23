@@ -14,8 +14,10 @@ import type { ExtractionInput } from '../extraction/input';
  * 7: `remindAt` on a task, the local time the entry asks to be reminded at (§8).
  * 8: `occurredAt` (local HH:MM or "now") and `sleep` (bed / wake) on an activity; "woke up" is
  *    always an activity (§9).
+ * 9: money paid or spent in `spent`, the number only; money still owed is a task (v0.5.0 test
+ *    build: amounts were kept only as text, so Ask couldn't total spending).
  */
-export const version = 8;
+export const version = 9;
 
 /** Keys code sets itself, never the model. */
 const NOT_FOR_THE_MODEL = new Set(['kind', 'exercises', 'sleep_event']);
@@ -66,6 +68,9 @@ Entry: went to bed at 11:30 last night, woke up at 6:45 feeling groggy. just had
 Entry: ok sleeping now
 {"activities":[{"category":"health","title":"Went to bed","notes":null,"metrics":[],"exercises":[],"loggedDate":"2026-03-06","occurredAt":"now","sleep":"bed","project":null,"inferredTags":[]}],"tasks":[],"newCategory":null,"logTags":[],"entities":[],"choresDone":[],"skip":null}
 
+Entry: bought medicines for dad, paid ₹850. need to pay the plumber 1200 tomorrow
+{"activities":[{"category":"health","title":"Bought medicines for Dad","notes":null,"metrics":[{"key":"spent","value":"850"}],"exercises":[],"loggedDate":"2026-03-06","occurredAt":null,"sleep":null,"project":null,"inferredTags":[]}],"tasks":[{"title":"Pay the plumber 1200","notes":null,"dueDate":"2026-03-07","category":null,"project":null,"inferredTags":[],"forPerson":null,"waitingOn":null,"remindAt":null}],"newCategory":null,"logTags":[],"entities":[{"kind":"person","name":"Dad","mentions":[{"target":"activity:0","role":"about"}]}],"choresDone":[],"skip":null}
+
 Entry: asdf test
 {"activities":[],"tasks":[],"newCategory":null,"logTags":[],"entities":[],"choresDone":[],"skip":{"reason":"No content"}}
 `.trim();
@@ -82,7 +87,7 @@ Times: occurredAt is the 24-hour local time HH:MM the entry states for an activi
 
 Sleep: "woke up" is always an activity, with sleep "wake", even with nothing else to say. Going to bed or to sleep for the night ("sleeping now", "so raha hoon") is always an activity with sleep "bed", never skipped. sleep is null for every other activity, naps included.
 
-Metrics: use only values the entry states, except 1-5 scales (energy, mood, stress) which you may estimate from clear wording. Never invent numbers. Allowed keys: ${metricList}. For an amount with no key, use a snake_case key with a unit suffix. Put gym exercises in "exercises".
+Metrics: use only values the entry states, except 1-5 scales (energy, mood, stress) which you may estimate from clear wording. Never invent numbers. Allowed keys: ${metricList}. For an amount with no key, use a snake_case key with a unit suffix. Put gym exercises in "exercises". Money the person paid or spent goes in "spent" on the activity it paid for (shopping, a fee, a ticket, a bill), as the number only: "₹3,600" is "3600", "Rs 500" is "500". Money still to pay or owed is a task, never "spent".
 
 Tags: 0-5 lowercase kebab-case tags. Reuse known tags. Skip tags that repeat the category or the entry's explicit tags.
 

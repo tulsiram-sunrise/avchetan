@@ -927,3 +927,44 @@ export function tasksCompletedBetween(
     )
     .orderBy(asc(tasks.completedAt));
 }
+
+/** Words that may come with an amount of money, in English and Hinglish. */
+// ` rs` and `rs.` rather than `rs`, which is in hours and years.
+const MONEY_WORDS = [
+  '₹',
+  ' rs',
+  'rs.',
+  'rupee',
+  'paid',
+  'pay',
+  'spent',
+  'spend',
+  'cost',
+  'price',
+  'fee',
+  'bought',
+  'kharch',
+];
+
+/**
+ * Entries organized with a prompt older than `version` that may mention money: organized again,
+ * they get their amounts as `spent` (v0.5.0, extraction prompt 9). Private ones too: they are
+ * organized by a model on the user's own hardware only, as always.
+ */
+export async function entriesMentioningMoney(
+  db: ClientDb,
+  options: { version: number },
+): Promise<string[]> {
+  const rows = await db
+    .select({ id: rawLogs.id })
+    .from(rawLogs)
+    .where(
+      and(
+        live(rawLogs),
+        eq(rawLogs.status, 'processed'),
+        or(isNull(rawLogs.extractionVersion), lt(rawLogs.extractionVersion, options.version)),
+        or(...MONEY_WORDS.map((word) => like(sql`lower(${rawLogs.content})`, `%${word}%`))),
+      ),
+    );
+  return rows.map((row) => row.id);
+}

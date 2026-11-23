@@ -226,6 +226,7 @@ export {
   loadOpenChores,
   loadVocabulary,
 } from './extraction/input';
+export { MONEY_RECHECK_SETTING, recheckMoneyOnce } from './extraction/money-recheck';
 export {
   LLM_MAY_CREATE_SETTING,
   type LlmMayCreate,
