@@ -1,45 +1,31 @@
-import { buildCaptureInput, normalizeMetrics } from '@avchetan/core';
-import type { ClientStore } from '@avchetan/db/sqlite';
-import { localDate, systemTimeZone } from '@avchetan/shared';
+import { runWrite } from '@avchetan/core';
 import type { AppServices } from '../app-services';
 import { refreshAll } from '../query-client';
-import { useWrite } from './entries';
+import { writeContext } from '../services/writes';
+import { useAction, useWrite } from './entries';
+
+// Core's shared writes (WRITE_ACTIONS), the same ones the PC runs.
 
 /** Finishing or cancelling a repeating task makes the next one, never before today (§6). */
-const todayOf = (store: ClientStore) => localDate(store.clock.now(), systemTimeZone());
-
-export const useSetTaskDone = () =>
-  useWrite((store, { id, done }: { id: string; done: boolean }) =>
-    store.write((tx) =>
-      done ? store.repos.tasks.complete(tx, id, todayOf(store)) : store.repos.tasks.reopen(tx, id),
-    ),
-  );
+export const useSetTaskDone = () => useAction('task.setDone');
 
 /** Done, with an optional note on how it went (product/tasks-routines-reminders.md §1). */
-export const useFinishTask = () =>
-  useWrite((store, { id, note }: { id: string; note?: string | null }) =>
-    store.write((tx) => store.repos.tasks.complete(tx, id, todayOf(store), note)),
-  );
+export const useFinishTask = () => useAction('task.finish');
 
-export const usePartlyDone = () =>
-  useWrite((store, { id, progressPct }: { id: string; progressPct: number }) =>
-    store.write((tx) => store.repos.tasks.partlyDone(tx, id, progressPct)),
-  );
+export const usePartlyDone = () => useAction('task.partlyDone');
 
 export const useCancelTask = () =>
-  useWrite((store, id: string) =>
-    store.write((tx) => store.repos.tasks.cancel(tx, id, todayOf(store))),
-  );
+  useWrite((store, id: string) => runWrite(writeContext(store), 'task.cancel', { id }));
 
 /** Move: only the due date changes, so it isn't a correction (see tasksRepo.editByUser). */
 export const useMoveTask = () =>
-  useWrite((store, { id, dueDate }: { id: string; dueDate: string | null }) =>
-    store.write((tx) => store.repos.tasks.editByUser(tx, id, { dueDate })),
+  useWrite((store, args: { id: string; dueDate: string | null }) =>
+    runWrite(writeContext(store), 'task.edit', args),
   );
 
 export const useEditTask = () =>
-  useWrite((store, { id, ...changes }: { id: string; title: string; dueDate: string | null }) =>
-    store.write((tx) => store.repos.tasks.editByUser(tx, id, changes)),
+  useWrite((store, args: { id: string; title: string; dueDate: string | null }) =>
+    runWrite(writeContext(store), 'task.edit', args),
   );
 
 /**
@@ -47,45 +33,33 @@ export const useEditTask = () =>
  * when the undo message times out, after the row may have gone.
  */
 export async function deleteTaskNow(services: AppServices, id: string): Promise<void> {
-  await services.store.write((tx) => services.store.repos.tasks.deleteByUser(tx, id));
+  await runWrite(writeContext(services.store), 'task.delete', { id });
   refreshAll();
   services.sync.schedule();
 }
 
 export const useEditActivity = () =>
-  useWrite((store, { id, ...changes }: { id: string; title: string; categoryId: string }) =>
-    store.write((tx) => store.repos.activities.editByUser(tx, id, changes)),
+  useWrite((store, args: { id: string; title: string; categoryId: string }) =>
+    runWrite(writeContext(store), 'activity.edit', args),
   );
 
-/** New numbers for an activity (from applyMetricRows), normalized like the model's. */
+/** New numbers for an activity (from applyMetricRows); the repository normalizes them. */
 export const useEditActivityNumbers = () =>
-  useWrite((store, { id, metrics }: { id: string; metrics: Record<string, unknown> }) =>
-    store.write((tx) =>
-      store.repos.activities.editByUser(tx, id, { metrics: normalizeMetrics(metrics).metrics }),
-    ),
+  useWrite((store, args: { id: string; metrics: Record<string, unknown> }) =>
+    runWrite(writeContext(store), 'activity.edit', args),
   );
 
 export const useDeleteActivity = () =>
-  useWrite((store, id: string) => store.write((tx) => store.repos.activities.deleteByUser(tx, id)));
+  useWrite((store, id: string) => runWrite(writeContext(store), 'activity.delete', { id }));
 
 /** Stops an entry being an example for the AI, on every device. */
 export const useForgetExample = () =>
-  useWrite((store, id: string) => store.write((tx) => store.repos.rawLogs.forgetExample(tx, id)));
+  useWrite((store, id: string) => runWrite(writeContext(store), 'log.forgetExample', { id }));
 
 export const useRequeueLog = () =>
-  useWrite((store, id: string) => store.write((tx) => store.repos.rawLogs.requeue(tx, id)));
+  useWrite((store, id: string) => runWrite(writeContext(store), 'log.requeue', { id }));
 
-export const useEditLog = () =>
-  useWrite((store, { id, content }: { id: string; content: string }) =>
-    store.write((tx) =>
-      store.repos.rawLogs.replace(
-        tx,
-        id,
-        // The time zone is the original's: `replace` keeps it.
-        buildCaptureInput(content, { source: 'mobile_text', capturedTz: 'UTC' }),
-      ),
-    ),
-  );
+export const useEditLog = () => useAction('log.editContent');
 
 export const useDeleteLog = () =>
-  useWrite((store, id: string) => store.write((tx) => store.repos.rawLogs.softDelete(tx, id)));
+  useWrite((store, id: string) => runWrite(writeContext(store), 'log.delete', { id }));

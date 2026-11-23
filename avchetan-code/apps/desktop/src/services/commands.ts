@@ -1,99 +1,35 @@
 import {
   type CommandName,
+  type CommandOutcome,
+  type CommandPlan,
   type CommandReading,
+  isSharedCommand,
   learnFromReading,
-  matchOpenTask,
   type ParsedCommand,
+  planSharedCommand,
+  type SharedCommandDeps,
+  type UndoStack,
 } from '@avchetan/core';
-import type { ClientStore, RawLog, Task } from '@avchetan/db/sqlite';
-import { type LocalDate, localDate, type UnlockOutcome } from '@avchetan/shared';
-import { loadSyncStatus, type SyncState } from '@avchetan/sync';
+import type { ClientStore, Task } from '@avchetan/db/sqlite';
+import { localDate, type UnlockOutcome } from '@avchetan/shared';
+import { loadSyncStatus } from '@avchetan/sync';
 import type { AppServices } from '../app-services';
 import { SETTINGS_TABS, type SettingsTab, saveSettingsTab } from '../main-window/settings-tabs';
 import { emitAppEvent } from '../native/events';
 import type { LockStatus } from '../native/lock';
+import { writeContext } from './actions';
 import { unlockApp } from './app-lock';
 import { announce } from './extraction';
-import { localToday } from './time-zone';
 
-/** What a command did, and how to take it back when it changed something. */
-export type CommandOutcome = { message: string; undo: (() => Promise<string>) | null };
-
-/** What Enter does for the current text (docs/product/command-mode.md). */
-export type CommandPlan =
-  /** Enter does nothing yet; the line says why. */
-  | { kind: 'hint'; text: string }
-  | { kind: 'run'; label: string; run: () => Promise<CommandOutcome> }
-  /** Several tasks match equally: ↑↓ picks, Enter runs the picked one. */
-  | {
-      kind: 'choose';
-      label: string;
-      /** `key`: the task's ID, as two tasks can share a title. */
-      options: { key: string; label: string; run: () => Promise<CommandOutcome> }[];
-    }
-  /** Not a command: Enter asks the AI to read it. */
-  | { kind: 'ask_ai'; input: string }
-  | { kind: 'error'; code: string; message: string };
-
-/** One change that can be taken back. `label` says what undoing does: `reopen “Call the plumber”`. */
-export type UndoEntry = { label: string; undo: () => Promise<string> };
-
-/** Undo for this session of the capture box. */
-export type UndoStack = {
-  push(entry: UndoEntry): void;
-  peek(): UndoEntry | undefined;
-  /** The entry whose undo is this function: the one a result's Undo button belongs to. */
-  find(undo: UndoEntry['undo']): UndoEntry | undefined;
-  /**
-   * Undoes this entry and only then takes it off the list: an undo that fails stays, to try
-   * again. Undefined when it was already undone.
-   */
-  run(entry: UndoEntry): Promise<string | undefined>;
-  readonly size: number;
-};
-
-const MAX_UNDO = 20;
-
-export function createUndoStack(): UndoStack {
-  const entries: UndoEntry[] = [];
-  return {
-    push(entry) {
-      entries.push(entry);
-      if (entries.length > MAX_UNDO) entries.shift();
-    },
-    peek: () => entries.at(-1),
-    find: (undo) => entries.find((entry) => entry.undo === undo),
-    async run(entry) {
-      if (!entries.includes(entry)) return undefined;
-      const message = await entry.undo();
-      const index = entries.indexOf(entry);
-      if (index >= 0) entries.splice(index, 1);
-      return message;
-    },
-    get size() {
-      return entries.length;
-    },
-  };
-}
-
-export type CommandDeps = {
+/** Core's shared commands, plus the PC's own: `/settings`, `/lock`, `/unlock`. */
+export type CommandDeps = SharedCommandDeps & {
   store: ClientStore;
-  today: () => LocalDate;
-  makeBrief: (day: LocalDate) => Promise<'made' | 'empty'>;
-  /** Syncs now and returns the state it ended in. */
-  syncNow: () => Promise<SyncState>;
-  openDays: () => Promise<void>;
-  /** After a write: refresh the windows and queue a sync. */
-  changed: () => void;
-  undo: UndoStack;
   /** The app lock (src-tauri/src/app_lock.rs). */
   lock: {
     status(): Promise<LockStatus>;
     unlock(): Promise<UnlockOutcome>;
     lockNow(): Promise<LockStatus>;
   };
-  /** Opens the main window's Search with the words (`/find`). */
-  openSearch: (text: string) => Promise<void>;
   /** Opens the main window on Settings, on `tab` when given. */
   openSettings: (tab: SettingsTab | null) => Promise<void>;
 };
@@ -102,6 +38,8 @@ export function commandDeps(services: AppServices, undo: UndoStack): CommandDeps
   const { store, platform, timeZone, sync, brief } = services;
   return {
     store,
+    write: writeContext(store),
+    words: { device: 'PC', syncPlace: 'Settings → Hub & sync → Sync' },
     today: () => localDate(store.clock.now(), timeZone.current()),
     makeBrief: (day) => brief.makeNow(day),
     async syncNow() {
@@ -132,31 +70,6 @@ export function commandDeps(services: AppServices, undo: UndoStack): CommandDeps
       if (tab) await emitAppEvent('main:navigate', { view: 'settings', tab });
     },
   };
-}
-
-/** A short quote of an entry for the undo line; only its owner sees the capture box. */
-function quote(content: string): string {
-  const line = content.replace(/\s+/g, ' ').trim();
-  return `“${line.length > 40 ? `${line.slice(0, 40)}…` : line}”`;
-}
-
-/**
- * An entry just saved from the capture box joins the undo list, so `/undo` can take it back. The
- * delete is a soft delete through the repository, with whatever the AI made from the entry.
- */
-export function rememberCapture(
-  deps: Pick<CommandDeps, 'store' | 'changed' | 'undo'>,
-  rawLog: Pick<RawLog, 'id' | 'content'>,
-): void {
-  const shown = quote(rawLog.content);
-  deps.undo.push({
-    label: `delete ${shown}`,
-    undo: async () => {
-      await deps.store.write((tx) => deps.store.repos.rawLogs.softDelete(tx, rawLog.id));
-      deps.changed();
-      return `Deleted: ${shown}`;
-    },
-  });
 }
 
 const TAB_ALIASES: Record<string, SettingsTab> = {
@@ -200,33 +113,6 @@ const UNLOCK_MESSAGES: Record<UnlockOutcome, string> = {
   unavailable: 'Windows Hello isn’t set up on this PC any more, so the app lock is now off',
 };
 
-function doneTask(deps: CommandDeps, task: Task): () => Promise<CommandOutcome> {
-  return async () => {
-    const { store } = deps;
-    const today = await localToday(store);
-    await store.write((tx) => store.repos.tasks.complete(tx, task.id, today));
-    deps.changed();
-    const undo = async () => {
-      await store.write((tx) => store.repos.tasks.reopen(tx, task.id));
-      deps.changed();
-      return `Reopened: ${task.title}`;
-    };
-    deps.undo.push({ label: `reopen “${task.title}”`, undo });
-    return { message: `Done: ${task.title}`, undo };
-  };
-}
-
-const SYNC_MESSAGES: Record<SyncState, string> = {
-  synced: 'Synced',
-  syncing: 'Syncing…',
-  not_configured: 'This PC isn’t connected to a hub or server, so there’s nothing to sync',
-  offline: 'This PC is offline; it syncs when it’s back',
-  unauthorized: 'Your hub or server refused this PC’s sync token',
-  server_unreachable: 'Can’t reach your hub or server',
-  wrong_server: 'A different server answered at this PC’s hub address. Pair again',
-  failed: 'Sync failed; Settings → Hub & sync → Sync says why',
-};
-
 /** The plan for a known command and its text. */
 export function planFor(
   deps: CommandDeps,
@@ -234,77 +120,8 @@ export function planFor(
   text: string,
   openTasks: readonly Task[],
 ): CommandPlan {
+  if (isSharedCommand(command)) return planSharedCommand(deps, command, text, openTasks);
   switch (command) {
-    case 'done': {
-      if (!text) return { kind: 'hint', text: 'Type words from the task to mark done' };
-      const match = matchOpenTask(text, openTasks);
-      if (match.kind === 'none') {
-        return {
-          kind: 'error',
-          code: 'command_no_match',
-          message: `No open task matches “${text}”`,
-        };
-      }
-      if (match.kind === 'one') {
-        return { kind: 'run', label: `Done: ${match.task.title}`, run: doneTask(deps, match.task) };
-      }
-      return {
-        kind: 'choose',
-        label: 'Several tasks match. ↑↓ to pick, Enter to mark it done',
-        options: match.tasks.map((task) => ({
-          key: task.id,
-          label: task.title,
-          run: doneTask(deps, task),
-        })),
-      };
-    }
-    case 'find': {
-      if (!text) return { kind: 'hint', text: 'Type words to find' };
-      return {
-        kind: 'run',
-        label: 'Open Search with these words',
-        async run() {
-          await deps.openSearch(text);
-          return { message: 'Opened Search', undo: null };
-        },
-      };
-    }
-    case 'brief':
-      return {
-        kind: 'run',
-        label: 'Make today’s daily brief and open it in Days',
-        async run() {
-          const status = await deps.makeBrief(deps.today());
-          await deps.openDays();
-          return {
-            message:
-              status === 'made'
-                ? 'Today’s brief is ready'
-                : 'Today has no entries yet, so no brief',
-            undo: null,
-          };
-        },
-      };
-    case 'sync':
-      return {
-        kind: 'run',
-        label: 'Sync now',
-        run: async () => ({ message: SYNC_MESSAGES[await deps.syncNow()], undo: null }),
-      };
-    case 'undo': {
-      const top = deps.undo.peek();
-      if (!top) return { kind: 'hint', text: 'Nothing to undo since Avchetan started' };
-      const stack = deps.undo;
-      return {
-        kind: 'run',
-        label: `Undo: ${top.label}`,
-        // The change the label names, even if another one was made since the line was shown.
-        async run() {
-          const message = await stack.run(top);
-          return { message: message ?? 'Already undone', undo: null };
-        },
-      };
-    }
     case 'settings': {
       const tab = settingsTabFor(text);
       if (tab === 'unknown') {

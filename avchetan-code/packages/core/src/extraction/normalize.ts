@@ -1,3 +1,4 @@
+import { normalizeMetrics, parseQuantity } from '@avchetan/db';
 import {
   type CategoryProposal,
   type ExtractionPlan,
@@ -24,7 +25,6 @@ import {
 } from '@avchetan/shared';
 import { z } from 'zod';
 import { ruleMatchesOf, ruleOutcome } from '../context/window-context';
-import { normalizeMetrics, parseQuantity } from '../normalize/metrics';
 import { normalizeTagPath, normalizeTagSegment } from '../normalize/tags';
 import { instantAt } from '../routines/checklist';
 import { checkDate, namesNoDay } from './date-check';

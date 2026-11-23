@@ -1,7 +1,10 @@
 import {
   COMMANDS,
   type CommandName,
+  type CommandOutcome,
+  type CommandPlan,
   type CommandReading,
+  createUndoStack,
   isCommand,
   loadCommandLearning,
   parseCommand,
@@ -14,15 +17,7 @@ import { type KeyboardEvent, type ReactNode, useEffect, useMemo, useRef, useStat
 import { HelpLink } from '../help-link';
 import { emitAppEvent } from '../native/events';
 import { useOpenTasks } from '../queries/organize';
-import {
-  type CommandOutcome,
-  type CommandPlan,
-  commandDeps,
-  confirmReading,
-  createUndoStack,
-  planCommand,
-  planFor,
-} from '../services/commands';
+import { commandDeps, confirmReading, planCommand, planFor } from '../services/commands';
 import { useServices } from '../services-context';
 import { DOCK_LIST_ID, dockRowId } from './dock-list';
 

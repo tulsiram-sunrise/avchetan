@@ -69,7 +69,7 @@ Learning is per PC, kept in client-local settings (`commands.aliases`, `commands
 ## How it's built
 
 - **Registry in `@avchetan/core`** (`commands/registry.ts`): each command's `name`, `help`, Zod `args` schema, `changes` (whether it writes) and `requiresConfirm(preview)`. The AI prompt is built from it, so a new command needs no prompt edit.
-- **Handlers in the desktop app** (`services/commands.ts`): they run in the dock (it already serves all writes, ADR-0019), go through the repositories, and return a preview, the result text and an undo function.
+- **Handlers** ([command registry](../patterns/command-registry.md)): `done`, `find`, `brief`, `sync` and `undo` are shared in core (`commands/handlers.ts`) so the phone runs the same code; `settings`, `lock` and `unlock` are the desktop app's (`services/commands.ts`). On the PC they run in the dock (it serves all writes, ADR-0019), write through core's shared write actions, and return the result text and an undo function.
 - **Reading with the AI** (`device/read-command.ts` in core): the hub's model through the `HubClient` when the hub answers this device, else its own answers model ([platform adapters](../patterns/platform-adapters.md#another-package-as-an-adapter-hubclient)).
 - **Parsing** (`commands/parse.ts` in core): `/` prefix, `//` escape, name or learned alias, the rest as arguments. Pure functions with tests.
 - **Logging:** command names, outcomes and counts only, never the text (non-negotiable rule 11).

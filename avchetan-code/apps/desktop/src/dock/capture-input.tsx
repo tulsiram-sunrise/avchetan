@@ -7,6 +7,7 @@ import {
   captureText,
   LOCK_FREE_COMMANDS,
   parseCommand,
+  rememberCapture,
 } from '@avchetan/core';
 import type { EntryHit } from '@avchetan/db/sqlite';
 import { toAppError } from '@avchetan/shared';
@@ -18,7 +19,7 @@ import { useDockFind } from '../queries/search';
 import { useSubmitKey } from '../queries/settings';
 import { unlockMessage } from '../services/app-lock';
 import { isQuestion, questionText } from '../services/ask';
-import { commandDeps, rememberCapture } from '../services/commands';
+import { commandDeps } from '../services/commands';
 import { dockKey } from '../services/dock-keys';
 import { dockState } from '../services/dock-state';
 import { DEFAULT_SUBMIT_KEY, isSubmitPress, submitHint } from '../services/submit-key';

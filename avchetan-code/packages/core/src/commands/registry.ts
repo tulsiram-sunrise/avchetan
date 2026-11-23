@@ -1,7 +1,7 @@
 /**
  * Commands for the capture box's `/` mode (docs/product/command-mode.md). The registry is the
- * single list: the dock's suggestions and the AI prompt are built from it, and the desktop app
- * gives each a handler. Every command takes free text after its name (possibly empty).
+ * single list: the dock's suggestions and the AI prompt are built from it. Handlers for done,
+ * find, brief, sync and undo are shared (handlers.ts); each app handles settings, lock, unlock. Every command takes free text after its name (possibly empty).
  */
 export const COMMANDS = {
   done: {

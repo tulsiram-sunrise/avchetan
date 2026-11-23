@@ -1,6 +1,5 @@
-import { METRIC_ALIASES, METRICS } from './metric-keys';
+import { METRIC_ALIASES, METRICS, normalizeMetrics, parseQuantity, toSnakeKey } from '@avchetan/db';
 import { metricLabel, metricUnit } from './metric-totals';
-import { normalizeMetrics, parseQuantity, toSnakeKey } from './metrics';
 
 /**
  * Editing an activity's numbers by hand

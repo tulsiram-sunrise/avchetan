@@ -1,3 +1,14 @@
+export {
+  type Exercise,
+  METRIC_ALIASES,
+  METRICS,
+  type MetricIssue,
+  type MetricSpec,
+  type NormalizedMetrics,
+  normalizeMetrics,
+  parseQuantity,
+  toSnakeKey,
+} from '@avchetan/db';
 export { type AskRequest, type AskResult, type AskSource, ask } from './analysis/ask';
 export {
   BRIEF_ENABLED_SETTING,
@@ -83,6 +94,17 @@ export {
   type CaptureMode,
   captureMode,
 } from './commands/capture-mode';
+export {
+  type CommandOutcome,
+  type CommandPlan,
+  isSharedCommand,
+  planSharedCommand,
+  rememberCapture,
+  SHARED_COMMANDS,
+  type SharedCommandDeps,
+  type SharedCommandName,
+  type SyncOutcome,
+} from './commands/handlers';
 export { type CommandReading, interpretCommand } from './commands/interpret';
 export {
   COMMANDS_ALIASES_SETTING,
@@ -113,6 +135,7 @@ export {
   isCommandName,
   LOCK_FREE_COMMANDS,
 } from './commands/registry';
+export { createUndoStack, MAX_UNDO, type UndoEntry, type UndoStack } from './commands/undo';
 export {
   type ClipboardRead,
   clipboardFields,
@@ -276,7 +299,6 @@ export {
   metricRows,
   nextMetricKey,
 } from './normalize/metric-edit';
-export { METRIC_ALIASES, METRICS, type MetricSpec } from './normalize/metric-keys';
 export {
   formatMetricAmount,
   type MetricSums,
@@ -288,14 +310,6 @@ export {
   metricUnit,
   topMetricTotals,
 } from './normalize/metric-totals';
-export {
-  type Exercise,
-  type MetricIssue,
-  type NormalizedMetrics,
-  normalizeMetrics,
-  parseQuantity,
-  toSnakeKey,
-} from './normalize/metrics';
 export { exerciseLines, metricsText } from './normalize/metrics-display';
 export { normalizeTagPath, normalizeTagSegment, singularize } from './normalize/tags';
 export type { ModelContext, ProviderAdapter } from './providers/adapter';
@@ -394,3 +408,12 @@ export {
   WHISPER_LANGUAGES,
   type WhisperLanguage,
 } from './voice/settings';
+export {
+  isWriteName,
+  runWrite,
+  WRITE_ACTIONS,
+  type WriteArgs,
+  type WriteContext,
+  type WriteName,
+  type WriteResult,
+} from './writes/actions';
