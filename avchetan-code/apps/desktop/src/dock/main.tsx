@@ -1,4 +1,4 @@
-import { recheckMoneyOnce } from '@avchetan/core';
+import { recheckOlderEntriesOnce } from '@avchetan/core';
 import { startRoutineDays } from '@avchetan/db/sqlite';
 import { createLogger, localDate } from '@avchetan/shared';
 import { enable } from '@tauri-apps/plugin-autostart';
@@ -71,12 +71,12 @@ void bootstrap(
     useDockStore.getState().setDraft(await loadDraft(services.store));
     void settleNativeState(services);
     services.extraction.start();
-    // Once after the update that added amounts spent: past entries with money are organized again.
-    recheckMoneyOnce(services.store)
+    // Once after the v0.5.0 update: past entries with money or sleep are organized again.
+    recheckOlderEntriesOnce(services.store)
       .then((queued) => {
         if (queued > 0) void services.extraction.wake();
       })
-      .catch(() => log.warn('could not look for entries with money'));
+      .catch(() => log.warn('could not look for older entries to organize again'));
     services.sync.start();
     services.brief.start();
     // A brief the hub made arrives by sync; tell the person once.

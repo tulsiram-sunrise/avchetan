@@ -226,7 +226,6 @@ export {
   loadOpenChores,
   loadVocabulary,
 } from './extraction/input';
-export { MONEY_RECHECK_SETTING, recheckMoneyOnce } from './extraction/money-recheck';
 export {
   LLM_MAY_CREATE_SETTING,
   type LlmMayCreate,
@@ -240,6 +239,7 @@ export {
   type PendingProcessorDeps,
 } from './extraction/pending-processor';
 export { waitsForLocalAi } from './extraction/private';
+export { RECHECK_SETTING, recheckOlderEntriesOnce } from './extraction/recheck-older';
 export { type ExtractionResult, extractionResultSchema } from './extraction/schema';
 export {
   ANALYSIS_MODE_SETTING,

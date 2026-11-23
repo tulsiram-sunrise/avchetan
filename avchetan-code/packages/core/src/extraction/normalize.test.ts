@@ -412,6 +412,36 @@ describe('when an activity happened, and sleep (§9)', () => {
     expect(at({}, 'ran')?.occurredAt).toBeNull();
   });
 
+  it('reads sleep hours from the words when the model gave none (test build 2026-11-24)', () => {
+    // The model marked the wake-up but left out its time, so pairing had nothing to pair.
+    const plan = normalizeExtraction(
+      {
+        ...empty,
+        activities: [
+          { ...activity, title: 'Went to bed', loggedDate: '2026-10-29', sleep: 'bed' },
+          { ...activity, title: 'Woke up', loggedDate: '2026-10-30', sleep: 'wake' },
+        ],
+      },
+      withText('My sleep was from yesterday 10:00PM to today 6:00AM'),
+    );
+    expect(plan.activities.map((a) => a.metrics)).toEqual([
+      { sleep_event: 'bed' },
+      { sleep_event: 'wake', sleep_h: 8 },
+    ]);
+    // A wake-up the model didn't mark still gets them, by its title.
+    expect(
+      at({ title: 'Woke up' }, 'My sleep timing was yesterday 10:00PM to today 5:00AM')?.metrics,
+    ).toEqual({ sleep_h: 7 });
+  });
+
+  it('keeps the model’s sleep hours, and adds none to an unrelated activity', () => {
+    expect(
+      at({ title: 'Sleep', metrics: [{ key: 'sleep_h', value: '6' }] }, 'slept from 10 pm to 6 am')
+        ?.metrics,
+    ).toEqual({ sleep_h: 6 });
+    expect(at({ title: 'Morning run' }, 'ran 5k, slept 7 hours')?.metrics).toEqual({});
+  });
+
   it('keeps only bed and wake as the sleep mark', () => {
     expect(at({ sleep: 'Wake' }, 'woke up')?.metrics).toEqual({ sleep_event: 'wake' });
     expect(at({ sleep: 'bed' }, 'sleeping')?.metrics).toEqual({ sleep_event: 'bed' });

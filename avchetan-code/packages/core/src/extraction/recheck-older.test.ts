@@ -1,7 +1,7 @@
 import { openTestStore } from '@avchetan/db/testing';
 import { describe, expect, it } from 'vitest';
 import { EXTRACTION_PROMPT_VERSION } from './extract';
-import { recheckMoneyOnce } from './money-recheck';
+import { recheckOlderEntriesOnce } from './recheck-older';
 
 async function organized(
   store: Awaited<ReturnType<typeof openTestStore>>['store'],
@@ -17,19 +17,23 @@ async function organized(
   return log;
 }
 
-describe('recheckMoneyOnce', () => {
-  it('queues older entries that mention money, once', async () => {
+describe('recheckOlderEntriesOnce', () => {
+  it('queues older entries that mention money or sleep, once', async () => {
     const { store } = await openTestStore();
     const meds = await organized(store, 'Bought meds for mom, it cost ₹3600', 8);
-    await organized(store, 'Slept 7 hours, best in years', 8);
+    const sleep = await organized(store, 'Slept from 10 pm to 6 am', 8);
+    await organized(store, 'Fixed the fence, 3 hours', 8);
     await organized(store, 'Paid Rs. 500 for the fee', EXTRACTION_PROMPT_VERSION);
 
-    expect(await recheckMoneyOnce(store)).toBe(1);
+    expect(await recheckOlderEntriesOnce(store)).toBe(2);
     const statuses = await store.db.query.rawLogs.findMany({ columns: { id: true, status: true } });
-    expect(statuses.filter((log) => log.status === 'pending_llm').map((log) => log.id)).toEqual([
-      meds.id,
-    ]);
+    expect(
+      statuses
+        .filter((log) => log.status === 'pending_llm')
+        .map((log) => log.id)
+        .sort(),
+    ).toEqual([meds.id, sleep.id].sort());
 
-    expect(await recheckMoneyOnce(store)).toBe(0);
+    expect(await recheckOlderEntriesOnce(store)).toBe(0);
   });
 });

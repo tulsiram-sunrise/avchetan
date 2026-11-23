@@ -928,33 +928,17 @@ export function tasksCompletedBetween(
     .orderBy(asc(tasks.completedAt));
 }
 
-/** Words that may come with an amount of money, in English and Hinglish. */
-// ` rs` and `rs.` rather than `rs`, which is in hours and years.
-const MONEY_WORDS = [
-  '₹',
-  ' rs',
-  'rs.',
-  'rupee',
-  'paid',
-  'pay',
-  'spent',
-  'spend',
-  'cost',
-  'price',
-  'fee',
-  'bought',
-  'kharch',
-];
-
 /**
- * Entries organized with a prompt older than `version` that may mention money: organized again,
- * they get their amounts as `spent` (v0.5.0, extraction prompt 9). Private ones too: they are
- * organized by a model on the user's own hardware only, as always.
+ * Live entries organized with a prompt older than `version` whose text holds any of `words`
+ * (lowercase, matched anywhere): to organize again when a newer prompt reads them better
+ * (v0.5.0: amounts spent, sleep hours). Private ones too: they are organized by a model on the
+ * user's own hardware only, as always.
  */
-export async function entriesMentioningMoney(
+export async function olderEntriesMentioning(
   db: ClientDb,
-  options: { version: number },
+  options: { version: number; words: readonly string[] },
 ): Promise<string[]> {
+  if (options.words.length === 0) return [];
   const rows = await db
     .select({ id: rawLogs.id })
     .from(rawLogs)
@@ -963,7 +947,7 @@ export async function entriesMentioningMoney(
         live(rawLogs),
         eq(rawLogs.status, 'processed'),
         or(isNull(rawLogs.extractionVersion), lt(rawLogs.extractionVersion, options.version)),
-        or(...MONEY_WORDS.map((word) => like(sql`lower(${rawLogs.content})`, `%${word}%`))),
+        or(...options.words.map((word) => like(sql`lower(${rawLogs.content})`, `%${word}%`))),
       ),
     );
   return rows.map((row) => row.id);
