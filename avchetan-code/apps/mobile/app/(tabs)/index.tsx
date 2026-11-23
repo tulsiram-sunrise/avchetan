@@ -33,6 +33,7 @@ import { CaptureButton } from '../../src/ui/capture-button';
 import { ChoreCard } from '../../src/ui/chore-card';
 import { DailyBrief } from '../../src/ui/daily-brief';
 import { DayCalendar } from '../../src/ui/day-calendar';
+import { DayCoverageCard } from '../../src/ui/day-coverage-card';
 import { DownloadBanner } from '../../src/ui/download-banner';
 import { EntryRow } from '../../src/ui/entry-row';
 import { SectionTitle } from '../../src/ui/parts';
@@ -205,6 +206,7 @@ function DayContent(props: { day: string; today: string; entryInView: string | n
               : 'Nothing was logged this day.'}
         </Text>
       ) : null}
+      <DayCoverageCard day={day} today={today} />
       <ChoreCard day={day} />
       {overdue.length > 0 ? <OverdueTasks rows={overdue} /> : null}
       {groups.map((group) => (

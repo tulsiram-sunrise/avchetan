@@ -11,6 +11,14 @@ export {
   planChoreEvening,
   saveChoreEveningSettings,
 } from './checklist';
+export {
+  type CoverageRoutine,
+  coverageIsBare,
+  coverageText,
+  type DayCoverage,
+  dayCoverage,
+  SMALL_THINGS_SHARE,
+} from './coverage';
 export { describeRoutine } from './describe';
 export {
   describeReminder,

@@ -1,7 +1,11 @@
+import { dayCoverage } from '@avchetan/core';
 import {
   type Category,
+  DAY_COVERAGE_SETTING,
+  loadDayCoverage,
   loadOverdueOpen,
   OVERDUE_OPEN_SETTING,
+  saveDayCoverage,
   saveOverdueOpen,
 } from '@avchetan/db/sqlite';
 import {
@@ -124,5 +128,48 @@ export function useSetOverdueOpen() {
       store.write((tx) => saveOverdueOpen(tx, open, store.clock.now())),
     onMutate: (open) => queryClient.setQueryData(overdueOpenQuery, open),
     onSettled: () => queryClient.invalidateQueries({ queryKey: overdueOpenQuery }),
+  });
+}
+
+const dayCoverageOnQuery = ['settings', DAY_COVERAGE_SETTING] as const;
+
+/** Whether Days shows day coverage; off until turned on, per device. */
+export function useDayCoverageOn() {
+  const { store } = useServices();
+  return useQuery({ queryKey: dayCoverageOnQuery, queryFn: () => loadDayCoverage(store.db) });
+}
+
+export function useSetDayCoverageOn() {
+  const { store } = useServices();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (on: boolean) => store.write((tx) => saveDayCoverage(tx, on, store.clock.now())),
+    onMutate: (on) => queryClient.setQueryData(dayCoverageOnQuery, on),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: dayCoverageOnQuery }),
+  });
+}
+
+/** How much of a day is accounted for; today's grows as the hours go by. */
+export function useDayCoverage(day: string, today: string, enabled: boolean) {
+  const { store, timeZone } = useServices();
+  const zone = timeZone.current();
+  return useQuery({
+    queryKey: ['days', 'coverage', day, today, zone],
+    enabled,
+    refetchInterval: day === today ? 5 * 60_000 : false,
+    queryFn: async () => {
+      const [activities, routineDays] = await Promise.all([
+        store.queries.activitiesOn(store.db, day),
+        store.repos.routines.daysOn(store.db, day),
+      ]);
+      return dayCoverage({
+        day,
+        today,
+        now: store.clock.now(),
+        timeZone: zone,
+        activities,
+        routineDays,
+      });
+    },
   });
 }

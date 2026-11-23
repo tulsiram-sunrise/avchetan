@@ -30,13 +30,16 @@ export {
   toCsv,
 } from './client/export';
 export {
+  DAY_COVERAGE_SETTING,
   getSetting,
   getSyncState,
   insertLlmRun,
+  loadDayCoverage,
   loadOverdueOpen,
   type NewLlmRun,
   OVERDUE_OPEN_SETTING,
   type SyncStateKey,
+  saveDayCoverage,
   saveOverdueOpen,
   setSetting,
   setSyncState,

@@ -73,6 +73,20 @@ export async function saveOverdueOpen(tx: Tx, open: boolean, now: string): Promi
   await setSetting(tx, OVERDUE_OPEN_SETTING, open, now);
 }
 
+/**
+ * Whether Days shows day coverage (tasks-routines-reminders.md §11). Kept per device, off until
+ * turned on.
+ */
+export const DAY_COVERAGE_SETTING = 'days.coverage';
+
+export async function loadDayCoverage(db: ClientDb): Promise<boolean> {
+  return (await getSetting(db, DAY_COVERAGE_SETTING)) === true;
+}
+
+export async function saveDayCoverage(tx: Tx, on: boolean, now: string): Promise<void> {
+  await setSetting(tx, DAY_COVERAGE_SETTING, on, now);
+}
+
 export type NewAskEntry = typeof askHistory.$inferInsert;
 
 /** Stays on this device by design: Ask history never syncs. */

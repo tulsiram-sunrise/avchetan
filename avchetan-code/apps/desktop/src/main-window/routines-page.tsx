@@ -9,7 +9,7 @@ import {
 import { type Routine, routineRule, starterRoutineId } from '@avchetan/db/sqlite';
 import { describeRepeatRule, isValidLocalTime } from '@avchetan/shared';
 import { useState } from 'react';
-import { useToday } from '../queries/days';
+import { useDayCoverageOn, useSetDayCoverageOn, useToday } from '../queries/days';
 import { useAction } from '../queries/organize';
 import { useRoutines } from '../queries/routines';
 import { useServices } from '../services-context';
@@ -367,6 +367,32 @@ export function RoutinesPage() {
         <p className="text-sm text-ink-muted">No routines yet.</p>
       ) : null}
       <ActionError errors={[routines.error]} />
+      <DayCoverageSetting />
     </div>
+  );
+}
+
+/** Off by default (tasks-routines-reminders.md §11); kept per device. */
+function DayCoverageSetting() {
+  const on = useDayCoverageOn();
+  const set = useSetDayCoverageOn();
+  return (
+    <section aria-label="Day coverage" className="flex flex-col gap-1">
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={on.data ?? false}
+          disabled={!on.isSuccess || set.isPending}
+          onChange={(event) => set.mutate(event.target.checked)}
+        />
+        Show day coverage in Days
+      </label>
+      <p className="text-sm text-ink-muted">
+        How much of each day is accounted for: what you logged with a duration, plus routines such
+        as sleep and work hours, plus 15% for small things nobody logs. The rest shows as
+        unaccounted, which may well have been rest.
+      </p>
+      <ActionError errors={[set.error]} />
+    </section>
   );
 }
