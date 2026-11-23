@@ -1,4 +1,9 @@
-import type { DeviceDeps, PendingProcessor } from '@avchetan/core';
+import {
+  createUndoStack,
+  type DeviceDeps,
+  type PendingProcessor,
+  type UndoStack,
+} from '@avchetan/core';
 import { type ClientStore, openClientStore, startRoutineDays } from '@avchetan/db/sqlite';
 import { createLogger, localDate, systemTimeZone } from '@avchetan/shared';
 import type { SyncEngine } from '@avchetan/sync';
@@ -24,6 +29,8 @@ export type AppServices = {
   brief: BriefService;
   /** What Ask, the brief and command reading in core need from this phone. */
   device: DeviceDeps;
+  /** What `/undo` can take back, while the app runs (docs/product/command-mode.md). */
+  undo: UndoStack;
 };
 
 /** Wires the packages: native database → client store → services. */
@@ -60,6 +67,7 @@ async function openAppServices(platform: Platform): Promise<AppServices> {
     extraction,
     sync,
     device,
+    undo: createUndoStack(),
     brief: createBriefService({ device, platform, sync }),
   };
 }

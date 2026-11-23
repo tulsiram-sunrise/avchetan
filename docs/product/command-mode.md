@@ -64,7 +64,7 @@ When you confirm an AI reading, Avchetan learns from it, so the next time needs 
 2. **Readings become examples.** The last 20 confirmed readings go into the command prompt as examples, so phrasings that aren't a single word get better too.
 3. **Settings → Capture box → Commands** lists the learned aliases and examples, each with **Forget**, and has a switch "Learn from commands I confirm" (default on).
 
-Learning is per PC, kept in client-local settings (`commands.aliases`, `commands.examples`, `commands.learn`): command mode is desktop-only, and these phrases are not log content to sync.
+Learning is per PC, kept in client-local settings (`commands.aliases`, `commands.examples`, `commands.learn`): the phone has only `/done` and `/undo` and never asks the AI ([§14](tasks-routines-reminders.md#14-done-and-undo-on-the-phone)), and these phrases are not log content to sync.
 
 ## How it's built
 

@@ -32,7 +32,7 @@ Avchetan is a personal logger and planner. Type (or say) anything — a workout,
 - [Window context and rules](capture-on-windows.md#window-context-and-rules) and [clipboard snap](capture-on-windows.md#attach-the-clipboard) on the PC
 - [The Android widget](capture-on-android.md#add-the-widget): a capture bar on your home screen
 - [Teach Avchetan with your fixes](corrections.md): how your fixes become examples for the AI, and how to forget them
-- [Commands in the capture box](commands.md): `/done`, `/brief`, `/sync`, `/undo`, `/settings`, `/lock`, `/unlock`, and what the AI learns from your phrasing
+- [Commands in the capture box](commands.md): `/done`, `/brief`, `/sync`, `/undo`, `/settings`, `/lock`, `/unlock`, and what the AI learns from your phrasing; `/done` and `/undo` on the phone too
 - [Setup check](troubleshooting.md#setup-check): tests your setup and says what to fix
 - [Use your phone away from home (Tailscale)](remote-access-tailscale.md)
 - [Back up and restore](backup-and-restore.md)
