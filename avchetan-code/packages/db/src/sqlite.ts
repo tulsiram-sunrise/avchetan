@@ -12,6 +12,15 @@ export type {
   CollectionSummary,
 } from './client/collections';
 export {
+  CONFLICT_COLUMNS,
+  type Conflict,
+  type ConflictField,
+  type ConflictTable,
+  changedFields,
+  type FieldChange,
+  isConflictTable,
+} from './client/conflicts';
+export {
   type ClientDatabase,
   type ClientDb,
   type ClientSchema,

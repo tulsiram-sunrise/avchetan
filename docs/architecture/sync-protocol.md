@@ -31,7 +31,7 @@ A version is the pair `(updated_at, updated_by_device)`. Incoming wins iff it is
 - After applying a pulled page, a client moves its clock past the newest `updated_at` in it (`clock.observe`). Otherwise an edit made right after pulling from a device with a faster clock would carry an older time and silently lose.
 - The server compares `updated_by_device` with `COLLATE "C"`, the byte order clients use, so both sides pick the same winner.
 
-**Local edits vs incoming pull:** if a pulled row loses LWW against the local row, it is skipped (the local row is in the outbox and will win on the server too). If it wins, it overwrites the local row and any outbox pointer for that record is removed (the local change already lost). **Planned for v0.5.0:** the losing user edit is kept on the device and shown as *Changed on two devices* ([roadmap](../roadmap.md#v050--tasks-routines-and-reminders)); until then it is lost silently.
+**Local edits vs incoming pull:** if a pulled row loses LWW against the local row, it is skipped (the local row is in the outbox and will win on the server too). If it wins, it overwrites the local row and any outbox pointer for that record is removed (the local change already lost). **Since v0.5.0** ([ADR-0034](../decisions/0034-two-device-edits-keep-the-loser.md)): when that waiting change was a hand edit (`sync_outbox.by_user`) and a field the person sees differs, the local row is first kept in the client-only `sync_conflicts` table and shown as *Changed on two devices*.
 
 **Special cases:**
 - `raw_logs.content` is immutable; a mismatch on the same ID is a bug → log error, keep server version.
@@ -65,7 +65,7 @@ Response:
   "rejected": [ { "table": "…", "id": "…", "code": "validation | clock_skew | unknown_table", "message": "…" } ],
   "serverTime": "2026-10-26T14:03:11.402Z" }
 ```
-Rows that lost LWW are **acked** (the conflict is resolved). Rejected rows stay in the outbox with `attempts++`; after 10 attempts they're flagged in the UI ("sync issue") and skipped until the user acts.
+Rows that lost LWW are **acked** (the conflict is resolved) and, since v0.5.0, marked `"lost": true` in `acked[]` (an additive field; a retried push of the same version is not marked). A device keeps a lost hand edit it pushed as a conflict ([ADR-0034](../decisions/0034-two-device-edits-keep-the-loser.md)). Rejected rows stay in the outbox with `attempts++`; after 10 attempts they're flagged in the UI ("sync issue") and skipped until the user acts.
 
 ## Pull — `GET /v1/sync/pull?cursor=<n>&limit=500`
 

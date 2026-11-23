@@ -204,6 +204,18 @@ export const TABLES = {
       enqueued_at: req('instant'),
       attempts: req('int'),
       last_error: opt('text'),
+      /** The waiting change was made by hand, so losing it to another device is shown (ADR-0034). */
+      by_user: flag(false),
+    },
+  },
+  /** A hand edit that lost to another device's, until the person picks one (ADR-0034). */
+  sync_conflicts: {
+    scope: 'local',
+    columns: {
+      table_name: req('text'),
+      record_id: req('text'),
+      lost_row: req('json'),
+      detected_at: req('instant'),
     },
   },
   /** Pulled rows this app couldn't read, tried again on every sync (ADR-0032). */

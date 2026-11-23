@@ -354,7 +354,7 @@ Planned days (confirmed 2026-11-16; full calendar repeat rules and sleep hours m
 25. `HubClient` in core: Ask, the brief and command reading move out of the apps, and `llmDepsFor()` ✅ 2026-11-23
 26. Command handlers, one undo model and the write actions move into core ✅ 2026-11-23
 27. `/done` and `/undo` on the phone ✅ 2026-11-23
-28. Edits made on two devices: keep the losing version, *Changed on two devices* notice, and its ADR (with the `fast-check` convergence test, device IDs seeded)
+28. Edits made on two devices: keep the losing version, *Changed on two devices* notice, and its ADR (with the `fast-check` convergence test, device IDs seeded) ✅ 2026-11-23 ([ADR-0034](decisions/0034-two-device-edits-keep-the-loser.md); a gap is [Q31](open-questions.md))
 29. Test build and release
 
 ## v0.6.0 — Security

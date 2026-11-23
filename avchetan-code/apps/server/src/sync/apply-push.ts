@@ -69,7 +69,7 @@ export function replacedColumns(
  * Last-Write-Wins in the database. `COLLATE "C"` compares device IDs byte by byte like the
  * clients do; a locale's order could pick a different winner on each side.
  */
-async function upsert(tx: ServerDb, { table: name, row }: Accepted): Promise<void> {
+async function upsert(tx: ServerDb, { table: name, row }: Accepted): Promise<boolean> {
   const table = PG_SYNCED_TABLES[name];
   const set = Object.fromEntries(
     replacedColumns(name, row).map(([key, column]) => [key, sql.raw(`excluded."${column}"`)]),
@@ -78,14 +78,24 @@ async function upsert(tx: ServerDb, { table: name, row }: Accepted): Promise<voi
   const values = Object.fromEntries(
     Object.entries(row).filter(([key]) => Object.hasOwn(columns, key)),
   );
-  await tx
+  const written = await tx
     .insert(table as typeof rawLogs)
     .values(values as never)
     .onConflictDoUpdate({
       target: table.id,
       set: { ...set, serverSeq: sql`nextval('sync_seq')` },
       where: sql`(excluded.updated_at, excluded.updated_by_device collate "C") > (${table.updatedAt}, ${table.updatedByDevice} collate "C")`,
-    });
+    })
+    .returning({ id: table.id });
+  if (written.length > 0) return false;
+  // Not written: the same version again (a retried push), or another device's newer one.
+  const [stored] = await tx
+    .select({
+      newer: sql<boolean>`(${table.updatedAt}, ${table.updatedByDevice} collate "C") > (${row.updatedAt}::timestamptz, ${row.updatedByDevice} collate "C")`,
+    })
+    .from(table as typeof rawLogs)
+    .where(eq(table.id, row.id));
+  return stored?.newer === true;
 }
 
 async function reportChangedContent(tx: ServerDb, row: WireRow): Promise<void> {
@@ -98,21 +108,29 @@ async function reportChangedContent(tx: ServerDb, row: WireRow): Promise<void> {
   }
 }
 
-/** Rows that lost Last-Write-Wins are acked: the conflict is resolved. */
+/**
+ * Rows that lost Last-Write-Wins are acked too: the conflict is resolved. They are marked
+ * `lost`, so the device can keep a hand edit that lost (ADR-0034).
+ */
 export async function applyPush(
   db: ServerDb,
   changes: PushRequest['changes'],
   now: string,
 ): Promise<PushResponse> {
   const { accepted, rejected } = sortChanges(changes, Date.parse(now));
+  const lost = new Set<Accepted>();
   await withSyncWrite(db, async (tx) => {
     for (const change of accepted) {
       if (change.table === 'raw_logs') await reportChangedContent(tx, change.row);
-      await upsert(tx, change);
+      if (await upsert(tx, change)) lost.add(change);
     }
   });
   return {
-    acked: accepted.map(({ table, row }) => ({ table, id: row.id })),
+    acked: accepted.map((change) => ({
+      table: change.table,
+      id: change.row.id,
+      ...(lost.has(change) ? { lost: true } : {}),
+    })),
     rejected,
     serverTime: now,
   };

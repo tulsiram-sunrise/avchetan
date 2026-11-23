@@ -31,6 +31,7 @@ import { useServices } from '../../src/services-context';
 import { usePalette } from '../../src/theme/theme';
 import { CaptureButton } from '../../src/ui/capture-button';
 import { ChoreCard } from '../../src/ui/chore-card';
+import { ConflictNotices } from '../../src/ui/conflict-notices';
 import { DailyBrief } from '../../src/ui/daily-brief';
 import { DayCalendar } from '../../src/ui/day-calendar';
 import { DayCoverageCard } from '../../src/ui/day-coverage-card';
@@ -181,6 +182,7 @@ function DayContent(props: { day: string; today: string; entryInView: string | n
     >
       <DownloadBanner />
       <SyncWarningBanner />
+      <ConflictNotices />
       <View className="gap-1 px-4 pt-3">
         <Text className="text-base font-semibold text-ink">
           {formatLocalDate(day, { weekday: 'long', day: 'numeric', month: 'long' })}

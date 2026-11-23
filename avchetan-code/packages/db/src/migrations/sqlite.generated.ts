@@ -109,5 +109,12 @@ export const sqliteMigrations: readonly Migration[] = [
     "statements": [
       "ALTER TABLE `tasks` ADD `remind_at` text;"
     ]
+  },
+  {
+    "tag": "0009_sync_conflicts",
+    "statements": [
+      "CREATE TABLE `sync_conflicts` (\n\t`table_name` text NOT NULL,\n\t`record_id` text NOT NULL,\n\t`lost_row` text NOT NULL,\n\t`detected_at` text NOT NULL,\n\tPRIMARY KEY(`table_name`, `record_id`)\n);",
+      "ALTER TABLE `sync_outbox` ADD `by_user` integer DEFAULT false NOT NULL;"
+    ]
   }
 ];

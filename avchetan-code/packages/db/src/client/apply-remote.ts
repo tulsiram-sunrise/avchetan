@@ -1,4 +1,5 @@
 import { eq, getTableColumns, inArray } from 'drizzle-orm';
+import { changedFields, isConflictTable, recordConflict, waitingUserEdit } from './conflicts';
 import type { Tx } from './database';
 import { compareVersions } from './lww';
 import { removeOutboxEntry } from './outbox';
@@ -60,6 +61,8 @@ export async function applyRemoteChanges(
      * older app dropped when it pulled it. Only for the one full pull after an update.
      */
     refill?: boolean;
+    /** When a hand edit waiting here loses, it is kept as a conflict at this time (ADR-0034). */
+    now?: string;
   } = {},
 ): Promise<ApplyResult> {
   const result: ApplyResult = { applied: 0, skipped: 0 };
@@ -92,6 +95,15 @@ export async function applyRemoteChanges(
       if (!current) {
         inserts.set(row.id, row);
       } else if (compareVersions(row, current) > 0) {
+        // A hand edit still waiting here loses to another device's: kept, to be shown.
+        if (
+          options.now &&
+          isConflictTable(tableName) &&
+          changedFields(tableName, current, row).length > 0 &&
+          (await waitingUserEdit(tx, tableName, row.id))
+        ) {
+          await recordConflict(tx, tableName, current, options.now);
+        }
         await tx
           .update(table)
           .set(row as never)

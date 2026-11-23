@@ -4,6 +4,7 @@ import { Pressable, SectionList, Text, View } from 'react-native';
 import { useToday } from '../../src/queries/days';
 import { useTaskGroupCounts, useTaskGroups } from '../../src/queries/entries';
 import { CaptureButton } from '../../src/ui/capture-button';
+import { ConflictNotices } from '../../src/ui/conflict-notices';
 import { SectionTitle } from '../../src/ui/parts';
 import { TaskRow } from '../../src/ui/task-row';
 
@@ -36,6 +37,7 @@ export default function TasksScreen() {
             alert={section.group === 'overdue'}
           />
         )}
+        ListHeaderComponent={<ConflictNotices />}
         renderItem={({ item }) => <TaskRow task={item} />}
         renderSectionFooter={({ section }) =>
           section.count > section.data.length && section.data.length >= limits[section.group] ? (

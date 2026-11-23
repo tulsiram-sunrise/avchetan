@@ -51,19 +51,39 @@ export function live(table: SyncedTable) {
   return isNull(table.deletedAt);
 }
 
+/** Transactions that carry a person's own edit (`store.write(fn, { byUser: true })`). */
+const userTransactions = new WeakSet<object>();
+
+export function markUserTransaction(tx: Tx): void {
+  userTransactions.add(tx);
+}
+
 export async function enqueueOutbox(
   tx: Tx,
   tableName: SyncedTableName,
   recordId: string,
   enqueuedAt: string,
 ): Promise<void> {
+  const byUser = userTransactions.has(tx);
   await tx
     .insert(S.syncOutbox)
-    .values({ tableName, recordId, enqueuedAt, attempts: 0 })
+    .values({ tableName, recordId, enqueuedAt, attempts: 0, byUser })
     .onConflictDoUpdate({
       target: [S.syncOutbox.tableName, S.syncOutbox.recordId],
-      set: { enqueuedAt, attempts: 0, lastError: null },
+      // A hand edit still waiting stays marked when the AI writes the row again (ADR-0034).
+      set: {
+        enqueuedAt,
+        attempts: 0,
+        lastError: null,
+        ...(byUser ? { byUser: true } : {}),
+      },
     });
+  // Edited by hand again: an older version that lost no longer matters.
+  if (byUser) {
+    await tx
+      .delete(S.syncConflicts)
+      .where(and(eq(S.syncConflicts.tableName, tableName), eq(S.syncConflicts.recordId, recordId)));
+  }
 }
 
 const nameOf = (table: SyncedTable) => getTableName(table) as SyncedTableName;
