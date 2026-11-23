@@ -27,6 +27,10 @@ If you close the box without saving, your text is still there the next time you 
 
 ![Typing an entry on the phone, with the Save button above it](images/capture-on-android-capture.png)
 
+## Share to Avchetan
+
+From another app (a browser, a chat, notes), tap **Share** and pick **Avchetan**. The capture box opens with what you shared in it: a web page comes as its title and its link. Add a word of your own if you like (*read later*, *recipe to try*), then tap **Save**, and you're back in the app you shared from. Nothing is saved until you tap **Save**; **Back** keeps the text in the box for next time. Text you had already typed in the box stays, above what you shared. Only text and links can be shared, not pictures or files, and a very long text is cut at 20,000 characters. If you use App lock, Avchetan asks to be unlocked first. The entry is saved on the phone at once, like any other, and organized when the AI gets to it.
+
 ## Add the widget
 
 The **Quick capture** widget puts a *What's on your mind?* bar on your home screen. Tap it, type, tap **Save**, and you're back on the home screen. The widget never shows your entries.
