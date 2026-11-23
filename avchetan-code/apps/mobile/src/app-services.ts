@@ -2,6 +2,7 @@ import {
   createUndoStack,
   type DeviceDeps,
   type PendingProcessor,
+  recheckOlderEntriesOnce,
   type UndoStack,
 } from '@avchetan/core';
 import { type ClientStore, openClientStore, startRoutineDays } from '@avchetan/db/sqlite';
@@ -50,6 +51,12 @@ async function openAppServices(platform: Platform): Promise<AppServices> {
   const sync = createSyncService(store, platform, extraction);
   const device = createDeviceDeps(store, platform, systemTimeZone);
   startBackups({ store, platform });
+  // Once after the v0.5.0 update: past entries with money or sleep are organized again.
+  recheckOlderEntriesOnce(store)
+    .then((queued) => {
+      if (queued > 0) void extraction.wake();
+    })
+    .catch(() => log.warn('could not look for older entries to organize again'));
   // Today's routine days (ADR-0031), and the next day's once the date changes while open.
   startRoutineDays({
     store,

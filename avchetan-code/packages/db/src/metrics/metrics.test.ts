@@ -133,3 +133,26 @@ describe('normalizeMetrics', () => {
     expect(issues).toEqual([{ key: 'nested', reason: 'unsupported_value' }]);
   });
 });
+
+describe('money (spent)', () => {
+  it.each([
+    [{ cost: '₹3,600' }, 3600],
+    [{ spent: 'Rs. 500' }, 500],
+    [{ amount_paid: '1,20,000' }, 120000],
+    [{ spent: '500/-' }, 500],
+    [{ paid: '250 rupees' }, 250],
+    [{ spent_inr: 99.5 }, 99.5],
+    [{ price: '$12' }, 12],
+  ])('reads %o as the amount, never converted', (input, amount) => {
+    expect(normalizeMetrics(input).metrics).toEqual({ spent: amount });
+  });
+
+  it('drops an amount it can’t read', () => {
+    expect(normalizeMetrics({ spent: 'a lot' }).metrics).toEqual({});
+  });
+
+  it('still reads decimal commas and thousands', () => {
+    expect(parseQuantity('2,5 km')).toEqual({ amount: 2.5, unit: 'km' });
+    expect(parseQuantity('10,000')).toEqual({ amount: 10000 });
+  });
+});

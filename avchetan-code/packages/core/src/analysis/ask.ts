@@ -1,11 +1,12 @@
 import type { ClientStore, RawLog } from '@avchetan/db/sqlite';
-import { LlmError, localDate, weekdayOf } from '@avchetan/shared';
+import { LlmError, type LocalDate, localDate, weekdayOf } from '@avchetan/shared';
 import { type LanguageModelUsage, stepCountIs, streamText } from 'ai';
 import type { LlmDeps } from '../llm/generate-structured';
 import { buildSystem, FINAL_STEP_NOTE } from '../prompts/analysis.v1';
 import type { ModelConfig } from '../providers/config';
 import { modelTimeoutError, toLlmError } from '../providers/errors';
 import { PROVIDER_ADAPTERS } from '../providers/registry';
+import { factLine, periodOf, type Totals, topicOf } from './question-facts';
 import {
   createAnalysisTools,
   createCitations,
@@ -30,6 +31,38 @@ export type AskRequest = {
   /** Search by meaning on the hub; without it Ask searches by words only. */
   searchHistory?: SearchHistory;
 };
+
+/**
+ * The question's period and number, added up by code with the same totals tool the model has,
+ * so its sources are cited the same way. Null when the question names no period or number this
+ * understands, or a category this log doesn't have.
+ */
+async function computedFacts(
+  question: string,
+  today: LocalDate,
+  tools: ReturnType<typeof createAnalysisTools>,
+): Promise<string | null> {
+  const period = periodOf(question, today);
+  const topic = topicOf(question);
+  const execute = tools.aggregate_metrics.execute;
+  if (!period || !topic || !execute) return null;
+  const totals = async (agg: 'sum' | 'avg') =>
+    (await execute(
+      {
+        metric: topic.metric,
+        agg,
+        from: period.from,
+        to: period.to,
+        ...(topic.category ? { category: topic.category } : {}),
+      },
+      // Called by code, not the model: no call ID or messages of its own.
+      { toolCallId: `computed-${agg}`, messages: [], context: {} } as never,
+    )) as Totals;
+  const sum = await totals('sum');
+  // A category the person doesn't use says nothing about the question.
+  if (topic.category && sum.rows === 0) return null;
+  return factLine(topic, period, { sum, average: await totals('avg') });
+}
 
 /** Answers from the local database through read-only tools. Never writes entries. */
 export async function ask(
@@ -59,22 +92,26 @@ export async function ask(
       errorCode,
     });
 
+  const tools = createAnalysisTools(store, {
+    // The privacy line: only a model on this PC may read private entries.
+    scope: { includePrivate: adapter.local },
+    today,
+    citations,
+    searchHistory: request.searchHistory,
+  });
+
   try {
+    const computed = await computedFacts(question, today, tools);
     const result = streamText({
       model: await llm.resolveModel(model),
       system: buildSystem({
         today,
         weekday: weekdayOf(today),
         semanticSearch: request.searchHistory !== undefined,
+        computed,
       }),
       prompt: question,
-      tools: createAnalysisTools(store, {
-        // The privacy line: only a model on this PC may read private entries.
-        scope: { includePrivate: adapter.local },
-        today,
-        citations,
-        searchHistory: request.searchHistory,
-      }),
+      tools,
       stopWhen: stepCountIs(MAX_STEPS),
       // The last step must answer: no tools, and told so.
       prepareStep: ({ stepNumber, messages }) =>

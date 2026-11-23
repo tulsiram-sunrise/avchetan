@@ -262,6 +262,7 @@ ID = `derivedId('routine_day', routine_id, scheduled_date)`. Made only on the da
 | `deep_work_min` | number | minutes | sum | |
 | `interruptions` | int | | sum | |
 | `weight_body_kg` | number | kg | average | |
+| `spent` | number | money in the person's own currency (never converted; one currency per setup) | sum | "paid ₹500", "Rs. 3,600" |
 | `kind` | string | system rows: `daily_brief`, `weekly_review` (with `week`, the Monday it starts, [weekly review](../product/weekly-review.md)) | | |
 
 **Aggregate** (`aggregate` in the registry) says how a period's values combine on trends and tag pages: amounts are summed, levels and readings averaged. Unknown numeric keys are summed.

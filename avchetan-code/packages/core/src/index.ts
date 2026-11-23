@@ -239,6 +239,7 @@ export {
   type PendingProcessorDeps,
 } from './extraction/pending-processor';
 export { waitsForLocalAi } from './extraction/private';
+export { RECHECK_SETTING, recheckOlderEntriesOnce } from './extraction/recheck-older';
 export { type ExtractionResult, extractionResultSchema } from './extraction/schema';
 export {
   ANALYSIS_MODE_SETTING,

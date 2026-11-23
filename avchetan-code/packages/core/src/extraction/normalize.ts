@@ -30,6 +30,7 @@ import { instantAt } from '../routines/checklist';
 import { checkDate, namesNoDay } from './date-check';
 import type { ChoreChoice, ExtractionVocabulary } from './input';
 import type { ExtractionResult } from './schema';
+import { sleepHoursFromWords } from './sleep-words';
 
 export const LLM_MAY_CREATE_SETTING = 'categories.llmMayCreate';
 export const llmMayCreateSchema = z.enum(['auto', 'suggest', 'off']);
@@ -118,6 +119,24 @@ export function plannedOccurrence(
 }
 
 const SLEEP_MARKS: ReadonlySet<string> = new Set<SleepEvent>(['bed', 'wake']);
+
+/**
+ * When the model gave no sleep hours, code reads them from the words ("from 10 PM to 6 AM") and
+ * puts them where pairing would: on the wake-up, else on an activity about waking or sleep, else
+ * on going to bed (v0.5.0 test build). Never on an activity the entry doesn't relate to sleep.
+ */
+function fillSleepHours(activities: PlannedActivity[], content: string): void {
+  if (activities.some((activity) => activity.metrics.sleep_h !== undefined)) return;
+  const hours = sleepHoursFromWords(content);
+  if (hours === null) return;
+  const titled = (pattern: RegExp) => activities.find((activity) => pattern.test(activity.title));
+  const target =
+    activities.find((activity) => activity.metrics[SLEEP_EVENT_KEY] === 'wake') ??
+    titled(/\b(?:woke|wake|waking|awake)\b/i) ??
+    titled(/\b(?:sleep|slept|nap)\b/i) ??
+    activities.find((activity) => activity.metrics[SLEEP_EVENT_KEY] === 'bed');
+  if (target) target.metrics.sleep_h = hours;
+}
 
 /**
  * The reminder an entry asked for (product/tasks-routines-reminders.md §8): the model gives a
@@ -327,6 +346,8 @@ export function normalizeExtraction(
       tagPaths: tagPaths(item.inferredTags, categorySlugs),
     };
   });
+
+  fillSleepHours(plannedActivities, rawLog.content ?? '');
 
   // A chore done is also something that happened that day: a tick with no activity on the
   // chore's day is a plan, or about another day, and is dropped.

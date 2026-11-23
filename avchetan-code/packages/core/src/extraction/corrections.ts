@@ -39,7 +39,18 @@ export function loadCorrectionPool(store: ClientStore, scope: DataScope) {
   return store.queries.correctedEntries(store.db, { ...scope, limit: CORRECTION_POOL });
 }
 
-const words = meaningfulWords;
+/** `worked`, `working` and `works` → `work`: an entry says it its way, a title another. */
+function stem(word: string): string {
+  for (const ending of ['ing', 'ed', 'es', 's']) {
+    if (word.endsWith(ending) && word.length - ending.length >= 3) {
+      return word.slice(0, -ending.length);
+    }
+  }
+  return word;
+}
+
+/** Meaningful words by stem, so "Work on Avchetan" is found in "I worked on avchetan". */
+const words = (text: string): Set<string> => new Set([...meaningfulWords(text)].map(stem));
 
 /**
  * Up to `MAX_EXAMPLES` corrected entries for this entry, only ones sharing at least one word with

@@ -84,6 +84,26 @@ export const WEIGHT_KG_UNITS = {
   pounds: LB,
 } as const;
 
+/** Currency words after an amount (`500 rs`): the number is kept as it is, never converted. */
+const MONEY_UNITS = Object.fromEntries(
+  [
+    'rs',
+    'inr',
+    'rupee',
+    'rupees',
+    'usd',
+    'dollar',
+    'dollars',
+    'eur',
+    'euro',
+    'euros',
+    'gbp',
+    'aed',
+    'dirham',
+    'dirhams',
+  ].map((unit) => [unit, 1]),
+);
+
 const WATER_ML_UNITS = { ml: 1, l: 1000, liter: 1000, liters: 1000, litre: 1000, litres: 1000 };
 
 export const METRICS: readonly MetricSpec[] = [
@@ -313,6 +333,33 @@ export const METRICS: readonly MetricSpec[] = [
       body_weight_kg: 1,
       body_weight_lb: LB,
       body_weight_lbs: LB,
+    },
+  },
+  {
+    // Money paid or spent, in the person's own currency: no conversion, one currency per setup.
+    key: 'spent',
+    type: 'number',
+    aggregate: 'sum',
+    min: 0,
+    max: 1_000_000_000,
+    units: MONEY_UNITS,
+    aliases: {
+      spent: 1,
+      spend: 1,
+      amount_spent: 1,
+      money_spent: 1,
+      spent_amount: 1,
+      cost: 1,
+      price: 1,
+      paid: 1,
+      amount_paid: 1,
+      expense: 1,
+      expenses: 1,
+      spent_inr: 1,
+      cost_inr: 1,
+      amount_inr: 1,
+      spent_rs: 1,
+      cost_rs: 1,
     },
   },
   { key: 'kind', type: 'text', aliases: { kind: 1 } },

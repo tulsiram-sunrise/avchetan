@@ -927,3 +927,28 @@ export function tasksCompletedBetween(
     )
     .orderBy(asc(tasks.completedAt));
 }
+
+/**
+ * Live entries organized with a prompt older than `version` whose text holds any of `words`
+ * (lowercase, matched anywhere): to organize again when a newer prompt reads them better
+ * (v0.5.0: amounts spent, sleep hours). Private ones too: they are organized by a model on the
+ * user's own hardware only, as always.
+ */
+export async function olderEntriesMentioning(
+  db: ClientDb,
+  options: { version: number; words: readonly string[] },
+): Promise<string[]> {
+  if (options.words.length === 0) return [];
+  const rows = await db
+    .select({ id: rawLogs.id })
+    .from(rawLogs)
+    .where(
+      and(
+        live(rawLogs),
+        eq(rawLogs.status, 'processed'),
+        or(isNull(rawLogs.extractionVersion), lt(rawLogs.extractionVersion, options.version)),
+        or(...options.words.map((word) => like(sql`lower(${rawLogs.content})`, `%${word}%`))),
+      ),
+    );
+  return rows.map((row) => row.id);
+}
