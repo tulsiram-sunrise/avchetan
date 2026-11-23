@@ -23,6 +23,7 @@
     "licenses:check": "node tooling/scripts/check-licenses.ts",
     "docs:check-links": "node tooling/scripts/check-doc-links.ts",
     "errors:check": "node tooling/scripts/check-error-codes.ts",
+    "a11y:check": "node tooling/scripts/check-a11y.ts",
     "icons": "node tooling/scripts/build-icons.ts",
     "docs:dev": "pnpm --filter @avchetan/docs-site dev",
     "docs:build": "pnpm --filter @avchetan/docs-site build",
@@ -30,6 +31,7 @@
     "version:check": "node tooling/scripts/version.ts check"
   },
   "devDependencies": {
+    "@babel/parser": "8.1.3",
     "@biomejs/biome": "2.6.3",
     "@types/node": "26.6.5",
     "@vitest/coverage-v8": "5.1.0",

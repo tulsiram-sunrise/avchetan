@@ -8,6 +8,7 @@ import { createTauriPlatform } from './platform';
 import { createDesktopLogSink, pluginLogWriter } from './platform/log-sink';
 import { createQueryClient } from './query-client';
 import { followDetailedLog } from './services/detailed-log';
+import { followTextSize } from './services/text-size';
 import { ServicesProvider } from './services-context';
 import './styles.css';
 
@@ -37,6 +38,7 @@ export async function bootstrap(
   try {
     const services = await openAppServices(createTauriPlatform());
     await followDetailedLog(services, baseLevel);
+    await followTextSize(() => services.platform.shell.textScale());
     await beforeRender?.(services);
     const queryClient = createQueryClient();
     root.render(

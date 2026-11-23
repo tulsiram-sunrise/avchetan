@@ -3,6 +3,10 @@
 **Goal:** write something down in two seconds, and find it again later.
 **You need:** the Avchetan app on your phone. Entries save without a connection, but organizing them needs an AI model.
 
+## Bigger text and TalkBack
+
+Avchetan follows Android's **Font size** (Settings → Display → Font size). With TalkBack on, every button, switch and box says what it is; a task's swipes (done, tomorrow) are also in TalkBack's actions menu.
+
 ## Choose an AI model
 
 Until you choose one, your entries are saved and wait.

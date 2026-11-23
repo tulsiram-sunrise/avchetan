@@ -32,6 +32,10 @@ The line at the bottom of the box shows how things stand, from this PC alone: ta
 
 Half-written text is kept, even if you close the box or restart your PC.
 
+## Bigger text and the keyboard
+
+Avchetan follows Windows' **Text size** (Settings → Accessibility → Text size): every window grows with it, from 100% to 225%. A change shows the next time you click into an Avchetan window. Everything can be reached with **Tab**, and the control you are on has a ring around it. Screen readers such as Narrator say each button's name, including icon buttons.
+
 ## Use the box with the keyboard
 
 You can type as soon as the box opens, and after you click anything in it the keyboard goes back to the text box.
