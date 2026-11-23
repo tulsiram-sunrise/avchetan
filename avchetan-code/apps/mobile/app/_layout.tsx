@@ -11,6 +11,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, AppState, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { onShare, takeShared } from '../modules/share-intent';
 import { type AppServices, getAppServices } from '../src/app-services';
 import { detailedLog } from '../src/platform/app-log';
 import { expoDeviceLock } from '../src/platform/device-lock';
@@ -21,8 +22,10 @@ import { reminderDay, scheduleBriefReminder } from '../src/services/brief-remind
 import { choreEveningDay } from '../src/services/chore-evening';
 import { watchAppState } from '../src/services/foreground';
 import { scheduleNotifications } from '../src/services/notifications';
+import { draftWithShared } from '../src/services/share';
 import { isTaskReminder } from '../src/services/task-reminders';
 import { ServicesProvider } from '../src/services-context';
+import { useDraft } from '../src/stores/draft';
 import { AppTheme } from '../src/theme/theme';
 import { lockedScreenLayout } from '../src/ui/lock-screen';
 import { HelpLink } from '../src/ui/parts';
@@ -71,6 +74,27 @@ function OpenTappedReminder() {
     router.navigate({ pathname: '/', params: { day } });
     void Notifications.clearLastNotificationResponseAsync();
   }, [response]);
+  return null;
+}
+
+/**
+ * Text or a link shared from another app opens the capture screen with it
+ * (docs/product/tasks-routines-reminders.md §12), whether the share started the app or reached
+ * it while open. Nothing is saved until you tap Save.
+ */
+function OpenShared() {
+  useEffect(() => {
+    const open = () => {
+      const shared = takeShared();
+      if (!shared) return;
+      const { text, setText } = useDraft.getState();
+      setText(draftWithShared(text, shared));
+      log.info('share received', { chars: shared.text.length });
+      router.navigate({ pathname: '/capture', params: { from: 'share' } });
+    };
+    open();
+    return onShare(open);
+  }, []);
   return null;
 }
 
@@ -139,6 +163,7 @@ function AppRoutes({ startup }: { startup: Startup }) {
           </Stack>
         </UndoProvider>
         <OpenTappedReminder />
+        <OpenShared />
       </QueryClientProvider>
     </ServicesProvider>
   );

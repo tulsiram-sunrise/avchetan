@@ -142,6 +142,8 @@ This is a setting, off by default. It shows the hours accounted for out of 24: l
 
 Android's share sheet sends text or a link from any app into a capture. This is a local capture like any other, and it never waits on the network. It is saved with the source `mobile_text`: a new source value would stop older apps from syncing ([R27](../open-questions.md#resolved)), so `mobile_share` waits for v0.6.0.
 
+**Built on Day 23 (2026-11-23).** The author chose that a share *opens the capture box filled in*, rather than saving at once, so a note can be added. The app's activity takes `text/plain` `SEND` intents (`android.intentFilters` in `app.json`). A local Expo module (`apps/mobile/modules/share-intent`, Kotlin) hands the shared text and subject to JavaScript once: `takeShared()` at start, and an `onShare` event when the app was already open. A share reopened from Recents (`FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY`) is ignored, and a taken intent is cleared so a rotation doesn't open it twice. `draftWithShared` (`src/services/share.ts`) puts a subject the text doesn't already hold (a page's title) above the text (its link), keeps what was typed above that, and cuts at 20,000 characters. The capture screen opens with `?from=share` and, like the widget, sends the app to the background when closed, so you're back in the app you shared from. App lock still comes first. The log gets the length of what was shared, never the text.
+
 ## 13. Accessibility pass
 
 On both apps: text size follows the system setting, keyboard focus is always visible, and controls have screen-reader labels. This includes the new task actions and the checklist card.

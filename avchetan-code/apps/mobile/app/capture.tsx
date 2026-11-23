@@ -12,7 +12,8 @@ import { useDictation } from '../src/ui/use-dictation';
 const log = createLogger('capture');
 
 /**
- * Also opened by `avchetan://capture`. Saving is local, so it closes at once. Opened from the
+ * Also opened by `avchetan://capture`, and by a share from another app (`?from=share`, §12 of
+ * docs/product/tasks-routines-reminders.md), which arrives as the draft. Saving is local, so it closes at once. Opened from the
  * home-screen widget (`?from=widget`), closing it any way sends the app to the background, so you
  * are back where you were (docs/product/android-widget.md). `&voice=1` (the widget's mic) starts
  * listening at once (docs/product/voice-capture.md#phone).
@@ -24,6 +25,8 @@ export default function CaptureScreen() {
   const capture = useCapture();
   const params = useLocalSearchParams<{ from?: string; voice?: string }>();
   const fromWidget = params.from === 'widget';
+  // Like the widget, a share goes back to the app it came from once you're done.
+  const backToCaller = fromWidget || params.from === 'share';
   const voiceAtOnce = params.voice === '1';
   const cursor = useRef(text.length);
   /** Some of the text was dictated: saved as `mobile_voice`. */
@@ -41,9 +44,9 @@ export default function CaptureScreen() {
   // On unmount (Save, Back or swiping the sheet away). Android's own Back on the root screen,
   // which leaves the app running with the tabs as they were.
   useEffect(() => {
-    if (!fromWidget) return;
+    if (!backToCaller) return;
     return () => BackHandler.exitApp();
-  }, [fromWidget]);
+  }, [backToCaller]);
 
   const startRef = useRef(dictation.start);
   startRef.current = dictation.start;
@@ -82,7 +85,9 @@ export default function CaptureScreen() {
               { text, source },
               {
                 onSuccess: (rawLog) => {
-                  if (fromWidget) log.info('capture from widget', { id: rawLog.id, source });
+                  if (backToCaller) {
+                    log.info('capture from outside the app', { id: rawLog.id, from: params.from });
+                  }
                   setText('');
                   router.back();
                 },
