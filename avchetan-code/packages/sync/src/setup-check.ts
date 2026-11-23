@@ -1,6 +1,7 @@
 import type { ClientStore } from '@avchetan/db/sqlite';
 import {
   type CheckRow,
+  createLogger,
   errorMessage,
   formatAgo,
   formatMinutes,
@@ -11,8 +12,11 @@ import {
 } from '@avchetan/shared';
 import { createApiClient, fetchHealth } from './api-client';
 import { loadServerUrls, SYNC_TOKEN_SECRET } from './config';
+import { findServer, loadLearned, usableLearned } from './find-server';
 import type { StatusResponse } from './protocol';
 import { loadSyncStatus } from './status';
+
+const log = createLogger('setup-check');
 
 /** Well inside the server's limit (MAX_CLOCK_SKEW_MS), leaving room for the request's own time. */
 export const CLOCK_WARNING_MS = 2 * 60_000;
@@ -23,6 +27,8 @@ export type ConnectionCheckDeps = {
   secrets: Pick<SecretStore, 'get'>;
   /** The wall clock, not the store's monotonic one, which hides a clock set back. */
   nowMs?: () => number;
+  /** Hubs announcing themselves on this network, looked for as sync does (engine.ts). */
+  discover?: () => Promise<string[]>;
 };
 
 export type ConnectionCheck =
@@ -30,6 +36,11 @@ export type ConnectionCheck =
   | {
       configured: true;
       addresses: { url: string; reachable: boolean }[];
+      /**
+       * Where the hub answered when no saved address did: an address it reported or announced,
+       * as sync finds it after the PC's address changed. `null` when a saved address answered.
+       */
+      foundAt: string | null;
       /** `null` when no address answered, so the token couldn't be tried. */
       token: 'accepted' | 'refused' | 'missing' | null;
       /** Server time minus this device's time, measured at the middle of the request. */
@@ -67,6 +78,7 @@ export async function checkConnection(deps: ConnectionCheckDeps): Promise<Connec
   const result = {
     configured: true as const,
     addresses,
+    foundAt: null as string | null,
     token: null as 'accepted' | 'refused' | 'missing' | null,
     clockOffsetMs: null as number | null,
     server: null as StatusResponse | null,
@@ -74,9 +86,13 @@ export async function checkConnection(deps: ConnectionCheckDeps): Promise<Connec
     lastSyncedAt: lastSyncedAt || null,
     stuck: status.stuck,
   };
-  const baseUrl = addresses.find((a) => a.reachable)?.url;
-  if (!baseUrl) return result;
-  if (!token) return { ...result, token: 'missing' };
+  let baseUrl = addresses.find((a) => a.reachable)?.url;
+  if (!token) return baseUrl ? { ...result, token: 'missing' } : result;
+  if (!baseUrl) {
+    result.foundAt = await findMovedHub(deps, urls, token);
+    if (!result.foundAt) return result;
+    baseUrl = result.foundAt;
+  }
 
   const api = createApiClient({ fetch, baseUrl, token, deviceId: store.deviceId });
   const sentAt = nowMs();
@@ -89,6 +105,35 @@ export async function checkConnection(deps: ConnectionCheckDeps): Promise<Connec
     const code = toAppError(error).code;
     if (code === 'unauthorized') return { ...result, token: 'refused' };
     return { ...result, error: code };
+  }
+}
+
+/**
+ * The hub at an address it reported or announced, in the order sync tries them (engine.ts). The
+ * address must prove it holds this device's token before the token is sent there (ADR-0033).
+ */
+async function findMovedHub(
+  deps: ConnectionCheckDeps,
+  saved: readonly string[],
+  token: string,
+): Promise<string | null> {
+  const { store, fetch } = deps;
+  const expected =
+    (await store.sync.getState('expected_server_id')) ??
+    (await store.sync.getState('server_id')) ??
+    '';
+  const tryAt = async (learned: string[]) => {
+    if (learned.length === 0) return null;
+    const found = await findServer({ fetch, saved: [], learned, expected, token });
+    return found && typeof found !== 'string' ? found.baseUrl : null;
+  };
+  const found = await tryAt(usableLearned((await loadLearned(store))?.urls ?? [], saved));
+  if (found || !deps.discover) return found;
+  try {
+    return await tryAt(usableLearned(await deps.discover(), saved));
+  } catch (error) {
+    log.debug('could not look for the hub on this network', { code: toAppError(error).code });
+    return null;
   }
 }
 
@@ -193,7 +238,16 @@ export function connectionRows(
 
   const rows: CheckRow[] = [];
   const reached = check.addresses.filter((a) => a.reachable);
-  if (reached.length === 0) {
+  if (reached.length === 0 && check.foundAt) {
+    rows.push({ id: 'reachable', state: 'ok', title: `Reaches your hub at ${check.foundAt}` });
+    rows.push({
+      id: 'reachable-others',
+      state: 'info',
+      title: `The saved address doesn't answer: ${check.addresses.map((a) => a.url).join(', ')}`,
+      detail:
+        "The hub's PC has a new address on this network. Sync finds it on its own, so nothing needs fixing.",
+    });
+  } else if (reached.length === 0) {
     rows.push({
       id: 'reachable',
       state: 'problem',

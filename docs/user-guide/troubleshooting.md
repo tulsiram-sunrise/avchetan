@@ -11,7 +11,7 @@ Start with the **Setup check**. It tests everything and tells you what to fix.
 
 It checks:
 
-- **Sync:** whether each saved address of your hub or server answers, whether it accepts this device's token, and whether this device's clock matches the server's.
+- **Sync:** whether each saved address of your hub or server answers, whether it accepts this device's token, and whether this device's clock matches the server's. When the hub's PC got a new address (for example after joining a phone hotspot again), the check looks for the hub the way sync does and says so: *"The saved address doesn't answer"* with *"Reaches your hub at …"* needs no fixing.
 - **AI:** whether the models this device uses can work: Ollama running, the model downloaded, or the API key saved. A phone that lets the hub organize or answer also sees the hub's own models, so it can tell you when Ollama has stopped on the PC, and whether the hub keeps up with organizing ([hub_not_organizing](#hub_not_organizing)).
 - **Home Hub on this PC** (Windows, when the hub is on): the hub running, its models in Ollama, the network Private, the firewall rules, Tailscale, and the paired phones.
 
@@ -115,7 +115,8 @@ Problems come first, each with its fix and a **Help** link to its section below.
 - Interrupted: the phone stopped the app while it was working. Open the entry and tap **Organize now**. If this keeps happening, let Avchetan run in the background in your phone's battery settings.
 - Ollama: is the Ollama app running in the tray?
 - Model not downloaded: see [model_missing](#model_missing), then click **Test** again.
-- Took too long: a large model on a PC without a graphics card can be slow. Try a smaller model.
+- Took too long: a large model on a PC without a graphics card can be slow. Try a smaller model. An online model that thinks before answering can also take longer than the 20 seconds allowed for organizing an entry; pick a faster one (a "flash" or "lite" model).
+- On the phone, an entry that says *"Taking longer than usual, trying again at …"* in grey isn't a problem: the first try timed out, often while the hub's PC loaded its model, and Avchetan tries again by itself. Only a red message on an entry means it stopped trying.
 - Doesn't offer this model: the model name is mistyped, retired, or not available on your account. Copy the exact name from the provider's model list into **Model**, then click **Test**.
 - Overloaded: the provider is busy. Avchetan tries again by itself later.
 - Cloud provider: possibly a temporary outage. Entries are retried automatically.

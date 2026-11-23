@@ -4,7 +4,8 @@ import type { HttpFetch } from '@avchetan/shared';
 import { MemorySecretStore } from '@avchetan/shared/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { SYNC_TOKEN_SECRET, saveConnection } from './config';
-import type { StatusResponse } from './protocol';
+import { saveLearned } from './find-server';
+import { hubProof, type StatusResponse, tokenKey } from './protocol';
 import {
   type ConnectionCheck,
   checkConnection,
@@ -16,6 +17,8 @@ const SERVER = '0192a000-0000-7000-8000-0000000000aa';
 const TOKEN = 'a-sync-token-that-is-long-enough-to-pass';
 const HOME = 'http://192.168.1.5:8787';
 const AWAY = 'http://100.101.102.103:8787';
+/** The hub's PC after it got a new address on the same network. */
+const MOVED = 'http://192.168.1.9:8787';
 const NOW_MS = Date.parse('2026-10-26T10:00:00.000Z');
 
 function serverStatus(serverTime: string): StatusResponse {
@@ -30,13 +33,18 @@ function serverStatus(serverTime: string): StatusResponse {
   };
 }
 
-/** A hub answering at the given addresses, accepting only TOKEN. */
+/** A hub answering at the given addresses, accepting only TOKEN and proving it holds it. */
 function hub(options: { at: string[]; serverTime?: string }): HttpFetch {
   return async (input, init) => {
     const url = String(input);
     if (!options.at.some((base) => url.startsWith(base))) throw new TypeError('fetch failed');
-    if (url.endsWith('/v1/health')) {
-      return Response.json({ status: 'ok', version: 'test', serverId: SERVER, protocol: 1 });
+    const parsed = new URL(url);
+    if (parsed.pathname === '/v1/health') {
+      const challenge = parsed.searchParams.get('challenge');
+      const health = { status: 'ok', version: 'test', serverId: SERVER, protocol: 1 };
+      return Response.json(
+        challenge ? { ...health, proof: hubProof(tokenKey(TOKEN), SERVER, challenge) } : health,
+      );
     }
     const auth = new Headers(init?.headers).get('Authorization');
     if (auth !== `Bearer ${TOKEN}`) {
@@ -93,6 +101,58 @@ describe('checkConnection', () => {
     expect(rows.find((r) => r.id === 'reachable-others')).toMatchObject({ state: 'info' });
     expect(rows.find((r) => r.id === 'token')).toMatchObject({ state: 'ok' });
     expect(rows.find((r) => r.id === 'clock')).toMatchObject({ state: 'ok' });
+  });
+
+  it('finds a hub whose PC got a new address, as sync does, and runs the other checks', async () => {
+    await connect();
+    await saveLearned(store, [MOVED]);
+
+    const result = await check(hub({ at: [MOVED] }));
+
+    expect(result).toMatchObject({ foundAt: MOVED, token: 'accepted' });
+    const rows = rowsOf(result);
+    expect(rows.find((r) => r.id === 'reachable')).toMatchObject({
+      state: 'ok',
+      title: `Reaches your hub at ${MOVED}`,
+    });
+    expect(rows.find((r) => r.id === 'reachable-others')).toMatchObject({ state: 'info' });
+    expect(rows.find((r) => r.id === 'clock')).toMatchObject({ state: 'ok' });
+    expect(rows.some((r) => r.state === 'problem' && r.id === 'reachable')).toBe(false);
+  });
+
+  it('looks for the hub on this network when no known address answers', async () => {
+    await connect();
+
+    const result = await checkConnection({
+      store,
+      fetch: hub({ at: [MOVED] }),
+      secrets,
+      nowMs: () => NOW_MS,
+      discover: async () => [MOVED],
+    });
+
+    expect(result).toMatchObject({ foundAt: MOVED, token: 'accepted' });
+  });
+
+  it('never sends the token to a new address that cannot prove it is the hub', async () => {
+    await connect();
+    await saveLearned(store, [MOVED]);
+    const sent: string[] = [];
+    const impostor: HttpFetch = async (input) => {
+      const url = new URL(String(input));
+      if (url.origin !== MOVED) throw new TypeError('fetch failed');
+      if (url.pathname === '/v1/health') {
+        return Response.json({ status: 'ok', version: 'test', serverId: SERVER, protocol: 1 });
+      }
+      sent.push(url.origin);
+      return Response.json(serverStatus('2026-10-26T10:00:00.000Z'));
+    };
+
+    const result = await check(impostor);
+
+    expect(result).toMatchObject({ foundAt: null, token: null });
+    expect(sent).toEqual([]);
+    expect(rowsOf(result)[0]).toMatchObject({ id: 'reachable', state: 'problem' });
   });
 
   it('reports a refused token, with pairing as the fix', async () => {

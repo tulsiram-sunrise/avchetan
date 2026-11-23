@@ -46,8 +46,10 @@ fn log_plugin() -> tauri::plugin::TauriPlugin<tauri::Wry> {
                 cfg!(debug_assertions),
             )
         })
-        // Libraries' details (requests, window events) stay out even in development.
+        // Libraries' details (requests, window events, each keychain read) stay out even in
+        // development.
         .level_for("hyper", log::LevelFilter::Warn)
+        .level_for("keyring", log::LevelFilter::Warn)
         .level_for("hyper_util", log::LevelFilter::Warn)
         .level_for("reqwest", log::LevelFilter::Warn)
         .level_for("tao", log::LevelFilter::Warn)

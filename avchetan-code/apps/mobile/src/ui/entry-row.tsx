@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
 import { usePalette } from '../theme/theme';
 import { privatePrefix, WaitsForLocalAi } from './private-mark';
+import { retryNote, willRetry } from './retry-note';
 import { StatusBadge } from './status-badge';
 import { TaskCheck } from './task-row';
 
@@ -56,7 +57,9 @@ export function EntryRow(props: {
             .join(' · ')}
         </Text>
       ) : null}
-      {rawLog.lastError ? (
+      {willRetry(rawLog) ? (
+        <Text className="text-xs text-inkMuted">{retryNote(rawLog)}</Text>
+      ) : rawLog.lastError ? (
         <Text numberOfLines={2} className="text-xs text-danger">
           {describeError(parseLastError(rawLog.lastError)).message}
         </Text>
