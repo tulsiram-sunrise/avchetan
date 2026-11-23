@@ -326,6 +326,31 @@ describe('dropCopiedItems', () => {
     expect(dropCopiedItems(answer, 'coffee with Rajeev again', [coffee]).dropped).toBe(0);
   });
 
+  it('keeps a repeated activity the entry says in other word forms (test build 2026-11-24)', () => {
+    const work = entry(
+      'work',
+      'In the evening, I worked on avchetan project and finished 2 more days of task',
+      '2026-11-18T14:49:45.981Z',
+      {
+        activities: [
+          {
+            id: '1',
+            title: 'Work on Avchetan',
+            deleted: false,
+            userEdited: true,
+            categorySlug: 'work',
+            metrics: {},
+          },
+        ],
+      },
+    );
+    const answer = { ...EMPTY, activities: [activity('Work on Avchetan')] };
+
+    expect(
+      dropCopiedItems(answer, 'Today I worked on avchetan for around 1 h', [work]).dropped,
+    ).toBe(0);
+  });
+
   it('keeps an example title learned for a closely alike entry', () => {
     const answer = { ...EMPTY, activities: [activity('Coffee with Rajeev')] };
     // Shares "last" and "rajeev" with the example: the title is what the user taught.
