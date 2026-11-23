@@ -1,6 +1,6 @@
 import { and, eq } from 'drizzle-orm';
 import { syncConflicts, syncOutbox } from '../schema/sqlite/tables';
-import type { ClientDb, Tx } from './database';
+import type { Tx } from './database';
 import { compareVersions } from './lww';
 import {
   getById,
