@@ -30,7 +30,7 @@ All code is in `avchetan-code/`. Run every `pnpm` command there. The [developer 
    - Synced tables are written only through the repository layer, and rows are never hard-deleted.
    - No API keys, tokens or personal data in code, fixtures, logs, screenshots or docs. Use made-up examples.
    - Sync and extraction changes need tests. LLM tests use the mock model, never a live API.
-3. A change users can see also updates the [user guide](docs/user-guide/README.md), and a new error code needs its [troubleshooting](docs/user-guide/troubleshooting.md) section (`pnpm errors:check` tells you).
+3. A change users can see also updates the [user guide](docs/user-guide/README.md), and a new error code needs its [troubleshooting](docs/user-guide/troubleshooting.md) section (`pnpm errors:check` tells you). A new button, switch or text box needs a name a screen reader can say (`pnpm a11y:check` tells you).
 4. A change to the architecture adds a decision record in [docs/decisions/](docs/decisions/).
 5. Run `pnpm check` before you push. CI also checks licenses, links, error codes and secrets.
 

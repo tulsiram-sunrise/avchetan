@@ -22,7 +22,7 @@
 - UI state (dock mode, draft, panel open) in Zustand stores in `src/stores/*`.
 - Query invalidation keys are table names (`['tasks', …]`); the `logs:changed` / `sync:done` events invalidate by table.
 - Tailwind (desktop) / NativeWind (mobile) with shared design tokens (colors, spacing, radii) from `@avchetan/shared/tokens`.
-- Accessibility: every interactive element keyboard-reachable on desktop; labels on icon buttons (`aria-label` on the PC; `accessibilityRole` plus `accessibilityLabel` or a `Text` inside on the phone, and `accessibilityLabel` on every `Switch` and `TextInput`); an action reached by swiping also offered as an `accessibilityActions` entry. Don't turn off focus outlines or font scaling: the PC draws one focus ring for the keyboard (`styles.css`) and follows Windows' Text size; the phone follows Android's font size.
+- Accessibility: every interactive element keyboard-reachable on desktop; labels on icon buttons (`aria-label` on the PC; `accessibilityRole` plus `accessibilityLabel` or a `Text` inside on the phone, and `accessibilityLabel` on every `Switch` and `TextInput`); an action reached by swiping also offered as an `accessibilityActions` entry. Don't turn off focus outlines or font scaling: the PC draws one focus ring for the keyboard (`styles.css`) and follows Windows' Text size; the phone follows Android's font size. `pnpm a11y:check` (in CI) fails on a control without a name.
 
 ## Rust (`apps/desktop/src-tauri`)
 

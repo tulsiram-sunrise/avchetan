@@ -49,6 +49,7 @@ jobs:
       - run: pnpm audit --prod
       - run: pnpm docs:check-links
       - run: pnpm errors:check
+      - run: pnpm a11y:check
       - run: pnpm version:check
 
   server-postgres:
