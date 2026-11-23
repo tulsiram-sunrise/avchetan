@@ -4,7 +4,7 @@ import { isValidLocalTime } from '@avchetan/shared';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
-import { useToday } from '../src/queries/days';
+import { useDayCoverageOn, useSetDayCoverageOn, useToday } from '../src/queries/days';
 import { useRing } from '../src/queries/reminders';
 import {
   useAddStarters,
@@ -128,6 +128,36 @@ function StarterPicker(props: { added: ReadonlySet<string>; onClose: () => void 
  * One notification in the evening when chores are still unticked, on this phone only
  * (product/tasks-routines-reminders.md §4). Turning it on asks Android for permission.
  */
+/** Off by default (tasks-routines-reminders.md §11); kept per device. */
+function DayCoverageSetting() {
+  const on = useDayCoverageOn();
+  const set = useSetDayCoverageOn();
+  return (
+    <View>
+      <SectionTitle title="Day coverage" />
+      <View className="gap-3 px-4">
+        <View className="flex-row items-center justify-between">
+          <View className="flex-1 pr-3">
+            <Text className="text-base text-ink">Show day coverage in Days</Text>
+            <Text className="text-sm text-inkMuted">
+              How much of each day is accounted for: what you logged with a duration, plus routines
+              such as sleep and work hours, plus 15% for small things nobody logs. The rest shows as
+              unaccounted, which may well have been rest.
+            </Text>
+          </View>
+          <Switch
+            accessibilityLabel="Show day coverage in Days"
+            value={on.data ?? false}
+            disabled={!on.isSuccess || set.isPending}
+            onValueChange={(next) => set.mutate(next)}
+          />
+        </View>
+        <Failure error={set.error} />
+      </View>
+    </View>
+  );
+}
+
 function EveningReminder() {
   const evening = useChoreEvening();
   const ring = useRing();
@@ -228,6 +258,7 @@ export default function RoutinesScreen() {
         <Text className="px-4 text-sm text-inkMuted">No routines yet.</Text>
       ) : null}
       {all.some((routine) => routine.kind === 'confirm') ? <EveningReminder /> : null}
+      <DayCoverageSetting />
       <View className="px-4">
         <Failure error={routines.error} />
       </View>

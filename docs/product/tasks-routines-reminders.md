@@ -136,6 +136,8 @@ The brief's first two lines are **✓ Went well** and **! Needs attention**, eac
 
 This is a setting, off by default. It shows the hours accounted for out of 24: logged `duration_min`, plus assumed routines (sleep, work) on days with no entry that contradicts them, plus 15% of the day for small things nobody logs. The rest is shown as **unaccounted**, never *wasted*, because an unlogged hour may have been rest.
 
+**Built on Day 22 (2026-11-23).** `dayCoverage` in `packages/core/src/routines/coverage.ts` works from the day's activities and routine days, in code (no AI). Logged = the sum of `duration_min`; logged sleep = `sleep_h` (on the wake-up, Day 19), and when there is any, an assumed sleep routine (the *Sleep* starter, or one with *sleep* in its name) is left out. Assumed routines count by their time window on the day's clock (*23:00–07:00* covers 00:00–07:00 and 23:00–24:00), overlaps once, a day marked skipped not at all; one without a window counts nothing. Small things = 15% of the period. The total never passes the period, so a duration logged inside work hours can count twice without overfilling the day. Today's period is the hours gone by, and windows count only up to now; days ahead show nothing. Days are 24 hours, also on daylight-saving days. The switch is the per-device setting `days.coverage` (not synced), on the Routines page of both apps; the card sits above Chores on Days.
+
 ## 12. Share to Avchetan
 
 Android's share sheet sends text or a link from any app into a capture. This is a local capture like any other, and it never waits on the network. It is saved with the source `mobile_text`: a new source value would stop older apps from syncing ([R27](../open-questions.md#resolved)), so `mobile_share` waits for v0.6.0.

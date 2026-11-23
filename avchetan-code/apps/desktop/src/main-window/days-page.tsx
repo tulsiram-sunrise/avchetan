@@ -30,6 +30,7 @@ import { useAppEvent } from '../use-app-event';
 import { useColorScheme } from '../use-color-scheme';
 import { ChoreCard } from './chore-card';
 import { DailyBrief } from './daily-brief';
+import { DayCoverageCard } from './day-coverage-card';
 import { isTyping } from './keys';
 import { SyncWarningBanner } from './sync-warning-banner';
 import { TimelineEntry } from './timeline';
@@ -424,6 +425,8 @@ function DayPanel(props: {
               : 'Nothing was logged this day.'}
         </p>
       ) : null}
+
+      <DayCoverageCard day={day} today={today} />
 
       <ChoreCard day={day} />
 
