@@ -1,4 +1,5 @@
 import { isValidLocalDate, ValidationError } from '@avchetan/shared';
+import { normalizeMetrics } from '../../metrics/metrics';
 import type { RowOrigin } from '../../schema/enums';
 import { activities } from '../../schema/sqlite/tables';
 import type { Tx } from '../database';
@@ -71,6 +72,8 @@ export function activitiesRepo(deps: RepoDeps) {
       const changes = {
         ...edit,
         ...(edit.title !== undefined ? { title: edit.title.trim() } : {}),
+        // A hand edit is normalized like the model's: `30 min` → `duration_min: 30`.
+        ...(edit.metrics != null ? { metrics: normalizeMetrics(edit.metrics).metrics } : {}),
       };
       await recordCorrection(tx, deps, 'activity', current, changes);
       return updateSynced(tx, deps, activities, id, {

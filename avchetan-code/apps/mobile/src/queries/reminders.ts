@@ -1,15 +1,17 @@
+import { runWrite } from '@avchetan/core';
 import type { UtcInstant } from '@avchetan/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Notifications from 'expo-notifications';
 import { chooseRing } from '../services/notifications';
 import { askForExactAlarms, exactAlarmsAllowed, loadPhoneRing } from '../services/task-reminders';
+import { writeContext } from '../services/writes';
 import { useServices } from '../services-context';
 import { useWrite } from './entries';
 
 /** Remind at an instant, or no reminder (product/tasks-routines-reminders.md §7). */
 export const useSetReminder = () =>
-  useWrite((store, { id, remindAt }: { id: string; remindAt: UtcInstant | null }) =>
-    store.write((tx) => store.repos.tasks.setReminder(tx, id, remindAt)),
+  useWrite((store, args: { id: string; remindAt: UtcInstant | null }) =>
+    runWrite(writeContext(store), 'task.setReminder', args),
   );
 
 const RING_KEY = ['settings', 'ring'] as const;

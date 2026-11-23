@@ -1,6 +1,6 @@
+import { METRICS } from '@avchetan/db';
 import { addDays, weekdayOf } from '@avchetan/shared';
 import type { ExtractionInput } from '../extraction/input';
-import { METRICS } from '../normalize/metric-keys';
 
 /**
  * 2: adds the user's own corrections as examples (docs/product/correction-feedback.md).

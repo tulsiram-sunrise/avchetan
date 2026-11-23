@@ -1,9 +1,11 @@
+import { runWrite, type WriteArgs, type WriteName } from '@avchetan/core';
 import { type ClientStore, TASK_GROUPS, type TaskGroup } from '@avchetan/db/sqlite';
 import { keepPreviousData, useMutation, useQueries, useQuery } from '@tanstack/react-query';
 import { refreshAll } from '../query-client';
 import { scheduleBriefReminder } from '../services/brief-reminder';
 import type { MobileSource } from '../services/capture';
 import { scheduleNotifications } from '../services/notifications';
+import { writeContext } from '../services/writes';
 import { useServices } from '../services-context';
 
 export function useExtracted(rawLogIds: readonly string[]) {
@@ -72,6 +74,11 @@ export function useWrite<A, R>(run: (store: ClientStore, args: A) => Promise<R>)
       void scheduleNotifications(store);
     },
   });
+}
+
+/** One of core's shared writes, as the PC runs it, with `useWrite`'s refresh and sync. */
+export function useAction<K extends WriteName>(name: K) {
+  return useWrite((store, args: WriteArgs<K>) => runWrite(writeContext(store), name, args));
 }
 
 /** How many tasks each group of the Tasks tab holds today. */

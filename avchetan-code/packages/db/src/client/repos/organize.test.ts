@@ -166,6 +166,21 @@ describe('activities & tasks', () => {
     expect(edited).toMatchObject({ title: '5K run', isUserEdited: true });
   });
 
+  it('normalizes numbers typed by hand like the model’s', async () => {
+    const { store } = await openTestStore();
+    const edited = await store.write(async (tx) => {
+      const row = await store.repos.activities.create(tx, {
+        categoryId: seedCategoryId('workout'),
+        title: 'Run',
+        loggedDate: '2026-10-26',
+      });
+      return store.repos.activities.editByUser(tx, row.id, {
+        metrics: { duration: '1 h', distance_km: 5, junk: { nested: true } },
+      });
+    });
+    expect(edited.metrics).toEqual({ duration_min: 60, distance_km: 5 });
+  });
+
   it('validates dates and titles', async () => {
     const { store } = await openTestStore();
     await expect(

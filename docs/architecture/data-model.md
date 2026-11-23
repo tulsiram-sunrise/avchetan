@@ -235,7 +235,7 @@ ID = `derivedId('routine_day', routine_id, scheduled_date)`. Made only on the da
 
 ## Metric key registry
 
-`metrics` is open JSON, but keys **must** come from this registry when one fits (the extraction prompt includes it; the normalizer maps synonyms like `minutes`→`duration_min`). Unknown keys are allowed, snake_case with a unit suffix when numeric. The registry lives in `packages/core/src/normalize/metric-keys.ts` and this table is its documentation.
+`metrics` is open JSON, but keys **must** come from this registry when one fits (the extraction prompt includes it; the normalizer maps synonyms like `minutes`→`duration_min`). Unknown keys are allowed, snake_case with a unit suffix when numeric. The registry lives in `packages/db/src/metrics/metric-keys.ts` and this table is its documentation. The repository normalizes numbers edited by hand the same way (`activities.editByUser`).
 
 | Key | Type | Unit / range | Aggregate | Example source |
 |---|---|---|---|---|

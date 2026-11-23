@@ -1,16 +1,15 @@
-import { parseCommand } from '@avchetan/core';
-import { type ClientStore, listOutbox, type Task } from '@avchetan/db/sqlite';
-import { openTestStore } from '@avchetan/db/testing';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  type CommandDeps,
   type CommandOutcome,
   type CommandPlan,
   createUndoStack,
-  planCommand,
+  parseCommand,
   rememberCapture,
-  settingsTabFor,
-} from './commands';
+} from '@avchetan/core';
+import { type ClientStore, listOutbox, type Task } from '@avchetan/db/sqlite';
+import { openTestStore } from '@avchetan/db/testing';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { writeContext } from './actions';
+import { type CommandDeps, planCommand, settingsTabFor } from './commands';
 
 let store: ClientStore;
 let deps: CommandDeps;
@@ -20,6 +19,8 @@ beforeEach(async () => {
   ({ store } = await openTestStore());
   deps = {
     store,
+    write: writeContext(store),
+    words: { device: 'PC', syncPlace: 'Settings → Hub & sync → Sync' },
     today: () => '2026-11-07',
     makeBrief: vi.fn(async () => 'made' as const),
     syncNow: vi.fn(async () => 'synced' as const),

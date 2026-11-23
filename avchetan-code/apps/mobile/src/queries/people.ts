@@ -1,8 +1,9 @@
-import { EXTRACTION_PROMPT_VERSION } from '@avchetan/core';
+import { EXTRACTION_PROMPT_VERSION, runWrite } from '@avchetan/core';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { writeContext } from '../services/writes';
 import { useServices } from '../services-context';
 import { useToday } from './days';
-import { useWrite } from './entries';
+import { useAction, useWrite } from './entries';
 
 /**
  * People and promises (docs/product/people-and-promises.md). Every write refreshes every query,
@@ -77,46 +78,15 @@ export const useDismissPair = () =>
     store.write((tx) => store.people.dismissPair(tx, pair, store.clock.now())),
   );
 
-export const useRenamePerson = () =>
-  useWrite((store, { id, name }: { id: string; name: string }) =>
-    store.write((tx) => store.repos.entities.rename(tx, id, name)),
-  );
+export const useRenamePerson = () => useAction('entity.rename');
 
-export const useMergePerson = () =>
-  useWrite((store, { id, intoId }: { id: string; intoId: string }) =>
-    store.write((tx) => store.repos.entities.merge(tx, id, intoId)),
-  );
+export const useMergePerson = () => useAction('entity.merge');
 
 /** "Promise to…" / "Waiting on…": a known person by ID, or a new name. */
-export const useLinkPromise = () =>
-  useWrite(
-    (
-      store,
-      input: {
-        taskId: string;
-        role: 'owed_to' | 'owed_by';
-        person: { id: string } | { name: string };
-      },
-    ) =>
-      store.write(async (tx) => {
-        const entityId =
-          'id' in input.person
-            ? input.person.id
-            : (await store.repos.entities.ensure(tx, { kind: 'person', name: input.person.name }))
-                .id;
-        return store.repos.entities.linkPromise(tx, {
-          taskId: input.taskId,
-          entityId,
-          role: input.role,
-        });
-      }),
-  );
+export const useLinkPromise = () => useAction('promise.link');
 
 /** "Not a promise": the task stays. */
-export const useUnlinkPromise = () =>
-  useWrite((store, input: { taskId: string; entityId: string }) =>
-    store.write((tx) => store.repos.entities.unlinkPromise(tx, input)),
-  );
+export const useUnlinkPromise = () => useAction('promise.unlink');
 
 /** Older entries that may hold promises the old prompt didn't mark. */
 export function useEntriesToRecheck() {
@@ -130,11 +100,4 @@ export function useEntriesToRecheck() {
 
 /** Organizes them again with the current prompt, in the background. */
 export const useRecheckPromises = () =>
-  useWrite((store, _: undefined) =>
-    store.write(async (tx) => {
-      const ids = await store.people.entriesToRecheckForPromises(tx, {
-        version: EXTRACTION_PROMPT_VERSION,
-      });
-      for (const id of ids) await store.repos.rawLogs.requeue(tx, id);
-    }),
-  );
+  useWrite((store, _: undefined) => runWrite(writeContext(store), 'people.recheckPromises', {}));

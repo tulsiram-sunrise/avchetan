@@ -1,4 +1,4 @@
-import { METRICS } from './metric-keys';
+import { METRICS } from '@avchetan/db';
 
 /**
  * Totals of an activity's numbers for a tag or project page
