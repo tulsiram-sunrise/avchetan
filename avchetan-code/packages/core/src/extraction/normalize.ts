@@ -29,6 +29,7 @@ import { normalizeTagPath, normalizeTagSegment } from '../normalize/tags';
 import { instantAt } from '../routines/checklist';
 import { checkDate, namesNoDay } from './date-check';
 import type { ChoreChoice, ExtractionVocabulary } from './input';
+import { spentFromWords } from './money-words';
 import type { ExtractionResult } from './schema';
 import { sleepHoursFromWords } from './sleep-words';
 
@@ -136,6 +137,18 @@ function fillSleepHours(activities: PlannedActivity[], content: string): void {
     titled(/\b(?:sleep|slept|nap)\b/i) ??
     activities.find((activity) => activity.metrics[SLEEP_EVENT_KEY] === 'bed');
   if (target) target.metrics.sleep_h = hours;
+}
+
+/**
+ * When the model gave no amount spent, code reads it from the words ("which cost ₹132") and puts
+ * it on the entry's one activity (v0.5.0 test build 2). With several activities it can't tell
+ * which one the money paid for, so it adds none.
+ */
+function fillSpent(activities: PlannedActivity[], content: string): void {
+  const [only, ...others] = activities;
+  if (!only || others.length > 0 || only.metrics.spent !== undefined) return;
+  const spent = spentFromWords(content);
+  if (spent !== null) only.metrics.spent = spent;
 }
 
 /**
@@ -348,6 +361,7 @@ export function normalizeExtraction(
   });
 
   fillSleepHours(plannedActivities, rawLog.content ?? '');
+  fillSpent(plannedActivities, rawLog.content ?? '');
 
   // A chore done is also something that happened that day: a tick with no activity on the
   // chore's day is a plan, or about another day, and is dropped.
