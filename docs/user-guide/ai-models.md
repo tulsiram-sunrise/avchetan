@@ -12,7 +12,7 @@ Avchetan uses AI for three jobs. Each can use a different model:
 
 - Install [Ollama](https://ollama.com). Avchetan detects it and suggests models.
 - Larger models give better answers but need more graphics memory. The hub's model sets say which PC they suit, for example **Ollama on your PC (no graphics card)**.
-- Without a working graphics card, Ollama runs on the processor. That still works, but an entry can take up to a minute to organize, and in our tests about one entry in three had a mistake, such as a missed number or wrong date. You can correct these in the main window. A cloud provider is more accurate, but your entries leave your PC.
+- Without a working graphics card, Ollama runs on the processor. That still works, but an entry can take up to a minute to organize, and in our tests about one entry in three had a mistake, such as a missed number or wrong date. You can correct these in the main window. A cloud provider is more accurate, but your entries leave your PC. If your PC has a graphics card but entries still take a minute or more, Windows may not be using it: open **Device Manager → Display adapters**, and if the card shows a warning sign, install the latest driver from the card maker's website (NVIDIA, AMD), then restart the PC.
 - If the app says a model isn't downloaded, click **Download it** in the [Setup check](troubleshooting.md#setup-check) (or **Download them** for the hub's models), or choose a model you already have.
 - On a phone: let your hub do it, because phones can't run these models. See below.
 

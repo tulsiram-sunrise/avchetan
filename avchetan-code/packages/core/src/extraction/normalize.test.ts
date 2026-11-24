@@ -442,6 +442,28 @@ describe('when an activity happened, and sleep (§9)', () => {
     expect(at({ title: 'Morning run' }, 'ran 5k, slept 7 hours')?.metrics).toEqual({});
   });
 
+  it('reads the amount spent from the words when the model gave none (test build 2026-11-24)', () => {
+    const text = 'I had the field ploughed today for sowing peas, which cost ₹132.';
+    expect(at({ title: 'Ploughed the field' }, text)?.metrics).toEqual({ spent: 132 });
+    // The model's own amount stays.
+    expect(
+      at({ title: 'Groceries', metrics: [{ key: 'spent', value: '600' }] }, 'groceries, paid ₹640')
+        ?.metrics,
+    ).toEqual({ spent: 600 });
+    // With two activities, code can't tell which one the money paid for.
+    const plan = normalizeExtraction(
+      {
+        ...empty,
+        activities: [
+          { ...activity, title: 'Ran' },
+          { ...activity, title: 'Lunch' },
+        ],
+      },
+      withText('ran 5k, then lunch, paid ₹250'),
+    );
+    expect(plan.activities.map((a) => a.metrics)).toEqual([{}, {}]);
+  });
+
   it('keeps only bed and wake as the sleep mark', () => {
     expect(at({ sleep: 'Wake' }, 'woke up')?.metrics).toEqual({ sleep_event: 'wake' });
     expect(at({ sleep: 'bed' }, 'sleeping')?.metrics).toEqual({ sleep_event: 'bed' });
