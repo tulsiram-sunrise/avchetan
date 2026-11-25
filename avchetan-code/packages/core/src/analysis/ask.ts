@@ -16,7 +16,12 @@ import {
 
 const MAX_STEPS = 6;
 const CLOUD_TIMEOUT_MS = 90_000;
-const LOCAL_TIMEOUT_MS = 180_000;
+/**
+ * Ask may look things up a few times before answering, and on a processor alone each step takes
+ * minutes: 3 minutes timed out on a real PC (v0.5.0 test build 3; 6 chosen 2026-11-25).
+ */
+export const ASK_LOCAL_TIMEOUT_MS = 360_000;
+const LOCAL_TIMEOUT_MS = ASK_LOCAL_TIMEOUT_MS;
 
 export type AskSource = { number: number; rawLog: RawLog };
 export type AskResult = { answer: string; sources: AskSource[] };

@@ -3,8 +3,16 @@ import { LlmError } from '@avchetan/shared';
 import type { ProviderAdapter } from '../adapter';
 
 const DEFAULT_BASE_URL = 'http://localhost:11434/v1';
-// Thinking took a small answer from 3 tokens to 92, far too slow on a CPU.
-const NO_THINKING = { ollama: { reasoningEffort: 'none' } };
+/**
+ * Thinking took a small answer from 3 tokens to 92, far too slow on a CPU.
+ *
+ * `keep_alive` (sent as is to Ollama's OpenAI-style endpoint) keeps the model loaded 30 minutes
+ * after its last use instead of Ollama's 5. On a PC without a working graphics card, an entry
+ * took 16–30 s while the prompt's fixed start was still loaded, and 2–3 minutes after the model
+ * had been unloaded (v0.5.0 test build 3; the user chose 30 minutes, 2026-11-25).
+ */
+export const KEEP_LOADED = '30m';
+const LOCAL_OPTIONS = { ollama: { reasoningEffort: 'none', keep_alive: KEEP_LOADED } };
 
 export const ollamaAdapter: ProviderAdapter = {
   id: 'ollama',
@@ -12,8 +20,8 @@ export const ollamaAdapter: ProviderAdapter = {
   requiresApiKey: false,
   local: true,
   freeTierUsesContent: false,
-  structuredOptions: NO_THINKING,
-  analysisOptions: NO_THINKING,
+  structuredOptions: LOCAL_OPTIONS,
+  analysisOptions: LOCAL_OPTIONS,
   createModel: ({ provider, model, baseUrl }, { fetch }) =>
     createOpenAICompatible({
       name: provider,

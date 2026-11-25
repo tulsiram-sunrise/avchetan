@@ -35,8 +35,11 @@ import {
 const TIMEOUT_MS = 30_000;
 /** `/v1/health` decides which address to use, so a dead one has to fail fast. */
 const HEALTH_TIMEOUT_MS = 4_000;
-/** A local model on a processor may take minutes to answer. */
-const ASK_TIMEOUT_MS = 300_000;
+/**
+ * A local model on a processor may take minutes to answer. Longer than the hub's own limit for
+ * Ask with a local model (6 minutes, core's ask.ts), so the hub's answer or error arrives first.
+ */
+const ASK_TIMEOUT_MS = 420_000;
 /** Ask waits on it, and falls back to searching by words. */
 const SEARCH_TIMEOUT_MS = 10_000;
 

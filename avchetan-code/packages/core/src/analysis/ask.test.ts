@@ -203,14 +203,14 @@ describe('ask', () => {
     expect(runs).toMatchObject([{ ok: false, errorCode: 'llm_unavailable' }]);
   });
 
-  it('turns thinking off on Ollama only', async () => {
+  it('turns thinking off and keeps the model loaded on Ollama only', async () => {
     doStream.mockImplementation(async () => textStream('None.'));
 
     await ask(store, question(ollama), llm);
     await ask(store, question(groq), llm);
 
     const sent = doStream.mock.calls.map(([options]) => options.providerOptions);
-    expect(sent[0]).toEqual({ ollama: { reasoningEffort: 'none' } });
+    expect(sent[0]).toEqual({ ollama: { reasoningEffort: 'none', keep_alive: '30m' } });
     expect(sent[1]).toBeUndefined();
   });
 

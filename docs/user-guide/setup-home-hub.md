@@ -88,7 +88,7 @@ ollama pull granite4.2:8b
 ollama pull qwen3-embedding:0.6b
 ```
 
-They take about 8 GB of disk in total. The small one organizes entries, the larger one answers questions, and the last one makes [search by meaning](#search-by-meaning) work. Without a graphics card they still work: organizing an entry takes about 30 seconds and an answer about 2 minutes.
+They take about 8 GB of disk in total. The small one organizes entries, the larger one answers questions, and the last one makes [search by meaning](#search-by-meaning) work. Without a graphics card they still work: organizing an entry takes about 30 seconds and an answer a few minutes (Avchetan waits up to 6 minutes for an answer from a model on your PC). Avchetan asks Ollama to keep a model loaded for 30 minutes after it was last used, so entries written in one sitting are quick; the first entry after a long pause can take 2–3 minutes while Ollama loads the model again. A loaded model uses memory (about 11 GB for the larger one), which Ollama frees after those 30 minutes.
 
 ### Get Avchetan
 
