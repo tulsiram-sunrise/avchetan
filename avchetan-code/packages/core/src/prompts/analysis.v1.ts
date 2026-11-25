@@ -1,8 +1,12 @@
 import { addDays, type LocalDate, type Weekday } from '@avchetan/shared';
 import { mondayOf } from '../analysis/compute';
 
-/** 6: a line computed by the app for the question's period and number, quoted as it is. */
-export const version = 6;
+/**
+ * 6: a line computed by the app for the question's period and number, quoted as it is.
+ * 7: that total also arrives as an aggregate_metrics result already in the conversation, since
+ * a small model set the system line aside to follow "every fact must come from a tool result".
+ */
+export const version = 7;
 
 export function buildSystem(context: {
   today: LocalDate;
@@ -20,8 +24,8 @@ export function buildSystem(context: {
   const computed = context.computed
     ? `
 
-Computed by the app for this question, exact and already added up: ${context.computed}
-Use these numbers and dates as they are and cite their sources. Never calculate or convert them yourself. If it says nothing was recorded, say so; don't use entries from other days instead.`
+Computed by the app for this question, exact and already added up (it is also the aggregate_metrics result already in the conversation): ${context.computed}
+This is a tool result. Use these numbers and dates as they are and cite their sources; don't look the same total up again. Never calculate or convert them yourself. If it says nothing was recorded, say so; don't use entries from other days instead.`
     : '';
   return `You answer questions about a person's own daily log, using only the tools.
 

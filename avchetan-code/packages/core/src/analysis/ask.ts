@@ -1,12 +1,19 @@
 import type { ClientStore, RawLog } from '@avchetan/db/sqlite';
 import { LlmError, type LocalDate, localDate, weekdayOf } from '@avchetan/shared';
-import { type LanguageModelUsage, stepCountIs, streamText } from 'ai';
+import { type LanguageModelUsage, type ModelMessage, stepCountIs, streamText } from 'ai';
 import type { LlmDeps } from '../llm/generate-structured';
 import { buildSystem, FINAL_STEP_NOTE } from '../prompts/analysis.v1';
 import type { ModelConfig } from '../providers/config';
 import { modelTimeoutError, toLlmError } from '../providers/errors';
 import { PROVIDER_ADAPTERS } from '../providers/registry';
-import { factLine, periodOf, type Totals, topicOf } from './question-facts';
+import {
+  factLine,
+  isPlainTotalsQuestion,
+  periodOf,
+  plainAnswer,
+  type Totals,
+  topicOf,
+} from './question-facts';
 import {
   createAnalysisTools,
   createCitations,
@@ -46,27 +53,58 @@ async function computedFacts(
   question: string,
   today: LocalDate,
   tools: ReturnType<typeof createAnalysisTools>,
-): Promise<string | null> {
+) {
   const period = periodOf(question, today);
   const topic = topicOf(question);
   const execute = tools.aggregate_metrics.execute;
   if (!period || !topic || !execute) return null;
+  const input = (agg: 'sum' | 'avg') => ({
+    metric: topic.metric,
+    agg,
+    from: period.from,
+    to: period.to,
+    ...(topic.category ? { category: topic.category } : {}),
+  });
   const totals = async (agg: 'sum' | 'avg') =>
     (await execute(
-      {
-        metric: topic.metric,
-        agg,
-        from: period.from,
-        to: period.to,
-        ...(topic.category ? { category: topic.category } : {}),
-      },
+      input(agg),
       // Called by code, not the model: no call ID or messages of its own.
       { toolCallId: `computed-${agg}`, messages: [], context: {} } as never,
     )) as Totals;
   const sum = await totals('sum');
   // A category the person doesn't use says nothing about the question.
   if (topic.category && sum.rows === 0) return null;
-  return factLine(topic, period, { sum, average: await totals('avg') });
+  const all = { sum, average: await totals('avg') };
+  return {
+    line: factLine(topic, period, all),
+    answer: plainAnswer(topic, period, all),
+    /** The total as a lookup the model already made: what its rules ask facts to come from. */
+    messages: [
+      { role: 'user', content: question },
+      {
+        role: 'assistant',
+        content: [
+          {
+            type: 'tool-call',
+            toolCallId: 'computed-sum',
+            toolName: 'aggregate_metrics',
+            input: input('sum'),
+          },
+        ],
+      },
+      {
+        role: 'tool',
+        content: [
+          {
+            type: 'tool-result',
+            toolCallId: 'computed-sum',
+            toolName: 'aggregate_metrics',
+            output: { type: 'json', value: sum },
+          },
+        ],
+      },
+    ] satisfies ModelMessage[],
+  };
 }
 
 /** Answers from the local database through read-only tools. Never writes entries. */
@@ -105,56 +143,65 @@ export async function ask(
     searchHistory: request.searchHistory,
   });
 
-  try {
-    const computed = await computedFacts(question, today, tools);
-    const result = streamText({
-      model: await llm.resolveModel(model),
-      system: buildSystem({
-        today,
-        weekday: weekdayOf(today),
-        semanticSearch: request.searchHistory !== undefined,
-        computed,
-      }),
-      prompt: question,
-      tools,
-      stopWhen: stepCountIs(MAX_STEPS),
-      // The last step must answer: no tools, and told so.
-      prepareStep: ({ stepNumber, messages }) =>
-        stepNumber === MAX_STEPS - 1
-          ? {
-              activeTools: [],
-              toolChoice: 'none',
-              messages: [...messages, { role: 'user', content: FINAL_STEP_NOTE }],
-            }
-          : undefined,
-      temperature: model.temperature ?? 0,
-      maxRetries: 0,
-      timeout: model.timeoutMs ?? (adapter.local ? LOCAL_TIMEOUT_MS : CLOUD_TIMEOUT_MS),
-      ...(request.abortSignal ? { abortSignal: request.abortSignal } : {}),
-      ...(adapter.analysisOptions ? { providerOptions: adapter.analysisOptions } : {}),
-    });
-
-    for await (const part of result.fullStream) {
-      if (part.type === 'text-delta') {
-        answer += part.text;
-        onText(normalizeCitations(answer));
-      } else if (part.type === 'finish') {
-        usage = part.totalUsage;
-      } else if (part.type === 'error') {
-        failure = part.error;
-      } else if (part.type === 'abort') {
-        // The timeout ends the stream without an error. Nothing in the app cancels an Ask yet.
-        failure ??= modelTimeoutError();
-      }
-    }
-    if (failure) throw failure;
-    if (!answer.trim()) throw new LlmError('llm_refused', 'The model returned no answer');
-  } catch (thrown) {
-    const error = toLlmError(thrown, adapter);
-    await finish(error.code);
-    throw error;
+  const computed = await computedFacts(question, today, tools);
+  if (computed && isPlainTotalsQuestion(question)) {
+    // The app's own total answers it: no model, so nothing to wait for and nothing to get wrong.
+    answer = computed.answer;
+  } else {
+    await answerWithModel();
   }
-  await finish(null);
+
+  async function answerWithModel() {
+    try {
+      const result = streamText({
+        model: await llm.resolveModel(model),
+        system: buildSystem({
+          today,
+          weekday: weekdayOf(today),
+          semanticSearch: request.searchHistory !== undefined,
+          computed: computed?.line ?? null,
+        }),
+        ...(computed ? { messages: computed.messages } : { prompt: question }),
+        tools,
+        stopWhen: stepCountIs(MAX_STEPS),
+        // The last step must answer: no tools, and told so.
+        prepareStep: ({ stepNumber, messages }) =>
+          stepNumber === MAX_STEPS - 1
+            ? {
+                activeTools: [],
+                toolChoice: 'none',
+                messages: [...messages, { role: 'user', content: FINAL_STEP_NOTE }],
+              }
+            : undefined,
+        temperature: model.temperature ?? 0,
+        maxRetries: 0,
+        timeout: model.timeoutMs ?? (adapter.local ? LOCAL_TIMEOUT_MS : CLOUD_TIMEOUT_MS),
+        ...(request.abortSignal ? { abortSignal: request.abortSignal } : {}),
+        ...(adapter.analysisOptions ? { providerOptions: adapter.analysisOptions } : {}),
+      });
+
+      for await (const part of result.fullStream) {
+        if (part.type === 'text-delta') {
+          answer += part.text;
+          onText(normalizeCitations(answer));
+        } else if (part.type === 'finish') {
+          usage = part.totalUsage;
+        } else if (part.type === 'error') {
+          failure = part.error;
+        } else if (part.type === 'abort') {
+          // The timeout ends the stream without an error. Nothing in the app cancels an Ask yet.
+          failure ??= modelTimeoutError();
+        }
+      }
+      if (failure) throw failure;
+      if (!answer.trim()) throw new LlmError('llm_refused', 'The model returned no answer');
+    } catch (thrown) {
+      const error = toLlmError(thrown, adapter);
+      await finish(error.code);
+      throw error;
+    }
+    await finish(null);
+  }
 
   answer = citations.withoutInvented(normalizeCitations(answer));
   onText(answer);

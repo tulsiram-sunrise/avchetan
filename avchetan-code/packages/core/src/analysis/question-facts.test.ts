@@ -1,6 +1,6 @@
 import type { LocalDate } from '@avchetan/shared';
 import { describe, expect, it } from 'vitest';
-import { periodOf, topicOf } from './question-facts';
+import { isPlainTotalsQuestion, periodOf, topicOf } from './question-facts';
 
 const today = '2026-11-24' as LocalDate; // a Tuesday
 
@@ -36,5 +36,28 @@ describe('topicOf', () => {
 
   it('counts work only in the work category', () => {
     expect(topicOf('hours worked today')).toEqual({ metric: 'duration_min', category: 'work' });
+  });
+});
+
+describe('isPlainTotalsQuestion', () => {
+  it.each([
+    'How much I spend this month',
+    'how much did I spend this month?',
+    "how much i've slept today",
+    'How much money did I spend last week',
+    'how many hours did I work this week',
+    'total spent this year',
+    'kitna kharcha this month',
+  ])('%s: the app answers', (question) => {
+    expect(isPlainTotalsQuestion(question)).toBe(true);
+  });
+
+  it.each([
+    'how much did I spend on groceries this month',
+    'why did I sleep so little this week',
+    'did I sleep less than usual this month',
+    'how much did I spend this month compared to last month',
+  ])('%s: the model answers', (question) => {
+    expect(isPlainTotalsQuestion(question)).toBe(false);
   });
 });
