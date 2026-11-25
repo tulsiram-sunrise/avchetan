@@ -217,7 +217,7 @@ ID = `derivedId('routine_day', routine_id, scheduled_date)`. Made only on the da
 | Table | Columns | Purpose |
 |---|---|---|
 | `sync_outbox` | `table_name`, `record_id` (PK pair), `enqueued_at`, `attempts`, `last_error`, `by_user` | Pointer to changed records; payload read at push time. Coalesces repeated edits ([sync-protocol](sync-protocol.md#outbox)). `by_user`: the waiting change includes a hand edit ([ADR-0034](../decisions/0034-two-device-edits-keep-the-loser.md)) |
-| `sync_conflicts` | `table_name`, `record_id` (PK pair), `lost_row` (JSON), `detected_at` | A hand edit that lost to another device's, shown as *Changed on two devices* until the person picks one ([ADR-0034](../decisions/0034-two-device-edits-keep-the-loser.md)) |
+| `sync_conflicts` | `table_name`, `record_id` (PK pair), `lost_row` (JSON), `detected_at` | A hand edit that lost to another device's, shown as *Changed on two devices* until the person picks one; `table_name = 'entry_edits'` holds an entry whose words were edited on two devices (keyed by the entry both replaced, `lost_row` = both entry IDs) ([ADR-0034](../decisions/0034-two-device-edits-keep-the-loser.md#addendum-2026-11-25-an-entrys-words)) |
 | `sync_set_aside` | `table_name`, `record_id` (PK pair), `row` (JSON), `set_aside_at` | Pulled rows this app couldn't read, tried again on every sync ([ADR-0032](../decisions/0032-sync-tolerates-unknown-values.md)) |
 | `sync_state` | `key` PK, `value` | `device_id`, `pull_cursor`, `last_push_at`, `last_pull_at`, `clock_last` |
 | `settings` | `key` PK, `value` JSON | Non-secret settings (model slots, hotkeys, server URL). Secrets are in the keychain |

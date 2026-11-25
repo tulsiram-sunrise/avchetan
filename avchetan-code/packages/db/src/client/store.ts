@@ -102,8 +102,9 @@ export async function openClientStore(options: OpenClientStoreOptions) {
 
   const deps: RepoDeps = { deviceId, clock, newId };
   const tags = tagsRepo(deps);
+  const rawLogs = rawLogsRepo(deps, tags);
   const baseRepos = {
-    rawLogs: rawLogsRepo(deps, tags),
+    rawLogs,
     activities: activitiesRepo(deps),
     tasks: tasksRepo(deps),
     categories: categoriesRepo(deps),
@@ -112,7 +113,7 @@ export async function openClientStore(options: OpenClientStoreOptions) {
     entities: entitiesRepo(deps),
     contextRules: contextRulesRepo(deps),
     routines: routinesRepo(deps),
-    conflicts: conflictsRepo(deps),
+    conflicts: conflictsRepo(deps, rawLogs),
   };
   const repos = { ...baseRepos, extraction: extractionRepo(deps, baseRepos) };
 
@@ -153,7 +154,7 @@ export async function openClientStore(options: OpenClientStoreOptions) {
       /** Queues every row again, for a server that has none of them. */
       enqueueEverything: (): Promise<void> => write((tx) => enqueueEverything(tx, clock.now())),
       applyRemote: (changes: readonly RemoteChange[]): Promise<ApplyResult> =>
-        database.write((tx) => applyRemoteChanges(tx, changes, { now: clock.now() })),
+        database.write((tx) => applyRemoteChanges(tx, changes, { now: clock.now(), deviceId })),
       /**
        * One pulled page and its cursor, together: a crash can't skip or repeat part of a page.
        * Rows this app couldn't read are kept aside in the same transaction (ADR-0032).
@@ -164,7 +165,11 @@ export async function openClientStore(options: OpenClientStoreOptions) {
         options: { refill?: boolean; setAside?: readonly SetAsideRow[] } = {},
       ): Promise<ApplyResult> =>
         write(async (tx) => {
-          const result = await applyRemoteChanges(tx, changes, { ...options, now: clock.now() });
+          const result = await applyRemoteChanges(tx, changes, {
+            ...options,
+            now: clock.now(),
+            deviceId,
+          });
           await dropSetAside(tx, changes);
           if (options.setAside?.length) await setAside(tx, options.setAside, clock.now());
           await setSyncState(tx, 'pull_cursor', String(cursor));

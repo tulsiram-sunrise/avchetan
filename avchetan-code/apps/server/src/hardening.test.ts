@@ -284,6 +284,28 @@ describe('a failed answer', () => {
     expect(events).not.toContain('10.0.0.7');
   });
 
+  it('keeps the model’s code for a brief or command, so the device can show its help', async () => {
+    const failing = async () => {
+      throw new LlmError('llm_unavailable', 'Timed out reading "met Asha about the loan"');
+    };
+    const server = await app({ brief: failing, command: failing });
+    await register(server);
+
+    const brief = await post(server, '/v1/brief', {
+      date: '2026-11-24',
+      timeZone: 'UTC',
+      replace: false,
+    });
+    const command = await post(server, '/v1/command', { input: 'water plants', examples: [] });
+
+    for (const response of [brief, command]) {
+      expect(response.status).toBe(503);
+      const body = await response.text();
+      expect(body).toContain('"code":"llm_unavailable"');
+      expect(body).not.toContain('Asha');
+    }
+  });
+
   it('logs where an unexpected error was thrown, never its text', async () => {
     const server = await app({
       checkAi: async () => {

@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { devices } from '@avchetan/db/pg';
-import { type Clock, createLogger, errorFields, type ModelCheck } from '@avchetan/shared';
+import { type Clock, createLogger, errorFields, LlmError, type ModelCheck } from '@avchetan/shared';
 import {
   type ErrorResponse,
   HEADERS,
@@ -202,6 +202,16 @@ export function createApp(deps: AppDeps) {
   app.onError((error, c) => {
     if (error instanceof ApiError) {
       return c.json(errorBody(c, error.code, error.message, error.details), error.status);
+    }
+    if (error instanceof LlmError) {
+      // The hub's model failed (busy, too slow, not running): the device shows this code's
+      // help, not "something went wrong". A fixed message, since a provider's may quote input.
+      log.warn('model failed', {
+        requestId: c.get('requestId'),
+        path: c.req.path,
+        code: error.code,
+      });
+      return c.json(errorBody(c, error.code, "The hub's model couldn't answer"), 503);
     }
     log.error('request failed', {
       requestId: c.get('requestId'),

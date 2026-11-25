@@ -48,6 +48,8 @@ If you change the same thing on the phone and on your PC before they sync (say, 
 
 Only changes you made by hand count, and only fields you can see (marking a task done on both devices shows nothing). The notice goes away by itself if you edit the same thing again. It appears on the device that synced **second**: if the device that changed it first had already synced, its change is replaced without a notice, as before.
 
+**An entry's words** work a little differently. Editing an entry's words saves a new version of the entry, so if you edit the same entry on both devices before they sync, both versions are kept side by side, and both devices show *Changed on two devices* with the two texts (*Words*). **Keep this one** deletes the other version, with what was organized from it, on every device; **Keep the other** deletes this device's version. Pick on one device only: the notice on the other device goes away once they sync.
+
 ## Notes
 
 - The code contains a secret. Don't share a photo or screenshot of it. If you think it leaked, see [If your sync token leaked](troubleshooting.md#token_stolen).

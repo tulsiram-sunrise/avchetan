@@ -1,5 +1,5 @@
-import { and, eq } from 'drizzle-orm';
-import { syncConflicts, syncOutbox } from '../schema/sqlite/tables';
+import { and, eq, isNull, ne, sql } from 'drizzle-orm';
+import { rawLogs, syncConflicts, syncOutbox } from '../schema/sqlite/tables';
 import type { Tx } from './database';
 import { compareVersions } from './lww';
 import {
@@ -36,7 +36,18 @@ export const CONFLICT_COLUMNS = {
 } as const satisfies Partial<Record<SyncedTableName, readonly string[]>>;
 
 export type ConflictTable = keyof typeof CONFLICT_COLUMNS;
-export type ConflictField = (typeof CONFLICT_COLUMNS)[ConflictTable][number];
+/** `content`: an entry's words, edited on two devices (see ENTRY_EDITS). */
+export type ConflictField = (typeof CONFLICT_COLUMNS)[ConflictTable][number] | 'content';
+
+/**
+ * An entry's words edited on two devices. Words never change in place: each edit is a new entry
+ * that replaces the old one (`context.supersedes`), so both edits live on side by side, and the
+ * row-by-row check above never sees them (v0.5.0 test build 3). Kept under this name, keyed by
+ * the entry both replaced: `lostRow` holds this device's entry id and the other device's.
+ */
+const ENTRY_EDITS = 'entry_edits';
+
+type EntryEditPair = { id: string; theirs: string };
 
 export function isConflictTable(name: string): name is ConflictTable {
   return Object.hasOwn(CONFLICT_COLUMNS, name);
@@ -93,6 +104,61 @@ export async function recordConflict(
     });
 }
 
+/**
+ * Entries pulled from another device that replace an entry this device had replaced too: kept as
+ * an entry edited on two devices. Runs after the pulled rows are written. Whose version is whose
+ * comes from the device that wrote it (`originDeviceId`): a pull can bring this device's own
+ * version back in the same page as the other one.
+ */
+export async function recordEntryEdits(
+  tx: Tx,
+  pulled: readonly Row<typeof rawLogs>[],
+  deviceId: string,
+  detectedAt: string,
+): Promise<void> {
+  for (const row of pulled) {
+    const replaced = row.context?.supersedes;
+    if (row.deletedAt || row.originDeviceId === deviceId || typeof replaced !== 'string') {
+      continue;
+    }
+    const [mine] = await tx
+      .select({ id: rawLogs.id })
+      .from(rawLogs)
+      .where(
+        and(
+          isNull(rawLogs.deletedAt),
+          eq(sql`json_extract(${rawLogs.context}, '$.supersedes')`, replaced),
+          eq(rawLogs.originDeviceId, deviceId),
+          ne(rawLogs.id, row.id),
+        ),
+      );
+    if (!mine) continue;
+    const pair: EntryEditPair = { id: mine.id, theirs: row.id };
+    await tx
+      .insert(syncConflicts)
+      .values({ tableName: ENTRY_EDITS, recordId: replaced, lostRow: pair, detectedAt })
+      .onConflictDoUpdate({
+        target: [syncConflicts.tableName, syncConflicts.recordId],
+        set: { lostRow: pair, detectedAt },
+      });
+  }
+}
+
+/** The two live entries of an entry edited on two devices; null once either is gone. */
+async function entryEditPair(
+  tx: Tx,
+  lostRow: Record<string, unknown>,
+): Promise<{ mine: Row<typeof rawLogs>; theirs: Row<typeof rawLogs> } | null> {
+  const { id, theirs } = lostRow as Partial<EntryEditPair>;
+  if (typeof id !== 'string' || typeof theirs !== 'string') return null;
+  const [mineRow, theirsRow] = await Promise.all([
+    getById(tx, rawLogs, id),
+    getById(tx, rawLogs, theirs),
+  ]);
+  if (!mineRow || mineRow.deletedAt || !theirsRow || theirsRow.deletedAt) return null;
+  return { mine: mineRow, theirs: theirsRow };
+}
+
 /** Whether the change waiting for this row was made by hand. */
 export async function waitingUserEdit(
   tx: Tx,
@@ -131,6 +197,21 @@ export async function currentConflicts(tx: Tx, deviceId: string): Promise<Confli
   const rows = await tx.select().from(syncConflicts);
   const shown: Conflict[] = [];
   for (const { tableName, recordId, lostRow, detectedAt } of rows) {
+    if (tableName === ENTRY_EDITS) {
+      const pair = await entryEditPair(tx, lostRow);
+      if (!pair) {
+        await removeConflict(tx, tableName, recordId);
+        continue;
+      }
+      shown.push({
+        table: 'raw_logs',
+        id: recordId,
+        current: pair.theirs,
+        changes: [{ field: 'content', mine: pair.mine.content, theirs: pair.theirs.content }],
+        detectedAt,
+      });
+      continue;
+    }
     if (!isConflictTable(tableName)) {
       await removeConflict(tx, tableName, recordId);
       continue;
@@ -154,10 +235,35 @@ export async function currentConflicts(tx: Tx, deviceId: string): Promise<Confli
   return shown.sort((a, b) => (a.detectedAt < b.detectedAt ? 1 : -1));
 }
 
-export function conflictsRepo(deps: RepoDeps) {
+/**
+ * An entry edited on two devices is settled by deleting the entry not kept, with what was
+ * organized from it, as Delete on an entry does.
+ */
+async function settleEntryEdit(
+  tx: Tx,
+  entries: { softDelete(tx: Tx, id: string): Promise<void> },
+  replaced: string,
+  keep: 'mine' | 'theirs',
+): Promise<boolean> {
+  const [conflict] = await tx
+    .select()
+    .from(syncConflicts)
+    .where(and(eq(syncConflicts.tableName, ENTRY_EDITS), eq(syncConflicts.recordId, replaced)));
+  if (!conflict) return false;
+  const pair = await entryEditPair(tx, conflict.lostRow);
+  if (pair) await entries.softDelete(tx, keep === 'mine' ? pair.theirs.id : pair.mine.id);
+  await removeConflict(tx, ENTRY_EDITS, replaced);
+  return true;
+}
+
+export function conflictsRepo(
+  deps: RepoDeps,
+  entries: { softDelete(tx: Tx, id: string): Promise<void> },
+) {
   return {
     /** Keep this one: this device's version is written again, as a new edit that syncs. */
     async keepMine(tx: Tx, table: ConflictTable, id: string): Promise<void> {
+      if (table === 'raw_logs' && (await settleEntryEdit(tx, entries, id, 'mine'))) return;
       const [conflict] = await tx
         .select()
         .from(syncConflicts)
@@ -171,6 +277,7 @@ export function conflictsRepo(deps: RepoDeps) {
     },
     /** Keep the other: the version that won stays; this one is forgotten. */
     async keepTheirs(tx: Tx, table: ConflictTable, id: string): Promise<void> {
+      if (table === 'raw_logs' && (await settleEntryEdit(tx, entries, id, 'theirs'))) return;
       await removeConflict(tx, table, id);
     },
   };

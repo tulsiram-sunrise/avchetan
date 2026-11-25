@@ -1,8 +1,8 @@
 /**
  * Money spent read straight from the words, for when the model misses it (v0.5.0 test build 2: a
  * small model left "which cost ₹132" out of the activity). Only clear statements count: an amount
- * marked as money (₹132, Rs 500, 640 rupees) or right after paid/spent/cost, in a sentence about
- * paying. Money still to pay, owed or received is not spent.
+ * marked as money (₹132, Rs 500, 640 rupees) or right after paid/spent/cost/gave, in a sentence
+ * about paying. Money still to pay, owed or received is not spent.
  */
 
 const NUMBER = String.raw`(\d{1,3}(?:,\d{2,3})+(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?)`;
@@ -14,13 +14,18 @@ const AMOUNTS = [
   new RegExp(`${BEFORE}${NUMBER}`, 'gu'),
   new RegExp(`${NUMBER}${AFTER}`, 'gu'),
   new RegExp(
-    String.raw`\b(?:paid|spent|cost|costs|costing)\s+(?:(?:about|around|only|me|us|just)\s+)*${NUMBER}(?![\d.,]*\s*${UNIT_WORDS}\b)`,
+    String.raw`\b(?:paid|spent|cost|costs|costing|gave)\s+(?:(?:about|around|only|me|us|just)\s+)*${NUMBER}(?![\d.,]*\s*${UNIT_WORDS}\b)`,
     'gu',
   ),
 ];
 
+/**
+ * Words about paying. "took" and "gave" count too ("the ticket took ₹80, gave ₹2500 to the
+ * tailor", test build 3); an amount still has to be marked as money, or follow paid/spent/
+ * cost/gave, so "took 2 hours" adds nothing.
+ */
 const SPENDING =
-  /\b(?:paid|pay|spent|spend|cost|costs|costing|bought|buy|purchased|purchase|kharch\w*|diye|diya|bill|fees?|fare|recharged?)\b/;
+  /\b(?:paid|pay|spent|spend|cost|costs|costing|bought|buy|purchased|purchase|took|gave|given|kharch\w*|diye|diya|bill|fees?|fare|recharged?)\b/;
 /** Money still to pay, owed, lent or coming in: never "spent". */
 const NOT_SPENT =
   /\b(?:need to|needs to|have to|has to|must|will|going to|gonna|tomorrow|owe|owes|owed|due|later|remind|pending|lend|lent|borrow\w*|loan|got|received|earned|salary|income|refund\w*|cashback|sold|selling)\b/;
@@ -40,20 +45,38 @@ function amountsIn(clause: string): number[] {
   return [...found.values()];
 }
 
+/** The amounts the entry says were paid, and the ones it says are owed, due or coming in. */
+function moneyIn(text: string): { paid: number[]; notPaid: number[] } {
+  const lower = text.toLowerCase();
+  if (!SPENDING.test(lower)) return { paid: [], notPaid: [] };
+  // A comma or period between digits is part of the number (₹1,200, ₹99.50), as is "Rs.".
+  const clauses = lower.split(/[;!?\n]|,(?!\d)|(?<!\brs)\.(?!\d)|\bthen\b|\bbut\b/);
+  const paid: number[] = [];
+  const notPaid: number[] = [];
+  for (const clause of clauses) {
+    (NOT_SPENT.test(clause) ? notPaid : paid).push(...amountsIn(clause));
+  }
+  return { paid, notPaid };
+}
+
 /**
  * The amount spent, when the entry clearly says so; null otherwise. Amounts in a sentence about
  * paying add up ("bought milk ₹60, bread ₹40" is 100); one in a clause about owing or receiving
  * doesn't count.
  */
 export function spentFromWords(text: string): number | null {
-  const lower = text.toLowerCase();
-  if (!SPENDING.test(lower)) return null;
-  // A comma or period between digits is part of the number (₹1,200, ₹99.50), as is "Rs.".
-  const clauses = lower.split(/[;!?\n]|,(?!\d)|(?<!\brs)\.(?!\d)|\bthen\b|\bbut\b/);
-  let total = 0;
-  for (const clause of clauses) {
-    if (NOT_SPENT.test(clause)) continue;
-    for (const amount of amountsIn(clause)) total += amount;
-  }
+  const total = moneyIn(text).paid.reduce((sum, amount) => sum + amount, 0);
   return total > 0 ? Math.round(total * 100) / 100 : null;
+}
+
+/**
+ * Whether a task the model made is only money the entry says was already paid ("₹2500 to the
+ * tailor" turned into "Pay the tailor ₹2500", test build 3). Every amount in the task has to
+ * be one the entry paid, and none of them one it still owes.
+ */
+export function isAlreadyPaid(task: string, entry: string): boolean {
+  const amounts = amountsIn(task.toLowerCase());
+  if (amounts.length === 0) return false;
+  const { paid, notPaid } = moneyIn(entry);
+  return amounts.every((amount) => paid.includes(amount) && !notPaid.includes(amount));
 }

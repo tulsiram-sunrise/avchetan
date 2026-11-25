@@ -29,7 +29,7 @@ import { normalizeTagPath, normalizeTagSegment } from '../normalize/tags';
 import { instantAt } from '../routines/checklist';
 import { checkDate, namesNoDay } from './date-check';
 import type { ChoreChoice, ExtractionVocabulary } from './input';
-import { spentFromWords } from './money-words';
+import { isAlreadyPaid, spentFromWords } from './money-words';
 import type { ExtractionResult } from './schema';
 import { sleepHoursFromWords } from './sleep-words';
 
@@ -122,6 +122,17 @@ export function plannedOccurrence(
 const SLEEP_MARKS: ReadonlySet<string> = new Set<SleepEvent>(['bed', 'wake']);
 
 /**
+ * The mark a title plainly states. The model sometimes marks "Went to bed" as waking up (v0.5.0
+ * test build 3): the title it wrote wins. None when the title names both or neither.
+ */
+function sleepMarkFromTitle(title: string): SleepEvent | null {
+  const bed = /\b(?:went to bed|to bed|fell asleep|went to sleep|bedtime)\b/i.test(title);
+  const wake = /\b(?:woke|wake|waking|got up|awake)\b/i.test(title);
+  if (bed === wake) return null;
+  return bed ? 'bed' : 'wake';
+}
+
+/**
  * When the model gave no sleep hours, code reads them from the words ("from 10 PM to 6 AM") and
  * puts them where pairing would: on the wake-up, else on an activity about waking or sleep, else
  * on going to bed (v0.5.0 test build). Never on an activity the entry doesn't relate to sleep.
@@ -140,15 +151,17 @@ function fillSleepHours(activities: PlannedActivity[], content: string): void {
 }
 
 /**
- * When the model gave no amount spent, code reads it from the words ("which cost ₹132") and puts
- * it on the entry's one activity (v0.5.0 test build 2). With several activities it can't tell
- * which one the money paid for, so it adds none.
+ * When the model gave no amount spent, or less than the words add up to, code reads it from the
+ * words ("which cost ₹132"; "ticket took ₹80 and ₹2500 to the tailor" is 2580) and puts it on the
+ * entry's one activity (v0.5.0 test builds 2 and 3). With several activities it can't tell which
+ * one the money paid for, so it changes none.
  */
 function fillSpent(activities: PlannedActivity[], content: string): void {
   const [only, ...others] = activities;
-  if (!only || others.length > 0 || only.metrics.spent !== undefined) return;
+  if (!only || others.length > 0) return;
   const spent = spentFromWords(content);
-  if (spent !== null) only.metrics.spent = spent;
+  const given = only.metrics.spent;
+  if (spent !== null && (typeof given !== 'number' || given < spent)) only.metrics.spent = spent;
 }
 
 /**
@@ -285,6 +298,8 @@ export function normalizeExtraction(
   const tasks = result.tasks
     .map((item, position) => ({ item, position }))
     .filter(({ item }) => item.title.trim())
+    // Money the entry says was paid isn't still to do (v0.5.0 test build 3).
+    .filter(({ item }) => !isAlreadyPaid(`${item.title} ${item.notes ?? ''}`, rawLog.content ?? ''))
     .slice(0, MAX_ITEMS);
 
   // Dropping items shifts positions, so mentions move to the surviving item's new index.
@@ -347,7 +362,9 @@ export function normalizeExtraction(
     const metrics = foldMetrics(item);
     // The model marks going to bed and waking up; code pairs them into sleep_h (db's sleep.ts).
     const sleep = item.sleep?.trim().toLowerCase();
-    if (sleep && SLEEP_MARKS.has(sleep)) metrics[SLEEP_EVENT_KEY] = sleep;
+    if (sleep && SLEEP_MARKS.has(sleep)) {
+      metrics[SLEEP_EVENT_KEY] = sleepMarkFromTitle(item.title) ?? sleep;
+    }
     return {
       categoryId: categories.resolve(item.category) ?? seedCategoryId('other'),
       title: clean(item.title, MAX_TITLE) as string,

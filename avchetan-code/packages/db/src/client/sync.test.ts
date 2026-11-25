@@ -318,3 +318,25 @@ describe('a hand edit that loses to a pulled row (ADR-0034)', () => {
     expect(await b.conflicts()).toEqual([]);
   });
 });
+
+describe('an entry’s words edited on two devices (test build 2026-11-25)', () => {
+  it('is shown when the other device’s new version arrives', async () => {
+    const { a, b } = await twoDevices();
+    const capture = { source: 'mobile_text', capturedTz: 'UTC' } as const;
+    const entry = await a.store.write((tx) =>
+      a.store.repos.rawLogs.capture(tx, { ...capture, content: 'original' }),
+    );
+    await deliver(a.store, b.store);
+    await b.store.write((tx) =>
+      b.store.repos.rawLogs.replace(tx, entry.id, { ...capture, content: 'from b' }),
+    );
+    await a.store.write((tx) =>
+      a.store.repos.rawLogs.replace(tx, entry.id, { ...capture, content: 'from a' }),
+    );
+    await deliver(a.store, b.store);
+
+    expect(await b.store.conflicts()).toMatchObject([
+      { table: 'raw_logs', id: entry.id, changes: [{ field: 'content', mine: 'from b' }] },
+    ]);
+  });
+});

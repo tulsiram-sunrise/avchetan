@@ -816,4 +816,73 @@ describe('edits made on two devices (ADR-0034)', () => {
 
     expect(await phone.store.conflicts()).toEqual([]);
   });
+
+  describe('an entry’s words (test build 2026-11-25)', () => {
+    const liveEntries = async ({ store }: Device) =>
+      (
+        await store.db.query.rawLogs.findMany({ where: (r, { isNull }) => isNull(r.deletedAt) })
+      ).map((entry) => entry.content);
+
+    async function entryEditedOnBoth() {
+      const phone = await device();
+      const desktop = await device();
+      const entry = await capture(phone, 'buy bread');
+      await converge(phone, desktop);
+      await runWrite(byHand(phone), 'log.editContent', {
+        id: entry.id,
+        content: 'buy bread and eggs',
+      });
+      desktop.advance(5_000);
+      await runWrite(byHand(desktop), 'log.editContent', {
+        id: entry.id,
+        content: 'buy bread and milk',
+      });
+      serverMs += 5_000;
+      await desktop.engine.syncNow();
+      await phone.engine.syncNow();
+      await desktop.engine.syncNow();
+      return { phone, desktop, entry };
+    }
+
+    it('shows both devices the two versions', async () => {
+      const { phone, desktop, entry } = await entryEditedOnBoth();
+
+      expect(await phone.store.conflicts()).toMatchObject([
+        {
+          table: 'raw_logs',
+          id: entry.id,
+          changes: [{ field: 'content', mine: 'buy bread and eggs', theirs: 'buy bread and milk' }],
+        },
+      ]);
+      expect(await desktop.store.conflicts()).toMatchObject([
+        {
+          table: 'raw_logs',
+          id: entry.id,
+          changes: [{ field: 'content', mine: 'buy bread and milk', theirs: 'buy bread and eggs' }],
+        },
+      ]);
+    });
+
+    it('Keep this one deletes the other version everywhere, and the notice goes', async () => {
+      const { phone, desktop, entry } = await entryEditedOnBoth();
+
+      await runWrite(byHand(phone), 'conflict.keepMine', { table: 'raw_logs', id: entry.id });
+      await converge(phone, desktop);
+
+      expect(await liveEntries(phone)).toEqual(['buy bread and eggs']);
+      expect(await liveEntries(desktop)).toEqual(['buy bread and eggs']);
+      expect(await phone.store.conflicts()).toEqual([]);
+      expect(await desktop.store.conflicts()).toEqual([]);
+    });
+
+    it('Keep the other deletes this device’s version', async () => {
+      const { phone, desktop, entry } = await entryEditedOnBoth();
+
+      await runWrite(byHand(phone), 'conflict.keepTheirs', { table: 'raw_logs', id: entry.id });
+      await converge(phone, desktop);
+
+      expect(await liveEntries(desktop)).toEqual(['buy bread and milk']);
+      expect(await desktop.store.conflicts()).toEqual([]);
+    });
+  });
 });
