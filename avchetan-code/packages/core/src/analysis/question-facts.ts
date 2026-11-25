@@ -10,6 +10,9 @@ import { mondayOf } from './compute';
 
 export type QuestionPeriod = { label: string; from: LocalDate; to: LocalDate };
 
+/** Words about sleep: the topic, and what "last night" means. */
+const SLEEP_WORDS = /\b(?:sleep|slept|sleeping|soya|soyi)\b/;
+
 const monthStart = (day: LocalDate): LocalDate => `${day.slice(0, 8)}01` as LocalDate;
 
 /** The period a question names, or null when it names none this understands. */
@@ -19,6 +22,12 @@ export function periodOf(question: string, today: LocalDate): QuestionPeriod | n
   if (lastDays) {
     const days = Math.max(1, Number(lastDays[1]));
     return { label: `the last ${days} days`, from: addDays(today, -(days - 1)), to: today };
+  }
+  if (/\blast night\b/.test(text)) {
+    // Sleep counts on the day you wake (sleep.ts): last night's is today's. Anything else done
+    // last night was yesterday.
+    const day = SLEEP_WORDS.test(text) ? today : addDays(today, -1);
+    return { label: 'last night', from: day, to: day };
   }
   if (/\b(?:today|tonight|aaj)\b/.test(text)) return { label: 'today', from: today, to: today };
   if (/\byesterday\b/.test(text)) {
@@ -46,7 +55,7 @@ export type QuestionTopic = { metric: string; category?: string };
 
 /** What a question counts, in order: the first that fits. */
 const TOPICS: readonly [RegExp, QuestionTopic][] = [
-  [/\b(?:sleep|slept|sleeping|soya|soyi)\b/, { metric: 'sleep_h' }],
+  [SLEEP_WORDS, { metric: 'sleep_h' }],
   [
     /\b(?:spend|spent|spending|expenses?|money|cost|costs|paid|pay|kharch|kharcha)\b/,
     { metric: 'spent' },
@@ -66,7 +75,7 @@ export function topicOf(question: string): QuestionTopic | null {
 
 /** The words of a period: what `periodOf` reads. */
 const PERIOD_WORDS =
-  /\b(?:(?:last|past) \d{1,3} days|today|tonight|aaj|yesterday|this week|last week|this month|last month|this year)\b/g;
+  /\b(?:(?:last|past) \d{1,3} days|last night|today|tonight|aaj|yesterday|this week|last week|this month|last month|this year)\b/g;
 /** Every word `TOPICS` reads. */
 const TOPIC_WORDS = new RegExp(TOPICS.map(([pattern]) => pattern.source).join('|'), 'g');
 /** Words that only make it a question: "how much did I …", "what was my total …". */
