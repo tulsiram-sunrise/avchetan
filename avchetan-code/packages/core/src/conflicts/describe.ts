@@ -22,6 +22,7 @@ const FIELD_LABELS: Record<ConflictField, string> = {
   windowEnd: 'Until',
   pausedAt: 'Paused',
   privacy: 'Private',
+  content: 'Words',
 };
 
 const YES_NO = new Set<ConflictField>(['completedAt', 'cancelledAt', 'pausedAt', 'deletedAt']);

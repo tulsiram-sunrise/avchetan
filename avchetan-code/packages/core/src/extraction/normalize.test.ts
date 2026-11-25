@@ -445,11 +445,15 @@ describe('when an activity happened, and sleep (§9)', () => {
   it('reads the amount spent from the words when the model gave none (test build 2026-11-24)', () => {
     const text = 'I had the field ploughed today for sowing peas, which cost ₹132.';
     expect(at({ title: 'Ploughed the field' }, text)?.metrics).toEqual({ spent: 132 });
-    // The model's own amount stays.
+    // The model's own amount stays unless the words add up to more.
+    expect(
+      at({ title: 'Groceries', metrics: [{ key: 'spent', value: '700' }] }, 'groceries, paid ₹640')
+        ?.metrics,
+    ).toEqual({ spent: 700 });
     expect(
       at({ title: 'Groceries', metrics: [{ key: 'spent', value: '600' }] }, 'groceries, paid ₹640')
         ?.metrics,
-    ).toEqual({ spent: 600 });
+    ).toEqual({ spent: 640 });
     // With two activities, code can't tell which one the money paid for.
     const plan = normalizeExtraction(
       {
@@ -464,9 +468,49 @@ describe('when an activity happened, and sleep (§9)', () => {
     expect(plan.activities.map((a) => a.metrics)).toEqual([{}, {}]);
   });
 
+  it('adds up every amount paid and drops a task for money already paid (test build 2026-11-25)', () => {
+    const text = 'Went to the city by train for a fitting. Ticket took ₹80 and ₹2500 to the tailor';
+    const plan = normalizeExtraction(
+      {
+        ...empty,
+        activities: [
+          { ...activity, title: 'Fitting in the city', metrics: [{ key: 'spent', value: '80' }] },
+        ],
+        tasks: [
+          { ...task, title: 'Pay the tailor ₹2500' },
+          { ...task, title: 'Ask the tailor when it is ready' },
+        ],
+      },
+      withText(text),
+    );
+    expect(plan.activities[0]?.metrics).toEqual({ spent: 2580 });
+    expect(plan.tasks.map((t) => t.title)).toEqual(['Ask the tailor when it is ready']);
+
+    // Money still owed stays a task.
+    const owed = normalizeExtraction(
+      { ...empty, tasks: [{ ...task, title: 'Pay the tailor ₹2500' }] },
+      withText('paid ₹500 advance; ₹2500 balance is due next week'),
+    );
+    expect(owed.tasks.map((t) => t.title)).toEqual(['Pay the tailor ₹2500']);
+  });
+
   it('keeps only bed and wake as the sleep mark', () => {
     expect(at({ sleep: 'Wake' }, 'woke up')?.metrics).toEqual({ sleep_event: 'wake' });
     expect(at({ sleep: 'bed' }, 'sleeping')?.metrics).toEqual({ sleep_event: 'bed' });
     expect(at({ sleep: 'nap' }, 'napped')?.metrics).toEqual({});
+  });
+
+  it('takes the sleep mark the title plainly states (test build 2026-11-25)', () => {
+    const text = 'I slept from 11 PM to 6 AM';
+    expect(at({ title: 'Went to bed', sleep: 'wake' }, text)?.metrics).toMatchObject({
+      sleep_event: 'bed',
+    });
+    expect(at({ title: 'Woke up', sleep: 'bed' }, text)?.metrics).toMatchObject({
+      sleep_event: 'wake',
+    });
+    // A title that names neither keeps the model's mark.
+    expect(at({ title: 'Sleep', sleep: 'wake' }, 'up at 7')?.metrics).toEqual({
+      sleep_event: 'wake',
+    });
   });
 });

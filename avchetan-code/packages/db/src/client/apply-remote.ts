@@ -1,5 +1,12 @@
 import { eq, getTableColumns, inArray } from 'drizzle-orm';
-import { changedFields, isConflictTable, recordConflict, waitingUserEdit } from './conflicts';
+import type { rawLogs } from '../schema/sqlite/tables';
+import {
+  changedFields,
+  isConflictTable,
+  recordConflict,
+  recordEntryEdits,
+  waitingUserEdit,
+} from './conflicts';
 import type { Tx } from './database';
 import { compareVersions } from './lww';
 import { removeOutboxEntry } from './outbox';
@@ -63,6 +70,8 @@ export async function applyRemoteChanges(
     refill?: boolean;
     /** When a hand edit waiting here loses, it is kept as a conflict at this time (ADR-0034). */
     now?: string;
+    /** This device: whose version of an entry edited on two devices is whose. */
+    deviceId?: string;
   } = {},
 ): Promise<ApplyResult> {
   const result: ApplyResult = { applied: 0, skipped: 0 };
@@ -128,6 +137,9 @@ export async function applyRemoteChanges(
     );
     for (const part of chunks([...inserts.values()], perInsert)) {
       await tx.insert(table).values(part as never);
+    }
+    if (options.now && options.deviceId && tableName === 'raw_logs') {
+      await recordEntryEdits(tx, rows as Row<typeof rawLogs>[], options.deviceId, options.now);
     }
   }
   return result;
