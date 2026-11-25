@@ -14,6 +14,9 @@ describe('periodOf', () => {
     ['runs last week', 'last week', '2026-11-16', '2026-11-22'],
     ['spent in the last 7 days', 'the last 7 days', '2026-11-18', '2026-11-24'],
     ['money this year', 'this year', '2026-01-01', '2026-11-24'],
+    // Sleep counts on the day you wake (test build 5); anything else last night was yesterday.
+    ['how long did I sleep last night', 'last night', '2026-11-24', '2026-11-24'],
+    ['what did I spend last night', 'last night', '2026-11-23', '2026-11-23'],
   ])('%s', (question, label, from, to) => {
     expect(periodOf(question, today)).toEqual({ label, from, to });
   });
@@ -48,6 +51,7 @@ describe('isPlainTotalsQuestion', () => {
     'how many hours did I work this week',
     'total spent this year',
     'kitna kharcha this month',
+    'how long did I sleep last night',
   ])('%s: the app answers', (question) => {
     expect(isPlainTotalsQuestion(question)).toBe(true);
   });

@@ -884,5 +884,68 @@ describe('edits made on two devices (ADR-0034)', () => {
       expect(await liveEntries(desktop)).toEqual(['buy bread and milk']);
       expect(await desktop.store.conflicts()).toEqual([]);
     });
+
+    it('shows it when one device edited its version again before syncing', async () => {
+      const phone = await device();
+      const desktop = await device();
+      const entry = await capture(phone, 'buy bread');
+      await converge(phone, desktop);
+      const first = await runWrite(byHand(phone), 'log.editContent', {
+        id: entry.id,
+        content: 'buy bread and eggs',
+      });
+      await runWrite(byHand(phone), 'log.editContent', {
+        id: (first as { id: string }).id,
+        content: 'buy bread, eggs and jam',
+      });
+      desktop.advance(5_000);
+      await runWrite(byHand(desktop), 'log.editContent', {
+        id: entry.id,
+        content: 'buy bread and milk',
+      });
+      serverMs += 5_000;
+      await desktop.engine.syncNow();
+      await phone.engine.syncNow();
+      await desktop.engine.syncNow();
+
+      expect(await phone.store.conflicts()).toMatchObject([
+        {
+          id: entry.id,
+          changes: [{ mine: 'buy bread, eggs and jam', theirs: 'buy bread and milk' }],
+        },
+      ]);
+      expect(await desktop.store.conflicts()).toMatchObject([
+        {
+          id: entry.id,
+          changes: [{ mine: 'buy bread and milk', theirs: 'buy bread, eggs and jam' }],
+        },
+      ]);
+
+      await runWrite(byHand(desktop), 'conflict.keepMine', { table: 'raw_logs', id: entry.id });
+      await converge(phone, desktop);
+      expect(await liveEntries(phone)).toEqual(['buy bread and milk']);
+      expect(await phone.store.conflicts()).toEqual([]);
+    });
+
+    it('shows nothing when one device edited the version the other had synced', async () => {
+      const phone = await device();
+      const desktop = await device();
+      const entry = await capture(phone, 'buy bread');
+      await converge(phone, desktop);
+      const first = await runWrite(byHand(phone), 'log.editContent', {
+        id: entry.id,
+        content: 'buy bread and eggs',
+      });
+      await converge(phone, desktop);
+      await runWrite(byHand(desktop), 'log.editContent', {
+        id: (first as { id: string }).id,
+        content: 'buy bread, eggs and milk',
+      });
+      await converge(desktop, phone);
+
+      expect(await liveEntries(phone)).toEqual(['buy bread, eggs and milk']);
+      expect(await phone.store.conflicts()).toEqual([]);
+      expect(await desktop.store.conflicts()).toEqual([]);
+    });
   });
 });

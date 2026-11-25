@@ -1,4 +1,4 @@
-import { and, eq, isNull, ne, sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { rawLogs, syncConflicts, syncOutbox } from '../schema/sqlite/tables';
 import type { Tx } from './database';
 import { compareVersions } from './lww';
@@ -104,11 +104,58 @@ export async function recordConflict(
     });
 }
 
+/** How far back a chain of edits is followed: far more than anyone edits one entry. */
+const MAX_EDIT_CHAIN = 50;
+
+/** The entries an entry replaced, nearest first: what it replaced, what that replaced, and on. */
+async function replacedChain(tx: Tx, replaced: string): Promise<string[]> {
+  const chain: string[] = [];
+  let next: unknown = replaced;
+  while (typeof next === 'string' && !chain.includes(next) && chain.length < MAX_EDIT_CHAIN) {
+    chain.push(next);
+    const [row] = await tx
+      .select({ context: rawLogs.context })
+      .from(rawLogs)
+      .where(eq(rawLogs.id, next));
+    next = row?.context?.supersedes;
+  }
+  return chain;
+}
+
+/**
+ * This device's live entry among the later versions of `from`, outside the other device's own
+ * line of versions (`lineage`): an edit there is built on the other device's, not beside it.
+ */
+async function myLaterVersion(
+  tx: Tx,
+  from: string,
+  deviceId: string,
+  lineage: ReadonlySet<string>,
+): Promise<string | null> {
+  const queue = [from];
+  const seen = new Set(queue);
+  while (queue.length > 0 && seen.size < MAX_EDIT_CHAIN) {
+    const children = await tx
+      .select({ id: rawLogs.id, deletedAt: rawLogs.deletedAt, origin: rawLogs.originDeviceId })
+      .from(rawLogs)
+      .where(eq(sql`json_extract(${rawLogs.context}, '$.supersedes')`, queue.shift() as string));
+    for (const child of children) {
+      if (lineage.has(child.id) || seen.has(child.id)) continue;
+      if (!child.deletedAt && child.origin === deviceId) return child.id;
+      seen.add(child.id);
+      queue.push(child.id);
+    }
+  }
+  return null;
+}
+
 /**
  * Entries pulled from another device that replace an entry this device had replaced too: kept as
  * an entry edited on two devices. Runs after the pulled rows are written. Whose version is whose
  * comes from the device that wrote it (`originDeviceId`): a pull can bring this device's own
- * version back in the same page as the other one.
+ * version back in the same page as the other one. Either device may have edited its version
+ * again before they synced (v0.5.0 test build 5), so both lines of versions are followed back to
+ * the entry they share; it names the conflict.
  */
 export async function recordEntryEdits(
   tx: Tx,
@@ -121,26 +168,21 @@ export async function recordEntryEdits(
     if (row.deletedAt || row.originDeviceId === deviceId || typeof replaced !== 'string') {
       continue;
     }
-    const [mine] = await tx
-      .select({ id: rawLogs.id })
-      .from(rawLogs)
-      .where(
-        and(
-          isNull(rawLogs.deletedAt),
-          eq(sql`json_extract(${rawLogs.context}, '$.supersedes')`, replaced),
-          eq(rawLogs.originDeviceId, deviceId),
-          ne(rawLogs.id, row.id),
-        ),
-      );
-    if (!mine) continue;
-    const pair: EntryEditPair = { id: mine.id, theirs: row.id };
-    await tx
-      .insert(syncConflicts)
-      .values({ tableName: ENTRY_EDITS, recordId: replaced, lostRow: pair, detectedAt })
-      .onConflictDoUpdate({
-        target: [syncConflicts.tableName, syncConflicts.recordId],
-        set: { lostRow: pair, detectedAt },
-      });
+    const chain = await replacedChain(tx, replaced);
+    const lineage = new Set([row.id, ...chain]);
+    for (const shared of chain) {
+      const mine = await myLaterVersion(tx, shared, deviceId, lineage);
+      if (!mine) continue;
+      const pair: EntryEditPair = { id: mine, theirs: row.id };
+      await tx
+        .insert(syncConflicts)
+        .values({ tableName: ENTRY_EDITS, recordId: shared, lostRow: pair, detectedAt })
+        .onConflictDoUpdate({
+          target: [syncConflicts.tableName, syncConflicts.recordId],
+          set: { lostRow: pair, detectedAt },
+        });
+      break;
+    }
   }
 }
 
