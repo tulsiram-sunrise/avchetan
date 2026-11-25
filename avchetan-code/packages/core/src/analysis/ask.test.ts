@@ -261,23 +261,66 @@ describe('ask: totals worked out by the app (v0.5.0 test build)', () => {
 
   it('says nothing was recorded today, so an older entry is not taken for today', async () => {
     await sleep('2026-10-20', 2);
-    doStream.mockResolvedValueOnce(textStream('No sleep recorded today.'));
 
-    await ask(store, { ...question(groq), question: 'how much i have slept today' }, llm);
+    const result = await ask(
+      store,
+      { ...question(groq), question: 'how much i have slept today' },
+      llm,
+    );
 
-    expect(system()).toContain('sleep, today (2026-10-30): nothing recorded.');
+    expect(result.answer).toBe('Sleep, today (2026-10-30): nothing recorded.');
   });
 
-  it('gives the exact total and its sources for this month', async () => {
+  it('gives the model the exact total, as a lookup already made, when there is more to it', async () => {
     await sleep('2026-10-28', 2);
     await sleep('2026-10-29', 7.5);
-    doStream.mockResolvedValueOnce(textStream('9.5 h.'));
+    doStream.mockResolvedValueOnce(textStream('9.5 h, less than usual.'));
 
-    await ask(store, { ...question(groq), question: 'how much did I sleep this month?' }, llm);
+    await ask(
+      store,
+      { ...question(groq), question: 'did I sleep less than usual this month?' },
+      llm,
+    );
 
     expect(system()).toContain(
       'sleep, this month (2026-10-01 to 2026-10-30): total 9.5 h from 2 activities, average 4.8 h each. Sources: [1] [2].',
     );
+    expect(system()).toContain('"toolName":"aggregate_metrics"');
+    expect(system()).toContain('"result":9.5');
+  });
+
+  it('answers a plain totals question itself, without the model (test build 2026-11-25)', async () => {
+    await sleep('2026-10-28', 2);
+    await sleep('2026-10-29', 7.5);
+    const seen: string[] = [];
+
+    const result = await ask(
+      store,
+      {
+        ...question(groq, (text) => seen.push(text)),
+        question: 'How much I slept this month?',
+      },
+      llm,
+    );
+
+    expect(doStream).not.toHaveBeenCalled();
+    expect(result.answer).toBe(
+      'Sleep, this month (2026-10-01 to 2026-10-30): 9.5 h in total, from 2 activities, 4.8 h on average. [1] [2]',
+    );
+    expect(result.sources).toHaveLength(2);
+    expect(seen.at(-1)).toBe(result.answer);
+    expect(runs).toEqual([]);
+  });
+
+  it('says plainly when nothing was recorded, without the model', async () => {
+    const result = await ask(
+      store,
+      { ...question(groq), question: 'how much did I spend today' },
+      llm,
+    );
+
+    expect(doStream).not.toHaveBeenCalled();
+    expect(result.answer).toBe('Spent, today (2026-10-30): nothing recorded.');
   });
 
   it('adds nothing when the question names no period', async () => {
