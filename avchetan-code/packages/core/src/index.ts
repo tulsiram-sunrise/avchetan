@@ -40,14 +40,13 @@ export {
   entriesSinceBrief,
   findDailyBrief,
   isDailyBrief,
-  isFrictionTag,
   type MakeBriefRequest,
   type MakeBriefResult,
   makeDailyBrief,
-  mayReadPrivate,
   parseBriefNotes,
 } from './analysis/daily-brief';
 export type { Candidate, WeekChange, WeekTotals } from './analysis/patterns';
+export { isFrictionTag, mayReadPrivate } from './analysis/review-rules';
 export type { SearchHistory } from './analysis/tools';
 export {
   bucketTrend,
@@ -156,7 +155,7 @@ export {
 } from './context/clipboard';
 export {
   CONTEXT_PAUSE_MINUTES,
-  CONTEXT_SETTING_KEYS,
+  CONTEXT_SETTINGS,
   loadContextSettings,
   pauseEnd,
   saveContextSettings,
@@ -410,7 +409,7 @@ export {
   SPEECH_LOCALES,
   type SpeechLocale,
   saveVoiceSettings,
-  VOICE_SETTING_KEYS,
+  VOICE_SETTINGS,
   type VoiceSettings,
   voiceSettingsSchema,
   WHISPER_LANGUAGES,

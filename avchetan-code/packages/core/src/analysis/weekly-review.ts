@@ -14,7 +14,6 @@ import { generateStructured, type LlmDeps } from '../llm/generate-structured';
 import { durationText } from '../normalize/day-summary';
 import { buildPrompt, SYSTEM } from '../prompts/weekly-review.v1';
 import type { ModelConfig } from '../providers/config';
-import { isFrictionTag, mayReadPrivate } from './daily-brief';
 import {
   type Candidate,
   compareWeeks,
@@ -27,6 +26,7 @@ import {
   WORST_OF_DAY,
   weekTotals,
 } from './patterns';
+import { isFrictionTag, mayReadPrivate } from './review-rules';
 
 const log = createLogger('weekly-review');
 

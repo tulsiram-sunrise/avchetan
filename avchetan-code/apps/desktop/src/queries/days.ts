@@ -112,7 +112,7 @@ export function useResolvedCategories() {
   });
 }
 
-const overdueOpenQuery = ['settings', OVERDUE_OPEN_SETTING] as const;
+const overdueOpenQuery = ['settings', OVERDUE_OPEN_SETTING.key] as const;
 
 /** Whether today's overdue tasks were left open; closed until opened (one line). */
 export function useOverdueOpen() {
@@ -131,7 +131,7 @@ export function useSetOverdueOpen() {
   });
 }
 
-const dayCoverageOnQuery = ['settings', DAY_COVERAGE_SETTING] as const;
+const dayCoverageOnQuery = ['settings', DAY_COVERAGE_SETTING.key] as const;
 
 /** Whether Days shows day coverage; off until turned on, per device. */
 export function useDayCoverageOn() {

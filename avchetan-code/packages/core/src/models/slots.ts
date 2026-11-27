@@ -1,4 +1,4 @@
-import { type ClientStore, getSetting, setSetting } from '@avchetan/db/sqlite';
+import type { ClientStore } from '@avchetan/db/sqlite';
 import {
   type HttpFetch,
   isOnThisDevice,
@@ -17,12 +17,7 @@ import {
 } from '../providers/config';
 import { apiKeySecretName, createModel, PROVIDER_ADAPTERS } from '../providers/registry';
 
-async function loadSlots(store: ClientStore) {
-  const parsed = modelSlotsSchema.safeParse(
-    (await getSetting(store.db, MODEL_SLOTS_SETTING)) ?? {},
-  );
-  return parsed.success ? parsed.data : modelSlotsSchema.parse({});
-}
+const loadSlots = (store: ClientStore) => MODEL_SLOTS_SETTING.load(store.db);
 
 /**
  * A model's own address (Ollama) gets the user's entries, so plain `http://` is only accepted where
@@ -73,7 +68,7 @@ export async function saveSlotModel(
   const apiKey = draft.apiKey.trim();
   if (apiKey) await secrets.set(apiKeySecretName(config.provider), apiKey);
   const slots = { ...(await loadSlots(store)), [slot]: config };
-  await store.write((tx) => setSetting(tx, MODEL_SLOTS_SETTING, slots, store.clock.now()));
+  await store.write((tx) => MODEL_SLOTS_SETTING.save(tx, slots, store.clock.now()));
 }
 
 export async function hasApiKey(secrets: SecretStore, provider: LlmProvider): Promise<boolean> {

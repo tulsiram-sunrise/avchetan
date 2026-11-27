@@ -40,7 +40,6 @@ export {
 } from './client/export';
 export {
   DAY_COVERAGE_SETTING,
-  getSetting,
   getSyncState,
   insertLlmRun,
   loadDayCoverage,
@@ -50,7 +49,6 @@ export {
   type SyncStateKey,
   saveDayCoverage,
   saveOverdueOpen,
-  setSetting,
   setSyncState,
 } from './client/local';
 export { compareVersions, type RowVersion } from './client/lww';
@@ -155,6 +153,12 @@ export {
   type TaskHit,
 } from './client/search';
 export type { ReadRow, SetAsideRow } from './client/set-aside';
+export {
+  defineSetting,
+  defineSettingGroup,
+  type Setting,
+  type SettingGroup,
+} from './client/settings';
 export { type ClientStore, type OpenClientStoreOptions, openClientStore } from './client/store';
 export {
   getById,

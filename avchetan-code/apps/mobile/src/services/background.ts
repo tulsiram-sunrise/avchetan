@@ -1,5 +1,5 @@
 import { loadExtractionSettings, MAX_ATTEMPTS, someModelAnswers } from '@avchetan/core';
-import { getSetting, setSetting } from '@avchetan/db/sqlite';
+import { defineSetting } from '@avchetan/db/sqlite';
 import { createLogger, toAppError } from '@avchetan/shared';
 import { loadSyncStatus } from '@avchetan/sync';
 import * as BackgroundTask from 'expo-background-task';
@@ -21,17 +21,14 @@ const MINIMUM_INTERVAL_MINUTES = 15;
 /** Fits the time Android allows. Anything left waits for the next run. */
 const MAX_LOGS_PER_RUN = 3;
 /** This phone's wait after an unreachable hub (settings stay on the device). */
-const UNREACHABLE_SETTING = 'background.unreachable';
-
-const unreachableSchema = z.object({
-  tries: z.int().min(1),
-  since: z.string(),
-  until: z.string(),
-});
+const UNREACHABLE_SETTING = defineSetting(
+  'background.unreachable',
+  z.object({ tries: z.int().min(1), since: z.string(), until: z.string() }).nullable(),
+  null,
+);
 
 async function loadUnreachable({ store }: AppServices): Promise<UnreachableState | null> {
-  const parsed = unreachableSchema.safeParse(await getSetting(store.db, UNREACHABLE_SETTING));
-  return parsed.success ? parsed.data : null;
+  return UNREACHABLE_SETTING.load(store.db);
 }
 
 /** Remembers whether the sync just run reached the hub, for the next runs' wait. */
@@ -47,7 +44,7 @@ async function noteSyncOutcome(services: AppServices): Promise<void> {
   const next = unreachableBackoff(previous, outcome, store.clock.now());
   if (next === previous) return;
   if (next) log.info('background sync waits', { tries: next.tries });
-  await store.write((tx) => setSetting(tx, UNREACHABLE_SETTING, next, store.clock.now()));
+  await store.write((tx) => UNREACHABLE_SETTING.save(tx, next, store.clock.now()));
 }
 
 /** Reads only the local database: deciding to skip a run must cost nothing. */

@@ -1,5 +1,4 @@
-import { getSetting } from '@avchetan/db/sqlite';
-import { openTestStore } from '@avchetan/db/testing';
+import { openTestStore, readRawSetting } from '@avchetan/db/testing';
 import { MemorySecretStore } from '@avchetan/shared/testing';
 import { saveConnection } from '@avchetan/sync';
 import { describe, expect, it } from 'vitest';
@@ -11,7 +10,7 @@ describe('needsSetup', () => {
     expect(await needsSetup(store)).toBe(true);
     await finishSetup(store, 'connect');
     expect(await needsSetup(store)).toBe(false);
-    expect(await getSetting(store.db, 'setup.mode')).toBe('connect');
+    expect(await readRawSetting(store, 'setup.mode')).toBe('connect');
   });
 
   it('never shows the welcome screen on a phone that was already in use', async () => {

@@ -3,7 +3,8 @@ import { registerDeviceRequestSchema } from '@avchetan/sync/protocol';
 import { count, eq } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { ApiError } from '../api-error';
-import { type AppDeps, type AppEnv, MAX_DEVICES } from '../app';
+import type { AppDeps, AppEnv } from '../app';
+import { MAX_DEVICES } from '../rate-limit';
 import { readBody } from './read-body';
 
 export function deviceRoutes({ db, clock, maxDevices = MAX_DEVICES }: AppDeps) {

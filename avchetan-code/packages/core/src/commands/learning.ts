@@ -1,4 +1,4 @@
-import { type ClientStore, getSetting, setSetting, type Tx } from '@avchetan/db/sqlite';
+import { type ClientStore, defineSetting, type Tx } from '@avchetan/db/sqlite';
 import { z } from 'zod';
 import { meaningfulWords } from '../normalize/words';
 import type { CommandReading } from './interpret';
@@ -10,16 +10,23 @@ import { COMMAND_NAMES, isCommandName } from './registry';
  * without the AI, and recent readings as prompt examples. Client-local settings: command mode
  * is desktop-only, and these phrases are not log content to sync.
  */
-export const COMMANDS_LEARN_SETTING = 'commands.learn';
-export const COMMANDS_ALIASES_SETTING = 'commands.aliases';
-export const COMMANDS_EXAMPLES_SETTING = 'commands.examples';
-
 export const MAX_COMMAND_EXAMPLES = 20;
 
 const commandName = z.enum(COMMAND_NAMES);
-const aliasesSchema = z.record(z.string(), commandName);
 const exampleSchema = z.object({ input: z.string(), command: commandName, text: z.string() });
 export type LearnedCommandExample = z.infer<typeof exampleSchema>;
+
+export const COMMANDS_LEARN_SETTING = defineSetting('commands.learn', z.boolean(), true);
+export const COMMANDS_ALIASES_SETTING = defineSetting(
+  'commands.aliases',
+  z.record(z.string(), commandName),
+  {},
+);
+export const COMMANDS_EXAMPLES_SETTING = defineSetting(
+  'commands.examples',
+  z.array(exampleSchema),
+  [],
+);
 
 export type CommandLearning = {
   learn: boolean;
@@ -30,18 +37,11 @@ export type CommandLearning = {
 
 export async function loadCommandLearning(store: ClientStore): Promise<CommandLearning> {
   const [learn, aliases, examples] = await Promise.all([
-    getSetting(store.db, COMMANDS_LEARN_SETTING),
-    getSetting(store.db, COMMANDS_ALIASES_SETTING),
-    getSetting(store.db, COMMANDS_EXAMPLES_SETTING),
+    COMMANDS_LEARN_SETTING.load(store.db),
+    COMMANDS_ALIASES_SETTING.load(store.db),
+    COMMANDS_EXAMPLES_SETTING.load(store.db),
   ]);
-  const parsedLearn = z.boolean().safeParse(learn);
-  const parsedAliases = aliasesSchema.safeParse(aliases ?? {});
-  const parsedExamples = z.array(exampleSchema).safeParse(examples ?? []);
-  return {
-    learn: parsedLearn.success ? parsedLearn.data : true,
-    aliases: parsedAliases.success ? parsedAliases.data : {},
-    examples: parsedExamples.success ? parsedExamples.data : [],
-  };
+  return { learn, aliases, examples };
 }
 
 async function save(store: ClientStore, write: (tx: Tx, now: string) => Promise<void>) {
@@ -49,7 +49,7 @@ async function save(store: ClientStore, write: (tx: Tx, now: string) => Promise<
 }
 
 export function saveCommandLearn(store: ClientStore, on: boolean): Promise<void> {
-  return save(store, (tx, now) => setSetting(tx, COMMANDS_LEARN_SETTING, on, now));
+  return save(store, (tx, now) => COMMANDS_LEARN_SETTING.save(tx, on, now));
 }
 
 /**
@@ -81,11 +81,10 @@ export async function learnFromReading(
     ...current.examples.filter((known) => known.input !== example.input),
   ].slice(0, MAX_COMMAND_EXAMPLES);
   await save(store, async (tx, now) => {
-    await setSetting(tx, COMMANDS_EXAMPLES_SETTING, examples, now);
+    await COMMANDS_EXAMPLES_SETTING.save(tx, examples, now);
     if (alias) {
-      await setSetting(
+      await COMMANDS_ALIASES_SETTING.save(
         tx,
-        COMMANDS_ALIASES_SETTING,
         { ...current.aliases, [alias]: reading.command },
         now,
       );
@@ -97,15 +96,14 @@ export async function learnFromReading(
 export async function forgetCommandAlias(store: ClientStore, word: string): Promise<void> {
   const { aliases } = await loadCommandLearning(store);
   const { [word]: _forgotten, ...rest } = aliases;
-  await save(store, (tx, now) => setSetting(tx, COMMANDS_ALIASES_SETTING, rest, now));
+  await save(store, (tx, now) => COMMANDS_ALIASES_SETTING.save(tx, rest, now));
 }
 
 export async function forgetCommandExample(store: ClientStore, input: string): Promise<void> {
   const { examples } = await loadCommandLearning(store);
   await save(store, (tx, now) =>
-    setSetting(
+    COMMANDS_EXAMPLES_SETTING.save(
       tx,
-      COMMANDS_EXAMPLES_SETTING,
       examples.filter((example) => example.input !== input),
       now,
     ),

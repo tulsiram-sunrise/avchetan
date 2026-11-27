@@ -1,7 +1,5 @@
-import { type ClientStore, getSetting, setSetting } from '@avchetan/db/sqlite';
+import { type ClientStore, defineSetting } from '@avchetan/db/sqlite';
 import { z } from 'zod';
-
-const SEE_THROUGH = 'dock.seeThrough';
 
 /**
  * How much of Windows' blurred backdrop shows through the capture box: how opaque the panel
@@ -11,6 +9,7 @@ const SEE_THROUGH = 'dock.seeThrough';
 export const seeThroughSchema = z.enum(['solid', 'light', 'medium', 'strong']);
 export type SeeThrough = z.infer<typeof seeThroughSchema>;
 export const DEFAULT_SEE_THROUGH: SeeThrough = 'medium';
+export const SEE_THROUGH = defineSetting('dock.seeThrough', seeThroughSchema, DEFAULT_SEE_THROUGH);
 
 /** Percent of the surface colour drawn over the backdrop. */
 export const PANEL_OPACITY: Record<SeeThrough, number> = {
@@ -28,12 +27,11 @@ export const SEE_THROUGH_OPTIONS: { value: SeeThrough; label: string }[] = [
 ];
 
 export async function loadSeeThrough(store: ClientStore): Promise<SeeThrough> {
-  const parsed = seeThroughSchema.safeParse(await getSetting(store.db, SEE_THROUGH));
-  return parsed.success ? parsed.data : DEFAULT_SEE_THROUGH;
+  return SEE_THROUGH.load(store.db);
 }
 
 export async function saveSeeThrough(store: ClientStore, seeThrough: SeeThrough): Promise<void> {
-  await store.write((tx) => setSetting(tx, SEE_THROUGH, seeThrough, store.clock.now()));
+  await store.write((tx) => SEE_THROUGH.save(tx, seeThrough, store.clock.now()));
 }
 
 /** The panel's background over the backdrop, as a CSS colour. */

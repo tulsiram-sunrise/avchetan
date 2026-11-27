@@ -1,6 +1,7 @@
-import { type ClientStore, getSetting, setSetting } from '@avchetan/db/sqlite';
+import { type ClientStore, defineSetting } from '@avchetan/db/sqlite';
+import { z } from 'zod';
 
-const INITIALIZED_KEY = 'autostart.initialized';
+const INITIALIZED = defineSetting('autostart.initialized', z.boolean(), false);
 
 /**
  * Development builds share the installed app's start-up entry name ("Avchetan"), so turning
@@ -18,8 +19,8 @@ export async function ensureAutostartDefault(
   store: ClientStore,
   autostart: AutostartControl,
 ): Promise<boolean> {
-  if ((await getSetting(store.db, INITIALIZED_KEY)) === true) return false;
+  if (await INITIALIZED.load(store.db)) return false;
   await autostart.enable();
-  await store.write((tx) => setSetting(tx, INITIALIZED_KEY, true, store.clock.now()));
+  await store.write((tx) => INITIALIZED.save(tx, true, store.clock.now()));
   return true;
 }

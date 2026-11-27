@@ -5,8 +5,9 @@ import type { PairingResponse } from '@avchetan/sync/protocol';
 import { eq } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { ApiError } from '../api-error';
-import { type AppDeps, type AppEnv, isLoopback } from '../app';
+import type { AppDeps, AppEnv } from '../app';
 import { hashToken } from '../auth';
+import { isLoopback } from '../socket-address';
 
 const log = createLogger('auth');
 

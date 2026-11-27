@@ -1,6 +1,8 @@
 import { eq } from 'drizzle-orm';
-import { askHistory, llmRuns, settings, syncState } from '../schema/sqlite/tables';
+import { z } from 'zod';
+import { askHistory, llmRuns, syncState } from '../schema/sqlite/tables';
 import type { ClientDb, Tx } from './database';
+import { defineSetting } from './settings';
 
 /** Keys in `sync_state` (client-local; never synced). */
 export type SyncStateKey =
@@ -44,47 +46,31 @@ export async function setSyncState(tx: Tx, key: SyncStateKey, value: string): Pr
 }
 
 /**
- * Non-secret settings (model slots, hotkey, server URLs). Secrets never go here — they
- * live in the platform SecretStore. Values are validated by their owners (Zod).
- */
-export async function getSetting(db: ClientDb, key: string): Promise<unknown> {
-  const row = await db.select().from(settings).where(eq(settings.key, key)).get();
-  return row?.value;
-}
-
-export async function setSetting(tx: Tx, key: string, value: unknown, now: string): Promise<void> {
-  await tx
-    .insert(settings)
-    .values({ key, value, updatedAt: now })
-    .onConflictDoUpdate({ target: settings.key, set: { value, updatedAt: now } });
-}
-
-/**
  * Whether the overdue tasks on today in Days were left open (finding-and-using-data.md §9).
  * One setting for both windows of the PC, kept per device; closed until opened.
  */
-export const OVERDUE_OPEN_SETTING = 'days.overdueOpen';
+export const OVERDUE_OPEN_SETTING = defineSetting('days.overdueOpen', z.boolean(), false);
 
 export async function loadOverdueOpen(db: ClientDb): Promise<boolean> {
-  return (await getSetting(db, OVERDUE_OPEN_SETTING)) === true;
+  return OVERDUE_OPEN_SETTING.load(db);
 }
 
 export async function saveOverdueOpen(tx: Tx, open: boolean, now: string): Promise<void> {
-  await setSetting(tx, OVERDUE_OPEN_SETTING, open, now);
+  await OVERDUE_OPEN_SETTING.save(tx, open, now);
 }
 
 /**
  * Whether Days shows day coverage (tasks-routines-reminders.md §11). Kept per device, off until
  * turned on.
  */
-export const DAY_COVERAGE_SETTING = 'days.coverage';
+export const DAY_COVERAGE_SETTING = defineSetting('days.coverage', z.boolean(), false);
 
 export async function loadDayCoverage(db: ClientDb): Promise<boolean> {
-  return (await getSetting(db, DAY_COVERAGE_SETTING)) === true;
+  return DAY_COVERAGE_SETTING.load(db);
 }
 
 export async function saveDayCoverage(tx: Tx, on: boolean, now: string): Promise<void> {
-  await setSetting(tx, DAY_COVERAGE_SETTING, on, now);
+  await DAY_COVERAGE_SETTING.save(tx, on, now);
 }
 
 export type NewAskEntry = typeof askHistory.$inferInsert;

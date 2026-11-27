@@ -1,18 +1,20 @@
-import { type ClientStore, getSetting, setSetting } from '@avchetan/db/sqlite';
+import { type ClientStore, defineSetting } from '@avchetan/db/sqlite';
 import { loadServerUrls } from '@avchetan/sync';
+import { z } from 'zod';
 
-const DONE_KEY = 'setup.completed';
+const SETUP_MODES = ['standalone', 'connect'] as const;
+export type SetupMode = (typeof SETUP_MODES)[number];
+
+const DONE = defineSetting('setup.completed', z.boolean(), false);
 /** How this phone was set up; Setup check uses it to know what to test. */
-const MODE_KEY = 'setup.mode';
-
-export type SetupMode = 'standalone' | 'connect';
+const MODE = defineSetting('setup.mode', z.enum(SETUP_MODES).nullable(), null);
 
 /**
  * True on a first run only (docs/conventions/onboarding-and-user-docs.md). A phone that already
  * has entries or a server was set up before the wizard existed: it is marked done.
  */
 export async function needsSetup(store: ClientStore): Promise<boolean> {
-  if ((await getSetting(store.db, DONE_KEY)) === true) return false;
+  if (await DONE.load(store.db)) return false;
   const [anyEntry, urls] = await Promise.all([
     store.db.query.rawLogs.findFirst({ columns: { id: true } }),
     loadServerUrls(store),
@@ -26,7 +28,7 @@ export async function needsSetup(store: ClientStore): Promise<boolean> {
 export async function finishSetup(store: ClientStore, mode: SetupMode | null): Promise<void> {
   const now = store.clock.now();
   await store.write(async (tx) => {
-    await setSetting(tx, DONE_KEY, true, now);
-    if (mode) await setSetting(tx, MODE_KEY, mode, now);
+    await DONE.save(tx, true, now);
+    if (mode) await MODE.save(tx, mode, now);
   });
 }

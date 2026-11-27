@@ -1,20 +1,17 @@
-import { type ClientStore, getSetting, setSetting } from '@avchetan/db/sqlite';
+import { type ClientStore, defineSetting } from '@avchetan/db/sqlite';
 import { createLogger } from '@avchetan/shared';
 import { z } from 'zod';
 
 const log = createLogger('draft');
-const DRAFT_KEY = 'dock.draft';
-const draftSchema = z.string();
+const DRAFT = defineSetting('dock.draft', z.string(), '');
 
 /** The unsent dock text, kept in local settings so it survives hide and restart. */
 export async function loadDraft(store: ClientStore): Promise<string> {
-  const parsed = draftSchema.safeParse(await getSetting(store.db, DRAFT_KEY));
-  if (!parsed.success) return '';
-  return parsed.data;
+  return DRAFT.load(store.db);
 }
 
 export async function saveDraft(store: ClientStore, text: string): Promise<void> {
-  await store.write((tx) => setSetting(tx, DRAFT_KEY, text, store.clock.now()));
+  await store.write((tx) => DRAFT.save(tx, text, store.clock.now()));
 }
 
 /**

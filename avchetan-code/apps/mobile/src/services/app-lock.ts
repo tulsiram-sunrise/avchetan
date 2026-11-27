@@ -1,4 +1,4 @@
-import { type ClientStore, getSetting, setSetting } from '@avchetan/db/sqlite';
+import { type ClientStore, defineSetting } from '@avchetan/db/sqlite';
 import {
   APP_LOCK_SETTING,
   type AppLockSettings,
@@ -8,6 +8,7 @@ import {
   shouldLock,
   type UnlockOutcome,
 } from '@avchetan/shared';
+import { z } from 'zod';
 import { create } from 'zustand';
 
 const log = createLogger('app-lock');
@@ -24,12 +25,19 @@ export type DeviceLock = {
   hidePreview(hide: boolean): Promise<void>;
 };
 
+/** Each field reads on its own, so one unreadable field never turns a lock that is on off. */
+const APP_LOCK = defineSetting(
+  APP_LOCK_SETTING,
+  z.unknown().transform(parseAppLockSettings),
+  DEFAULT_APP_LOCK,
+);
+
 export async function loadAppLock(store: ClientStore): Promise<AppLockSettings> {
-  return parseAppLockSettings(await getSetting(store.db, APP_LOCK_SETTING));
+  return APP_LOCK.load(store.db);
 }
 
 export async function saveAppLock(store: ClientStore, settings: AppLockSettings): Promise<void> {
-  await store.write((tx) => setSetting(tx, APP_LOCK_SETTING, settings, store.clock.now()));
+  await store.write((tx) => APP_LOCK.save(tx, settings, store.clock.now()));
 }
 
 type LockState = {

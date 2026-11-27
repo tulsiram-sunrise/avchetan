@@ -1,5 +1,5 @@
-import { type ClientStore, setSetting } from '@avchetan/db/sqlite';
-import { openTestStore } from '@avchetan/db/testing';
+import type { ClientStore } from '@avchetan/db/sqlite';
+import { openTestStore, readRawSetting, writeRawSetting } from '@avchetan/db/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { findSpeechModel, SPEECH_MODELS } from '../models/presets';
 import {
@@ -32,7 +32,7 @@ describe('voice settings', () => {
 
   it('falls back field by field when a stored value is bad', async () => {
     await saveVoiceSettings(store, { model: 'whisper-base' });
-    await store.write((tx) => setSetting(tx, 'voice.language', 'klingon', store.clock.now()));
+    await writeRawSetting(store, 'voice.language', 'klingon');
     expect(await loadVoiceSettings(store)).toMatchObject({
       model: 'whisper-base',
       language: 'auto',

@@ -60,12 +60,12 @@ Note: the original spec put `server/` at the root; it lives in `apps/` so Turbor
 shared  ←  db  ←  core
               ←  sync
 apps/* → any package        packages/* → never apps/*
-server → shared, db, core, sync/protocol (not the sync client engine)
+server → shared, db, core, sync (the wire schemas, and the sync engine for its own device, ADR-0021)
 ```
 
 - Packages are **platform-free**: no `@tauri-apps/*`, `expo-*`, `react-native`, `node:*`, DOM-only APIs. Platform capabilities enter through **adapter interfaces** defined in the package and implemented in each app (see [patterns/platform-adapters.md](../patterns/platform-adapters.md)).
 - `db` exposes dialect entry points: `@avchetan/db/sqlite` (clients) and `@avchetan/db/pg` (server). Shared repository logic is written against a small driver interface.
-- No circular deps; enforced with a lint rule / `dependency-cruiser` check in CI.
+- **Checked on every `pnpm lint` and in CI:** `tooling/scripts/check-package-imports.ts` fails when a package imports against the arrows above or an app (source, tests, scripts and `package.json`), and Biome's `noImportCycles` fails on an import cycle between files. A type-only import (`import type`) doesn't count as a cycle.
 
 ## Adapters each app provides
 

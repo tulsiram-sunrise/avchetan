@@ -1,18 +1,17 @@
-import { type ClientStore, getSetting, setSetting } from '@avchetan/db/sqlite';
+import { type ClientStore, defineSetting } from '@avchetan/db/sqlite';
 import { type LocalDate, localDate, systemTimeZone, timeZoneSchema } from '@avchetan/shared';
+import { z } from 'zod';
 
-const TIME_ZONE_KEY = 'general.timezone';
+/** Settings values can't be null: an empty string means "follow Windows". */
+const TIME_ZONE = defineSetting('general.timezone', z.union([timeZoneSchema, z.literal('')]), '');
 
 /** The zone the user chose, or null to follow Windows. */
 export async function loadTimeZone(store: ClientStore): Promise<string | null> {
-  const parsed = timeZoneSchema.safeParse(await getSetting(store.db, TIME_ZONE_KEY));
-  return parsed.success ? parsed.data : null;
+  return (await TIME_ZONE.load(store.db)) || null;
 }
 
 export async function saveTimeZone(store: ClientStore, zone: string | null): Promise<void> {
-  // Settings values can't be null: an empty string means "follow Windows".
-  const value = zone === null ? '' : timeZoneSchema.parse(zone);
-  await store.write((tx) => setSetting(tx, TIME_ZONE_KEY, value, store.clock.now()));
+  await store.write((tx) => TIME_ZONE.save(tx, zone ?? '', store.clock.now()));
 }
 
 /**

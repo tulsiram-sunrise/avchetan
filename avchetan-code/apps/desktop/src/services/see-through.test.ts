@@ -1,5 +1,4 @@
-import { setSetting } from '@avchetan/db/sqlite';
-import { openTestStore } from '@avchetan/db/testing';
+import { openTestStore, writeRawSetting } from '@avchetan/db/testing';
 import { describe, expect, it } from 'vitest';
 import { loadSeeThrough, PANEL_OPACITY, panelBackground, saveSeeThrough } from './see-through';
 
@@ -13,7 +12,7 @@ describe('capture box see-through', () => {
 
   it('falls back to medium for a value it does not know', async () => {
     const { store } = await openTestStore();
-    await store.write((tx) => setSetting(tx, 'dock.seeThrough', 'glass', store.clock.now()));
+    await writeRawSetting(store, 'dock.seeThrough', 'glass');
     expect(await loadSeeThrough(store)).toBe('medium');
   });
 

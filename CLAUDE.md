@@ -72,7 +72,7 @@ Requirements: Node ≥ 24, pnpm (pinned via `packageManager`; `corepack enable`)
 |---|---|
 | `pnpm install` | Install workspace deps (also installs lefthook git hooks) |
 | `pnpm check` | lint + typecheck + test — run before every commit |
-| `pnpm lint` / `pnpm lint:fix` | Biome check / autofix (TS, JS, JSON, YAML; Markdown is not formatted) |
+| `pnpm lint` / `pnpm lint:fix` | Biome check / autofix (TS, JS, JSON, YAML; Markdown is not formatted), plus the package import direction check |
 | `pnpm typecheck` | `tsc --noEmit` in every package (Turbo) |
 | `pnpm test` | Vitest in every package (Turbo) |
 | `pnpm --filter @avchetan/<pkg> test -- --watch` | Watch one package's tests |

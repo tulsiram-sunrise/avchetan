@@ -12,3 +12,8 @@ export function socketAddress(c: Context): string | undefined {
   if (!('incoming' in env) && !('server' in env)) return undefined;
   return getConnInfo(c).remote.address;
 }
+
+const LOOPBACK = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
+
+/** Whether a request came from the server's own machine. */
+export const isLoopback = (address: string | undefined) => !!address && LOOPBACK.has(address);

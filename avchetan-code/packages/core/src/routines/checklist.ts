@@ -1,4 +1,4 @@
-import { type ClientStore, getSetting, type RoutineOnDay, setSetting } from '@avchetan/db/sqlite';
+import { type ClientStore, defineSetting, type RoutineOnDay } from '@avchetan/db/sqlite';
 import {
   isValidLocalTime,
   type LocalDate,
@@ -25,8 +25,6 @@ export function openChores(rows: readonly RoutineOnDay[]): RoutineOnDay[] {
   return dayChores(rows).filter((row) => row.day.status === 'open');
 }
 
-/** Kept per device (the settings table isn't synced); only a device that rings uses it. */
-export const CHORE_EVENING_SETTING = 'chores.evening';
 export const DEFAULT_CHORE_EVENING_TIME: LocalTime = '20:00';
 
 export type ChoreEveningSettings = { enabled: boolean; time: LocalTime };
@@ -40,14 +38,20 @@ const choreEveningSchema = z.object({
     .transform((value) => value as LocalTime),
 });
 
-/** On at 20:00 until changed; anything unreadable falls back to that. */
-export function parseChoreEveningSettings(value: unknown): ChoreEveningSettings {
-  const parsed = choreEveningSchema.safeParse(value ?? {});
-  return parsed.success ? parsed.data : { enabled: true, time: DEFAULT_CHORE_EVENING_TIME };
-}
+/**
+ * Kept per device (the settings table isn't synced); only a device that rings uses it. On at
+ * 20:00 until changed; a field that doesn't read falls back on its own.
+ */
+export const CHORE_EVENING_SETTING = defineSetting('chores.evening', choreEveningSchema, {
+  enabled: true,
+  time: DEFAULT_CHORE_EVENING_TIME,
+});
+
+export const parseChoreEveningSettings = (value: unknown): ChoreEveningSettings =>
+  CHORE_EVENING_SETTING.parse(value);
 
 export async function loadChoreEveningSettings(store: ClientStore): Promise<ChoreEveningSettings> {
-  return parseChoreEveningSettings(await getSetting(store.db, CHORE_EVENING_SETTING));
+  return CHORE_EVENING_SETTING.load(store.db);
 }
 
 export async function saveChoreEveningSettings(
@@ -58,7 +62,7 @@ export async function saveChoreEveningSettings(
     throw new TypeError('Expected HH:MM');
   }
   const next = { ...(await loadChoreEveningSettings(store)), ...patch };
-  await store.write((tx) => setSetting(tx, CHORE_EVENING_SETTING, next, store.clock.now()));
+  await store.write((tx) => CHORE_EVENING_SETTING.save(tx, next, store.clock.now()));
   return next;
 }
 
