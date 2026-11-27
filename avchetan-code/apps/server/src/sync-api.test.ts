@@ -376,6 +376,45 @@ describe('push and pull', () => {
   });
 });
 
+describe('who a request and a row come from (today; v0.6.0 Days 4–5 turn these round)', () => {
+  const OTHER = '0192a000-0000-7000-8000-000000000002';
+
+  beforeEach(async () => {
+    await register();
+    await post(
+      '/v1/devices/register',
+      { deviceId: OTHER, name: 'Other', platform: 'android' },
+      { [HEADERS.device]: OTHER },
+    );
+  });
+
+  it('today: one token signs in as any registered device', async () => {
+    const asOther = await app.request('/v1/sync/pull?cursor=0&limit=10', {
+      headers: headers({ [HEADERS.device]: OTHER }),
+    });
+
+    expect(asOther.status).toBe(200);
+  });
+
+  it('today: the hub keeps the updated_by_device a push names, even another device’s', async () => {
+    const row = await clientRow();
+
+    await push([{ table: 'raw_logs', row: { ...row, updatedByDevice: OTHER } }]);
+
+    expect((await pull()).changes[0]?.row).toMatchObject({ updatedByDevice: OTHER });
+  });
+
+  it('today: a later push can change a row’s origin_device_id', async () => {
+    const row = await clientRow();
+    await push([{ table: 'raw_logs', row }]);
+
+    const moved = { ...row, originDeviceId: OTHER, updatedAt: '2026-10-26T10:00:10.000Z' };
+    await push([{ table: 'raw_logs', row: moved }]);
+
+    expect((await pull()).changes[0]?.row).toMatchObject({ originDeviceId: OTHER });
+  });
+});
+
 describe('status', () => {
   const status = () => app.request('/v1/status', { headers: headers() });
 

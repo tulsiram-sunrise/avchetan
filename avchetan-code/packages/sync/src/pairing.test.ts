@@ -45,6 +45,10 @@ describe('pairing links', () => {
     });
   });
 
+  it('today: carries the sync token itself, so anyone who sees the QR can sync (v0.6.0 Day 6)', () => {
+    expect(new URL(link).searchParams.get('token')).toBe(TOKEN);
+  });
+
   it('says so for something that isn’t a pairing code', () => {
     expect(() => parsePairingLink('https://example.org')).toThrow(
       expect.objectContaining({ code: 'invalid_pairing_code' }),
