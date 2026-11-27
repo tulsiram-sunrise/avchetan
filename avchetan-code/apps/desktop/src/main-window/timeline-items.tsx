@@ -94,7 +94,8 @@ export function TaskRow({ task }: { task: Task }) {
   );
 }
 
-export function EntryActions({ rawLog }: { rawLog: RawLog }) {
+/** `kept`: the line saying what Organize again leaves alone (`keptOnReorganize`). */
+export function EntryActions({ rawLog, kept }: { rawLog: RawLog; kept?: string | null }) {
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(rawLog.content);
   const requeue = useAction('log.requeue');
@@ -163,6 +164,7 @@ export function EntryActions({ rawLog }: { rawLog: RawLog }) {
           ) : null}
         </div>
       )}
+      {kept && !editing ? <p>{kept}</p> : null}
       {confirmPrivate && !isPrivate ? (
         <div className="flex flex-col gap-1">
           <p>

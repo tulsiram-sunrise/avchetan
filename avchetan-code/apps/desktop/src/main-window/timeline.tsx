@@ -1,4 +1,4 @@
-import { windowContextOf } from '@avchetan/core';
+import { keptOnReorganize, windowContextOf } from '@avchetan/core';
 import type { Activity, RawLog, Task } from '@avchetan/db/sqlite';
 import { formatTime } from '@avchetan/shared';
 import { useEffect, useRef, useState } from 'react';
@@ -73,7 +73,7 @@ export function TimelineEntry(props: {
         <details className="text-xs text-ink-muted">
           <summary className="cursor-pointer">Options</summary>
           <div className="pt-2">
-            <EntryActions rawLog={rawLog} />
+            <EntryActions rawLog={rawLog} kept={keptOnReorganize({ activities, tasks })} />
           </div>
         </details>
       </div>

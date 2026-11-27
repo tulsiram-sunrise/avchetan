@@ -1,4 +1,10 @@
-import { clipboardOf, exerciseLines, metricsText, windowContextOf } from '@avchetan/core';
+import {
+  clipboardOf,
+  exerciseLines,
+  keptOnReorganize,
+  metricsText,
+  windowContextOf,
+} from '@avchetan/core';
 import type { Activity, RawLog } from '@avchetan/db/sqlite';
 import { describeError, formatDay, formatTime, parseLastError } from '@avchetan/shared';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -144,7 +150,8 @@ function LastError({ rawLog }: { rawLog: RawLog }) {
   );
 }
 
-function EntryActions({ rawLog }: { rawLog: RawLog }) {
+/** `kept`: the line saying what Organize again leaves alone (`keptOnReorganize`). */
+function EntryActions({ rawLog, kept }: { rawLog: RawLog; kept: string | null }) {
   const [text, setText] = useState<string | null>(null);
   const requeue = useRequeueLog();
   const edit = useEditLog();
@@ -210,6 +217,7 @@ function EntryActions({ rawLog }: { rawLog: RawLog }) {
           </View>
         </>
       )}
+      {kept && text === null ? <Text className="text-xs text-inkMuted">{kept}</Text> : null}
       {confirmPrivate && !isPrivate ? (
         <View className="gap-2">
           <Text className="text-sm text-ink">
@@ -281,7 +289,7 @@ export default function LogScreen() {
       <WindowLine context={rawLog.context} />
       <ClipboardText context={rawLog.context} />
       <LastError rawLog={rawLog} />
-      <EntryActions rawLog={rawLog} />
+      <EntryActions rawLog={rawLog} kept={keptOnReorganize({ activities, tasks })} />
       {activities.length > 0 ? (
         <View>
           <Text className="pb-1 text-xs font-semibold uppercase text-inkMuted">Activities</Text>
