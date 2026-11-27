@@ -1,4 +1,4 @@
-import { openTestStore, readRawSetting, writeRawSetting } from '@avchetan/db/testing';
+import { openTestStore, writeRawSetting } from '@avchetan/db/testing';
 import { describe, expect, it } from 'vitest';
 import {
   loadAnalysisMode,

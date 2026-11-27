@@ -11,7 +11,7 @@ import {
   seedCategoryId,
   tasks,
 } from '@avchetan/db/sqlite';
-import { openTestStore, readRawSetting, writeRawSetting } from '@avchetan/db/testing';
+import { openTestStore, readRawSetting } from '@avchetan/db/testing';
 import { derivedId, localDate } from '@avchetan/shared';
 import type { LanguageModel } from 'ai';
 import { MockLanguageModelV4 } from 'ai/test';

@@ -9,12 +9,7 @@ import {
 } from '@avchetan/shared';
 import { MODEL_SLOTS_SETTING } from '../extraction/settings';
 import { testModel } from '../llm/test-model';
-import {
-  type LlmProvider,
-  type ModelConfig,
-  modelConfigSchema,
-  modelSlotsSchema,
-} from '../providers/config';
+import { type LlmProvider, type ModelConfig, modelConfigSchema } from '../providers/config';
 import { apiKeySecretName, createModel, PROVIDER_ADAPTERS } from '../providers/registry';
 
 const loadSlots = (store: ClientStore) => MODEL_SLOTS_SETTING.load(store.db);

@@ -1,4 +1,4 @@
-import { openTestStore, readRawSetting, writeRawSetting } from '@avchetan/db/testing';
+import { openTestStore, writeRawSetting } from '@avchetan/db/testing';
 import { DETAILED_LOG_MS } from '@avchetan/shared';
 import { describe, expect, it } from 'vitest';
 import {

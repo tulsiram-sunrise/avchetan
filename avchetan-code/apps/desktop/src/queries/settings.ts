@@ -2,7 +2,6 @@ import {
   DETAILED_LOG_SETTING,
   LLM_MAY_CREATE_SETTING,
   type LlmMayCreate,
-  llmMayCreateSchema,
   loadDetailedLogUntil,
   loadExtractionMode,
   loadExtractionSettings,

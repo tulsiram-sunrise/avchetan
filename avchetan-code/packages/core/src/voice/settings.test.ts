@@ -1,5 +1,5 @@
 import type { ClientStore } from '@avchetan/db/sqlite';
-import { openTestStore, readRawSetting, writeRawSetting } from '@avchetan/db/testing';
+import { openTestStore, writeRawSetting } from '@avchetan/db/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { findSpeechModel, SPEECH_MODELS } from '../models/presets';
 import {
