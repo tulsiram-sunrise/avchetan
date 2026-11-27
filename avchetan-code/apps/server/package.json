@@ -13,7 +13,8 @@
     "build:sidecar": "node scripts/build-sidecar.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run --passWithNoTests",
-    "coverage": "vitest run --passWithNoTests --coverage --coverage.reporter=text-summary --coverage.include=src/**"
+    "coverage": "vitest run --passWithNoTests --coverage --coverage.reporter=text-summary --coverage.include=src/**",
+    "bench:sync": "tsx scripts/bench-sync.ts"
   },
   "dependencies": {
     "@avchetan/core": "workspace:*",

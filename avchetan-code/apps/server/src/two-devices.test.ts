@@ -159,6 +159,28 @@ async function restartServer(options: { resetDataEpoch: boolean }) {
   serverFetch = (input, init) => Promise.resolve(app.fetch(new Request(input, init)));
 }
 
+describe('what travels (today; v0.6.0 Days 3–6 turn this round)', () => {
+  it('today: every request after the health check carries the sync token itself', async () => {
+    const sent: { path: string; authorization: string | null }[] = [];
+    const watching: HttpFetch = (input, init) => {
+      const path = new globalThis.URL(String(input)).pathname;
+      sent.push({ path, authorization: new Headers(init?.headers).get('authorization') });
+      return serverFetch(input, init);
+    };
+    const phone = await device(watching);
+    await capture(phone, 'an entry');
+
+    await phone.engine.syncNow();
+
+    const signedIn = sent.filter(({ path }) => path !== '/v1/health');
+    expect(signedIn.map(({ path }) => path)).toEqual(
+      expect.arrayContaining(['/v1/devices/register', '/v1/sync/push', '/v1/sync/pull']),
+    );
+    for (const { authorization } of signedIn) expect(authorization).toBe(`Bearer ${TOKEN}`);
+    expect(sent.find(({ path }) => path === '/v1/health')?.authorization).toBeNull();
+  });
+});
+
 describe('a server whose data went back in time', () => {
   it('gets everything again from its devices when its data epoch changes', async () => {
     const desktop = await device();
