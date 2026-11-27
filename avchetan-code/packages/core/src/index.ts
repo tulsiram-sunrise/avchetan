@@ -226,6 +226,7 @@ export {
   loadOpenChores,
   loadVocabulary,
 } from './extraction/input';
+export { keptOnReorganize, type OrganizedItem } from './extraction/kept-edits';
 export {
   LLM_MAY_CREATE_SETTING,
   type LlmMayCreate,

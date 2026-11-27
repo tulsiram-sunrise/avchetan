@@ -92,7 +92,7 @@ An entry's tags show under it on **Days**; tap one to open the tag's page. **Mor
 
 Tap an entry on **Days** to see what was found in it.
 
-- **Organize again:** try again, for example after you choose a better model.
+- **Organize again:** try again, for example after you choose a better model. Activities and tasks you edited or added stay as they are; the line under the buttons says which.
 - **Edit text:** change what you wrote. The entry keeps its original time and is organized again.
 - **Delete entry:** remove it, along with everything found in it.
 - **Edit** under an activity: change its title or pick another category.

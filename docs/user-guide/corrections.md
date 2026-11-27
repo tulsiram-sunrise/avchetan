@@ -16,6 +16,8 @@ Moving a task to another day isn't a fix. Changing only its due date, for exampl
 
 Only fixes to things Avchetan organized count. Activities and tasks you added yourself don't. If you delete a whole entry, or edit its text (which organizes it again from scratch), it stops being an example.
 
+**Organize again** keeps what you changed by hand: an activity or task you edited or added stays as it is, and the entry's **Options** say so (*Organize again keeps what you edited or added (1 activity)*). To change one of those, change it by hand.
+
 A fix you make on your phone also teaches your PC and your hub, once they sync.
 
 ## Fix an entry
