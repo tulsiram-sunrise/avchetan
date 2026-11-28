@@ -34,8 +34,9 @@
 ## Formatting & lint
 
 - **Biome** for TS/JS/JSON/YAML formatting and linting ([ADR-0013](../decisions/0013-biome-for-lint-and-format.md)): 2-space indent, single quotes, semicolons, trailing commas, line width 100. Markdown, `pnpm-lock.yaml` and generated migrations are excluded.
-- Package boundaries are enforced by Biome's `noRestrictedImports` on `packages/**/src` (no `node:*`, `@tauri-apps/*`, `expo*`, `react-native*`, or app imports; tests are exempt).
+- Package boundaries are enforced by Biome's `noRestrictedImports` on `packages/**/src` (no `node:*`, `@tauri-apps/*`, `expo*`, `react-native*`, or app imports; tests are exempt). The direction between packages (`shared ← db ← {core, sync}`, tests included) is checked by `pnpm lint` (`tooling/scripts/check-package-imports.ts`), and import cycles by Biome's `noImportCycles`.
 - Import order: node/builtins, external, `@avchetan/*`, relative — Biome organizes imports.
+- Settings: declare each one with `defineSetting(key, schema, default)` from `@avchetan/db/sqlite` and use its `load` and `save`; there is no other way to read the `settings` table from app code. Tests that need a value the schema refuses use `writeRawSetting` from `@avchetan/db/testing`.
 - `pnpm lint` and `pnpm typecheck` must pass before commit (enforced by a pre-commit hook via `lefthook`, and CI).
 
 ## Dependencies

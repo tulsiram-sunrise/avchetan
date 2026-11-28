@@ -1,4 +1,4 @@
-import { type ClientStore, getSetting, setSetting } from '@avchetan/db/sqlite';
+import { type ClientStore, defineSetting, defineSettingGroup } from '@avchetan/db/sqlite';
 import { z } from 'zod';
 
 /**
@@ -33,42 +33,26 @@ export const DEFAULT_VOICE_SETTINGS: VoiceSettings = {
   locale: 'mixed',
 };
 
-export const VOICE_SETTING_KEYS = {
-  model: 'voice.model',
-  language: 'voice.language',
-  device: 'voice.device',
-  locale: 'voice.locale',
-} as const satisfies Record<keyof VoiceSettings, string>;
+const { shape } = voiceSettingsSchema;
+const D = DEFAULT_VOICE_SETTINGS;
 
-export async function loadVoiceSettings(store: ClientStore): Promise<VoiceSettings> {
-  const keys = Object.keys(VOICE_SETTING_KEYS) as (keyof VoiceSettings)[];
-  const values = await Promise.all(
-    keys.map((key) => getSetting(store.db, VOICE_SETTING_KEYS[key])),
-  );
-  const settings = { ...DEFAULT_VOICE_SETTINGS };
-  keys.forEach((key, index) => {
-    const parsed = voiceSettingsSchema.shape[key].safeParse(values[index]);
-    // Each field falls back on its own, so one bad value doesn't reset the rest.
-    if (parsed.success) Object.assign(settings, { [key]: parsed.data });
-  });
-  return settings;
+/** One setting per field, so one bad value doesn't reset the rest. */
+export const VOICE_SETTINGS = defineSettingGroup<VoiceSettings>({
+  model: defineSetting('voice.model', shape.model, D.model),
+  language: defineSetting('voice.language', shape.language, D.language),
+  device: defineSetting('voice.device', shape.device, D.device),
+  locale: defineSetting('voice.locale', shape.locale, D.locale),
+});
+
+export function loadVoiceSettings(store: ClientStore): Promise<VoiceSettings> {
+  return VOICE_SETTINGS.load(store.db);
 }
 
 export async function saveVoiceSettings(
   store: ClientStore,
   changes: Partial<VoiceSettings>,
 ): Promise<void> {
-  await store.write(async (tx) => {
-    const now = store.clock.now();
-    for (const [key, value] of Object.entries(changes) as [keyof VoiceSettings, unknown][]) {
-      await setSetting(
-        tx,
-        VOICE_SETTING_KEYS[key],
-        voiceSettingsSchema.shape[key].parse(value),
-        now,
-      );
-    }
-  });
+  await store.write((tx) => VOICE_SETTINGS.save(tx, changes, store.clock.now()));
 }
 
 /**

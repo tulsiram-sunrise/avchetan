@@ -5,9 +5,10 @@ import {
   type DeviceDeps,
   findDailyBrief,
 } from '@avchetan/core';
-import { type ClientStore, getSetting, setSetting } from '@avchetan/db/sqlite';
+import { type ClientStore, defineSetting } from '@avchetan/db/sqlite';
 import { addDays, createLogger, type LocalDate, localDate, toAppError } from '@avchetan/shared';
 import type { SyncEngine } from '@avchetan/sync';
+import { z } from 'zod';
 import { emitAppEvent } from '../native/events';
 import type { Platform } from '../platform';
 import { announce } from './extraction';
@@ -15,10 +16,10 @@ import { announce } from './extraction';
 const log = createLogger('brief');
 
 /** The newest day a notification was shown for, so each brief notifies once. */
-const BRIEF_NOTIFIED_SETTING = 'brief.notified';
+const BRIEF_NOTIFIED = defineSetting('brief.notified', z.string(), '');
 
-async function saveSetting(store: ClientStore, key: string, value: unknown): Promise<void> {
-  await store.write((tx) => setSetting(tx, key, value, store.clock.now()));
+async function saveNotified(store: ClientStore, day: LocalDate): Promise<void> {
+  await store.write((tx) => BRIEF_NOTIFIED.save(tx, day, store.clock.now()));
 }
 
 export type BriefService = BriefRunner & {
@@ -50,9 +51,8 @@ export function createBriefService(deps: {
   }
 
   async function notify(day: LocalDate): Promise<void> {
-    const notified = await getSetting(store.db, BRIEF_NOTIFIED_SETTING);
-    if (typeof notified === 'string' && notified >= day) return;
-    await saveSetting(store, BRIEF_NOTIFIED_SETTING, day);
+    if ((await BRIEF_NOTIFIED.load(store.db)) >= day) return;
+    await saveNotified(store, day);
     try {
       await platform.shell.notifyBrief(day);
     } catch (error) {
@@ -74,7 +74,7 @@ export function createBriefService(deps: {
     ...runner,
     // Asked for in Days: the person is looking at it, so no notification.
     makeNow: async (day) => {
-      await saveSetting(store, BRIEF_NOTIFIED_SETTING, day);
+      await saveNotified(store, day);
       return make(day, true);
     },
     async checkReceived() {

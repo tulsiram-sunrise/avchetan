@@ -1,5 +1,4 @@
-import { setSetting } from '@avchetan/db/sqlite';
-import { openTestStore } from '@avchetan/db/testing';
+import { openTestStore, writeRawSetting } from '@avchetan/db/testing';
 import { DETAILED_LOG_MS } from '@avchetan/shared';
 import { describe, expect, it } from 'vitest';
 import {
@@ -35,9 +34,7 @@ describe('the detailed log setting', () => {
 describe('an hour that has passed', () => {
   it('reads as off', async () => {
     const { store } = await openTestStore();
-    await store.write((tx) =>
-      setSetting(tx, DETAILED_LOG_SETTING, '2000-01-01T00:00:00.000Z', store.clock.now()),
-    );
+    await writeRawSetting(store, DETAILED_LOG_SETTING.key, '2000-01-01T00:00:00.000Z');
 
     expect(await loadDetailedLogUntil(store)).toBeNull();
   });

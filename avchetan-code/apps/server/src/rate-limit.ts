@@ -15,6 +15,9 @@ export const MAX_PULLS = 600;
  */
 export const MAX_FROM_ADDRESS = 1_500;
 
+/** Devices a server accepts, so a leaked token can't register thousands. */
+export const MAX_DEVICES = 50;
+
 export type RateLimiter = {
   /** Seconds to wait, or null when the request may go ahead. */
   (key: string): number | null;

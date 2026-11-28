@@ -4,8 +4,14 @@
  */
 import { DatabaseSync } from 'node:sqlite';
 import { createSequentialIds } from '@avchetan/shared/testing';
+import { eq } from 'drizzle-orm';
 import type { SqliteExecutor } from '../src/client/database';
-import { type OpenClientStoreOptions, openClientStore } from '../src/client/store';
+import {
+  type ClientStore,
+  type OpenClientStoreOptions,
+  openClientStore,
+} from '../src/client/store';
+import { settings } from '../src/schema/sqlite/tables';
 
 /** SqliteExecutor over an in-memory (or file) node:sqlite database. */
 export function createNodeSqliteExecutor(path = ':memory:') {
@@ -46,4 +52,22 @@ export async function openTestStore(options: TestStoreOptions = {}) {
       wallMs += ms;
     },
   };
+}
+
+/**
+ * Stores a setting's value as it is, past its schema, and reads one back raw: for tests of what a
+ * device does with a value an older or broken build left behind.
+ */
+export async function writeRawSetting(store: ClientStore, key: string, value: unknown) {
+  await store.write((tx) =>
+    tx
+      .insert(settings)
+      .values({ key, value, updatedAt: store.clock.now() })
+      .onConflictDoUpdate({ target: settings.key, set: { value } }),
+  );
+}
+
+export async function readRawSetting(store: ClientStore, key: string): Promise<unknown> {
+  const row = await store.db.select().from(settings).where(eq(settings.key, key)).get();
+  return row?.value;
 }

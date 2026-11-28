@@ -19,10 +19,10 @@ import {
   dailyBriefId,
   entriesSinceBrief,
   findDailyBrief,
-  isFrictionTag,
   makeDailyBrief,
   parseBriefNotes,
 } from './daily-brief';
+import { isFrictionTag } from './review-rules';
 
 const DAY = '2026-10-26';
 const TZ = 'UTC';

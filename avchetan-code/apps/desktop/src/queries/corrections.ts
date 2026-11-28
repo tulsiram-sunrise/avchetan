@@ -23,7 +23,7 @@ export function useLearnedEntries() {
 }
 
 /** Read by the dock before each entry it organizes, so no announcement is needed. */
-const learnQuery = ['settings', LEARN_FROM_CORRECTIONS_SETTING] as const;
+const learnQuery = ['settings', LEARN_FROM_CORRECTIONS_SETTING.key] as const;
 
 export function useLearnFromCorrections() {
   const { store } = useServices();

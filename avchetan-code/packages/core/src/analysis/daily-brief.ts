@@ -21,7 +21,7 @@ import { generateStructured, type LlmDeps } from '../llm/generate-structured';
 import { dayCategories } from '../normalize/day-summary';
 import { type BriefFacts, buildPrompt, SYSTEM } from '../prompts/daily-brief.v3';
 import type { ModelConfig } from '../providers/config';
-import { PROVIDER_ADAPTERS } from '../providers/registry';
+import { isFrictionTag, mayReadPrivate } from './review-rules';
 import { isSunday, makeWeeklyReview } from './weekly-review';
 
 const log = createLogger('daily-brief');
@@ -38,14 +38,6 @@ const MAX_ENTRIES = 60;
 const MAX_ENTRY_CHARS = 400;
 const MAX_TITLES_PER_CATEGORY = 6;
 const MAX_TAGS = 20;
-
-/** Tag words that mean pain, tiredness or a blocker. */
-const FRICTION_WORDS =
-  /(^|[-/])(pain|ache|aches|hurt|sore|injury|injured|fatigue|tired|exhausted|low-energy|stress|stressed|anxiety|anxious|blocked|blocker|stuck|sick|ill|headache|migraine|insomnia|burnout)($|[-/])/;
-
-export function isFrictionTag(path: string): boolean {
-  return path.startsWith('health/') || FRICTION_WORDS.test(path);
-}
 
 export const briefTextSchema = z.object({
   wentWell: z.string().min(1).max(400),
@@ -105,14 +97,6 @@ export function entriesSinceBrief(
 
 export function findDailyBrief(store: ClientStore, day: LocalDate): Promise<Activity | undefined> {
   return store.queries.activityById(store.db, dailyBriefId(day));
-}
-
-/**
- * Private entries reach a model only when it runs where the data is (the line Ask draws), and
- * every model the brief may fall back to must qualify.
- */
-export function mayReadPrivate(models: readonly ModelConfig[]): boolean {
-  return models.length > 0 && models.every((model) => PROVIDER_ADAPTERS[model.provider].local);
 }
 
 /** Everything the model is told about a day, counted here; null when the day has no entries. */

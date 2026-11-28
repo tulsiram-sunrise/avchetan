@@ -1,4 +1,4 @@
-import { type ClientStore, getSetting, setSetting, type Task } from '@avchetan/db/sqlite';
+import { type ClientStore, defineSetting, type Task } from '@avchetan/db/sqlite';
 import {
   addDays,
   formatDueDate,
@@ -21,16 +21,15 @@ import { instantAt } from './checklist';
  */
 
 /** *Ring for reminders on this device*: kept per device (the settings table isn't synced). */
-export const RING_SETTING = 'reminders.ring';
+export const RING_SETTING = defineSetting('reminders.ring', z.boolean().nullable(), null);
 
 /** Unset, a device follows its kind: the phone rings, the PC doesn't (R25). */
 export async function loadRingSetting(store: ClientStore, byDefault: boolean): Promise<boolean> {
-  const parsed = z.boolean().safeParse(await getSetting(store.db, RING_SETTING));
-  return parsed.success ? parsed.data : byDefault;
+  return (await RING_SETTING.load(store.db)) ?? byDefault;
 }
 
 export async function saveRingSetting(store: ClientStore, on: boolean): Promise<void> {
-  await store.write((tx) => setSetting(tx, RING_SETTING, on, store.clock.now()));
+  await store.write((tx) => RING_SETTING.save(tx, on, store.clock.now()));
 }
 
 /** How many reminders ahead the phone hands to Android at once; the rest wait for a reschedule. */

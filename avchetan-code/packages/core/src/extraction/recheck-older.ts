@@ -1,11 +1,12 @@
-import { type ClientStore, getSetting, setSetting } from '@avchetan/db/sqlite';
+import { type ClientStore, defineSetting } from '@avchetan/db/sqlite';
 import { createLogger } from '@avchetan/shared';
+import { z } from 'zod';
 import { EXTRACTION_PROMPT_VERSION } from './extract';
 
 const log = createLogger('extraction');
 
 /** The prompt version this device last organized older entries again for (local, not synced). */
-export const RECHECK_SETTING = 'extraction.recheckOlder';
+export const RECHECK_SETTING = defineSetting('extraction.recheckOlder', z.number().int(), 0);
 
 /**
  * Words that mark an entry v0.5.0 reads better: an amount spent (prompt 9) or sleep times (code
@@ -39,15 +40,14 @@ const RECHECK_WORDS = [
  * the same entries twice; their items have derived IDs and converge. Returns how many were queued.
  */
 export async function recheckOlderEntriesOnce(store: ClientStore): Promise<number> {
-  const done = await getSetting(store.db, RECHECK_SETTING);
-  if (typeof done === 'number' && done >= EXTRACTION_PROMPT_VERSION) return 0;
+  if ((await RECHECK_SETTING.load(store.db)) >= EXTRACTION_PROMPT_VERSION) return 0;
   const ids = await store.queries.olderEntriesMentioning(store.db, {
     version: EXTRACTION_PROMPT_VERSION,
     words: RECHECK_WORDS,
   });
   await store.write(async (tx) => {
     for (const id of ids) await store.repos.rawLogs.requeue(tx, id);
-    await setSetting(tx, RECHECK_SETTING, EXTRACTION_PROMPT_VERSION, store.clock.now());
+    await RECHECK_SETTING.save(tx, EXTRACTION_PROMPT_VERSION, store.clock.now());
   });
   if (ids.length > 0) log.info('older entries queued to organize again', { count: ids.length });
   return ids.length;

@@ -1,22 +1,31 @@
-import { type ClientStore, getSetting, setSetting } from '@avchetan/db/sqlite';
+import { type ClientStore, defineSetting } from '@avchetan/db/sqlite';
 import {
   APP_LOCK_SETTING,
   type AppLockSettings,
   createLogger,
+  DEFAULT_APP_LOCK,
   parseAppLockSettings,
   type UnlockOutcome,
 } from '@avchetan/shared';
+import { z } from 'zod';
 import type { Lock } from '../native/lock';
 
 const log = createLogger('app-lock');
 
+/** Each field reads on its own, so one unreadable field never turns a lock that is on off. */
+const APP_LOCK = defineSetting(
+  APP_LOCK_SETTING,
+  z.unknown().transform(parseAppLockSettings),
+  DEFAULT_APP_LOCK,
+);
+
 /** The app lock setting (docs/product/app-lock.md). Client-local, never synced. */
 export async function loadAppLock(store: ClientStore): Promise<AppLockSettings> {
-  return parseAppLockSettings(await getSetting(store.db, APP_LOCK_SETTING));
+  return APP_LOCK.load(store.db);
 }
 
 export async function saveAppLock(store: ClientStore, settings: AppLockSettings): Promise<void> {
-  await store.write((tx) => setSetting(tx, APP_LOCK_SETTING, settings, store.clock.now()));
+  await store.write((tx) => APP_LOCK.save(tx, settings, store.clock.now()));
 }
 
 /** The dock passes the saved setting to Rust at start, before either window shows anything. */

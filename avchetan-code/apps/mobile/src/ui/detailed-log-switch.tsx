@@ -11,7 +11,7 @@ import { detailedLog } from '../platform/app-log';
 import { useServices } from '../services-context';
 import { Button, HelpLink } from './parts';
 
-const detailedLogQuery = ['settings', DETAILED_LOG_SETTING] as const;
+const detailedLogQuery = ['settings', DETAILED_LOG_SETTING.key] as const;
 
 /**
  * *Detailed log for 1 hour*: each request, sync step and entry organized, still never what was

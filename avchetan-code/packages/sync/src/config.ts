@@ -1,6 +1,5 @@
-import { type ClientStore, getSetting, setSetting, setSyncState } from '@avchetan/db/sqlite';
+import { type ClientStore, defineSetting, setSyncState } from '@avchetan/db/sqlite';
 import {
-  createLogger,
   isOnThisDevice,
   isPrivateNetwork,
   isTailscale,
@@ -10,18 +9,14 @@ import {
 } from '@avchetan/shared';
 import { z } from 'zod';
 
-const log = createLogger('sync');
-
-const SERVER_URLS_SETTING = 'sync.serverUrls';
 export const SYNC_TOKEN_SECRET: SecretName = 'sync:token';
 
 const serverUrlsSchema = z.array(z.url());
+const SERVER_URLS_SETTING = defineSetting('sync.serverUrls', serverUrlsSchema, []);
 
 /** Addresses of one server, tried in order: home network first, then Tailscale. */
 export async function loadServerUrls(store: ClientStore): Promise<string[]> {
-  const urls = serverUrlsSchema.safeParse((await getSetting(store.db, SERVER_URLS_SETTING)) ?? []);
-  if (!urls.success) log.warn('invalid server urls setting', { issues: urls.error.issues.length });
-  return urls.success ? urls.data : [];
+  return SERVER_URLS_SETTING.load(store.db);
 }
 
 /**
@@ -72,7 +67,7 @@ export async function saveConnection(
   for (const url of cleaned) assertSafeServerUrl(url, trustLocalNetwork);
   if (token) await secrets.set(SYNC_TOKEN_SECRET, token.trim());
   await store.write(async (tx) => {
-    await setSetting(tx, SERVER_URLS_SETTING, cleaned, store.clock.now());
+    await SERVER_URLS_SETTING.save(tx, cleaned, store.clock.now());
     await setSyncState(tx, 'expected_server_id', serverId ?? '');
   });
 }
@@ -82,7 +77,7 @@ export async function removeConnection(
   secrets: Pick<SecretStore, 'delete'>,
 ): Promise<void> {
   await store.write(async (tx) => {
-    await setSetting(tx, SERVER_URLS_SETTING, [], store.clock.now());
+    await SERVER_URLS_SETTING.save(tx, [], store.clock.now());
     await setSyncState(tx, 'expected_server_id', '');
   });
   await secrets.delete(SYNC_TOKEN_SECRET);

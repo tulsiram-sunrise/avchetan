@@ -1,19 +1,16 @@
 import { loadContextSettings, saveContextSettings } from '@avchetan/core';
-import { type ClientStore, getSetting, setSetting } from '@avchetan/db/sqlite';
+import { type ClientStore, defineSetting } from '@avchetan/db/sqlite';
 import { z } from 'zod';
 import type { HotkeyStatus, Shell } from '../native/shell';
 
-const HOTKEY_KEY = 'dock.hotkey';
+/** Empty until the user picks their own shortcut. */
+const HOTKEY = defineSetting('dock.hotkey', z.string(), '');
 /** Must match DEFAULT_SHORTCUT in src-tauri/src/hotkey.rs. */
 export const DEFAULT_HOTKEY = 'Ctrl+Shift+Space';
 
 /** The user's chosen shortcut, if they changed it. */
 export async function savedHotkey(store: ClientStore): Promise<string | undefined> {
-  const parsed = z
-    .string()
-    .min(1)
-    .safeParse(await getSetting(store.db, HOTKEY_KEY));
-  return parsed.success ? parsed.data : undefined;
+  return (await HOTKEY.load(store.db)) || undefined;
 }
 
 /** Registers `shortcut`; it is saved only if registration succeeded. */
@@ -24,24 +21,20 @@ export async function changeHotkey(
 ): Promise<HotkeyStatus> {
   const status = await shell.setHotkey(shortcut);
   if (status.registered) {
-    await store.write((tx) => setSetting(tx, HOTKEY_KEY, status.shortcut, store.clock.now()));
+    await store.write((tx) => HOTKEY.save(tx, status.shortcut, store.clock.now()));
   }
   return status;
 }
 
 // ---------------------------------------------------------------------- clipboard snap
 
-const SNAP_HOTKEY_KEY = 'dock.snap_hotkey';
+const SNAP_HOTKEY = defineSetting('dock.snap_hotkey', z.string(), '');
 /** Clipboard snap's default (docs/product/clipboard-snap.md#the-shortcut). */
 export const DEFAULT_SNAP_HOTKEY = 'Ctrl+Shift+Alt+Space';
 
 /** The clipboard shortcut the user chose, or the default. */
 export async function savedSnapHotkey(store: ClientStore): Promise<string> {
-  const parsed = z
-    .string()
-    .min(1)
-    .safeParse(await getSetting(store.db, SNAP_HOTKEY_KEY));
-  return parsed.success ? parsed.data : DEFAULT_SNAP_HOTKEY;
+  return (await SNAP_HOTKEY.load(store.db)) || DEFAULT_SNAP_HOTKEY;
 }
 
 /** The same keys, whatever their order or case: `ctrl+alt+k` and `Alt+Ctrl+K`. */
@@ -77,7 +70,7 @@ export async function changeSnapHotkey(
   }
   const status = await shell.setSnapHotkey(shortcut);
   if (status.registered) {
-    await store.write((tx) => setSetting(tx, SNAP_HOTKEY_KEY, status.shortcut, store.clock.now()));
+    await store.write((tx) => SNAP_HOTKEY.save(tx, status.shortcut, store.clock.now()));
   }
   return status;
 }

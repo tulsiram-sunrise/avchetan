@@ -77,13 +77,6 @@ export type AppDeps = {
 
 /** Every request body but a push: questions, commands, searches and registrations are small. */
 export const MAX_REQUEST_BYTES = 64 * 1024;
-export const MAX_DEVICES = 50;
-
-const LOOPBACK = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
-
-/** Whether a request came from the server's own machine. */
-export const isLoopback = (address: string | undefined) => !!address && LOOPBACK.has(address);
-
 export type AppEnv = { Variables: { requestId: string; deviceId: string; internal: boolean } };
 
 function errorBody(

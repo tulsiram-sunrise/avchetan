@@ -5,14 +5,13 @@ import {
   categories,
   entityMentions,
   entityTags,
-  getSetting,
   NEW_CATEGORY,
   type RawLog,
   rawLogs,
   seedCategoryId,
   tasks,
 } from '@avchetan/db/sqlite';
-import { openTestStore } from '@avchetan/db/testing';
+import { openTestStore, readRawSetting } from '@avchetan/db/testing';
 import { derivedId, localDate } from '@avchetan/shared';
 import type { LanguageModel } from 'ai';
 import { MockLanguageModelV4 } from 'ai/test';
@@ -299,7 +298,7 @@ describe('processRawLog', () => {
       await extract(log, { ...emptyResult, activities: [sitar], newCategory: proposal }, 'suggest');
 
       expect(await liveActivities()).toMatchObject([{ categoryId: seedCategoryId('other') }]);
-      expect(await getSetting(store.db, CATEGORY_SUGGESTIONS_SETTING)).toEqual([proposal]);
+      expect(await readRawSetting(store, CATEGORY_SUGGESTIONS_SETTING.key)).toEqual([proposal]);
     });
 
     it('ignores the proposal when set to off', async () => {
@@ -307,7 +306,7 @@ describe('processRawLog', () => {
       await extract(log, { ...emptyResult, activities: [sitar], newCategory: proposal }, 'off');
 
       expect(await liveActivities()).toMatchObject([{ categoryId: seedCategoryId('other') }]);
-      expect(await getSetting(store.db, CATEGORY_SUGGESTIONS_SETTING)).toBeUndefined();
+      expect(await readRawSetting(store, CATEGORY_SUGGESTIONS_SETTING.key)).toBeUndefined();
     });
 
     it('never stores the placeholder ID', async () => {

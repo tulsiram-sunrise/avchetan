@@ -1,4 +1,4 @@
-import { type ClientStore, getSetting, setSetting } from '@avchetan/db/sqlite';
+import { type ClientStore, defineSetting } from '@avchetan/db/sqlite';
 import {
   addDays,
   addMs,
@@ -18,36 +18,31 @@ import { findDailyBrief } from './daily-brief';
 
 const log = createLogger('daily-brief');
 
-export const BRIEF_ENABLED_SETTING = 'brief.enabled';
-export const BRIEF_TIME_SETTING = 'brief.time';
 export const DEFAULT_BRIEF_TIME: LocalTime = '21:00';
 
 export const localTimeSchema = z.string().refine(isValidLocalTime, 'Expected HH:MM');
+
+export const BRIEF_ENABLED_SETTING = defineSetting('brief.enabled', z.boolean(), true);
+export const BRIEF_TIME_SETTING = defineSetting('brief.time', localTimeSchema, DEFAULT_BRIEF_TIME);
 
 export type BriefSettings = { enabled: boolean; time: LocalTime };
 
 export async function loadBriefSettings(store: ClientStore): Promise<BriefSettings> {
   const [enabled, time] = await Promise.all([
-    getSetting(store.db, BRIEF_ENABLED_SETTING),
-    getSetting(store.db, BRIEF_TIME_SETTING),
+    BRIEF_ENABLED_SETTING.load(store.db),
+    BRIEF_TIME_SETTING.load(store.db),
   ]);
-  const parsedTime = localTimeSchema.safeParse(time);
-  return {
-    enabled: enabled !== false,
-    time: parsedTime.success ? parsedTime.data : DEFAULT_BRIEF_TIME,
-  };
+  return { enabled, time };
 }
 
 export async function saveBriefSettings(
   store: ClientStore,
   patch: Partial<BriefSettings>,
 ): Promise<void> {
-  const time = patch.time === undefined ? undefined : localTimeSchema.parse(patch.time);
   await store.write(async (tx) => {
     const now = store.clock.now();
-    if (patch.enabled !== undefined)
-      await setSetting(tx, BRIEF_ENABLED_SETTING, patch.enabled, now);
-    if (time !== undefined) await setSetting(tx, BRIEF_TIME_SETTING, time, now);
+    if (patch.enabled !== undefined) await BRIEF_ENABLED_SETTING.save(tx, patch.enabled, now);
+    if (patch.time !== undefined) await BRIEF_TIME_SETTING.save(tx, patch.time, now);
   });
 }
 
@@ -211,9 +206,6 @@ export function createBriefRunner(deps: BriefRunnerDeps): BriefRunner {
   };
 }
 
-/** The last brief that failed on this device, for Days to explain. Cleared on success. */
-export const BRIEF_FAILURE_SETTING = 'brief.failure';
-
 export const briefFailureSchema = z.object({
   day: z.string(),
   code: z.string(),
@@ -221,17 +213,23 @@ export const briefFailureSchema = z.object({
 });
 export type BriefFailure = z.infer<typeof briefFailureSchema>;
 
+/**
+ * The last brief that failed on this device, for Days to explain. Cleared on success: settings
+ * values can't be null, so `false` means no failure.
+ */
+export const BRIEF_FAILURE_SETTING = defineSetting(
+  'brief.failure',
+  z.union([briefFailureSchema, z.literal(false)]),
+  false,
+);
+
 export async function loadBriefFailure(store: ClientStore): Promise<BriefFailure | null> {
-  const parsed = briefFailureSchema.safeParse(await getSetting(store.db, BRIEF_FAILURE_SETTING));
-  return parsed.success ? parsed.data : null;
+  return (await BRIEF_FAILURE_SETTING.load(store.db)) || null;
 }
 
 export async function saveBriefFailure(
   store: ClientStore,
   failure: BriefFailure | null,
 ): Promise<void> {
-  // Settings values can't be null: `false` means no failure.
-  await store.write((tx) =>
-    setSetting(tx, BRIEF_FAILURE_SETTING, failure ?? false, store.clock.now()),
-  );
+  await store.write((tx) => BRIEF_FAILURE_SETTING.save(tx, failure ?? false, store.clock.now()));
 }

@@ -1,7 +1,5 @@
-import { type ClientStore, getSetting, setSetting } from '@avchetan/db/sqlite';
+import { type ClientStore, defineSetting } from '@avchetan/db/sqlite';
 import { z } from 'zod';
-
-const SUBMIT_KEY = 'dock.submitKey';
 
 /**
  * Which key saves an entry in the dock; the other one inserts a new line.
@@ -10,14 +8,14 @@ const SUBMIT_KEY = 'dock.submitKey';
 export const submitKeySchema = z.enum(['enter', 'shift_enter']);
 export type SubmitKey = z.infer<typeof submitKeySchema>;
 export const DEFAULT_SUBMIT_KEY: SubmitKey = 'enter';
+const SUBMIT_KEY = defineSetting('dock.submitKey', submitKeySchema, DEFAULT_SUBMIT_KEY);
 
 export async function loadSubmitKey(store: ClientStore): Promise<SubmitKey> {
-  const parsed = submitKeySchema.safeParse(await getSetting(store.db, SUBMIT_KEY));
-  return parsed.success ? parsed.data : DEFAULT_SUBMIT_KEY;
+  return SUBMIT_KEY.load(store.db);
 }
 
 export async function saveSubmitKey(store: ClientStore, submitKey: SubmitKey): Promise<void> {
-  await store.write((tx) => setSetting(tx, SUBMIT_KEY, submitKey, store.clock.now()));
+  await store.write((tx) => SUBMIT_KEY.save(tx, submitKey, store.clock.now()));
 }
 
 type KeyPress = {

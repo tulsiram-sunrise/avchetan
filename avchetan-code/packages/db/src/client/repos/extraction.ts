@@ -1,9 +1,10 @@
 import { derivedId, slugify } from '@avchetan/shared';
 import { and, eq, inArray, notInArray } from 'drizzle-orm';
+import { z } from 'zod';
 import type { EntityKind, LinkTargetType, MentionRole } from '../../schema/enums';
 import { activities, entityMentions, rawLogs, tasks } from '../../schema/sqlite/tables';
 import type { Tx } from '../database';
-import { getSetting, setSetting } from '../local';
+import { defineSetting } from '../settings';
 import {
   getById,
   live,
@@ -23,9 +24,15 @@ import type { tasksRepo } from './tasks';
 /** Stands in for a category ID: "the category this plan creates". */
 export const NEW_CATEGORY = 'new';
 
-export const CATEGORY_SUGGESTIONS_SETTING = 'categories.suggestions';
+const categoryProposalSchema = z.object({ name: z.string(), description: z.string() });
+export type CategoryProposal = z.infer<typeof categoryProposalSchema>;
 
-export type CategoryProposal = { name: string; description: string };
+/** New categories the model proposed when it may only suggest them (ADR-0015). */
+export const CATEGORY_SUGGESTIONS_SETTING = defineSetting(
+  'categories.suggestions',
+  z.array(categoryProposalSchema),
+  [],
+);
 
 export type PlannedActivity = {
   /** A category ID or `NEW_CATEGORY`. */
@@ -115,16 +122,10 @@ export function extractionRepo(deps: RepoDeps, repos: Repos) {
   }
 
   async function addCategorySuggestion(tx: Tx, proposal: CategoryProposal): Promise<void> {
-    const stored = await getSetting(tx, CATEGORY_SUGGESTIONS_SETTING);
-    const suggestions = (Array.isArray(stored) ? stored : []) as CategoryProposal[];
+    const suggestions = await CATEGORY_SUGGESTIONS_SETTING.load(tx);
     const slug = slugify(proposal.name);
     if (suggestions.some((known) => slugify(known.name) === slug)) return;
-    await setSetting(
-      tx,
-      CATEGORY_SUGGESTIONS_SETTING,
-      [...suggestions, proposal],
-      deps.clock.now(),
-    );
+    await CATEGORY_SUGGESTIONS_SETTING.save(tx, [...suggestions, proposal], deps.clock.now());
   }
 
   return {

@@ -1,5 +1,5 @@
 import { isSunday, loadBriefSettings } from '@avchetan/core';
-import { type ClientStore, getSetting, setSetting } from '@avchetan/db/sqlite';
+import { type ClientStore, defineSetting } from '@avchetan/db/sqlite';
 import {
   createLogger,
   type LocalDate,
@@ -19,7 +19,11 @@ const log = createLogger('brief-reminder');
  * notification at the brief time, scheduled for a day only once it has an entry, so empty days
  * stay quiet. Tapping it opens Days, which makes or fetches the brief.
  */
-export const BRIEF_REMINDER_SETTING = 'brief.reminder';
+export const BRIEF_REMINDER_SETTING = defineSetting(
+  'brief.reminder',
+  z.enum(['on', 'off']).nullable(),
+  null,
+);
 const CHANNEL_ID = 'daily-brief';
 const ID_PREFIX = 'daily-brief-';
 
@@ -27,10 +31,7 @@ const ID_PREFIX = 'daily-brief-';
 export type ReminderChoice = 'on' | 'off' | null;
 
 export async function loadReminderChoice(store: ClientStore): Promise<ReminderChoice> {
-  const parsed = z
-    .enum(['on', 'off'])
-    .safeParse(await getSetting(store.db, BRIEF_REMINDER_SETTING));
-  return parsed.success ? parsed.data : null;
+  return BRIEF_REMINDER_SETTING.load(store.db);
 }
 
 /** Turning it on asks Android for permission; refused, the choice is saved as off. */
@@ -41,7 +42,7 @@ export async function chooseReminder(store: ClientStore, on: boolean): Promise<R
     const granted = current.granted || (await Notifications.requestPermissionsAsync()).granted;
     if (!granted) choice = 'off';
   }
-  await store.write((tx) => setSetting(tx, BRIEF_REMINDER_SETTING, choice, store.clock.now()));
+  await store.write((tx) => BRIEF_REMINDER_SETTING.save(tx, choice, store.clock.now()));
   await scheduleBriefReminder(store);
   return choice;
 }

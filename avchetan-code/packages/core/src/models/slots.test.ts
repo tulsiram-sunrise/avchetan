@@ -1,5 +1,4 @@
-import { getSetting, setSetting } from '@avchetan/db/sqlite';
-import { openTestStore } from '@avchetan/db/testing';
+import { openTestStore, readRawSetting, writeRawSetting } from '@avchetan/db/testing';
 import { withStandardFailures } from '@avchetan/shared';
 import { MemorySecretStore } from '@avchetan/shared/testing';
 import { describe, expect, it, vi } from 'vitest';
@@ -25,7 +24,9 @@ describe('AI model settings', () => {
 
     expect(await secrets.get(apiKeySecretName('groq'))).toBe('secret-value');
     expect(await hasApiKey(secrets, 'groq')).toBe(true);
-    expect(JSON.stringify(await getSetting(store.db, MODEL_SLOTS_SETTING))).not.toContain('secret');
+    expect(JSON.stringify(await readRawSetting(store, MODEL_SLOTS_SETTING.key))).not.toContain(
+      'secret',
+    );
   });
 
   it('gives the processor the saved model', async () => {
@@ -80,11 +81,11 @@ describe('AI model settings', () => {
   it('keeps the other slots', async () => {
     const { store } = await openTestStore();
     const analysis = { provider: 'ollama', model: 'other-model' };
-    await store.write((tx) => setSetting(tx, MODEL_SLOTS_SETTING, { analysis }, store.clock.now()));
+    await writeRawSetting(store, MODEL_SLOTS_SETTING.key, { analysis });
 
     await saveSlotModel(store, new MemorySecretStore(), 'extraction', { config, apiKey: '' });
 
-    expect(await getSetting(store.db, MODEL_SLOTS_SETTING)).toMatchObject({ analysis });
+    expect(await readRawSetting(store, MODEL_SLOTS_SETTING.key)).toMatchObject({ analysis });
   });
 
   it('rejects an empty model name', async () => {

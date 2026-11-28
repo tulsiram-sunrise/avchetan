@@ -1,5 +1,4 @@
-import { setSetting } from '@avchetan/db/sqlite';
-import { openTestStore } from '@avchetan/db/testing';
+import { openTestStore, writeRawSetting } from '@avchetan/db/testing';
 import { describe, expect, it } from 'vitest';
 import {
   loadAnalysisMode,
@@ -12,14 +11,9 @@ import {
 
 async function storeWithModel() {
   const { store } = await openTestStore();
-  await store.write((tx) =>
-    setSetting(
-      tx,
-      MODEL_SLOTS_SETTING,
-      { extraction: { provider: 'groq', model: 'test-model' } },
-      store.clock.now(),
-    ),
-  );
+  await writeRawSetting(store, MODEL_SLOTS_SETTING.key, {
+    extraction: { provider: 'groq', model: 'test-model' },
+  });
   return store;
 }
 

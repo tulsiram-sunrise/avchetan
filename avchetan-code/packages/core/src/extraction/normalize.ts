@@ -1,6 +1,7 @@
 import { normalizeMetrics, parseQuantity } from '@avchetan/db';
 import {
   type CategoryProposal,
+  defineSetting,
   type ExtractionPlan,
   isUnnamedPerson,
   type MentionTarget,
@@ -33,9 +34,14 @@ import { isAlreadyPaid, spentFromWords } from './money-words';
 import type { ExtractionResult } from './schema';
 import { sleepHoursFromWords } from './sleep-words';
 
-export const LLM_MAY_CREATE_SETTING = 'categories.llmMayCreate';
 export const llmMayCreateSchema = z.enum(['auto', 'suggest', 'off']);
 export type LlmMayCreate = z.infer<typeof llmMayCreateSchema>;
+/** Whether the model may add categories of its own (ADR-0015). */
+export const LLM_MAY_CREATE_SETTING = defineSetting(
+  'categories.llmMayCreate',
+  llmMayCreateSchema,
+  'auto',
+);
 
 const MAX_TAGS = 5;
 const MAX_TITLE = 200;

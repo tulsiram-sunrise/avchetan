@@ -1,5 +1,4 @@
-import { setSetting } from '@avchetan/db/sqlite';
-import { openTestStore } from '@avchetan/db/testing';
+import { openTestStore, writeRawSetting } from '@avchetan/db/testing';
 import { FakeNetworkMonitor, MemorySecretStore } from '@avchetan/shared/testing';
 import { describe, expect, it, vi } from 'vitest';
 import { loadBriefFailure } from '../analysis/brief-schedule';
@@ -33,7 +32,7 @@ async function device(options: {
   const { store } = await openTestStore();
   if (options.slots) {
     const { slots } = options;
-    await store.write((tx) => setSetting(tx, MODEL_SLOTS_SETTING, slots, store.clock.now()));
+    await writeRawSetting(store, MODEL_SLOTS_SETTING.key, slots);
   }
   if (options.mode) await saveAnalysisMode(store, options.mode);
   const fetch = vi.fn<typeof globalThis.fetch>();

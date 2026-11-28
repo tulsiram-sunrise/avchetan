@@ -1,5 +1,5 @@
 import { dueReminders, loadRingSetting, PC_LATE_LIMIT_MS } from '@avchetan/core';
-import { type ClientStore, getSetting, setSetting } from '@avchetan/db/sqlite';
+import { type ClientStore, defineSetting } from '@avchetan/db/sqlite';
 import {
   addMs,
   type Cancel,
@@ -22,7 +22,7 @@ const CHECK_EVERY_MS = 30_000;
 /** How many due reminders one check shows; more at once would only bury each other. */
 const MOST_AT_ONCE = 5;
 /** The newest reminder time already shown, so a restart doesn't show it again. */
-export const REMINDERS_SHOWN_SETTING = 'reminders.shown_until';
+export const REMINDERS_SHOWN_SETTING = defineSetting('reminders.shown_until', z.iso.datetime(), '');
 
 export type ReminderChecker = {
   /** Shows what is due; returns how many were shown. */
@@ -42,8 +42,8 @@ export function createReminderChecker(deps: {
       const now = store.clock.now();
       const earliest = addMs(now, -PC_LATE_LIMIT_MS);
       if (since === null) {
-        const saved = z.string().safeParse(await getSetting(store.db, REMINDERS_SHOWN_SETTING));
-        since = saved.success && saved.data > earliest ? (saved.data as UtcInstant) : earliest;
+        const saved = await REMINDERS_SHOWN_SETTING.load(store.db);
+        since = saved > earliest ? (saved as UtcInstant) : earliest;
       }
       if (!(await loadRingSetting(store, PC_RINGS_BY_DEFAULT))) {
         // Quiet now means quiet for good: turning it on later doesn't bring old ones back.
@@ -62,7 +62,7 @@ export function createReminderChecker(deps: {
           log.warn('could not show a reminder', { code: toAppError(error).code });
         }
       }
-      await store.write((tx) => setSetting(tx, REMINDERS_SHOWN_SETTING, now, store.clock.now()));
+      await store.write((tx) => REMINDERS_SHOWN_SETTING.save(tx, now, store.clock.now()));
       return due.length;
     },
   };

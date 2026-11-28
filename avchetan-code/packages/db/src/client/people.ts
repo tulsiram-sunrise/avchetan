@@ -4,13 +4,13 @@ import { z } from 'zod';
 import type { EntityKind, MentionRole } from '../schema/enums';
 import { activities, entities, entityMentions, rawLogs, tasks } from '../schema/sqlite/tables';
 import type { ClientDb, Tx } from './database';
-import { getSetting, setSetting } from './local';
 import type { DataScope } from './privacy';
 import { type Entity, isUnnamedPerson, normalizeEntityName, PROMISE_ROLES } from './repos/entities';
 import type { RawLog } from './repos/raw-logs';
 import type { Task } from './repos/tasks';
 import { isOpenTask, openTaskWhere, taskState } from './repos/tasks';
 import { matchingEntityIds } from './search';
+import { defineSetting } from './settings';
 import { live } from './synced';
 
 /** Reads for people and promises (docs/product/people-and-promises.md). */
@@ -691,17 +691,20 @@ export function duplicateSuggestions(
 export const duplicatePairKey = (a: string, b: string) => pairKey(a, b);
 
 /** Client-local, not synced: pairs the user said are different people ("No"). */
-export const DISMISSED_PAIRS_SETTING = 'people.dismissedPairs';
-const dismissedPairsSchema = z.array(z.string()).catch([]);
+export const DISMISSED_PAIRS_SETTING = defineSetting(
+  'people.dismissedPairs',
+  z.array(z.string()),
+  [],
+);
 
 export async function loadDismissedPairs(db: ClientDb): Promise<Set<string>> {
-  return new Set(dismissedPairsSchema.parse((await getSetting(db, DISMISSED_PAIRS_SETTING)) ?? []));
+  return new Set(await DISMISSED_PAIRS_SETTING.load(db));
 }
 
 export async function dismissPair(tx: Tx, pair: { a: string; b: string }, now: string) {
   const pairs = await loadDismissedPairs(tx);
   pairs.add(pairKey(pair.a, pair.b));
-  await setSetting(tx, DISMISSED_PAIRS_SETTING, [...pairs], now);
+  await DISMISSED_PAIRS_SETTING.save(tx, [...pairs], now);
 }
 
 /**

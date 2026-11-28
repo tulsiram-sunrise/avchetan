@@ -2,7 +2,6 @@ import {
   DETAILED_LOG_SETTING,
   LLM_MAY_CREATE_SETTING,
   type LlmMayCreate,
-  llmMayCreateSchema,
   loadDetailedLogUntil,
   loadExtractionMode,
   loadExtractionSettings,
@@ -12,7 +11,6 @@ import {
   startDetailedLog,
   stopDetailedLog,
 } from '@avchetan/core';
-import { getSetting, setSetting } from '@avchetan/db/sqlite';
 import { createLogger } from '@avchetan/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { emitAppEvent } from '../native/events';
@@ -27,18 +25,13 @@ const log = createLogger('queries');
 /** Keyed by the `settings` table so a change in one window refreshes the other. */
 const submitKeyQuery = ['settings', 'dock.submitKey'] as const;
 
-const mayCreateQuery = ['settings', LLM_MAY_CREATE_SETTING] as const;
+const mayCreateQuery = ['settings', LLM_MAY_CREATE_SETTING.key] as const;
 
 export function useMayCreate() {
   const { store } = useServices();
   return useQuery({
     queryKey: mayCreateQuery,
-    queryFn: async () => {
-      const parsed = llmMayCreateSchema.safeParse(
-        await getSetting(store.db, LLM_MAY_CREATE_SETTING),
-      );
-      return parsed.success ? parsed.data : 'auto';
-    },
+    queryFn: () => LLM_MAY_CREATE_SETTING.load(store.db),
   });
 }
 
@@ -47,7 +40,7 @@ export function useSetMayCreate() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (value: LlmMayCreate) =>
-      store.write((tx) => setSetting(tx, LLM_MAY_CREATE_SETTING, value, store.clock.now())),
+      store.write((tx) => LLM_MAY_CREATE_SETTING.save(tx, value, store.clock.now())),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: mayCreateQuery }),
   });
 }
@@ -129,7 +122,7 @@ export function useSetSeeThrough() {
   });
 }
 
-const ringQuery = ['settings', RING_SETTING] as const;
+const ringQuery = ['settings', RING_SETTING.key] as const;
 
 /** *Ring for reminders on this device*: off on a PC until turned on (§7). */
 export function useRingHere() {
@@ -154,7 +147,7 @@ export function useSetRingHere() {
   });
 }
 
-const detailedLogQuery = ['settings', DETAILED_LOG_SETTING] as const;
+const detailedLogQuery = ['settings', DETAILED_LOG_SETTING.key] as const;
 
 /** When *Detailed log for 1 hour* ends, or null when it is off. */
 export function useDetailedLogUntil() {

@@ -48,7 +48,8 @@
       "preset": "recommended",
       "suspicious": {
         "noConsole": "error",
-        "noExplicitAny": "error"
+        "noExplicitAny": "error",
+        "noImportCycles": "error"
       },
       "style": {
         "noDefaultExport": "error",

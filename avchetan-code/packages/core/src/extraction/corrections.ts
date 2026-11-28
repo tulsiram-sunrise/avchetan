@@ -2,8 +2,7 @@ import {
   type ClientStore,
   type CorrectedEntry,
   type DataScope,
-  getSetting,
-  setSetting,
+  defineSetting,
 } from '@avchetan/db/sqlite';
 import { localDate } from '@avchetan/shared';
 import { z } from 'zod';
@@ -16,15 +15,18 @@ import type { ExtractionResult } from './schema';
  */
 
 /** Device setting: send this device's correction examples to the model. Default on. */
-export const LEARN_FROM_CORRECTIONS_SETTING = 'extraction.learnFromCorrections';
+export const LEARN_FROM_CORRECTIONS_SETTING = defineSetting(
+  'extraction.learnFromCorrections',
+  z.boolean(),
+  true,
+);
 
 export async function loadLearnFromCorrections(store: ClientStore): Promise<boolean> {
-  const value = z.boolean().safeParse(await getSetting(store.db, LEARN_FROM_CORRECTIONS_SETTING));
-  return value.success ? value.data : true;
+  return LEARN_FROM_CORRECTIONS_SETTING.load(store.db);
 }
 
 export async function saveLearnFromCorrections(store: ClientStore, on: boolean): Promise<void> {
-  await store.write((tx) => setSetting(tx, LEARN_FROM_CORRECTIONS_SETTING, on, store.clock.now()));
+  await store.write((tx) => LEARN_FROM_CORRECTIONS_SETTING.save(tx, on, store.clock.now()));
 }
 
 /** How many recently corrected entries are considered. */
